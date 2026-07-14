@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { setFootHeightVar } from './ui.js';
 import { buildAll } from './screens/index.js';
 import { runLoading } from './screens/loading.js';
 import { syncCategoriesToResults } from './screens/results.js';
@@ -39,6 +40,7 @@ export function go(id){
   }else{
     foot.classList.add('hide');
   }
+  setFootHeightVar();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 export function goNext(){

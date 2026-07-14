@@ -14,7 +14,7 @@ export function buildReview(){
     card.innerHTML=`
       <div style="display:flex;gap:11px;align-items:flex-start;width:100%">
         <span class="fi">${f.ico}</span>
-        <span><span class="ft">${f.ttl}</span><span class="fd">${f.sub}</span></span>
+        <div><span class="ft">${f.ttl}</span><span class="fd">${f.sub}</span></div>
       </div>
       <div style="display:flex;gap:6px;margin-left:auto">
         <button class="btn btn-sm btn-ghost" data-act="ok" onclick="markFeat(${i},'ok',this)" style="padding:6px 12px;font-size:12px">Correct</button>

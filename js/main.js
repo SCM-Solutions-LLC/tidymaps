@@ -1,7 +1,7 @@
 /* ============================================================
    TidyMap AI — entry point
    ============================================================ */
-import { toast } from './ui.js';
+import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
 import { refreshAiStatus, openSettings, closeSettings, saveSettings, clearKey } from './ai.js';
 import { setRail, go, goNext, goBack, restart } from './router.js';
 import { buildAll } from './screens/index.js';
@@ -27,3 +27,6 @@ Object.assign(window, {
 buildAll();
 setRail();
 refreshAiStatus();
+setAppbarHeightVar();
+setFootHeightVar();
+addEventListener('resize', () => { setAppbarHeightVar(); setFootHeightVar(); });

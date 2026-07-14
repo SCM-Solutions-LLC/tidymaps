@@ -46,7 +46,7 @@ export function buildResults(){
     'We noticed you already have two baskets, one deep bin, open shelf space on the right side, and unused vertical space above the cans. Put these to work before buying anything.';
   const existingData = (A&&A.existing.length)?A.existing:EXISTING;
   document.getElementById('res-existing').innerHTML=existingData.map(e=>`
-    <div class="feat"><span class="fi">${e.ico}</span><span><span class="ft">${escapeHtml(e.ft)}</span><span class="fd">${escapeHtml(e.fd)}</span></span></div>`).join('');
+    <div class="feat"><span class="fi">${e.ico}</span><div><span class="ft">${escapeHtml(e.ft)}</span><span class="fd">${escapeHtml(e.fd)}</span></div></div>`).join('');
   document.getElementById('res-dontbuy').textContent = (A&&A.dontBuy) ? A.dontBuy :
     'No new bins, racks, or organizers yet. Your two baskets and deep bin already cover snacks, breakfast, and overflow. Measure first if you decide to upgrade later.';
 

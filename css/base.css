@@ -30,9 +30,10 @@ p{margin:0 0 1em}
 }
 .appbar-inner{
   max-width:var(--maxw);margin:0 auto;padding:12px var(--pad,18px);
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;gap:12px;min-width:0;
 }
-.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.01em}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.01em;min-width:0}
+.brand > span:not(.logo){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .brand .logo{
   width:28px;height:28px;border-radius:8px;flex:none;
   background:linear-gradient(135deg,var(--primary),var(--primary-2));
@@ -45,9 +46,13 @@ p{margin:0 0 1em}
 .appbar .restart{
   font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3);background:none;border:1px solid var(--line-2);border-radius:999px;padding:7px 13px;
-  transition:.16s;
+  transition:.16s;white-space:nowrap;flex:none;
 }
 .appbar .restart:hover{color:var(--ink);border-color:var(--ink-3)}
+@media(max-width:419px){
+  .brand .mvp{display:none}
+  .appbar .restart{padding:7px 10px;letter-spacing:.04em}
+}
 
 /* progress rail under appbar */
 .rail{height:3px;background:var(--surface-3);overflow:hidden}
