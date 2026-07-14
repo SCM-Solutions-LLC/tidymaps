@@ -1,4 +1,5 @@
 import { buildSpace } from './space.js';
+import { buildHousehold } from './household.js';
 import { buildCapture } from './capture.js';
 import { buildDetails } from './details.js';
 import { buildPrefs } from './prefs.js';
@@ -10,6 +11,6 @@ import { buildFeedback } from './feedback.js';
    Build screens
    ============================================================ */
 export function buildAll(){
-  buildSpace(); buildCapture(); buildDetails(); buildPrefs();
+  buildSpace(); buildHousehold(); buildCapture(); buildDetails(); buildPrefs();
   buildCustomize(); buildSave(); buildFeedback();
 }

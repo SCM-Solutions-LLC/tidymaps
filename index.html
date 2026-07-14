@@ -102,9 +102,44 @@
   </div>
 </section>
 
-<!-- ============================================================ 3. CAPTURE -->
+<!-- ============================================================ 3. HOUSEHOLD -->
+<section class="screen has-rail" id="screen-household">
+  <div class="step-head"><span class="step-num">02</span><span class="step-kicker">Your household</span></div>
+  <div class="wiz">
+    <div class="wiz-main">
+      <h2>Who uses this space?</h2>
+      <p class="muted small" style="margin-top:6px">This shapes where things go &mdash; kid items low and reachable, hazards high or latched.</p>
+      <div class="card pad" style="margin-top:18px">
+        <div class="qa"><span class="q">Do kids use or reach this space?</span>
+          <span class="seg" id="hh-kids-seg"><button data-v="yes">Yes</button><button data-v="no">No</button></span></div>
+        <div id="hh-kid-ages" class="hide" style="padding:12px 2px 16px;border-bottom:1px solid var(--line)">
+          <div class="small" style="font-weight:600;margin-bottom:8px">Their ages <span class="muted" style="font-weight:400">(pick all that apply)</span></div>
+          <div class="chips" id="hh-age-chips"></div>
+        </div>
+        <div class="qa"><span class="q">Any pets?</span>
+          <span class="seg" id="hh-pets-seg"><button data-v="yes">Yes</button><button data-v="no">No</button></span></div>
+        <div id="hh-pet-types" class="hide" style="padding:12px 2px 16px;border-bottom:1px solid var(--line)">
+          <div class="small" style="font-weight:600;margin-bottom:8px">What kind?</div>
+          <div class="chips" id="hh-pet-chips"></div>
+        </div>
+        <div style="padding:14px 2px 6px">
+          <div class="small" style="font-weight:600;margin-bottom:8px">Reaching &amp; mobility</div>
+          <div class="chips" id="hh-mobility-chips"></div>
+        </div>
+        <label class="field" style="margin-top:16px;margin-bottom:4px"><span>Anything else we should know? <span class="muted" style="font-weight:400">(optional)</span></span>
+          <textarea id="hh-notes" placeholder="e.g. my toddler opens everything, or grandma uses this pantry daily&hellip;"></textarea></label>
+      </div>
+    </div>
+    <aside class="wiz-rail">
+      <div class="rail-note"><strong>Safety first.</strong> With kids in the house, heavy or hazardous items get placed up high or behind a latch &mdash; and their snacks go where they can reach without climbing.</div>
+      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================ 4. CAPTURE -->
 <section class="screen has-rail" id="screen-capture">
-  <div class="step-head"><span class="step-num">02</span><span class="step-kicker">Show us the space</span></div>
+  <div class="step-head"><span class="step-num">03</span><span class="step-kicker">Show us the space</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>How do you want to show us the space?</h2>
@@ -121,7 +156,7 @@
 
 <!-- ============================================================ 4. SPACE DETAILS -->
 <section class="screen has-rail" id="screen-details">
-  <div class="step-head"><span class="step-num">03</span><span class="step-kicker">Space details &middot; optional</span></div>
+  <div class="step-head"><span class="step-num">04</span><span class="step-kicker">Space details &middot; optional</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>A few optional details</h2>
@@ -130,10 +165,16 @@
         <span>You can skip this. The plan will still work, but dimensions help us make better product recommendations.</span>
       </div>
       <div class="card pad">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px">
+          <span class="small" style="font-weight:600">Measurements</span>
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px">Units
+            <select id="d-unit" style="width:auto;padding:6px 9px;font-size:13px"><option value="in">inches</option><option value="cm">cm</option></select>
+          </label>
+        </div>
         <div class="grid grid-2">
-          <label class="field"><span>Approximate width</span><input type="text" id="d-w" placeholder="e.g. 30 in"></label>
-          <label class="field"><span>Approximate height</span><input type="text" id="d-h" placeholder="e.g. 60 in"></label>
-          <label class="field"><span>Approximate depth</span><input type="text" id="d-d" placeholder="e.g. 14 in"></label>
+          <label class="field"><span>Width</span><input type="number" id="d-w" placeholder="e.g. 30" min="1" step="0.5" inputmode="decimal"></label>
+          <label class="field"><span>Height</span><input type="number" id="d-h" placeholder="e.g. 60" min="1" step="0.5" inputmode="decimal"></label>
+          <label class="field"><span>Depth (front to back)</span><input type="number" id="d-d" placeholder="e.g. 14" min="1" step="0.5" inputmode="decimal"></label>
           <label class="field"><span>Number of shelves</span><input type="number" id="d-shelves" placeholder="e.g. 5" min="0"></label>
         </div>
         <div class="divider" style="margin:8px 0 18px"></div>
@@ -149,7 +190,7 @@
 
 <!-- ============================================================ 5. PREFERENCES -->
 <section class="screen has-rail" id="screen-prefs">
-  <div class="step-head"><span class="step-num">04</span><span class="step-kicker">Preferences</span></div>
+  <div class="step-head"><span class="step-num">05</span><span class="step-kicker">Preferences</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>What should your plan prioritize?</h2>
@@ -187,7 +228,7 @@
 
 <!-- ============================================================ 7. DETECTION REVIEW -->
 <section class="screen" id="screen-review">
-  <div class="step-head"><span class="step-num">05</span><span class="step-kicker">Confirm what we found</span></div>
+  <div class="step-head"><span class="step-num">06</span><span class="step-kicker">Confirm what we found</span></div>
   <h2>Did we get this right?</h2>
   <div class="helper" style="margin:14px 0 22px">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>

@@ -62,11 +62,34 @@ export const DEMO_FEATURES = [
 export const DEMO_CATS = ['Snacks','Canned goods','Pasta & grains','Baking supplies','Spices & sauces','Breakfast items','Paper goods','Bulk overflow','Kids’ snacks','Loose packets','Duplicate items','Possible expired items'];
 
 export const MAP = [
-  {lv:'Top shelf',ic:SVG.arrowUp,zone:'Bulk overflow · Backup paper goods · Rarely used items',why:'These items are used less often and do not need to be easy to reach.'},
-  {lv:'Eye level',ic:SVG.eye,eye:true,zone:'Daily snacks · Breakfast items · Coffee or tea',why:'Frequently used items should be visible and easy to access.'},
-  {lv:'Middle shelf',ic:SVG.alignCenter,zone:'Canned goods · Pasta · Grains · Dinner ingredients',why:'Meal-building items should be grouped together to reduce searching.'},
-  {lv:'Lower shelf',ic:SVG.arrowDown,zone:'Heavy items · Kid-friendly snacks · Large containers',why:'Heavy items are safer lower down, and kid snacks stay within reach.'},
-  {lv:'Door / side',ic:SVG.panelRight,zone:'Spices · Sauces · Small packets',why:'Small items are easier to manage in narrow zones or small organizers.'}
+  {lv:'Top shelf',ic:SVG.arrowUp,zone:'Bulk overflow · Backup paper goods · Rarely used items',why:'These items are used less often and do not need to be easy to reach.',
+    shelfIndex:0,safety:{flag:'keep-high',why:'Rarely used bulk stays out of the way of daily traffic.'},
+    items:[{name:'Bulk overflow',size:'l',flags:['heavy']},{name:'Paper goods',size:'l',flags:[]},{name:'Rarely used',size:'m',flags:[]}]},
+  {lv:'Eye level',ic:SVG.eye,eye:true,zone:'Daily snacks · Breakfast items · Coffee or tea',why:'Frequently used items should be visible and easy to access.',
+    shelfIndex:1,safety:{flag:null,why:null},
+    items:[{name:'Daily snacks',size:'m',flags:['kid-frequent']},{name:'Breakfast',size:'m',flags:[]},{name:'Coffee & tea',size:'s',flags:[]}]},
+  {lv:'Middle shelf',ic:SVG.alignCenter,zone:'Canned goods · Pasta · Grains · Dinner ingredients',why:'Meal-building items should be grouped together to reduce searching.',
+    shelfIndex:2,safety:{flag:null,why:null},
+    items:[{name:'Canned goods',size:'m',flags:['heavy']},{name:'Pasta & grains',size:'m',flags:[]},{name:'Dinner ingredients',size:'m',flags:[]}]},
+  {lv:'Lower shelf',ic:SVG.arrowDown,zone:'Heavy items · Kid-friendly snacks · Large containers',why:'Heavy items are safer lower down, and kid snacks stay within reach.',
+    shelfIndex:3,safety:{flag:'kid-safe',why:'Kid snacks stay reachable without climbing; heavy items cannot fall far.'},
+    items:[{name:'Heavy items',size:'l',flags:['heavy']},{name:'Kid snacks',size:'s',flags:['kid-frequent']},{name:'Large containers',size:'l',flags:[]}]},
+  {lv:'Door / side',ic:SVG.panelRight,zone:'Spices · Sauces · Small packets',why:'Small items are easier to manage in narrow zones or small organizers.',
+    shelfIndex:4,safety:{flag:null,why:null},
+    items:[{name:'Spices',size:'s',flags:[]},{name:'Sauces',size:'s',flags:['fragile']},{name:'Small packets',size:'s',flags:[]}]}
+];
+export const DEMO_GEOMETRY = {unit:'in',width:30,height:60,depth:14,shelfCount:5,shelfYFracs:[0.08,0.30,0.52,0.72,0.90],estimated:true};
+export const DEMO_SAFETY_NOTES = [
+  'Kid snacks live on the lower shelf so small hands can reach them without climbing.',
+  'Heavy jars and cans stay at waist height or below, so nothing heavy can fall from above.'
+];
+export const DEMO_PRODUCT_NEEDS = [
+  {type:'clear-bin',qty:4,purpose:'Corral loose snack packets so they stay visible',targetZone:'Eye level',maxDims:{w_in:9.5,h_in:7,d_in:13.5},priority:'high'},
+  {type:'can-riser',qty:1,purpose:'See every can without digging',targetZone:'Middle shelf',maxDims:{w_in:16,h_in:10,d_in:13.5},priority:'high'},
+  {type:'turntable',qty:1,purpose:'Reach sauces at the back of the deep shelf',targetZone:'Middle shelf',maxDims:{w_in:13,h_in:6,d_in:13},priority:'nice'},
+  {type:'shelf-riser',qty:1,purpose:'Turn unused vertical space into a second level',targetZone:'Top shelf',maxDims:{w_in:14,h_in:9,d_in:13.5},priority:'nice'},
+  {type:'airtight-container',qty:2,purpose:'Keep flour and sugar fresh and stackable',targetZone:'Middle shelf',maxDims:{w_in:6,h_in:9,d_in:13},priority:'nice'},
+  {type:'label-set',qty:1,purpose:'Make the zones easy for the whole household to keep',targetZone:'Every zone',maxDims:null,priority:'nice'}
 ];
 export const EXISTING = [
   {ico:SVG.shoppingBag,ft:'Reuse: 2 baskets',fd:'Use these for snacks and breakfast items.'},

@@ -7,11 +7,12 @@ import { syncCategoriesToResults } from './screens/results.js';
 /* ============================================================
    Flow / routing
    ============================================================ */
-export const FLOW = ['landing','space','capture','details','prefs','loading','review','results','customize','save','feedback','done'];
+export const FLOW = ['landing','space','household','capture','details','prefs','loading','review','results','customize','save','feedback','done'];
 // screens that show the sticky Back/Continue footer
 export const FLOW_SCREENS = {
-  space:{next:'capture',back:'landing',label:'Continue'},
-  capture:{next:'details',back:'space',label:'Continue'},
+  space:{next:'household',back:'landing',label:'Continue'},
+  household:{next:'capture',back:'space',label:'Continue'},
+  capture:{next:'details',back:'household',label:'Continue'},
   details:{next:'prefs',back:'capture',label:'Continue · or skip'},
   prefs:{next:'loading',back:'details',label:'Analyze my space'},
   review:{next:'results',back:null,label:'Build my plan'}
@@ -72,8 +73,14 @@ export function fillRailSummaries(){
   const rows=[];
   if(state.space) rows.push(['Space', SPACE_NAMES[state.space]||state.space]);
   if(state.goal) rows.push(['Goal', GOAL_NAMES[state.goal]||state.goal]);
+  const h=state.household;
+  if(h.kids.present==='yes') rows.push(['Kids', h.kids.ages.length?h.kids.ages.join(', '):'yes']);
+  else if(h.kids.present==='no') rows.push(['Kids', 'no']);
+  if(h.pets.present==='yes') rows.push(['Pets', h.pets.types.length?h.pets.types.join(', '):'yes']);
+  if(h.mobility.length && !(h.mobility.length===1 && h.mobility[0]==='None')) rows.push(['Mobility', h.mobility.join(', ')]);
   if(state.capture) rows.push(['Capture', CAPTURE_NAMES[state.capture]||state.capture]);
   if(state.uploadedFiles && state.uploadedFiles.length) rows.push(['Photos', state.uploadedFiles.length+' selected']);
+  if(state.dims && (state.dims.w_in||state.dims.d_in)) rows.push(['Size', [state.dims.w_in&&state.dims.w_in+'w', state.dims.h_in&&state.dims.h_in+'h', state.dims.d_in&&state.dims.d_in+'d'].filter(Boolean).join(' × ')+' in']);
   if(state.prefs && state.prefs.size) rows.push(['Priorities', state.prefs.size+' picked']);
   if(state.budget) rows.push(['Budget', state.budget]);
   if(state.effort) rows.push(['Effort', state.effort]);
@@ -87,12 +94,16 @@ export function restart(){
   state.space=state.goal=state.capture=state.budget=state.effort=null;
   state.prefs=new Set(); state.upgrades=false;
   state.cats=[]; state.features=[];
-  state.uploadedFiles=[]; state.uploadedVideo=null;
-  state.ai=null; state.aiError=null; state.afterMode='Use existing containers';
+  state.uploadedFiles=[]; state.uploadedVideo=null; state.frames=[];
+  state.dims=null;
+  state.household={ kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
+  state.ai=null; state.aiError=null; state.planMeta=null; state.afterMode='Use existing containers';
   document.querySelectorAll('.sel').forEach(e=>e.classList.remove('sel'));
   document.getElementById('goal-block').classList.add('hide');
   document.getElementById('capture-detail').classList.add('hide');
   document.getElementById('customize-result').classList.add('hide');
+  document.getElementById('hh-kid-ages').classList.add('hide');
+  document.getElementById('hh-pet-types').classList.add('hide');
   buildAll();
   go('landing');
 }

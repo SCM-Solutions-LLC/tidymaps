@@ -4,48 +4,75 @@ import { state } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { backendConfigured } from '../config.js';
 import { analyzeSpace } from '../api.js';
-import { fileToScaledB64 } from '../media.js';
+import { fileToScaledB64, extractVideoFrames, formatTime } from '../media.js';
 import { normalizeAi, buildAnalysisContext } from '../plan.js';
 import { go } from '../router.js';
 import { buildResults } from './results.js';
+
+function showFrames(frames){
+  const fw=document.getElementById('frames-wrap');
+  const f=document.getElementById('frames');
+  fw.classList.remove('hide');
+  f.innerHTML='';
+  frames.forEach((fr,k)=>{
+    const d=document.createElement('div');
+    d.className='frame'; d.setAttribute('data-t',formatTime(fr.t));
+    const img=document.createElement('img');
+    img.src='data:image/jpeg;base64,'+fr.data;
+    img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+    img.alt='Video frame at '+formatTime(fr.t);
+    d.appendChild(img);
+    f.appendChild(d);
+    setTimeout(()=>d.classList.add('in'), k*150);
+  });
+}
 
 /* ---------- Loading ---------- */
 export function runLoading(){
   const wrap=document.getElementById('load-steps'); wrap.innerHTML='';
   const fw=document.getElementById('frames-wrap');
+  fw.classList.add('hide');
   LOAD_LABELS.forEach((l,i)=>{
     const row=document.createElement('div'); row.className='load-step'; row.id='ls-'+i;
     row.innerHTML=`<span class="dot">${ICON.check}</span><span>${l}</span>`;
     wrap.appendChild(row);
   });
-  // video -> show frames after the "extracting" step (real extraction lands with video analysis)
-  if(state.capture==='video'){
-    fw.classList.remove('hide');
-    const f=document.getElementById('frames'); f.innerHTML='';
-    ['0:00','0:04','0:09','0:13'].forEach(t=>{
-      const d=document.createElement('div'); d.className='frame'; d.setAttribute('data-t',t);
-      d.innerHTML='<div class="pantry-mini"><i></i><i></i><i></i><i></i></div>';
-      f.appendChild(d);
-    });
-  }else{ fw.classList.add('hide'); }
 
-  // Kick off real analysis in parallel (server-held keys via edge function)
-  state.ai=null; state.aiError=null; state.planMeta=null;
-  const doReal = backendConfigured() && (state.uploadedFiles||[]).length && state.capture==='photos';
-  let aiPromise = null;
-  if(doReal){
+  state.ai=null; state.aiError=null; state.planMeta=null; state.frames=[];
+
+  // Video: really extract frames client-side (thumbnails show even without a backend)
+  let framesPromise=null;
+  if(state.capture==='video' && state.uploadedVideo){
+    framesPromise = extractVideoFrames(state.uploadedVideo, 6)
+      .then(frames=>{ state.frames=frames; showFrames(frames); return frames; })
+      .catch(()=>{ return []; });
+  }
+
+  // Real analysis through the edge function (photos or video frames)
+  const wantsReal = backendConfigured() &&
+    ((state.capture==='photos' && (state.uploadedFiles||[]).length) ||
+     (state.capture==='video' && state.uploadedVideo));
+  let aiPromise=null;
+  if(wantsReal){
     document.getElementById('load-sub').innerHTML =
-      'Analyzing your photos &middot; <span class="spin-ring"></span>';
+      'Analyzing your space &middot; <span class="spin-ring"></span>';
     aiPromise = (async ()=>{
-      const files = (state.uploadedFiles||[]).slice(0,5);
-      const images = await Promise.all(files.map(async f=>({ media_type:'image/jpeg', data: await fileToScaledB64(f) })));
-      const { plan, model } = await analyzeSpace(images, buildAnalysisContext());
+      let images;
+      if(state.capture==='video'){
+        const frames = await (framesPromise||Promise.resolve([]));
+        if(!frames.length) throw new Error('We could not read frames from that video — try photos instead.');
+        images = frames.map(fr=>({ media_type:'image/jpeg', data:fr.data }));
+      }else{
+        const files=(state.uploadedFiles||[]).slice(0,5);
+        images = await Promise.all(files.map(async f=>({ media_type:'image/jpeg', data: await fileToScaledB64(f) })));
+      }
+      const { plan, model } = await analyzeSpace(images.slice(0,6), buildAnalysisContext());
       state.ai = normalizeAi(plan);
       state.planMeta = { model, source:'ai', analyzedAt: Date.now() };
     })().catch(e=>{ state.aiError = e.message || 'Analysis failed'; state.ai=null; state.planMeta=null; });
   }else{
     document.getElementById('load-sub').textContent =
-      backendConfigured() ? 'Using the demo plan (real analysis runs on the Upload-photos path).'
+      backendConfigured() ? 'Using the demo plan for this path.'
                           : 'Showing the demo plan — the analysis backend is not connected yet.';
   }
 
@@ -54,9 +81,6 @@ export function runLoading(){
     if(i>0) document.getElementById('ls-'+(i-1)).classList.replace('doing','done');
     if(i>=LOAD_LABELS.length){ finishLoading(aiPromise); return; }
     const row=document.getElementById('ls-'+i); row.classList.add('doing');
-    if(state.capture==='video'&&i===1){
-      document.querySelectorAll('.frame').forEach((fr,k)=>setTimeout(()=>fr.classList.add('in'),k*150));
-    }
     i++;
     setTimeout(tick, i===2?780:430);
   };

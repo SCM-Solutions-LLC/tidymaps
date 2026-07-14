@@ -2,6 +2,7 @@ import { MAP, EXISTING, STEPS, UPGRADES, AFTER_MODES, AFTER_PALETTE } from '../d
 import { SVG, ICON } from '../icons.js';
 import { state } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
+import { activeSafetyNotes } from '../plan.js';
 import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
@@ -43,14 +44,27 @@ export function buildResults(){
     'Right-side open shelf space is free','Lower shelf can safely hold heavy items'];
   document.getElementById('res-opps').innerHTML=opps.map(p=>`<li>${escapeHtml(p)}</li>`).join('');
 
-  // map
+  // household safety notes (only present when the plan carries them)
+  const notesWrap=document.getElementById('res-safety-notes');
+  if(notesWrap){
+    notesWrap.innerHTML=activeSafetyNotes().map(n=>
+      `<div class="safety-note">${SVG.shield}<span>${escapeHtml(n)}</span></div>`).join('');
+  }
+
+  // map — v2 rows carry per-shelf safety flags
+  const SAFETY_LABEL={'kid-safe':'kid safe','keep-high':'keep high','lock-or-latch':'lock or latch'};
   const mapData = (A&&A.map.length)?A.map:MAP;
-  document.getElementById('res-map').innerHTML=mapData.map(m=>`
+  document.getElementById('res-map').innerHTML=mapData.map(m=>{
+    const flag=m.safety&&m.safety.flag;
+    const badge=flag?`<span class="tag ${flag==='kid-safe'?'green':'warn'}" style="margin-left:8px;vertical-align:2px">${SAFETY_LABEL[flag]}</span>`:'';
+    const safetyWhy=(m.safety&&m.safety.why)?`<div class="why">${SVG.shield}<span>${escapeHtml(m.safety.why)}</span></div>`:'';
+    return `
     <div class="shelf ${m.eye?'eye':''}">
       <div class="label"><span class="lv">${escapeHtml(m.lv)}</span><span class="ic">${m.ic}</span></div>
-      <div class="body"><div class="zone">${escapeHtml(m.zone)}</div>
-        <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div></div>
-    </div>`).join('');
+      <div class="body"><div class="zone">${escapeHtml(m.zone)}${badge}</div>
+        <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div>${safetyWhy}</div>
+    </div>`;
+  }).join('');
 
   // existing first
   document.getElementById('res-existing-lede').textContent = (A&&A.existingLede) ? A.existingLede :
