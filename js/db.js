@@ -109,6 +109,13 @@ export async function loadSpace(id){
   state.stepDone = (data.progress && data.progress.stepsDone) || [];
   state.arrangement = data.arrangement;
   state.upgrades = !!(data.shopping && data.shopping.length);
+  // photo sources for the report hero and the before/after slider
+  state.beforePhotoUrl = await coverUrl(data.id).catch(()=>null);
+  state.afterRenderUrl = null;
+  if(data.after_render_path){
+    const { data:signed } = await c.storage.from('space-media').createSignedUrl(data.after_render_path, 3600);
+    state.afterRenderUrl = signed ? signed.signedUrl : null;
+  }
   return data;
 }
 

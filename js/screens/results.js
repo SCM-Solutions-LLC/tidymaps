@@ -2,8 +2,11 @@ import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE } from '../data.js';
 import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
-import { activeSafetyNotes, activeProductNeeds } from '../plan.js';
+import { activeSafetyNotes, activeProductNeeds, buildGeminiBrief } from '../plan.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
+import { backendConfigured } from '../config.js';
+import { renderAfter as renderAfterApi } from '../api.js';
+import { fileToScaledB64 } from '../media.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { buildReview } from './review.js';
@@ -93,6 +96,83 @@ export function buildResults(){
   // upgrades / shopping — catalog-matched, dimension-aware
   setUpgrades(state.upgrades);
   loadCatalog().then(()=>{ initShopping(); renderUpgrades(); });
+
+  // photorealistic before/after (only when we have the user's photo)
+  setupAfterPhoto();
+}
+
+/* ---------- Photorealistic after-render (Gemini via edge function) ---------- */
+function beforePhotoSrc(){
+  if(state.uploadedFiles && state.uploadedFiles.length) return URL.createObjectURL(state.uploadedFiles[0]);
+  if(state.frames && state.frames.length) return 'data:image/jpeg;base64,'+state.frames[0].data;
+  return state.beforePhotoUrl || null;
+}
+
+function setupAfterPhoto(){
+  const wrap=document.getElementById('after-photo'); if(!wrap) return;
+  const beforeUrl=beforePhotoSrc();
+  state._beforeUrl=beforeUrl;
+  const hero=document.getElementById('report-hero');
+  if(hero){ hero.classList.toggle('hide',!beforeUrl); if(beforeUrl) hero.querySelector('img').src=beforeUrl; }
+  const afterUrl=state.afterRenderB64 ? 'data:image/png;base64,'+state.afterRenderB64 : (state.afterRenderUrl||null);
+  wrap.classList.toggle('hide', !beforeUrl);
+  if(!beforeUrl) return;
+  const slider=document.getElementById('ba-slider');
+  const genRow=document.getElementById('after-gen-row');
+  const disclaimer=document.getElementById('ba-disclaimer');
+  if(afterUrl){
+    document.getElementById('ba-before-img').src=beforeUrl;
+    document.getElementById('ba-after-img').src=afterUrl;
+    slider.classList.remove('hide');
+    disclaimer.classList.remove('hide');
+    genRow.classList.add('hide');
+  }else{
+    slider.classList.add('hide');
+    disclaimer.classList.add('hide');
+    genRow.classList.toggle('hide', !backendConfigured());
+  }
+}
+
+async function beforePhotoB64(){
+  if(state.uploadedFiles && state.uploadedFiles.length){
+    return { media_type:'image/jpeg', data: await fileToScaledB64(state.uploadedFiles[0]) };
+  }
+  if(state.frames && state.frames.length){
+    return { media_type:'image/jpeg', data: state.frames[0].data };
+  }
+  if(state._beforeUrl){
+    const blob=await (await fetch(state._beforeUrl)).blob();
+    const data=await new Promise((res,rej)=>{
+      const fr=new FileReader();
+      fr.onload=()=>res(String(fr.result).split(',')[1]);
+      fr.onerror=rej;
+      fr.readAsDataURL(blob);
+    });
+    return { media_type: blob.type||'image/jpeg', data };
+  }
+  throw new Error('No photo to work from.');
+}
+
+export async function generateAfter(){
+  const btn=document.getElementById('after-gen-btn');
+  const note=document.getElementById('after-gen-note');
+  btn.disabled=true;
+  btn.innerHTML='Rendering&hellip; <span class="spin-ring" style="border-color:rgba(255,255,255,.5);border-right-color:transparent"></span>';
+  note.textContent='This usually takes ten seconds or so.';
+  try{
+    const image=await beforePhotoB64();
+    const res=await renderAfterApi(image, buildGeminiBrief(), state.activeSpaceId);
+    state.afterRenderB64=res.image.data;
+    setupAfterPhoto();
+    toast('Photo preview ready — drag the slider');
+  }catch(e){
+    note.textContent=(e && e.code==='rate_limited')
+      ? e.message
+      : 'Photo preview unavailable right now — the illustrated layout below still shows the full plan.';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Generate photo preview';
+  }
 }
 
 const TYPE_ICON={

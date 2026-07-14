@@ -104,6 +104,7 @@ export function restart(){
   state.ai=null; state.aiError=null; state.planMeta=null; state.afterMode='Use existing containers';
   state.activeSpaceId=null; state.shopping=null; state.arrangement=null;
   state.stepDone=[]; state.upgradeChecked=null;
+  state.afterRenderB64=null; state.afterRenderUrl=null; state.beforePhotoUrl=null;
   clearGuestDraft();
   document.querySelectorAll('.sel').forEach(e=>e.classList.remove('sel'));
   document.getElementById('goal-block').classList.add('hide');

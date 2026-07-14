@@ -39,6 +39,7 @@ export function runLoading(){
   });
 
   state.ai=null; state.aiError=null; state.planMeta=null; state.frames=[];
+  state.afterRenderB64=null; state.afterRenderUrl=null;
 
   // Video: really extract frames client-side (thumbnails show even without a backend)
   let framesPromise=null;

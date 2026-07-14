@@ -290,6 +290,7 @@
       <span id="res-byline">Example plan &middot; demo data</span>
       <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:500">Analyzed by Claude</span>
     </div>
+    <div id="report-hero" class="hide"><img alt="Your space" src=""></div>
   </header>
 
   <div class="report-body">
@@ -362,6 +363,25 @@
       <section class="chapter" id="ch-after">
         <div class="ch-head"><span class="ch-num">05</span><div class="ch-titles"><span class="eyebrow">Before &amp; after</span><h3>What it could look like</h3>
           <p class="ch-sub">An illustrated layout of the recommended plan &mdash; each shelf as a labelled zone.</p></div></div>
+
+        <!-- Photorealistic preview: the user's own photo, reorganized by AI -->
+        <div id="after-photo" class="hide" style="margin-bottom:18px">
+          <div class="ba-slider hide" id="ba-slider" style="--pos:50%">
+            <img id="ba-before-img" alt="Your space today" src="">
+            <img id="ba-after-img" class="after-img" alt="Your space, organized (AI visualization)" src="">
+            <span class="ba-divider"></span>
+            <span class="ba-tag b">Before</span>
+            <span class="ba-tag a">After &middot; AI</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare before and after"
+              oninput="this.parentElement.style.setProperty('--pos',this.value+'%')">
+          </div>
+          <p class="note hide" id="ba-disclaimer" style="margin-top:8px">AI visualization of your own photo &mdash; illustrative, not exact. Your items stay where the plan says; the picture just shows the feel.</p>
+          <div id="after-gen-row" class="hide" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" id="after-gen-btn" onclick="generateAfter()">Generate photo preview</button>
+            <span class="small muted" id="after-gen-note" style="flex:1;min-width:200px">See your actual space organized &mdash; AI edits your photo to match the plan.</span>
+          </div>
+        </div>
+
         <div class="after-tabs" id="after-tabs"></div>
         <div class="after-stage">
           <div class="ba">

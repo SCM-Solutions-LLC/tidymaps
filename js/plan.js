@@ -109,6 +109,18 @@ export function activeProductNeeds(){
     ? state.ai.productNeeds : DEMO_PRODUCT_NEEDS;
 }
 
+// The edit brief for the photorealistic "after" render: reorganize only,
+// preserve the actual room.
+export function buildGeminiBrief(){
+  const lines=activeMapV2().map(m=>{
+    const safety=(m.safety&&m.safety.why)?` (${m.safety.why})`:'';
+    return `- ${m.lv}: ${m.zone}${safety}`;
+  });
+  return 'Edit this photo. Keep the exact same room, camera angle, lighting, wall color, floor, and the shelving architecture completely unchanged. Only reorganize the visible contents so the space looks tidy and fully organized following this plan:\n'
+    + lines.join('\n')
+    + '\nGroup items into clearly separated zones, face labels forward, align containers neatly. Do not add people, text overlays, or any items that are not plausibly already in the photo. Photorealistic result.';
+}
+
 // Assemble the context object the analyze-space edge function expects
 export function buildAnalysisContext(){
   const toggles={};
