@@ -2,6 +2,7 @@ import { MAP, EXISTING, STEPS, UPGRADES, AFTER_MODES, AFTER_PALETTE } from '../d
 import { SVG, ICON } from '../icons.js';
 import { state } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
+import { AI } from '../ai.js';
 import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
@@ -11,6 +12,16 @@ export function buildResults(){
   // AI badge on results title
   const badge=document.getElementById('res-ai-badge');
   if(badge) badge.style.display = A ? 'inline-flex' : 'none';
+
+  // report masthead + byline
+  const mastSpace=document.getElementById('mast-space');
+  if(mastSpace) mastSpace.textContent = A ? A.spaceType : 'Pantry';
+  const mastDate=document.getElementById('mast-date');
+  if(mastDate) mastDate.textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
+  const byline=document.getElementById('res-byline');
+  if(byline) byline.textContent = A
+    ? 'Analyzed by Claude · '+AI.model.replace('claude-','').replace(/-/g,' ')
+    : 'Example plan · demo data';
 
   // summary
   document.getElementById('res-summary').textContent = A ? A.summary :
@@ -174,6 +185,8 @@ export function renderAfter(mode){
 export function setUpgrades(on){
   state.upgrades=on;
   document.getElementById('res-upgrades-wrap').classList.toggle('hide',!on);
+  const tocShop=document.getElementById('toc-shop');
+  if(tocShop) tocShop.classList.toggle('hide',!on);
 }
 
 /* Called from goNext() when leaving the review screen */

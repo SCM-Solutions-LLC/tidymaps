@@ -41,6 +41,7 @@ export function go(id){
     foot.classList.add('hide');
   }
   setFootHeightVar();
+  fillRailSummaries();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 export function goNext(){
@@ -61,7 +62,27 @@ export function updateGate(){
   if(current==='space') ok=!!state.space && !!state.goal;
   if(current==='capture') ok=!!state.capture;
   btn.disabled=!ok;
+  fillRailSummaries();
 }
+// "Your answers so far" panel in the wizard context rail
+const SPACE_NAMES={pantry:'Pantry',cabinet:'Kitchen cabinet',closet:'Closet',garage:'Garage shelf',attic:'Attic / storage',laundry:'Laundry room',kids:'Kids’ storage',other:'Other'};
+const GOAL_NAMES={find:'Easier to find',clutter:'Less clutter',own:'Use what I own',capacity:'More capacity',kid:'Kid-friendly',minimal:'Minimal look',shop:'Product recs',unsure:'Best plan'};
+const CAPTURE_NAMES={photos:'Photos',video:'Video',demo:'Demo example'};
+export function fillRailSummaries(){
+  const rows=[];
+  if(state.space) rows.push(['Space', SPACE_NAMES[state.space]||state.space]);
+  if(state.goal) rows.push(['Goal', GOAL_NAMES[state.goal]||state.goal]);
+  if(state.capture) rows.push(['Capture', CAPTURE_NAMES[state.capture]||state.capture]);
+  if(state.uploadedFiles && state.uploadedFiles.length) rows.push(['Photos', state.uploadedFiles.length+' selected']);
+  if(state.prefs && state.prefs.size) rows.push(['Priorities', state.prefs.size+' picked']);
+  if(state.budget) rows.push(['Budget', state.budget]);
+  if(state.effort) rows.push(['Effort', state.effort]);
+  const html=rows.length
+    ? rows.map(([k,v])=>`<div class="rs-row"><dt>${k}</dt><dd>${String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}</dd></div>`).join('')
+    : '<span class="rs-empty">Nothing yet — your choices will collect here.</span>';
+  document.querySelectorAll('[data-rail-sum]').forEach(dl=>{ dl.innerHTML=html; });
+}
+
 export function restart(){
   state.space=state.goal=state.capture=state.budget=state.effort=null;
   state.prefs=new Set(); state.upgrades=false;

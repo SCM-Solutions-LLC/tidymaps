@@ -1,6 +1,7 @@
 import { PREFS, BUDGETS, EFFORT } from '../data.js';
 import { ICON } from '../icons.js';
 import { state } from '../state.js';
+import { fillRailSummaries } from '../router.js';
 
 export function buildPrefs(){
   const pc=document.getElementById('pref-chips'); pc.innerHTML='';
@@ -10,6 +11,7 @@ export function buildPrefs(){
       c.classList.toggle('sel');
       if(c.classList.contains('sel')) state.prefs.add(p); else state.prefs.delete(p);
       if(p==='Open to buying storage') state.upgrades=c.classList.contains('sel');
+      fillRailSummaries();
     };
     pc.appendChild(c);
   });
@@ -20,6 +22,7 @@ export function buildPrefs(){
       bc.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));
       c.classList.add('sel'); state.budget=b;
       if(b!=='$0'&&b!=='No budget selected') state.upgrades=true;
+      fillRailSummaries();
     };
     bc.appendChild(c);
   });
@@ -27,7 +30,7 @@ export function buildPrefs(){
   EFFORT.forEach(([t,s])=>{
     const b=document.createElement('button'); b.className='opt';
     b.innerHTML=`<span><span class="ttl">${t}</span><span class="sub">${s}</span></span><span class="tick">${ICON.check}</span>`;
-    b.onclick=()=>{ec.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');state.effort=t;};
+    b.onclick=()=>{ec.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');state.effort=t;fillRailSummaries();};
     ec.appendChild(b);
   });
 }
