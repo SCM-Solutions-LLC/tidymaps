@@ -84,11 +84,11 @@ export const DEMO_SAFETY_NOTES = [
   'Heavy jars and cans stay at waist height or below, so nothing heavy can fall from above.'
 ];
 export const DEMO_PRODUCT_NEEDS = [
-  {type:'clear-bin',qty:4,purpose:'Corral loose snack packets so they stay visible',targetZone:'Eye level',maxDims:{w_in:9.5,h_in:7,d_in:13.5},priority:'high'},
-  {type:'can-riser',qty:1,purpose:'See every can without digging',targetZone:'Middle shelf',maxDims:{w_in:16,h_in:10,d_in:13.5},priority:'high'},
+  {type:'clear-bin',qty:4,purpose:'Corral loose snack packets so they stay visible',targetZone:'Eye level',maxDims:{w_in:10.5,h_in:8,d_in:14},priority:'high'},
+  {type:'can-riser',qty:1,purpose:'See every can without digging',targetZone:'Middle shelf',maxDims:{w_in:18,h_in:14,d_in:14},priority:'high'},
   {type:'turntable',qty:1,purpose:'Reach sauces at the back of the deep shelf',targetZone:'Middle shelf',maxDims:{w_in:13,h_in:6,d_in:13},priority:'nice'},
-  {type:'shelf-riser',qty:1,purpose:'Turn unused vertical space into a second level',targetZone:'Top shelf',maxDims:{w_in:14,h_in:9,d_in:13.5},priority:'nice'},
-  {type:'airtight-container',qty:2,purpose:'Keep flour and sugar fresh and stackable',targetZone:'Middle shelf',maxDims:{w_in:6,h_in:9,d_in:13},priority:'nice'},
+  {type:'shelf-riser',qty:1,purpose:'Turn unused vertical space into a second level',targetZone:'Top shelf',maxDims:{w_in:14,h_in:9,d_in:14},priority:'nice'},
+  {type:'airtight-container',qty:2,purpose:'Keep flour and sugar fresh and stackable',targetZone:'Middle shelf',maxDims:{w_in:6.5,h_in:13,d_in:14},priority:'nice'},
   {type:'label-set',qty:1,purpose:'Make the zones easy for the whole household to keep',targetZone:'Every zone',maxDims:null,priority:'nice'}
 ];
 export const EXISTING = [
@@ -110,19 +110,8 @@ export const STEPS = [
   {t:'Add labels if available',m:'10 min',w:'Labels make the system easier to maintain.'},
   {t:'Take a final photo',m:'2 min',w:'This helps track progress and compare before / after.'}
 ];
-export const UPGRADES = [
-  {pic:SVG.box,h:'Clear stackable bins for snacks',why:'Corrals loose packets and makes snacks visible at a glance.',where:'Eye-level shelf',cost:'$24',dim:true},
-  {pic:SVG.barChart,h:'Tiered can organizer',why:'Lets you see every can without digging — reclaims hidden depth.',where:'Middle shelf',cost:'$18',dim:true},
-  {pic:SVG.refreshCw,h:'Lazy Susan for sauces',why:'Spin to reach bottles in the back of a deep shelf.',where:'Middle shelf / corner',cost:'$14',dim:false},
-  {pic:SVG.layoutGrid,h:'Door-mounted spice rack',why:'Frees shelf space and keeps spices visible.',where:'Pantry door',cost:'$22',dim:true},
-  {pic:SVG.trendingUp,h:'Shelf riser',why:'Turns unused vertical space into a second usable level.',where:'Above the cans',cost:'$16',dim:true},
-  {pic:SVG.lock,h:'Airtight containers for baking',why:'Keeps flour, sugar, and grains fresh and uniform.',where:'Baking zone',cost:'$28',dim:false},
-  {pic:SVG.tag,h:'Label set',why:'Makes the system easy to maintain for the whole household.',where:'Every zone',cost:'$9',dim:false}
-];
-export const SHOPPING = [
-  ['4 clear stackable bins','$24'],['2 lazy Susans','$26'],['1 tiered can organizer','$18'],
-  ['10 pantry labels','$9'],['2 airtight containers','$14']
-];
+/* Purchase suggestions now come from productNeeds (AI or demo) matched
+   against the curated catalog in data/catalog.json — see js/catalog.js. */
 export const AFTER_MODES = ['Use existing containers','Minimal look','More bins','More labels','Kid-friendly setup','Hidden storage'];
 export const CUSTOMIZE = [
   ['minimal','Make it more minimal','Fewer visible items, more hidden storage, calmer shelves.'],

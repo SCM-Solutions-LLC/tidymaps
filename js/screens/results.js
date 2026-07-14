@@ -1,8 +1,9 @@
-import { MAP, EXISTING, STEPS, UPGRADES, AFTER_MODES, AFTER_PALETTE } from '../data.js';
+import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE } from '../data.js';
 import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
-import { activeSafetyNotes } from '../plan.js';
+import { activeSafetyNotes, activeProductNeeds } from '../plan.js';
+import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { buildReview } from './review.js';
@@ -89,43 +90,117 @@ export function buildResults(){
   });
   renderAfter(state.afterMode);
 
-  // upgrades
-  if(!state.upgradeChecked || state.upgradeChecked.length!==UPGRADES.length){
-    state.upgradeChecked=UPGRADES.map(()=>true);
-  }
-  renderUpgrades();
+  // upgrades / shopping — catalog-matched, dimension-aware
   setUpgrades(state.upgrades);
+  loadCatalog().then(()=>{ initShopping(); renderUpgrades(); });
 }
+
+const TYPE_ICON={
+  'clear-bin':'box','basket':'shoppingBag','turntable':'refreshCw','can-riser':'barChart',
+  'shelf-riser':'trendingUp','door-rack':'layoutGrid','airtight-container':'lock',
+  'drawer-organizer':'columns','hook-rack':'tag','label-set':'tag','safety-latch':'lock',
+};
+
+// Build (or keep a restored) shopping selection: one entry per product need
+function initShopping(){
+  const needs=activeProductNeeds();
+  const valid=state.shopping && state.shopping.length===needs.length &&
+    state.shopping.every(s=>s && typeof s.needIdx==='number');
+  if(valid) return;
+  state.shopping=needs.map((need,i)=>{
+    const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
+    return {
+      needIdx:i, checked:true, qty:need.qty,
+      productId: top?top.product.id:null,
+      name: top?top.product.name:TYPE_LABEL[need.type],
+      price_usd: top?top.product.price_usd:null,
+      url: top?top.product.url:null,
+      retailer: top?top.product.retailer:null,
+      fit: top?top.fit:'unknown',
+    };
+  });
+}
+
+function persistShopping(){
+  if(getSession()) updateSpacePatch({shopping:state.shopping});
+  else persistGuestDraft();
+}
+
 export function renderUpgrades(){
-  document.getElementById('res-upgrades').innerHTML=UPGRADES.map((u,i)=>`
-    <div class="prod${state.upgradeChecked[i]?'':' excluded'}">
-      <input type="checkbox" ${state.upgradeChecked[i]?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(u.h)} in shopping list">
-      <span class="pic">${u.pic}</span>
-      <div><h4>${u.h}</h4><div class="pwhy">${u.why}</div>
-        <div class="pmeta"><span>${SVG.mapPin} ${u.where}</span><span>${u.dim?SVG.ruler+' Measure first':SVG.check.replace('stroke-width="3"','stroke-width="2" width="12" height="12"')+' No dimensions needed'}</span></div>
+  const needs=activeProductNeeds();
+  document.getElementById('res-upgrades').innerHTML=needs.map((need,i)=>{
+    const sel=state.shopping[i];
+    const options=matchProducts(need).filter(m=>m.fit!=='no-fit').slice(0,4);
+    const badge=fitBadge(sel.fit);
+    const links=searchLinks(need).map(l=>
+      `<a href="${l.url}" target="_blank" rel="noopener" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
+    const picker=options.length>1?`
+      <select onchange="pickProduct(${i},this.value)" style="width:auto;max-width:100%;padding:7px 10px;font-size:13px;margin-top:8px">
+        ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} — $${o.product.price_usd}</option>`).join('')}
+      </select>`:'';
+    const chosen=sel.productId?`
+      <div style="margin-top:8px;font-size:13.5px">
+        <a href="${sel.url}" target="_blank" rel="noopener" style="font-weight:600;text-decoration:underline">${escapeHtml(sel.name)}</a>
+        <span class="muted"> at ${escapeHtml(sel.retailer)}</span>
+        ${badge.txt?`<span class="tag ${badge.cls}" style="margin-left:8px">${escapeHtml(badge.txt)}</span>`:''}
+      </div>${picker}`:
+      `<div style="margin-top:8px;font-size:13px" class="muted">No catalog match for this space — use the search links below.</div>`;
+    return `
+    <div class="prod${sel.checked?'':' excluded'}">
+      <input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list">
+      <span class="pic">${SVG[TYPE_ICON[need.type]]||SVG.box}</span>
+      <div>
+        <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${need.priority==='high'?' <span class="tag green" style="vertical-align:2px">recommended</span>':''}</h4>
+        <div class="pwhy">${escapeHtml(need.purpose)}</div>
+        ${chosen}
+        <div class="pmeta">
+          <span>${SVG.mapPin} ${escapeHtml(need.targetZone||'Anywhere')}</span>
+          ${need.maxDims?`<span>${SVG.ruler} Max ${need.maxDims.w_in}″w × ${need.maxDims.h_in}″h × ${need.maxDims.d_in}″d</span>`:''}
+        </div>
+        <div class="small muted" style="margin-top:8px">Search instead: ${links}</div>
       </div>
-      <span class="cost">${u.cost}</span>
-    </div>`).join('');
+      <span class="cost">${sel.price_usd!=null?'$'+Math.round(sel.price_usd*sel.qty):'—'}</span>
+    </div>`;
+  }).join('');
   renderShopping();
 }
+
+export function pickProduct(i, productId){
+  const need=activeProductNeeds()[i];
+  const m=matchProducts(need).find(x=>x.product.id===productId);
+  if(!m) return;
+  Object.assign(state.shopping[i],{
+    productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd,
+    url:m.product.url, retailer:m.product.retailer, fit:m.fit,
+  });
+  renderUpgrades();
+  persistShopping();
+}
+
 export function toggleUpgrade(i){
-  state.upgradeChecked[i]=!state.upgradeChecked[i];
-  document.querySelectorAll('#res-upgrades .prod')[i].classList.toggle('excluded',!state.upgradeChecked[i]);
+  state.shopping[i].checked=!state.shopping[i].checked;
+  document.querySelectorAll('#res-upgrades .prod')[i].classList.toggle('excluded',!state.shopping[i].checked);
   renderShopping();
-  if(!getSession()) persistGuestDraft();
+  persistShopping();
 }
 export function uncheckAllUpgrades(){
-  state.upgradeChecked=UPGRADES.map(()=>false);
+  (state.shopping||[]).forEach(s=>{ s.checked=false; });
   renderUpgrades();
+  persistShopping();
   toast('All upgrades removed — you\'re on the $0 plan');
 }
 export function renderShopping(){
-  const picked=UPGRADES.filter((u,i)=>state.upgradeChecked[i]);
+  const picked=(state.shopping||[]).filter(s=>s.checked);
   const list=document.getElementById('res-shopping');
-  list.innerHTML=picked.length?picked.map(u=>`<li><span>${u.h}</span><span class="qcost">${u.cost}</span></li>`).join(''):
+  list.innerHTML=picked.length?picked.map(s=>
+    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'—'}</span></li>`).join(''):
     '<li><span class="muted">No items selected — you\'re on the $0 plan.</span></li>';
-  const total=picked.reduce((sum,u)=>sum+(parseInt(u.cost.replace(/\D/g,''),10)||0),0);
-  document.getElementById('res-shop-total').textContent=total?('$'+total):'$0';
+  const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
+  const unpriced=picked.some(s=>s.price_usd==null);
+  document.getElementById('res-shop-total').textContent=(total?'$'+Math.round(total):'$0')+(unpriced?'+':'');
+  const asOf=priceAsOf();
+  const note=document.getElementById('res-price-asof');
+  if(note) note.textContent=asOf?`Prices approximate, checked ${asOf}. Links open the retailer's page.`:'';
 }
 export function renderSteps(list){
   const wrap=document.getElementById('res-steps'); wrap.innerHTML='';
