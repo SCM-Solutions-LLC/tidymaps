@@ -27,6 +27,10 @@ export function setRail(){
   document.getElementById('rail').style.width=Math.min(100,pct)+'%';
 }
 export function go(id){
+  if(current==='viewer3d' && id!=='viewer3d'){
+    // free WebGL resources when leaving the 3D screen
+    import('./screens/viewer3d.js').then(m=>m.disposeViewer3d());
+  }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('screen-'+id);
   el.classList.add('active');

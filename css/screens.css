@@ -111,3 +111,8 @@
 }
 .dash-new:hover{border-color:var(--primary-line);color:var(--primary);background:var(--primary-bg)}
 .dash-empty{grid-column:1/-1;text-align:center;padding:30px 10px;color:var(--ink-3)}
+
+/* ---------- 3D viewer ---------- */
+.v3d-wrap{margin-top:18px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface-2)}
+.v3d-wrap canvas{display:block;width:100%;height:min(68vh,560px);touch-action:none;cursor:grab}
+.v3d-wrap canvas:active{cursor:grabbing}

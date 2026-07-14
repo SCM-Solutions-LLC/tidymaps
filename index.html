@@ -402,6 +402,14 @@
           </div>
         </div>
         <p class="note" style="margin-top:10px">This is an illustrated layout of the plan, not a photo of your space &mdash; it shows where each group of items should go. Actual fit varies with item sizes and containers.</p>
+
+        <div class="card pad" style="margin-top:18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div style="font-weight:600">Walk around it in 3D</div>
+            <p class="small muted" style="margin:4px 0 0">Rotate, zoom, and drag items between shelves to test a different arrangement before you touch a thing.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openViewer3d()">Open the 3D view</button>
+        </div>
       </section>
 
       <!-- 06. Optional upgrades + shopping -->
@@ -433,8 +441,9 @@
       </section>
 
       <div class="report-actions">
+        <button class="btn btn-primary" onclick="openViewer3d()">Open the 3D view</button>
         <button class="btn btn-ghost" onclick="go('customize')">Adjust this plan</button>
-        <button class="btn btn-primary" onclick="go('save')">Save &amp; share</button>
+        <button class="btn btn-ghost" onclick="go('save')">Save &amp; share</button>
       </div>
     </div>
   </div>
@@ -481,6 +490,22 @@
 
   <div style="margin-top:26px">
     <button class="btn btn-primary btn-block" onclick="submitFeedback()">Submit feedback</button>
+  </div>
+</section>
+
+<!-- ============================================================ 3D VIEWER -->
+<section class="screen wide" id="screen-viewer3d">
+  <div class="step-head" style="border-top:none;padding-top:0"><span class="step-num">3D</span><span class="step-kicker">Try it before you touch a shelf</span></div>
+  <h2>Your space in 3D</h2>
+  <p class="muted small" style="margin-top:6px">Rotate with the mouse or one finger &middot; zoom with scroll or pinch &middot; <strong>drag any item</strong> to a different shelf to try another arrangement.</p>
+  <div class="v3d-wrap">
+    <canvas id="v3d-canvas"></canvas>
+  </div>
+  <p class="note" id="v3d-status" style="margin-top:10px"></p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+    <button class="btn btn-ghost" onclick="go('results')">&larr; Back to the plan</button>
+    <button class="btn btn-primary" id="v3d-save" onclick="saveArrangement()">Save arrangement</button>
+    <button class="btn btn-ghost" onclick="resetArrangement()">Reset to recommended</button>
   </div>
 </section>
 

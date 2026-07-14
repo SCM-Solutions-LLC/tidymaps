@@ -15,6 +15,7 @@ import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, b
 import { submitFeedback } from './screens/feedback.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
 import { dashSignOut } from './screens/dashboard.js';
+import { openViewer3d, saveArrangement, resetArrangement } from './screens/viewer3d.js';
 
 /* Expose every function referenced by inline on* handlers
    (in index.html and in injected template strings) */
@@ -26,6 +27,7 @@ Object.assign(window, {
   segPick, markFeat, removeFeat,
   toggleUpgrade, toggleStep, skipStep, pickProduct, generateAfter,
   openAuth, closeAuth, sendAuthCode, verifyAuthCode, dashSignOut,
+  openViewer3d, saveArrangement, resetArrangement,
 });
 
 buildAll();
