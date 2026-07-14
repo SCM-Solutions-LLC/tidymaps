@@ -1,8 +1,10 @@
-import { state } from './state.js';
+import { state, persistGuestDraft, clearGuestDraft } from './state.js';
 import { setFootHeightVar } from './ui.js';
+import { getSession } from './auth.js';
 import { buildAll } from './screens/index.js';
 import { runLoading } from './screens/loading.js';
 import { syncCategoriesToResults } from './screens/results.js';
+import { buildDashboard } from './screens/dashboard.js';
 
 /* ============================================================
    Flow / routing
@@ -43,6 +45,8 @@ export function go(id){
   }
   setFootHeightVar();
   fillRailSummaries();
+  if(id==='dashboard') buildDashboard();
+  if(!getSession()) persistGuestDraft();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 export function goNext(){
@@ -98,6 +102,9 @@ export function restart(){
   state.dims=null;
   state.household={ kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
   state.ai=null; state.aiError=null; state.planMeta=null; state.afterMode='Use existing containers';
+  state.activeSpaceId=null; state.shopping=null; state.arrangement=null;
+  state.stepDone=[]; state.upgradeChecked=null;
+  clearGuestDraft();
   document.querySelectorAll('.sel').forEach(e=>e.classList.remove('sel'));
   document.getElementById('goal-block').classList.add('hide');
   document.getElementById('capture-detail').classList.add('hide');

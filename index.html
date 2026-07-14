@@ -28,10 +28,40 @@
       <span class="mvp">Prototype</span>
     </a>
     <span class="spacer"></span>
+    <button class="restart hide" id="acct-signin" onclick="openAuth()">Sign in</button>
+    <button class="restart hide" id="acct-btn" onclick="go('dashboard')">My spaces</button>
     <button class="restart" onclick="restart()">Start over</button>
   </div>
   <div class="rail"><i id="rail"></i></div>
 </header>
+
+<!-- Sign-in modal: email -> 6-digit code, no passwords, no redirects -->
+<div class="modal-backdrop hide" id="auth-modal" onclick="if(event.target===this)closeAuth()">
+  <div class="modal">
+    <h3 style="font-family:var(--sans);font-weight:600;font-size:17px">Save your spaces</h3>
+    <p class="small muted" style="margin:8px 0 0">Sign in with your email and we&rsquo;ll send a 6-digit code &mdash; no password to remember.</p>
+    <div id="auth-step-email">
+      <label class="field" style="margin-top:16px"><span>Email</span>
+        <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" spellcheck="false">
+      </label>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn btn-primary btn-sm" id="auth-send-btn" onclick="sendAuthCode()">Email me a code</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeAuth()">Cancel</button>
+      </div>
+    </div>
+    <div id="auth-step-code" class="hide">
+      <label class="field" style="margin-top:16px"><span>6-digit code</span>
+        <input type="text" id="auth-code" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" style="font-family:var(--mono);letter-spacing:.35em;font-size:18px">
+      </label>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn btn-primary btn-sm" id="auth-verify-btn" onclick="verifyAuthCode()">Sign in</button>
+        <button class="btn btn-ghost btn-sm" onclick="sendAuthCode()">Resend code</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeAuth()">Cancel</button>
+      </div>
+    </div>
+    <p class="small" id="auth-msg" style="margin:14px 0 0;min-height:1.2em"></p>
+  </div>
+</div>
 
 <main>
 
@@ -423,6 +453,16 @@
   <div style="margin-top:26px">
     <button class="btn btn-primary btn-block" onclick="submitFeedback()">Submit feedback</button>
   </div>
+</section>
+
+<!-- ============================================================ DASHBOARD -->
+<section class="screen wide" id="screen-dashboard">
+  <header class="report-mast" style="border-bottom-width:1px">
+    <div class="mast-kicker"><span class="mk-brand">Your spaces</span><span id="dash-count"></span></div>
+    <h2 style="margin-top:12px">Welcome back</h2>
+    <div class="report-byline"><span id="dash-email"></span><span class="sep">&middot;</span><a href="#" onclick="dashSignOut();return false" style="text-decoration:underline">Sign out</a></div>
+  </header>
+  <div class="dash-grid" id="dash-grid" style="margin-top:26px"></div>
 </section>
 
 <!-- ============================================================ DONE -->

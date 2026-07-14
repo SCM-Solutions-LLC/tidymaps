@@ -1,8 +1,10 @@
 import { MAP, EXISTING, STEPS, UPGRADES, AFTER_MODES, AFTER_PALETTE } from '../data.js';
 import { SVG, ICON } from '../icons.js';
-import { state } from '../state.js';
+import { state, persistGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes } from '../plan.js';
+import { getSession } from '../auth.js';
+import { updateSpacePatch } from '../db.js';
 import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
@@ -110,6 +112,7 @@ export function toggleUpgrade(i){
   state.upgradeChecked[i]=!state.upgradeChecked[i];
   document.querySelectorAll('#res-upgrades .prod')[i].classList.toggle('excluded',!state.upgradeChecked[i]);
   renderShopping();
+  if(!getSession()) persistGuestDraft();
 }
 export function uncheckAllUpgrades(){
   state.upgradeChecked=UPGRADES.map(()=>false);
@@ -152,6 +155,15 @@ export function toggleStep(i){
   document.getElementById('task-'+i).classList.toggle('done',state.stepDone[i]);
   document.querySelector('#task-'+i+' .mark').textContent=state.stepDone[i]?'Completed':'Mark complete';
   updateProgress();
+  if(getSession()) updateSpacePatch({progress:{stepsDone:state.stepDone}});
+  else persistGuestDraft();
+}
+
+// Re-apply a saved checklist (from a saved space or a guest draft) after renderSteps reset it
+export function applySavedProgress(saved){
+  (saved||[]).forEach((v,i)=>{
+    if(v && state.stepDone && i<state.stepDone.length && !state.stepDone[i]) toggleStep(i);
+  });
 }
 export function skipStep(i){
   if(!state.stepDone[i]) toggleStep(i);

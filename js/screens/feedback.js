@@ -2,6 +2,7 @@ import { FB_USEFUL, FB_VS, FB_NEXT } from '../data.js';
 import { ICON } from '../icons.js';
 import { state } from '../state.js';
 import { go } from '../router.js';
+import { submitFeedbackRow } from '../db.js';
 
 /* ---------- Feedback ---------- */
 export function buildFeedback(){
@@ -26,4 +27,13 @@ export function buildFeedback(){
     n.appendChild(c);
   });
 }
-export function submitFeedback(){ go('done'); }
+export function submitFeedback(){
+  // best-effort: feedback lands in the DB when the backend is connected
+  submitFeedbackRow({
+    useful: state.fbUseful||null,
+    vs: state.fbVs||null,
+    comments: (document.getElementById('fb-text')||{}).value||null,
+    next_space: state.fbNext||null,
+  }).catch(()=>{});
+  go('done');
+}
