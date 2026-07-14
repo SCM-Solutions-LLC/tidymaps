@@ -1,0 +1,6 @@
+/* Screen-specific styles live here */
+/* Landing hero left-align on desktop */
+@media(min-width:560px){
+  .landing-hero{text-align:left !important}
+  .landing-hero .hero-actions{justify-content:flex-start !important}
+}

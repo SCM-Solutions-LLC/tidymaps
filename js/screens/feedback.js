@@ -1,0 +1,29 @@
+import { FB_USEFUL, FB_VS, FB_NEXT } from '../data.js';
+import { ICON } from '../icons.js';
+import { state } from '../state.js';
+import { go } from '../router.js';
+
+/* ---------- Feedback ---------- */
+export function buildFeedback(){
+  const u=document.getElementById('fb-useful'); u.innerHTML='';
+  FB_USEFUL.forEach(t=>{
+    const b=document.createElement('button'); b.className='opt';
+    b.innerHTML=`<span class="ttl">${t}</span><span class="tick">${ICON.check}</span>`;
+    b.onclick=()=>{u.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');state.fbUseful=t;};
+    u.appendChild(b);
+  });
+  const v=document.getElementById('fb-vs'); v.innerHTML='';
+  FB_VS.forEach(t=>{
+    const b=document.createElement('button'); b.className='opt';
+    b.innerHTML=`<span class="ttl">${t}</span><span class="tick">${ICON.check}</span>`;
+    b.onclick=()=>{v.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');state.fbVs=t;};
+    v.appendChild(b);
+  });
+  const n=document.getElementById('fb-next'); n.innerHTML='';
+  FB_NEXT.forEach(t=>{
+    const c=document.createElement('button'); c.className='chip'; c.innerHTML=t;
+    c.onclick=()=>{n.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');state.fbNext=t;};
+    n.appendChild(c);
+  });
+}
+export function submitFeedback(){ go('done'); }
