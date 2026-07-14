@@ -5,5 +5,5 @@ export const state = {
   cats:[], features:[],
   afterMode:'Use existing containers',
   uploadedFiles:[], uploadedVideo:null,
-  ai:null
+  ai:null, planMeta:null
 };

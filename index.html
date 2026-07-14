@@ -28,40 +28,10 @@
       <span class="mvp">Prototype</span>
     </a>
     <span class="spacer"></span>
-    <button class="restart" id="ai-status-btn" onclick="openSettings()" title="Connect AI"><span id="ai-status-dot" class="ai-dot"></span>AI</button>
     <button class="restart" onclick="restart()">Start over</button>
   </div>
   <div class="rail"><i id="rail"></i></div>
 </header>
-
-<!-- AI settings modal -->
-<div class="modal-backdrop hide" id="settings-modal" onclick="if(event.target===this)closeSettings()">
-  <div class="modal">
-    <h3 style="font-family:var(--sans);font-weight:600;font-size:17px">Connect AI analysis</h3>
-    <p class="small muted" style="margin:8px 0 0">Paste your Anthropic API key to analyze real photos with Claude. It&rsquo;s stored only in this browser (localStorage) and sent straight to Anthropic &mdash; never to us.</p>
-    <label class="field" style="margin-top:16px"><span>Anthropic API key</span>
-      <input type="password" id="ai-key-input" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
-    </label>
-    <div class="callout info" style="margin-top:4px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <div>No key yet? Create one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="text-decoration:underline">console.anthropic.com</a> and add a few dollars of credit under Billing. Each photo analysis costs about a cent.</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px">
-      <span style="font-weight:600">Model</span>
-      <select id="ai-model-select" style="width:auto;padding:7px 10px;font-size:13px">
-        <option value="claude-sonnet-4-6">Sonnet 4.6 — balanced</option>
-        <option value="claude-haiku-4-5">Haiku 4.5 — cheapest</option>
-        <option value="claude-opus-4-8">Opus 4.8 — best</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:20px">
-      <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save</button>
-      <button class="btn btn-ghost btn-sm" onclick="closeSettings()">Cancel</button>
-      <span class="spacer" style="flex:1"></span>
-      <button class="btn btn-ghost btn-sm" id="ai-clear-btn" onclick="clearKey()" style="color:var(--clay)">Remove key</button>
-    </div>
-  </div>
-</div>
 
 <main>
 

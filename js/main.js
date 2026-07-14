@@ -2,7 +2,6 @@
    TidyMap AI — entry point
    ============================================================ */
 import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
-import { refreshAiStatus, openSettings, closeSettings, saveSettings, clearKey } from './ai.js';
 import { setRail, go, goNext, goBack, restart } from './router.js';
 import { buildAll } from './screens/index.js';
 import { runDemo } from './screens/landing.js';
@@ -16,7 +15,6 @@ import { submitFeedback } from './screens/feedback.js';
    (in index.html and in injected template strings) */
 Object.assign(window, {
   go, goBack, goNext, restart,
-  openSettings, closeSettings, saveSettings, clearKey,
   addCategory, toast, uncheckAllUpgrades, setUpgrades,
   runDemo, submitFeedback,
   handleDrop, handleFiles, handleVideoFile,
@@ -26,7 +24,14 @@ Object.assign(window, {
 
 buildAll();
 setRail();
-refreshAiStatus();
 setAppbarHeightVar();
 setFootHeightVar();
 addEventListener('resize', () => { setAppbarHeightVar(); setFootHeightVar(); });
+
+// TidyMap now runs analysis server-side; scrub any bring-your-own-key
+// remnants from the prototype era.
+if(localStorage.getItem('tidymap_key')){
+  localStorage.removeItem('tidymap_key');
+  localStorage.removeItem('tidymap_model');
+  setTimeout(()=>toast('TidyMap now runs its own AI — your saved API key was removed from this browser.'), 800);
+}

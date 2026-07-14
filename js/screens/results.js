@@ -2,7 +2,6 @@ import { MAP, EXISTING, STEPS, UPGRADES, AFTER_MODES, AFTER_PALETTE } from '../d
 import { SVG, ICON } from '../icons.js';
 import { state } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
-import { AI } from '../ai.js';
 import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
@@ -19,8 +18,9 @@ export function buildResults(){
   const mastDate=document.getElementById('mast-date');
   if(mastDate) mastDate.textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
   const byline=document.getElementById('res-byline');
+  const model=(state.planMeta&&state.planMeta.model)||'';
   if(byline) byline.textContent = A
-    ? 'Analyzed by Claude · '+AI.model.replace('claude-','').replace(/-/g,' ')
+    ? 'Analyzed by Claude'+(model?' · '+model.replace('claude-','').replace(/-/g,' '):'')
     : 'Example plan · demo data';
 
   // summary
