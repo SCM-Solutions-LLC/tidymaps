@@ -18,7 +18,10 @@ const s = v => (v==null?'':String(v));
 const num = (v,fallback)=>{ const n=Number(v); return Number.isFinite(n)&&n>0?n:fallback; };
 
 function normalizeGeometry(g, mapLen){
-  const shelfCount = Math.max(1, Math.min(12, Math.round(num(g&&g.shelfCount, mapLen||5))));
+  // the user's own shelf count wins over the AI estimate (map rows are clamped
+  // to shelfCount downstream, so the two always stay consistent)
+  const userShelves = state.dims && state.dims.shelves;
+  const shelfCount = Math.max(1, Math.min(12, Math.round(num(userShelves, num(g&&g.shelfCount, mapLen||5)))));
   let fracs = Array.isArray(g&&g.shelfYFracs) ? g.shelfYFracs.map(Number).filter(n=>Number.isFinite(n)&&n>=0&&n<=1) : [];
   if(fracs.length!==shelfCount){
     fracs = Array.from({length:shelfCount},(_,i)=>0.08+0.82*(shelfCount===1?0:i/(shelfCount-1)));

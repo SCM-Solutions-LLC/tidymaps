@@ -138,27 +138,35 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 4096,
+        max_tokens: 8192,
         messages: [{ role: 'user', content }],
       }),
     });
     if (!res.ok) {
       const detail = await res.text();
       console.error('anthropic error', res.status, detail.slice(0, 500));
-      return json(req, 502, { error: 'upstream', status: res.status });
+      return json(req, 502, { error: 'upstream', status: res.status, detail: detail.slice(0, 300) });
     }
     const data = await res.json();
     const txt = (data.content ?? [])
       .filter((b: { type: string }) => b.type === 'text')
       .map((b: { text: string }) => b.text).join('').trim();
+    if (data.stop_reason === 'max_tokens') {
+      console.error('anthropic response truncated', requestId, 'tail:', txt.slice(-200));
+      return json(req, 502, { error: 'truncated', detail: 'model output hit the token limit' });
+    }
     const a = txt.indexOf('{');
     const b = txt.lastIndexOf('}');
-    if (a < 0 || b < 0) return json(req, 502, { error: 'no_json_in_response' });
+    if (a < 0 || b < 0) {
+      console.error('no json in response', requestId, 'head:', txt.slice(0, 200));
+      return json(req, 502, { error: 'no_json_in_response', detail: txt.slice(0, 200) });
+    }
     let plan: unknown;
     try {
       plan = JSON.parse(txt.slice(a, b + 1));
     } catch {
-      return json(req, 502, { error: 'unparseable_json' });
+      console.error('unparseable json', requestId, 'tail:', txt.slice(-200));
+      return json(req, 502, { error: 'unparseable_json', detail: txt.slice(-200) });
     }
     return json(req, 200, { plan, model: MODEL, requestId });
   } catch (e) {
