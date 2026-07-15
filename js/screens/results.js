@@ -219,10 +219,10 @@ export function renderUpgrades(){
         ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} — $${o.product.price_usd}</option>`).join('')}
       </select>`:'';
     const chosen=sel.productId?`
-      <div style="margin-top:8px;font-size:13.5px">
-        <a href="${sel.url}" target="_blank" rel="noopener" style="font-weight:600;text-decoration:underline">${escapeHtml(sel.name)}</a>
-        <span class="muted"> at ${escapeHtml(sel.retailer)}</span>
-        ${badge.txt?`<span class="tag ${badge.cls}" style="margin-left:8px">${escapeHtml(badge.txt)}</span>`:''}
+      <div class="pchoice">
+        <a href="${sel.url}" target="_blank" rel="noopener">${escapeHtml(sel.name)}</a>
+        <span class="muted">at ${escapeHtml(sel.retailer)}</span>
+        ${badge.txt?`<span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}
       </div>${picker}`:
       `<div style="margin-top:8px;font-size:13px" class="muted">No catalog match for this space — use the search links below.</div>`;
     return `
@@ -230,7 +230,7 @@ export function renderUpgrades(){
       <input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list">
       <span class="pic">${SVG[TYPE_ICON[need.type]]||SVG.box}</span>
       <div>
-        <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${need.priority==='high'?' <span class="tag green" style="vertical-align:2px">recommended</span>':''}</h4>
+        <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${need.priority==='high'?'<span class="tag green">recommended</span>':''}</h4>
         <div class="pwhy">${escapeHtml(need.purpose)}</div>
         ${chosen}
         <div class="pmeta">

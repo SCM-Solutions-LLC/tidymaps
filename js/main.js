@@ -7,7 +7,7 @@ import { setRail, go, goNext, goBack, restart } from './router.js';
 import { getSession } from './auth.js';
 import { loadSpace } from './db.js';
 import { buildAll } from './screens/index.js';
-import { runDemo } from './screens/landing.js';
+import { runDemo, requestInvite, initLanding } from './screens/landing.js';
 import { handleDrop, handleFiles, handleVideoFile } from './screens/capture.js';
 import { segPick } from './screens/details.js';
 import { markFeat, removeFeat, addCategory } from './screens/review.js';
@@ -22,7 +22,7 @@ import { openViewer3d, saveArrangement, resetArrangement } from './screens/viewe
 Object.assign(window, {
   go, goBack, goNext, restart,
   addCategory, toast, uncheckAllUpgrades, setUpgrades,
-  runDemo, submitFeedback,
+  runDemo, requestInvite, submitFeedback,
   handleDrop, handleFiles, handleVideoFile,
   segPick, markFeat, removeFeat,
   toggleUpgrade, toggleStep, skipStep, pickProduct, generateAfter,
@@ -31,6 +31,7 @@ Object.assign(window, {
 });
 
 buildAll();
+initLanding();
 setRail();
 setAppbarHeightVar();
 setFootHeightVar();

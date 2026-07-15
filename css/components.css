@@ -95,7 +95,8 @@ textarea{resize:vertical;min-height:84px}
 .kpi .v{font-size:19px;font-weight:600;font-family:var(--serif);margin-top:4px;letter-spacing:-.01em}
 
 .taglist{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 0}
-.tag{font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 11px;color:var(--ink-2)}
+/* a pill that breaks across lines reads as broken — wrap around it, never inside it */
+.tag{font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 11px;color:var(--ink-2);white-space:nowrap}
 .tag.green{background:var(--primary-bg);border-color:var(--primary-line);color:var(--primary)}
 .tag.warn{background:var(--warn-bg);border-color:oklch(.85 .06 65);color:var(--warn)}
 
@@ -163,7 +164,7 @@ textarea{resize:vertical;min-height:84px}
 .ba .after{background:var(--surface)}
 @media(max-width:560px){.ba{grid-template-columns:1fr}.ba .before{border-right:none;border-bottom:1px solid var(--line)}}
 .cab{display:grid;gap:6px;background:linear-gradient(180deg,var(--surface-3),var(--surface-2));border-radius:9px;padding:7px}
-.cab-shelf{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 9px;position:relative}
+.cab-shelf{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 9px;position:relative;display:flex;flex-direction:column;justify-content:center}
 .cab-shelf.eye{border-color:var(--primary-line);box-shadow:0 0 0 1px var(--primary-line)}
 .cab-shelf.kid{border-color:var(--good);box-shadow:0 0 0 1px color-mix(in oklch,var(--good) 50%,transparent)}
 .cab-lv{font-family:var(--mono);font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
@@ -179,9 +180,13 @@ textarea{resize:vertical;min-height:84px}
 .cab-item svg{width:11px;height:11px;flex:none;opacity:.7}
 .cab-item .lbl{font-family:var(--mono);font-size:7.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:3px;padding:0 3px;margin-left:2px}
 .ba{display:grid;grid-template-columns:1fr 1fr}
-.ba > div{padding:14px}
+/* both panes flex vertically so the before sketch and the after cabinet
+   stretch to the same height and their shelf rows line up */
+.ba > div{padding:14px;display:flex;flex-direction:column}
 .ba .ba-h{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
 .ba .before{background:var(--surface-2);border-right:1px solid var(--line)}
+.ba .before .pantry-vis{flex:1;aspect-ratio:auto;min-height:240px}
+.ba .after .cab{flex:1;grid-auto-rows:1fr}
 .pantry-vis{display:grid;grid-template-rows:repeat(5,1fr);gap:5px;aspect-ratio:3/4;background:var(--surface-3);border-radius:8px;padding:6px}
 .pantry-vis .row{background:var(--surface);border-radius:4px;display:flex;gap:3px;padding:4px;align-items:stretch}
 .pantry-vis.messy .row{gap:2px}
@@ -200,17 +205,20 @@ textarea{resize:vertical;min-height:84px}
 .prod > input[type=checkbox]{width:19px;height:19px;margin-top:2px;accent-color:var(--primary);flex:none}
 .prod .pic{width:46px;height:46px;border-radius:10px;background:var(--clay-bg);display:grid;place-items:center;flex:none;color:var(--clay)}
 .prod .pic svg{width:22px;height:22px}
-.prod h4{margin:0 0 4px;font-size:15px;font-weight:600}
+.prod h4{margin:0 0 4px;font-size:15px;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
 .prod .pwhy{font-size:13px;color:var(--ink-3);line-height:1.45}
+/* chosen product line: link, retailer, and fit badge wrap as whole units */
+.prod .pchoice{margin-top:8px;font-size:13.5px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.prod .pchoice a{font-weight:600;text-decoration:underline;overflow-wrap:anywhere}
 .prod .pmeta{font-size:12px;color:var(--ink-3);margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
 .prod .pmeta span{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;gap:4px}
 .prod .pmeta span svg{width:12px;height:12px}
 .prod .cost{font-weight:600;font-family:var(--serif);font-size:17px;white-space:nowrap}
 
 .shopping{list-style:none;padding:0;margin:0}
-.shopping li{display:flex;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14.5px}
+.shopping li{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14.5px}
 .shopping li:last-child{border-bottom:none}
-.shopping li .qcost{color:var(--ink-3);font-family:var(--mono);font-size:13px}
+.shopping li .qcost{color:var(--ink-3);font-family:var(--mono);font-size:13px;flex:none;white-space:nowrap}
 
 .callout{border-radius:var(--radius-sm);padding:14px 16px;font-size:13.5px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
 .callout svg{width:18px;height:18px;flex:none;margin-top:1px}
