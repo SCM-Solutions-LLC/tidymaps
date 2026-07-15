@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>TidyMap AI — Practical home organization</title>
-<meta name="description" content="Upload photos or a short video of your messy pantry or storage space. Get a practical organization map, a move-by-move plan, and optional storage recommendations. A prototype from SCM Solutions LLC." />
+<title>TidyMap AI — The Art of Order</title>
+<meta name="description" content="TidyMap composes bespoke home organization plans for discerning households. Photographs in, a room-by-room plan out — every shelf considered, every object given its place. A prototype from SCM Solutions LLC." />
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="icon" href="assets/favicon.svg" />
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/components.css" />
 <link rel="stylesheet" href="css/screens.css" />
 <link rel="stylesheet" href="css/report.css" />
+<link rel="stylesheet" href="css/luxury.css" />
 <script type="importmap">
 {
   "imports": {
@@ -24,7 +25,7 @@
 }
 </script>
 </head>
-<body>
+<body class="on-landing">
 
 <header class="appbar">
   <div class="appbar-inner">
@@ -75,47 +76,206 @@
 
 <!-- ============================================================ 1. LANDING -->
 <section class="screen wide active" id="screen-landing">
-  <div class="landing-hero">
-    <div class="hero-copy">
-      <span class="eyebrow">Practical home organization</span>
-      <h1 style="margin-top:18px">Show us the mess. We&rsquo;ll make the plan.</h1>
-      <p class="lede" style="margin-top:18px">Snap a few photos of your pantry, closet, or shelf. We&rsquo;ll figure out what goes where &mdash; and tell you exactly how to get there.</p>
-      <div class="hero-actions">
-        <button class="btn btn-primary" onclick="go('space')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          Organize My Space
-        </button>
-        <button class="btn btn-ghost" onclick="runDemo()">See Example Plan</button>
+
+  <!-- Liquid glass scene: drifting light, warped through an SVG displacement filter -->
+  <div class="lx-scene" aria-hidden="true">
+    <svg width="0" height="0" style="position:absolute">
+      <filter id="lx-liquid" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.011" numOctaves="2" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="110" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </svg>
+    <i class="lx-orb a"></i><i class="lx-orb b"></i><i class="lx-orb c"></i>
+  </div>
+
+  <!-- Hero -->
+  <div class="lx-hero lx-reveal">
+    <span class="lx-eyebrow rule-r">A private atelier for the ordered home</span>
+    <h1 class="lx-h1">Order, elevated<br>to an <em>art form</em>.</h1>
+    <p class="lx-lede">TidyMap composes bespoke organization plans for discerning households. A few photographs of a room as it truly lives &mdash; and every shelf is considered, every object granted its place, every move resolved before a single thing is touched.</p>
+    <div class="lx-actions">
+      <button class="lx-btn gold" onclick="go('space')">
+        Begin Your Transformation
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <button class="lx-btn glass" onclick="runDemo()">View a Private Commission</button>
+    </div>
+    <p class="lx-fine">Photographs in &middot; a composed plan out &middot; discretion assured</p>
+  </div>
+
+  <!-- Before / after vitrine -->
+  <div class="lx-console lxg sheen lx-reveal" aria-hidden="true">
+    <figure class="lx-frame">
+      <div class="pantry-vis messy"><div class="row"><b></b><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div><div class="row"><b></b><b></b><b></b><b></b></div></div>
+      <figcaption><span>Before</span><span>As it lives</span></figcaption>
+    </figure>
+    <div class="lx-console-mid">
+      <span class="lx-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <span class="lx-console-note">One sitting</span>
+    </div>
+    <figure class="lx-frame after">
+      <div class="pantry-vis tidy"><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div></div>
+      <figcaption><span>After</span><span>Six composed zones</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="lx-stats lx-reveal">
+    <div class="lx-stat lxg"><span class="v">01</span><span class="k">unhurried sitting, from photographs to a finished room</span></div>
+    <div class="lx-stat lxg"><span class="v">06</span><span class="k">zones, each composed with reason and intent</span></div>
+    <div class="lx-stat lxg"><span class="v">$0</span><span class="k">required &mdash; acquisition is a choice, never a condition</span></div>
+  </div>
+
+  <!-- Manifesto -->
+  <div class="lx-manifesto lx-reveal">
+    <p>&ldquo;True luxury is not owning more. It is knowing precisely <em>where everything belongs</em>.&rdquo;</p>
+    <div class="lx-attrib">The TidyMap House Philosophy</div>
+  </div>
+
+  <!-- The rite of order: storytelling chapters -->
+  <div class="lx-story">
+    <header class="lx-sechead lx-reveal">
+      <span class="lx-eyebrow rule-r">The Rite of Order</span>
+      <h2 class="lx-h2">How a commission unfolds</h2>
+    </header>
+    <div class="lx-chapters">
+      <div class="lx-chapter lxg sheen lx-reveal">
+        <span class="num">I.<small>The Consultation</small></span>
+        <div>
+          <h3>Show us the room as it truly lives.</h3>
+          <p>It begins quietly. A few photographs &mdash; no staging, no apology. Our intelligence studies every shelf, every basket, every habit hiding in plain sight, and takes inventory of what the room already holds: the pieces you own, the space you forgot you had.</p>
+        </div>
       </div>
-      <p class="hero-fineprint">Messy pantry &rarr; a plan you can follow in under an hour.</p>
+      <div class="lx-chapter lxg sheen lx-reveal">
+        <span class="num">II.<small>The Composition</small></span>
+        <div>
+          <h3>Every object is granted a place, with reason.</h3>
+          <p>Then, the plan. The everyday within arm&rsquo;s reach; the occasional above; the delicate behind glass; a child&rsquo;s things where small hands can find them safely. Zone by zone, the room is composed like a score &mdash; measured to the shelf, argued to the inch.</p>
+        </div>
+      </div>
+      <div class="lx-chapter lxg sheen lx-reveal">
+        <span class="num">III.<small>The Reveal</small></span>
+        <div>
+          <h3>A choreography of small, certain moves.</h3>
+          <p>You move through it in a single unhurried hour &mdash; each step timed, each step explained, walked through in three dimensions before you touch a thing. What remains is not merely tidiness. It is a room that answers you, and keeps answering.</p>
+        </div>
+      </div>
     </div>
-    <div class="hero-collage" aria-hidden="true">
-      <figure class="hero-frame before">
-        <div class="pantry-vis messy"><div class="row"><b></b><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div><div class="row"><b></b><b></b><b></b><b></b></div></div>
-        <figcaption><span>Before</span><span>No zones</span></figcaption>
-      </figure>
-      <span class="hero-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-      <figure class="hero-frame after">
-        <div class="pantry-vis tidy"><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div></div>
-        <figcaption><span>After</span><span>6 zones &middot; kid-safe</span></figcaption>
-      </figure>
+  </div>
+
+  <!-- The Collection: high-end product showcase -->
+  <div class="lx-collection">
+    <header class="lx-sechead lx-reveal">
+      <span class="lx-eyebrow rule-r">The Collection</span>
+      <h2 class="lx-h2">Objects of considered storage</h2>
+      <p class="lx-sub">When a plan calls for acquisition, it draws from a curation held to the House Standard &mdash; pieces chosen for material, proportion, and permanence, matched to your shelves to the half-inch.</p>
+    </header>
+    <div class="lx-vitrines">
+      <div class="lx-vitrine lxg sheen lx-reveal">
+        <span class="no">No. 01</span>
+        <span class="art" aria-hidden="true">
+          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="40" y="32" width="40" height="60" rx="9"/>
+            <rect x="36" y="18" width="48" height="12" rx="6"/>
+            <path d="M49 46v32" opacity=".45"/>
+            <path d="M46 62h28" opacity=".3" stroke-dasharray="2 5"/>
+          </svg>
+        </span>
+        <h4>The Meridian Canister</h4>
+        <p class="mat">Hand-blown borosilicate, brass-capped. Airtight, and unashamed of a front-row shelf.</p>
+        <div class="rowline"><span class="price">$68</span><span class="tagr">Atelier curation</span></div>
+      </div>
+      <div class="lx-vitrine lxg sheen lx-reveal">
+        <span class="no">No. 02</span>
+        <span class="art" aria-hidden="true">
+          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 92h88"/>
+            <path d="M24 92V68h38V46h38v46"/>
+            <path d="M24 68h38" opacity=".45"/>
+            <path d="M62 46h38" opacity=".45"/>
+          </svg>
+        </span>
+        <h4>The Savile Riser</h4>
+        <p class="mat">Oiled walnut, dovetailed. Doubles a shelf without raising its voice.</p>
+        <div class="rowline"><span class="price">$124</span><span class="tagr">Atelier curation</span></div>
+      </div>
+      <div class="lx-vitrine lxg sheen lx-reveal">
+        <span class="no">No. 03</span>
+        <span class="art" aria-hidden="true">
+          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="60" cy="58" rx="42" ry="15"/>
+            <path d="M18 58v9c0 8.3 18.8 15 42 15s42-6.7 42-15v-9" opacity=".6"/>
+            <circle cx="60" cy="58" r="4.5"/>
+          </svg>
+        </span>
+        <h4>The Salon Turntable</h4>
+        <p class="mat">Brushed brass on a silent bearing. The far corner of a deep cabinet, retired forever.</p>
+        <div class="rowline"><span class="price">$92</span><span class="tagr">Atelier curation</span></div>
+      </div>
+      <div class="lx-vitrine lxg sheen lx-reveal">
+        <span class="no">No. 04</span>
+        <span class="art" aria-hidden="true">
+          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M28 50h64l-7 38a9 9 0 0 1-8.9 7H43.9a9 9 0 0 1-8.9-7z"/>
+            <path d="M33.5 64h53M36.5 78h47" opacity=".4"/>
+            <path d="M44 50a16 16 0 0 1 32 0" opacity=".7"/>
+          </svg>
+        </span>
+        <h4>The Atelier Basket</h4>
+        <p class="mat">Hand-woven rattan, linen-lined. For the things that deserve softness.</p>
+        <div class="rowline"><span class="price">$85</span><span class="tagr">Atelier curation</span></div>
+      </div>
+    </div>
+    <p class="lx-collection-fine lx-reveal">Every piece is optional, always. A TidyMap plan begins with what you already own &mdash; the Collection appears only when you ask it to.</p>
+  </div>
+
+  <!-- House values -->
+  <div class="lx-values">
+    <header class="lx-sechead lx-reveal">
+      <span class="lx-eyebrow rule-r">The House Standard</span>
+      <h2 class="lx-h2">Values we do not negotiate</h2>
+    </header>
+    <div class="lx-values-grid">
+      <div class="lx-value lxg sheen lx-reveal">
+        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+        <h4>Discretion</h4>
+        <p>Your rooms, your photographs, your plan &mdash; composed for you and seen by no one else.</p>
+      </div>
+      <div class="lx-value lxg sheen lx-reveal">
+        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span>
+        <h4>Precision</h4>
+        <p>Measured to the half-inch. Nothing is recommended that has not been proven to fit.</p>
+      </div>
+      <div class="lx-value lxg sheen lx-reveal">
+        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg></span>
+        <h4>Restraint</h4>
+        <p>We begin with what you own. Nothing enters the room without intention &mdash; or invitation.</p>
+      </div>
+      <div class="lx-value lxg sheen lx-reveal">
+        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.2 8.5a3.5 3.5 0 1 1 0 7c-3.6 0-8.8-7-12.4-7a3.5 3.5 0 1 0 0 7c3.6 0 8.8-7 12.4-7z"/></svg></span>
+        <h4>Permanence</h4>
+        <p>A system designed to be kept &mdash; season after season, not photographed once and lost.</p>
+      </div>
     </div>
   </div>
 
-  <div class="belief">
-    <p>Most organization apps show you a pretty picture. We&rsquo;d rather give you <em>a plan you can actually follow</em> &mdash; starting with the stuff you already own.</p>
-    <div class="attribution">Why TidyMap exists</div>
-  </div>
-
-  <div class="how">
-    <div class="how-row"><span class="how-num">01</span><div><h4>Start with what you own</h4><p>We plan around your existing shelves, bins, and baskets before suggesting anything new.</p></div></div>
-    <div class="how-row"><span class="how-num">02</span><div><h4>We spot what&rsquo;s already there</h4><p>Shelves, bins, hooks, drawers, unused vertical space &mdash; we find it all in your photos.</p></div></div>
-    <div class="how-row"><span class="how-num">03</span><div><h4>Step-by-step, not just before-and-after</h4><p>A guided checklist with time estimates and reasons, not just a pretty after photo.</p></div></div>
-    <div class="how-row"><span class="how-num">04</span><div><h4>Buy things only if you want to</h4><p>Storage product ideas only show up if you ask. Otherwise, it costs you $0.</p></div></div>
-  </div>
-
-  <div class="landing-cta">
-    <button class="btn btn-primary" onclick="go('space')">Organize My Space</button>
+  <!-- The Private Registry: membership by invitation -->
+  <div class="lx-reserve lxg lx-reveal">
+    <span class="lx-eyebrow rule-r">The Private Registry</span>
+    <h2 class="lx-h2">Membership, by <em>invitation</em>.</h2>
+    <p class="lx-lede">The Registry admits a limited number of households each season. Members hold first access to new ateliers, seasonal re-compositions of their rooms, and a standing consultation &mdash; theirs whenever a space falls out of tune.</p>
+    <div class="lx-invite" id="lx-invite-form">
+      <input type="email" id="lx-email" placeholder="Your private email" autocomplete="email" spellcheck="false" onkeydown="if(event.key==='Enter')requestInvite()">
+      <button class="lx-btn gold" onclick="requestInvite()">Request an Invitation</button>
+    </div>
+    <div class="lx-invited hide" id="lx-invite-done">
+      <span class="lx-seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <p class="lx-invited-h">Your request has been received.</p>
+      <p class="lx-invited-p">We will write to <strong data-invite-email></strong> the moment a place opens in the Registry.</p>
+    </div>
+    <p class="lx-fine">Requests are reviewed in the order received &middot; admission each season is deliberately small</p>
+    <div class="lx-reserve-alt">
+      Prefer not to wait? <button class="lx-linklike" onclick="go('space')">Commission a plan now</button> &nbsp;&middot;&nbsp; <button class="lx-linklike" onclick="runDemo()">view an example commission</button>
+    </div>
   </div>
 </section>
 
