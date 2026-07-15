@@ -10,29 +10,29 @@
   --serif:"Fraunces","Source Serif 4",Georgia,serif;
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
-  /* materials: parchment ground, porcelain + oat surfaces */
-  --bg:        oklch(0.966 0.016 78);   /* parchment */
-  --surface:   oklch(0.993 0.006 85);   /* porcelain */
-  --surface-2: oklch(0.955 0.017 80);   /* oat */
-  --surface-3: oklch(0.936 0.020 78);   /* deep oat */
-  --ink:       oklch(0.22 0.028 55);    /* walnut, deeper for contrast */
-  --ink-2:     oklch(0.38 0.024 55);
-  --ink-3:     oklch(0.52 0.018 58);
-  --line:      oklch(0.895 0.018 75);
-  --line-2:    oklch(0.842 0.022 72);
+  /* materials: white ground, warm cream bands */
+  --bg:        oklch(0.995 0.003 85);   /* clean white */
+  --surface:   oklch(0.955 0.020 72);   /* warm cream — visible contrast */
+  --surface-2: oklch(0.940 0.024 72);   /* deeper cream */
+  --surface-3: oklch(0.920 0.028 72);   /* deep warm */
+  --ink:       oklch(0.20 0.020 55);    /* near-black walnut */
+  --ink-2:     oklch(0.35 0.018 55);
+  --ink-3:     oklch(0.50 0.014 58);
+  --line:      oklch(0.88 0.016 75);
+  --line-2:    oklch(0.82 0.020 72);
 
   /* terracotta — the single primary accent */
-  --primary:      oklch(0.60 0.125 36);
-  --primary-2:    oklch(0.53 0.130 33);
+  --primary:      oklch(0.55 0.145 32);
+  --primary-2:    oklch(0.48 0.150 30);
   --primary-bg:   oklch(0.946 0.032 40);
   --primary-line: oklch(0.845 0.058 40);
 
   /* sage — reassurance, safety, family-friendly states */
-  --sage:      oklch(0.58 0.068 145);
-  --sage-2:    oklch(0.48 0.072 148);
+  --sage:      oklch(0.55 0.080 145);
+  --sage-2:    oklch(0.45 0.085 148);
   --sage-bg:   oklch(0.946 0.024 145);
   --sage-line: oklch(0.845 0.042 145);
-  --sage-ink:  oklch(0.42 0.068 148);
+  --sage-ink:  oklch(0.38 0.068 148);
 
   /* legacy aliases kept so existing components stay coherent:
      informational teal now resolves to sage, "good" is sage */
@@ -49,8 +49,8 @@
 
   --radius: 10px;
   --radius-sm: 8px;
-  --shadow: 0 1px 3px oklch(0.42 0.03 55 / .06);
-  --shadow-lg: 0 2px 8px oklch(0.42 0.03 55 / .09);
+  --shadow: 0 1px 3px oklch(0.30 0.02 55 / .08);
+  --shadow-lg: 0 4px 16px oklch(0.30 0.02 55 / .10);
   --maxw: 760px;
 
   /* motion — gentle and purposeful */
