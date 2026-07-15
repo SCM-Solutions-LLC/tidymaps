@@ -88,10 +88,20 @@ export async function coverUrl(spaceId){
   return signed ? signed.signedUrl : null;
 }
 
-export async function loadSpace(id){
+export async function fetchSpace(id){
   const { c } = requireClient();
   const { data, error } = await c.from('spaces').select('*').eq('id',id).single();
   if(error || !data) throw new Error('Could not open that space.');
+  const beforePhotoUrl = await coverUrl(data.id).catch(()=>null);
+  let afterRenderUrl = null;
+  if(data.after_render_path){
+    const { data:signed } = await c.storage.from('space-media').createSignedUrl(data.after_render_path, 3600);
+    afterRenderUrl = signed ? signed.signedUrl : null;
+  }
+  return { data, beforePhotoUrl, afterRenderUrl };
+}
+
+export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   state.activeSpaceId = data.id;
   state.space = data.space_type;
   state.goal = data.goal;
@@ -109,14 +119,13 @@ export async function loadSpace(id){
   state.stepDone = (data.progress && data.progress.stepsDone) || [];
   state.arrangement = data.arrangement;
   state.upgrades = !!(data.shopping && data.shopping.length);
-  // photo sources for the report hero and the before/after slider
-  state.beforePhotoUrl = await coverUrl(data.id).catch(()=>null);
-  state.afterRenderUrl = null;
-  if(data.after_render_path){
-    const { data:signed } = await c.storage.from('space-media').createSignedUrl(data.after_render_path, 3600);
-    state.afterRenderUrl = signed ? signed.signedUrl : null;
-  }
+  state.beforePhotoUrl = beforePhotoUrl;
+  state.afterRenderUrl = afterRenderUrl;
   return data;
+}
+
+export async function loadSpace(id){
+  return applyLoadedSpace(await fetchSpace(id));
 }
 
 // Debounced incremental writes for progress / shopping / arrangement

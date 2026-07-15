@@ -5,7 +5,7 @@ import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, buildGeminiBrief } from '../plan.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { backendConfigured } from '../config.js';
-import { renderAfter as renderAfterApi } from '../api.js';
+import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.js';
 import { fileToScaledB64 } from '../media.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
@@ -166,9 +166,7 @@ export async function generateAfter(){
     setupAfterPhoto();
     toast('Photo preview ready — drag the slider');
   }catch(e){
-    note.textContent=(e && e.code==='rate_limited')
-      ? e.message
-      : 'Photo preview unavailable right now — the illustrated layout below still shows the full plan.';
+    note.textContent=renderAfterErrorMessage(e);
   }finally{
     btn.disabled=false;
     btn.textContent='Generate photo preview';

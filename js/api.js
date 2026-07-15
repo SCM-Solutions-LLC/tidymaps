@@ -52,3 +52,23 @@ export function analyzeSpace(images, context){
 export function renderAfter(image, instructions, spaceId = null){
   return callFn('render-after', { image, instructions, spaceId });
 }
+
+export function renderAfterErrorMessage(error){
+  if(error && error.code==='rate_limited') return error.message;
+  if(error && error.code==='preview_misconfigured'){
+    return 'Photo preview is temporarily offline while its AI connection is repaired.';
+  }
+  if(error && error.code==='upstream_quota'){
+    return 'Photo preview has reached its AI limit for now — try again later.';
+  }
+  if(error && error.code==='network'){
+    return 'Could not reach the photo preview service — check your connection and try again.';
+  }
+  if(error && error.code==='no_image_returned'){
+    return 'The AI could not produce a preview from this photo. Try a clearer, well-lit photo.';
+  }
+  if(error && error.code==='upstream_invalid_request'){
+    return 'The photo preview could not process this image. Try another clear JPG, PNG, or WebP photo.';
+  }
+  return 'Photo preview unavailable right now — the illustrated layout below still shows the full plan.';
+}
