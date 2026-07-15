@@ -1,0 +1,110 @@
+/* ============================================================
+   Results as a designed report: masthead, chapter TOC, chapters
+   ============================================================ */
+
+/* ---------- Masthead ---------- */
+.report-mast{padding:8px 0 26px;border-bottom:2px solid var(--ink)}
+.report-mast .mast-kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;
+}
+.report-mast .mast-kicker .mk-brand{color:var(--primary)}
+.report-mast h2{font-size:clamp(32px,6vw,52px);margin-top:14px;max-width:16ch}
+.report-byline{
+  display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:16px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-2);
+}
+.report-byline .sep{color:var(--line-2)}
+
+/* ---------- Body grid: sticky TOC + chapters ---------- */
+.report-body{display:grid;gap:0;margin-top:8px}
+.report-toc{display:none}
+@media(min-width:960px){
+  .report-body{grid-template-columns:190px 1fr;gap:56px}
+  .report-toc{
+    display:block;position:sticky;top:calc(var(--appbar-h,57px) + 26px);
+    align-self:start;padding-top:34px;
+  }
+}
+.report-toc .toc-h{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.report-toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.report-toc a{
+  display:flex;gap:10px;align-items:baseline;padding:7px 2px;font-size:13.5px;color:var(--ink-2);
+  border-top:1px solid var(--line);transition:.15s;
+}
+.report-toc a:hover{color:var(--ink)}
+.report-toc a .tn{font-family:var(--mono);font-size:10px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.report-toc a.here{color:var(--primary-2)}
+.report-toc a.here .tn{color:var(--primary-2)}
+
+/* ---------- Chapters ---------- */
+.chapter{padding-top:44px}
+.ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:16px;border-top:1px solid var(--line-2);padding-top:14px}
+.ch-head .ch-num{font-family:var(--serif);font-size:clamp(30px,4.6vw,42px);font-weight:500;line-height:1;color:var(--primary);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ch-head .ch-titles{min-width:0}
+.ch-head .eyebrow{display:block;margin-bottom:5px}
+.ch-head h3{font-size:clamp(20px,3.4vw,26px);letter-spacing:-.02em}
+.ch-head .ch-sub{font-size:13.5px;color:var(--ink-3);margin-top:6px;line-height:1.5}
+
+/* Summary chapter: editorial, no card chrome */
+.report .summary-lede{font-size:clamp(15.5px,2vw,17.5px);line-height:1.6;color:var(--ink-2);max-width:62ch;margin:0}
+
+/* KPI band: hairline-separated mono figures, no tiles */
+.report .kpis{
+  grid-template-columns:repeat(2,1fr);gap:0;margin-top:22px;
+  border-top:1px solid var(--ink);border-bottom:1px solid var(--line);
+}
+@media(min-width:560px){.report .kpis{grid-template-columns:repeat(4,1fr)}}
+.report .kpi{
+  background:none;border:none;border-radius:0;padding:14px 16px 15px 0;
+  border-right:1px solid var(--line);
+}
+.report .kpi:last-child{border-right:none}
+.report .kpi + .kpi{padding-left:16px}
+@media(max-width:559px){
+  .report .kpi:nth-child(2n){border-right:none}
+  .report .kpi:nth-child(2n+1){padding-left:0}
+  .report .kpi:nth-child(n+3){border-top:1px solid var(--line)}
+}
+.report .kpi .v{font-size:22px;margin-top:5px}
+
+/* Safety margin notes (populated when the plan carries household flags) */
+.safety-note{
+  display:flex;gap:10px;align-items:flex-start;margin-top:14px;
+  padding:12px 14px;border-left:3px solid var(--primary);
+  background:var(--primary-bg);border-radius:0 10px 10px 0;
+  font-size:13.5px;color:var(--ink-2);line-height:1.5;
+}
+.safety-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--primary-2)}
+
+/* Report hero: the user's own photo, photography-forward */
+#report-hero{margin-top:20px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+#report-hero img{width:100%;max-height:420px;object-fit:cover;display:block}
+
+/* Before/after slider: after image clipped to --pos, dragged via a
+   full-bleed invisible range input */
+.ba-slider{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--surface-2)}
+.ba-slider img{width:100%;display:block;max-height:480px;object-fit:cover}
+.ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 calc(100% - var(--pos,50%)) 0 0)}
+.ba-slider .ba-divider{
+  position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;
+  background:#fff;box-shadow:0 0 10px rgba(0,0,0,.45);pointer-events:none;
+}
+.ba-slider .ba-divider::after{
+  content:"\2194";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:34px;height:34px;border-radius:50%;background:#fff;color:var(--ink);
+  display:grid;place-items:center;font-size:15px;box-shadow:0 1px 6px rgba(0,0,0,.35);
+}
+.ba-slider .ba-tag{
+  position:absolute;top:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;background:rgba(0,0,0,.55);color:#fff;border-radius:5px;padding:4px 8px;pointer-events:none;
+}
+.ba-slider .ba-tag.b{left:10px}
+.ba-slider .ba-tag.a{right:10px;background:var(--primary)}
+.ba-slider input[type=range]{
+  position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0;
+  -webkit-appearance:none;appearance:none;background:none;border:none;
+}
+
+/* Chapter end actions */
+.report-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:52px;padding-top:22px;border-top:2px solid var(--ink)}

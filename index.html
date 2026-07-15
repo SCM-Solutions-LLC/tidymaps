@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>TidyMap AI — Practical home organization</title>
+<meta name="description" content="Upload photos or a short video of your messy pantry or storage space. Get a practical organization map, a move-by-move plan, and optional storage recommendations. A prototype from SCM Solutions LLC." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="icon" href="assets/favicon.svg" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/screens.css" />
+<link rel="stylesheet" href="css/report.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-inner">
+    <a class="brand" href="#" onclick="go('landing');return false;">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+      </span>
+      <span>TidyMap&nbsp;AI</span>
+      <span class="mvp">Prototype</span>
+    </a>
+    <span class="spacer"></span>
+    <button class="restart hide" id="acct-signin" onclick="openAuth()">Sign in</button>
+    <button class="restart hide" id="acct-btn" onclick="go('dashboard')">My spaces</button>
+    <button class="restart" onclick="restart()">Start over</button>
+  </div>
+  <div class="rail"><i id="rail"></i></div>
+</header>
+
+<!-- Sign-in modal: email -> 6-digit code, no passwords, no redirects -->
+<div class="modal-backdrop hide" id="auth-modal" onclick="if(event.target===this)closeAuth()">
+  <div class="modal">
+    <h3 style="font-family:var(--sans);font-weight:600;font-size:17px">Save your spaces</h3>
+    <p class="small muted" style="margin:8px 0 0">Sign in with your email and we&rsquo;ll send a 6-digit code &mdash; no password to remember.</p>
+    <div id="auth-step-email">
+      <label class="field" style="margin-top:16px"><span>Email</span>
+        <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" spellcheck="false">
+      </label>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn btn-primary btn-sm" id="auth-send-btn" onclick="sendAuthCode()">Email me a code</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeAuth()">Cancel</button>
+      </div>
+    </div>
+    <div id="auth-step-code" class="hide">
+      <label class="field" style="margin-top:16px"><span>6-digit code</span>
+        <input type="text" id="auth-code" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" style="font-family:var(--mono);letter-spacing:.35em;font-size:18px">
+      </label>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn btn-primary btn-sm" id="auth-verify-btn" onclick="verifyAuthCode()">Sign in</button>
+        <button class="btn btn-ghost btn-sm" onclick="sendAuthCode()">Resend code</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeAuth()">Cancel</button>
+      </div>
+    </div>
+    <p class="small" id="auth-msg" style="margin:14px 0 0;min-height:1.2em"></p>
+  </div>
+</div>
+
+<main>
+
+<!-- ============================================================ 1. LANDING -->
+<section class="screen wide active" id="screen-landing">
+  <div class="landing-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Practical home organization</span>
+      <h1 style="margin-top:18px">Show us the mess. We&rsquo;ll make the plan.</h1>
+      <p class="lede" style="margin-top:18px">Snap a few photos of your pantry, closet, or shelf. We&rsquo;ll figure out what goes where &mdash; and tell you exactly how to get there.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="go('space')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Organize My Space
+        </button>
+        <button class="btn btn-ghost" onclick="runDemo()">See Example Plan</button>
+      </div>
+      <p class="hero-fineprint">Messy pantry &rarr; a plan you can follow in under an hour.</p>
+    </div>
+    <div class="hero-collage" aria-hidden="true">
+      <figure class="hero-frame before">
+        <div class="pantry-vis messy"><div class="row"><b></b><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div><div class="row"><b></b><b></b><b></b><b></b></div></div>
+        <figcaption><span>Before</span><span>No zones</span></figcaption>
+      </figure>
+      <span class="hero-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      <figure class="hero-frame after">
+        <div class="pantry-vis tidy"><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div></div>
+        <figcaption><span>After</span><span>6 zones &middot; kid-safe</span></figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="belief">
+    <p>Most organization apps show you a pretty picture. We&rsquo;d rather give you <em>a plan you can actually follow</em> &mdash; starting with the stuff you already own.</p>
+    <div class="attribution">Why TidyMap exists</div>
+  </div>
+
+  <div class="how">
+    <div class="how-row"><span class="how-num">01</span><div><h4>Start with what you own</h4><p>We plan around your existing shelves, bins, and baskets before suggesting anything new.</p></div></div>
+    <div class="how-row"><span class="how-num">02</span><div><h4>We spot what&rsquo;s already there</h4><p>Shelves, bins, hooks, drawers, unused vertical space &mdash; we find it all in your photos.</p></div></div>
+    <div class="how-row"><span class="how-num">03</span><div><h4>Step-by-step, not just before-and-after</h4><p>A guided checklist with time estimates and reasons, not just a pretty after photo.</p></div></div>
+    <div class="how-row"><span class="how-num">04</span><div><h4>Buy things only if you want to</h4><p>Storage product ideas only show up if you ask. Otherwise, it costs you $0.</p></div></div>
+  </div>
+
+  <div class="landing-cta">
+    <button class="btn btn-primary" onclick="go('space')">Organize My Space</button>
+  </div>
+</section>
+
+<!-- ============================================================ 2. SPACE SELECTION -->
+<section class="screen has-rail" id="screen-space">
+  <div class="step-head"><span class="step-num">01</span><span class="step-kicker">Your space</span></div>
+  <div class="wiz">
+    <div class="wiz-main">
+      <h2>What space are you organizing?</h2>
+      <p class="muted small" style="margin-top:6px">Pantry is the best place to start for this preview.</p>
+      <div class="grid grid-auto" id="space-opts" style="margin-top:18px"></div>
+
+      <div id="goal-block" class="hide" style="margin-top:30px">
+        <h3>What is your main goal?</h3>
+        <div class="grid" id="goal-opts" style="margin-top:14px"></div>
+      </div>
+    </div>
+    <aside class="wiz-rail">
+      <div class="rail-note"><strong>Why we ask.</strong> Different spaces get different plans &mdash; a pantry is zoned by how often you reach for things; a closet by season and size.</div>
+      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================ 3. HOUSEHOLD -->
+<section class="screen has-rail" id="screen-household">
+  <div class="step-head"><span class="step-num">02</span><span class="step-kicker">Your household</span></div>
+  <div class="wiz">
+    <div class="wiz-main">
+      <h2>Who uses this space?</h2>
+      <p class="muted small" style="margin-top:6px">This shapes where things go &mdash; kid items low and reachable, hazards high or latched.</p>
+      <div class="card pad" style="margin-top:18px">
+        <div class="qa"><span class="q">Do kids use or reach this space?</span>
+          <span class="seg" id="hh-kids-seg"><button data-v="yes">Yes</button><button data-v="no">No</button></span></div>
+        <div id="hh-kid-ages" class="hide" style="padding:12px 2px 16px;border-bottom:1px solid var(--line)">
+          <div class="small" style="font-weight:600;margin-bottom:8px">Their ages <span class="muted" style="font-weight:400">(pick all that apply)</span></div>
+          <div class="chips" id="hh-age-chips"></div>
+        </div>
+        <div class="qa"><span class="q">Any pets?</span>
+          <span class="seg" id="hh-pets-seg"><button data-v="yes">Yes</button><button data-v="no">No</button></span></div>
+        <div id="hh-pet-types" class="hide" style="padding:12px 2px 16px;border-bottom:1px solid var(--line)">
+          <div class="small" style="font-weight:600;margin-bottom:8px">What kind?</div>
+          <div class="chips" id="hh-pet-chips"></div>
+        </div>
+        <div style="padding:14px 2px 6px">
+          <div class="small" style="font-weight:600;margin-bottom:8px">Reaching &amp; mobility</div>
+          <div class="chips" id="hh-mobility-chips"></div>
+        </div>
+        <label class="field" style="margin-top:16px;margin-bottom:4px"><span>Anything else we should know? <span class="muted" style="font-weight:400">(optional)</span></span>
+          <textarea id="hh-notes" placeholder="e.g. my toddler opens everything, or grandma uses this pantry daily&hellip;"></textarea></label>
+      </div>
+    </div>
+    <aside class="wiz-rail">
+      <div class="rail-note"><strong>Safety first.</strong> With kids in the house, heavy or hazardous items get placed up high or behind a latch &mdash; and their snacks go where they can reach without climbing.</div>
+      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================ 4. CAPTURE -->
+<section class="screen has-rail" id="screen-capture">
+  <div class="step-head"><span class="step-num">03</span><span class="step-kicker">Show us the space</span></div>
+  <div class="wiz">
+    <div class="wiz-main">
+      <h2>How do you want to show us the space?</h2>
+      <div class="grid" id="capture-opts" style="margin-top:18px"></div>
+
+      <div id="capture-detail" class="hide" style="margin-top:22px"></div>
+    </div>
+    <aside class="wiz-rail">
+      <div class="rail-note"><strong>Photos beat memory.</strong> We work from what&rsquo;s actually visible &mdash; three to five photos or a slow video pan is all it takes.</div>
+      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================ 4. SPACE DETAILS -->
+<section class="screen has-rail" id="screen-details">
+  <div class="step-head"><span class="step-num">04</span><span class="step-kicker">Space details &middot; optional</span></div>
+  <div class="wiz">
+    <div class="wiz-main">
+      <h2>A few optional details</h2>
+      <div class="helper" style="margin:14px 0 22px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <span>You can skip this. The plan will still work, but dimensions help us make better product recommendations.</span>
+      </div>
+      <div class="card pad">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px">
+          <span class="small" style="font-weight:600">Measurements</span>
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px">Units
+            <select id="d-unit" style="width:auto;padding:6px 9px;font-size:13px"><option value="in">inches</option><option value="cm">cm</option></select>
+          </label>
+        </div>
+        <div class="grid grid-2">
+          <label class="field"><span>Width</span><input type="number" id="d-w" placeholder="e.g. 30" min="1" step="0.5" inputmode="decimal"></label>
+          <label class="field"><span>Height</span><input type="number" id="d-h" placeholder="e.g. 60" min="1" step="0.5" inputmode="decimal"></label>
+          <label class="field"><span>Depth (front to back)</span><input type="number" id="d-d" placeholder="e.g. 14" min="1" step="0.5" inputmode="decimal"></label>
+          <label class="field"><span>Number of shelves</span><input type="number" id="d-shelves" placeholder="e.g. 5" min="0"></label>
+        </div>
+        <div class="divider" style="margin:8px 0 18px"></div>
+        <div id="detail-toggles"></div>
+      </div>
+    </div>
+    <aside class="wiz-rail">
+      <div class="rail-note"><strong>Measure once.</strong> Shelf depth is the number that decides whether a bin actually fits &mdash; grab a tape measure if you can.</div>
+      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================ 5. PREFERENCES -->
+<section class="screen has-rail" id="screen-prefs">
+  <div class="step-head"><span class="step-num">05</span><span class="step-kicker">Preferences</span></div>
+  <div class="wiz">
+    <div class="wiz-main">
+      <h2>What should your plan prioritize?</h2>
+      <p class="muted small" style="margin-top:6px">Pick any that matter to you.</p>
+      <div class="chips" id="pref-chips" style="margin-top:18px"></div>
+
+      <h3 style="margin-top:28px">Budget</h3>
+      <div class="chips" id="budget-chips" style="margin-top:12px"></div>
+
+      <h3 style="margin-top:28px">How much effort do you want to put in?</h3>
+      <div class="grid" id="effort-opts" style="margin-top:12px"></div>
+    </div>
+    <aside class="wiz-rail">
+      <div class="rail-note"><strong>The $0 default.</strong> Product suggestions stay off unless you opt in &mdash; every plan works with what you already own first.</div>
+      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============================================================ 6. LOADING -->
+<section class="screen" id="screen-loading">
+  <div style="text-align:center;padding:18px 0">
+    <span class="eyebrow">Analyzing your space</span>
+    <h2 style="margin-top:12px">Figuring out your space</h2>
+    <p class="muted small" id="load-sub">Hang tight, this takes a moment.</p>
+  </div>
+  <div class="card pad">
+    <div class="load-steps" id="load-steps"></div>
+    <div id="frames-wrap" class="hide">
+      <p class="small muted" style="margin:18px 0 0;font-weight:600;color:var(--ink-2)">Key frames extracted</p>
+      <div class="frames" id="frames"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 7. DETECTION REVIEW -->
+<section class="screen" id="screen-review">
+  <div class="step-head"><span class="step-num">06</span><span class="step-kicker">Confirm what we found</span></div>
+  <h2>Did we get this right?</h2>
+  <div class="helper" style="margin:14px 0 22px">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span>Confirming this helps us create a more realistic organization plan. Nothing here has to be perfect.</span>
+  </div>
+
+  <span class="eyebrow">Detected existing features</span>
+  <div class="grid" id="rev-features" style="margin-top:12px"></div>
+
+  <span class="eyebrow" style="display:block;margin-top:30px">Detected item categories</span>
+  <p class="small muted" style="margin:8px 0 0">Tap to remove anything that isn&rsquo;t in your space, or add what we missed.</p>
+  <div class="chips" id="rev-cats" style="margin-top:14px"></div>
+  <div style="display:flex;gap:9px;margin-top:14px">
+    <input type="text" id="add-cat" placeholder="Add a missing category&hellip;">
+    <button class="btn btn-ghost btn-sm" onclick="addCategory()" style="white-space:nowrap">+ Add</button>
+  </div>
+</section>
+
+<!-- ============================================================ 8. RESULTS REPORT -->
+<section class="screen wide report" id="screen-results">
+  <header class="report-mast">
+    <div class="mast-kicker">
+      <span class="mk-brand">Organization plan</span>
+      <span id="mast-space">Pantry</span>
+      <span id="mast-date"></span>
+    </div>
+    <h2 id="res-title">Here&rsquo;s your plan</h2>
+    <div class="report-byline">
+      <span id="res-byline">Example plan &middot; demo data</span>
+      <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:500">Analyzed by Claude</span>
+    </div>
+    <div id="report-hero" class="hide"><img alt="Your space" src=""></div>
+  </header>
+
+  <div class="report-body">
+    <nav class="report-toc" aria-label="Plan chapters">
+      <div class="toc-h">In this plan</div>
+      <ol>
+        <li><a href="#ch-summary"><span class="tn">01</span>Summary</a></li>
+        <li><a href="#ch-map"><span class="tn">02</span>The map</a></li>
+        <li><a href="#ch-reuse"><span class="tn">03</span>Use what you own</a></li>
+        <li><a href="#ch-steps"><span class="tn">04</span>Move by move</a></li>
+        <li><a href="#ch-after"><span class="tn">05</span>Before &amp; after</a></li>
+        <li><a href="#ch-shop" id="toc-shop" class="hide"><span class="tn">06</span>Upgrades &amp; shopping</a></li>
+      </ol>
+    </nav>
+
+    <div class="report-main">
+      <!-- 01. Summary -->
+      <section class="chapter" id="ch-summary">
+        <div class="ch-head"><span class="ch-num">01</span><div class="ch-titles"><span class="eyebrow">The space</span><h3>Summary</h3></div></div>
+        <p class="summary-lede" id="res-summary"></p>
+        <div class="kpis" id="res-kpis"></div>
+        <div style="margin-top:20px">
+          <div class="small" style="font-weight:600;margin-bottom:6px">Detected item categories</div>
+          <div class="taglist" id="res-cat-tags"></div>
+        </div>
+        <div class="grid grid-2" style="margin-top:20px">
+          <div>
+            <div class="small" style="font-weight:600;margin-bottom:8px;color:var(--clay)">Main organization problems</div>
+            <ul class="problems" id="res-problems"></ul>
+          </div>
+          <div>
+            <div class="small" style="font-weight:600;margin-bottom:8px;color:var(--primary)">Biggest opportunities</div>
+            <ul class="problems opps" id="res-opps"></ul>
+          </div>
+        </div>
+        <div id="res-safety-notes"></div>
+      </section>
+
+      <!-- 02. Organization map -->
+      <section class="chapter" id="ch-map">
+        <div class="ch-head"><span class="ch-num">02</span><div class="ch-titles"><span class="eyebrow">Where everything goes</span><h3>The map</h3></div></div>
+        <div id="res-map"></div>
+      </section>
+
+      <!-- 03. Use existing first -->
+      <section class="chapter" id="ch-reuse">
+        <div class="ch-head"><span class="ch-num">03</span><div class="ch-titles"><span class="eyebrow">Use what you&rsquo;ve got</span><h3>Use what you already have first</h3></div></div>
+        <div class="card pad" style="background:var(--primary-bg);border-color:var(--primary-line)">
+          <p style="margin:0 0 14px;font-size:15px;color:var(--ink-2)" id="res-existing-lede"></p>
+          <div class="feat-grid" id="res-existing"></div>
+          <div class="callout info" style="margin-top:16px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <div><strong>What not to buy yet:</strong> <span id="res-dontbuy"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04. Move-by-move -->
+      <section class="chapter" id="ch-steps">
+        <div class="ch-head"><span class="ch-num">04</span><div class="ch-titles"><span class="eyebrow">Your step-by-step guide</span><h3>Move by move</h3>
+          <p class="ch-sub">Work top to bottom. Mark steps complete as you go.</p></div></div>
+        <div class="progwrap">
+          <div class="lab"><span id="prog-text">Step 0 of 9 complete</span><span id="prog-pct" class="muted">0%</span></div>
+          <div class="progbar"><i id="prog-bar"></i></div>
+        </div>
+        <div class="steps" id="res-steps"></div>
+      </section>
+
+      <!-- 05. Before/After -->
+      <section class="chapter" id="ch-after">
+        <div class="ch-head"><span class="ch-num">05</span><div class="ch-titles"><span class="eyebrow">Before &amp; after</span><h3>What it could look like</h3>
+          <p class="ch-sub">An illustrated layout of the recommended plan &mdash; each shelf as a labelled zone.</p></div></div>
+
+        <!-- Photorealistic preview: the user's own photo, reorganized by AI -->
+        <div id="after-photo" class="hide" style="margin-bottom:18px">
+          <div class="ba-slider hide" id="ba-slider" style="--pos:50%">
+            <img id="ba-before-img" alt="Your space today" src="">
+            <img id="ba-after-img" class="after-img" alt="Your space, organized (AI visualization)" src="">
+            <span class="ba-divider"></span>
+            <span class="ba-tag b">Before</span>
+            <span class="ba-tag a">After &middot; AI</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Compare before and after"
+              oninput="this.parentElement.style.setProperty('--pos',this.value+'%')">
+          </div>
+          <p class="note hide" id="ba-disclaimer" style="margin-top:8px">AI visualization of your own photo &mdash; illustrative, not exact. Your items stay where the plan says; the picture just shows the feel.</p>
+          <div id="after-gen-row" class="hide" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" id="after-gen-btn" onclick="generateAfter()">Generate photo preview</button>
+            <span class="small muted" id="after-gen-note" style="flex:1;min-width:200px">See your actual space organized &mdash; AI edits your photo to match the plan.</span>
+          </div>
+        </div>
+
+        <div class="after-tabs" id="after-tabs"></div>
+        <div class="after-stage">
+          <div class="ba">
+            <div class="before"><div class="ba-h">Before &middot; today</div>
+              <div class="pantry-vis messy"><div class="row"><b></b><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div><div class="row"><b></b><b></b><b></b><b></b></div></div>
+            </div>
+            <div class="after"><div class="ba-h" id="after-h">After &middot; Use existing containers</div>
+              <div class="cab" id="after-cabinet"></div>
+            </div>
+          </div>
+        </div>
+        <p class="note" style="margin-top:10px">This is an illustrated layout of the plan, not a photo of your space &mdash; it shows where each group of items should go. Actual fit varies with item sizes and containers.</p>
+
+        <div class="card pad" style="margin-top:18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div style="font-weight:600">Walk around it in 3D</div>
+            <p class="small muted" style="margin:4px 0 0">Rotate, zoom, and drag items between shelves to test a different arrangement before you touch a thing.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openViewer3d()">Open the 3D view</button>
+        </div>
+      </section>
+
+      <!-- 06. Optional upgrades + shopping -->
+      <section class="chapter" id="ch-shop">
+        <div id="res-upgrades-wrap" class="hide">
+          <div class="ch-head"><span class="ch-num">06</span><div class="ch-titles"><span class="eyebrow">Optional upgrades</span><h3>Upgrades &amp; shopping</h3>
+            <p class="ch-sub">Only because you said you&rsquo;re open to buying storage products. The $0 plan above works without any of these.</p></div></div>
+          <div id="res-upgrades"></div>
+          <div class="callout warn" style="margin-top:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+            <span>Measure shelf width, height, and depth before purchasing. Nothing here is guaranteed to fit.</span>
+          </div>
+          <div class="card pad" style="margin-top:22px">
+            <div class="small" style="font-weight:600;margin-bottom:10px">Shopping list</div>
+            <p class="note" id="res-price-asof" style="margin:0 0 10px"></p>
+            <ul class="shopping" id="res-shopping"></ul>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1.5px solid var(--line)">
+              <span style="font-weight:600">Estimated cost</span>
+              <span style="font-weight:600;font-family:var(--serif);font-size:18px" id="res-shop-total">$45&ndash;$85</span>
+            </div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
+              <button class="btn btn-ghost btn-sm" onclick="toast('Shopping list saved')">Save shopping list</button>
+              <button class="btn btn-ghost btn-sm" onclick="toast('List sent')">Send list</button>
+              <button class="btn btn-ghost btn-sm" onclick="uncheckAllUpgrades()">Remove all upgrades</button>
+              <button class="btn btn-ghost btn-sm" onclick="setUpgrades(false);toast('Switched to the $0 plan')">Use $0 plan instead</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="report-actions">
+        <button class="btn btn-primary" onclick="openViewer3d()">Open the 3D view</button>
+        <button class="btn btn-ghost" onclick="go('customize')">Adjust this plan</button>
+        <button class="btn btn-ghost" onclick="go('save')">Save &amp; share</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 9. CUSTOMIZE -->
+<section class="screen" id="screen-customize">
+  <div class="step-label">Refine</div>
+  <h2>Adjust your plan</h2>
+  <p class="muted small" style="margin-top:6px">Pick a change and we&rsquo;ll revise the plan.</p>
+  <div class="grid grid-2" id="customize-opts" style="margin-top:18px"></div>
+  <div id="customize-result" class="hide" style="margin-top:20px"></div>
+</section>
+
+<!-- ============================================================ 10. SAVE / SHARE -->
+<section class="screen" id="screen-save">
+  <div style="text-align:center;padding:10px 0 0">
+    <div class="b-ico" style="width:54px;height:54px;border-radius:14px;margin:0 auto 14px;background:var(--primary-bg);color:var(--primary);display:grid;place-items:center">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <h2>Your plan is ready</h2>
+    <p class="muted small" style="max-width:34ch;margin:8px auto 0">Save it, share it with the household, or start organizing your next space.</p>
+  </div>
+  <div class="grid grid-2" id="save-opts" style="margin-top:24px"></div>
+  <div style="text-align:center;margin-top:22px">
+    <button class="btn btn-ghost" onclick="go('feedback')">Give feedback &rarr;</button>
+  </div>
+</section>
+
+<!-- ============================================================ 11. FEEDBACK -->
+<section class="screen" id="screen-feedback">
+  <div class="step-label">Last step</div>
+  <h2>How useful is this plan?</h2>
+  <div class="grid" id="fb-useful" style="margin-top:16px"></div>
+
+  <h3 style="margin-top:28px">Was the step-by-step plan more useful than just seeing an after image?</h3>
+  <div class="grid" id="fb-vs" style="margin-top:14px"></div>
+
+  <h3 style="margin-top:28px">What would make this better?</h3>
+  <textarea id="fb-text" placeholder="Tell us anything&hellip;" style="margin-top:12px"></textarea>
+
+  <h3 style="margin-top:28px">What space would you organize next?</h3>
+  <div class="chips" id="fb-next" style="margin-top:14px"></div>
+
+  <div style="margin-top:26px">
+    <button class="btn btn-primary btn-block" onclick="submitFeedback()">Submit feedback</button>
+  </div>
+</section>
+
+<!-- ============================================================ 3D VIEWER -->
+<section class="screen wide" id="screen-viewer3d">
+  <div class="step-head" style="border-top:none;padding-top:0"><span class="step-num">3D</span><span class="step-kicker">Try it before you touch a shelf</span></div>
+  <h2>Your space in 3D</h2>
+  <p class="muted small" style="margin-top:6px">Rotate with the mouse or one finger &middot; zoom with scroll or pinch &middot; <strong>drag any item</strong> to a different shelf to try another arrangement.</p>
+  <div class="v3d-wrap">
+    <canvas id="v3d-canvas"></canvas>
+  </div>
+  <p class="note" id="v3d-status" style="margin-top:10px"></p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+    <button class="btn btn-ghost" onclick="go('results')">&larr; Back to the plan</button>
+    <button class="btn btn-primary" id="v3d-save" onclick="saveArrangement()">Save arrangement</button>
+    <button class="btn btn-ghost" onclick="resetArrangement()">Reset to recommended</button>
+  </div>
+</section>
+
+<!-- ============================================================ DASHBOARD -->
+<section class="screen wide" id="screen-dashboard">
+  <header class="report-mast" style="border-bottom-width:1px">
+    <div class="mast-kicker"><span class="mk-brand">Your spaces</span><span id="dash-count"></span></div>
+    <h2 style="margin-top:12px">Welcome back</h2>
+    <div class="report-byline"><span id="dash-email"></span><span class="sep">&middot;</span><a href="#" onclick="dashSignOut();return false" style="text-decoration:underline">Sign out</a></div>
+  </header>
+  <div class="dash-grid" id="dash-grid" style="margin-top:26px"></div>
+</section>
+
+<!-- ============================================================ DONE -->
+<section class="screen" id="screen-done">
+  <div style="text-align:center;padding:40px 0">
+    <div class="b-ico" style="width:60px;height:60px;border-radius:16px;margin:0 auto 18px;background:var(--primary-bg);color:var(--primary);display:grid;place-items:center">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <h2>Thank you</h2>
+    <p class="muted" style="max-width:36ch;margin:10px auto 0">Your feedback tells us if a real plan beats a pretty picture. That&rsquo;s what we&rsquo;re here to find out.</p>
+    <div style="display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-top:26px">
+      <button class="btn btn-primary" onclick="go('results')">Back to my plan</button>
+      <button class="btn btn-ghost" onclick="restart()">Organize another space</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="foot-mini">
+  <span>TidyMap AI &middot; A prototype by <a href="https://scmsolutions.org">SCM Solutions</a></span>
+  <span><a href="https://scmsolutions.org">scmsolutions.org</a></span>
+</div>
+
+<!-- sticky flow footer (shown only on flow screens) -->
+<div class="flow-foot hide" id="flow-foot">
+  <div class="flow-foot-inner">
+    <button class="back" id="flow-back" onclick="goBack()">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+      Back
+    </button>
+    <span class="spacer"></span>
+    <button class="btn btn-primary" id="flow-next" onclick="goNext()">Continue</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

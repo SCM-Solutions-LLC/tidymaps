@@ -1,0 +1,80 @@
+import { state, persistGuestDraft } from '../state.js';
+import { toast } from '../ui.js';
+import { go } from '../router.js';
+import { activeGeometry, activeMapV2 } from '../plan.js';
+import { getSession } from '../auth.js';
+import { updateSpacePatch } from '../db.js';
+
+/* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
+
+let view=null, detach=null, resizeHandler=null;
+
+export async function openViewer3d(){
+  go('viewer3d');
+  const status=document.getElementById('v3d-status');
+  if(view) return;                       // already built for this plan
+  status.textContent='Loading 3D view…';
+  try{
+    const [{ buildScene }, { attachDrag }]=await Promise.all([
+      import('../three/scene.js'),
+      import('../three/interact.js'),
+    ]);
+    const geometry=activeGeometry();
+    const map=activeMapV2();
+    const placements=(state.arrangement && state.arrangement.placements)||[];
+    const canvas=document.getElementById('v3d-canvas');
+    view=buildScene({ geometry, map, placements, canvas });
+    const kids=state.household.kids.present==='yes';
+    detach=attachDrag(view, {
+      onDrop(item, shelf){
+        const flags=item.userData.flags||[];
+        const hazardous=flags.some(f=>['chemical','sharp','heavy','fragile'].includes(f));
+        const kidShelf=shelf.row && shelf.row.safety && shelf.row.safety.flag==='kid-safe';
+        if(kids && hazardous && kidShelf){
+          toast('Heads up: “'+item.userData.name+'” within kids’ reach — we recommend a higher shelf');
+        }
+        markDirty();
+      },
+    });
+    resizeHandler=()=>view && view.setSize();
+    addEventListener('resize', resizeHandler);
+    status.textContent=geometry.estimated
+      ? 'Dimensions are estimated from your photos — add measurements in the wizard for exact scale.'
+      : `Built from your measurements: ${geometry.width}″w × ${geometry.height}″h × ${geometry.depth}″d.`;
+  }catch(e){
+    status.textContent='The 3D view could not load on this device — the plan above has everything.';
+  }
+}
+
+let dirty=false;
+function markDirty(){
+  dirty=true;
+  const btn=document.getElementById('v3d-save');
+  if(btn) btn.disabled=false;
+}
+
+export function saveArrangement(){
+  if(!view) return;
+  state.arrangement={ version:1, geometry:activeGeometry(), placements:view.placements() };
+  if(getSession()) updateSpacePatch({ arrangement: state.arrangement });
+  else persistGuestDraft();
+  dirty=false;
+  const btn=document.getElementById('v3d-save');
+  if(btn) btn.disabled=true;
+  toast('Arrangement saved');
+}
+
+export function resetArrangement(){
+  state.arrangement=null;
+  disposeViewer3d();
+  openViewer3d();
+  toast('Back to the recommended arrangement');
+}
+
+// called by the router when navigating away
+export function disposeViewer3d(){
+  if(detach){ detach(); detach=null; }
+  if(resizeHandler){ removeEventListener('resize', resizeHandler); resizeHandler=null; }
+  if(view){ view.dispose(); view=null; }
+  dirty=false;
+}
