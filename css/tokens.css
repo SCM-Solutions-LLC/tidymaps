@@ -47,16 +47,15 @@
   --warn:      oklch(0.60 0.105 68);
   --warn-bg:   oklch(0.948 0.032 68);
 
-  --radius: 18px;
-  --radius-sm: 12px;
-  --shadow: 0 1px 2px oklch(0.42 0.03 55 / .05), 0 10px 26px oklch(0.42 0.03 55 / .07);
-  --shadow-lg: 0 2px 6px oklch(0.42 0.03 55 / .07), 0 22px 52px oklch(0.42 0.03 55 / .11);
+  --radius: 10px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px oklch(0.42 0.03 55 / .06);
+  --shadow-lg: 0 2px 8px oklch(0.42 0.03 55 / .09);
   --maxw: 760px;
 
   /* motion — gentle and purposeful */
   --ease: cubic-bezier(.2,.7,.3,1);
   --dur: .18s;
 
-  /* paper grain, laid over the ground so surfaces feel like stock, not pixels */
-  --paper-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='11'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.055 0 0 0 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+  --paper-grain: none;
 }
