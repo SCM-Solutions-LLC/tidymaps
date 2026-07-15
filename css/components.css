@@ -1,5 +1,5 @@
 /* ---------- Cards & selectables ---------- */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);transition:box-shadow .2s}
+.card{background:color-mix(in oklch,var(--surface) 92%,transparent);border:1px solid color-mix(in oklch,#fff 55%,var(--line));border-radius:var(--radius);box-shadow:inset 0 1px 0 oklch(1 0 0/.7),var(--shadow);transition:box-shadow .2s}
 .card:hover{box-shadow:0 1px 3px oklch(0.4 0.02 55 / .06), 0 10px 28px oklch(0.4 0.02 55 / .08)}
 .pad{padding:clamp(18px,4vw,26px)}
 .grid{display:grid;gap:12px}
@@ -150,7 +150,7 @@ textarea{resize:vertical;min-height:84px}
 .task.done .acts .mark{background:var(--primary);color:#fff;border-color:var(--primary)}
 
 /* sticks just below the appbar; --appbar-h is measured by ui.js on load/resize */
-.progwrap{position:sticky;top:var(--appbar-h,57px);z-index:5;background:var(--bg);padding:12px 0 14px;margin-bottom:4px}
+.progwrap{position:sticky;top:var(--appbar-h,57px);z-index:5;background:color-mix(in oklch,var(--bg) 78%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:12px 0 14px;margin-bottom:4px}
 .progwrap .lab{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:7px}
 .progbar{height:9px;background:var(--surface-3);border-radius:999px;overflow:hidden}
 .progbar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--primary-2));transition:width .35s cubic-bezier(.2,.7,.3,1)}

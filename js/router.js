@@ -34,8 +34,6 @@ export function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('screen-'+id);
   el.classList.add('active');
-  // the landing wears its own dark "atelier" shell (see css/luxury.css)
-  document.body.classList.toggle('on-landing', id==='landing');
   current=id;
   setRail();
   // footer
