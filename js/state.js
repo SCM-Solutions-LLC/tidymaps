@@ -13,6 +13,40 @@ export const state = {
   arrangement:null,     // 3D arrangement state
 };
 
+// Demo plans must never inherit a real user's media or saved-plan state.
+// Keeping this reset DOM-free makes the transition deterministic and testable.
+export function prepareDemoPlanState(target=state){
+  target.space='pantry';
+  target.goal='find';
+  target.capture='demo';
+  target.upgrades=true;
+  target.prefs=new Set();
+  target.budget=null;
+  target.effort=null;
+  target.cats=[];
+  target.features=[];
+  target.afterMode='Use existing containers';
+  target.uploadedFiles=[];
+  target.uploadedVideo=null;
+  target.frames=[];
+  target.dims=null;
+  target.household={ kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
+  target.ai=null;
+  target.aiError=null;
+  target.planMeta=null;
+  target.activeSpaceId=null;
+  target.shopping=null;
+  target.arrangement=null;
+  target.stepDone=[];
+  target.upgradeChecked=null;
+  target.beforePhotoUrl=null;
+  target.afterRenderB64=null;
+  target.afterRenderUrl=null;
+  delete target._beforeUrl;
+  Object.keys(target).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete target[k]; });
+  return target;
+}
+
 export function householdAnswered(){
   const h=state.household;
   return h.kids.present!==null || h.pets.present!==null || h.mobility.length>0 || !!h.notes.trim();
