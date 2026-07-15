@@ -1,18 +1,27 @@
 /* TidyMap — landing page. Scoped to #screen-landing. */
 
+/* ---------- Full-bleed utility ---------- */
+.lx-bleed{
+  margin-left:calc(-1 * var(--pad,18px));
+  margin-right:calc(-1 * var(--pad,18px));
+  padding-left:var(--pad,18px);
+  padding-right:var(--pad,18px);
+}
+
 /* ---------- Type ---------- */
 .lx-eyebrow{
-  font-size:13px;font-weight:600;color:var(--primary);
+  font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--primary);
 }
 
 .lx-h1{
-  font-family:var(--serif);font-weight:500;letter-spacing:-.02em;line-height:1.08;
-  font-size:clamp(36px,5.5vw,56px);margin:16px 0 0;color:var(--ink);
+  font-family:var(--serif);font-weight:600;letter-spacing:-.025em;line-height:1.06;
+  font-size:clamp(38px,5.5vw,58px);margin:16px 0 0;color:var(--ink);
 }
 .lx-h1 em,.lx-h2 em{font-style:normal;color:var(--ink)}
 .lx-h2{
-  font-family:var(--serif);font-weight:500;letter-spacing:-.015em;line-height:1.15;
-  font-size:clamp(24px,3.6vw,34px);margin:12px 0 0;color:var(--ink);
+  font-family:var(--serif);font-weight:600;letter-spacing:-.02em;line-height:1.12;
+  font-size:clamp(26px,3.8vw,38px);margin:12px 0 0;color:var(--ink);
 }
 .lx-lede{
   font-size:clamp(16px,2vw,18px);line-height:1.65;color:var(--ink-2);
@@ -21,7 +30,7 @@
 .lx-fine{
   font-size:13px;color:var(--ink-3);margin-top:18px;line-height:1.7;
 }
-.lx-sub{font-size:15px;line-height:1.65;color:var(--ink-3);max-width:58ch;margin:10px 0 0}
+.lx-sub{font-size:15px;line-height:1.65;color:var(--ink-2);max-width:58ch;margin:10px 0 0}
 
 .lx-sechead{max-width:720px}
 .lx-sechead.center{text-align:center;margin:0 auto}
@@ -72,7 +81,7 @@
 /* ---------- Hero ---------- */
 .lx-hero{
   display:grid;gap:36px;align-items:center;
-  padding:clamp(28px,5vh,56px) 0 8px;
+  padding:clamp(32px,6vh,64px) 0 8px;
 }
 @media(min-width:920px){.lx-hero{grid-template-columns:7fr 5fr;gap:48px}}
 .lx-hero-copy{min-width:0}
@@ -112,52 +121,60 @@
 /* ---------- Reassurance strip ---------- */
 .lx-assure{
   display:grid;gap:0;grid-template-columns:1fr;
-  margin-top:clamp(40px,7vh,64px);
+  margin-top:clamp(48px,8vh,72px);
+  background:var(--surface);
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding-top:0;padding-bottom:0;
 }
 @media(min-width:680px){.lx-assure{grid-template-columns:repeat(3,1fr)}}
-.lx-assure > div{padding:18px 20px 20px;border-top:1px solid var(--line)}
+.lx-assure > div{padding:22px 24px 24px;border-top:1px solid var(--line)}
 @media(min-width:680px){
   .lx-assure > div{border-top:none;border-left:1px solid var(--line)}
   .lx-assure > div:first-child{border-left:none;padding-left:2px}
 }
-.lx-assure .a-t{font-weight:600;font-size:16px;color:var(--ink)}
-.lx-assure .a-d{font-size:14px;color:var(--ink-3);margin-top:4px;line-height:1.55}
+.lx-assure .a-t{font-weight:700;font-size:16px;color:var(--ink)}
+.lx-assure .a-d{font-size:14px;color:var(--ink-2);margin-top:4px;line-height:1.55}
 
 /* ---------- Story ---------- */
-.lx-story{margin-top:clamp(64px,10vh,96px)}
-.lx-chapters{margin-top:28px;display:grid;gap:0}
+.lx-story{margin-top:clamp(72px,11vh,104px)}
+.lx-chapters{margin-top:32px;display:grid;gap:0}
 .lx-chapter{
-  display:grid;gap:4px 24px;grid-template-columns:1fr;
-  padding:22px 2px;border-top:1px solid var(--line);
+  display:grid;gap:4px 28px;grid-template-columns:1fr;
+  padding:24px 2px;border-top:1px solid var(--line);
 }
 .lx-chapter:last-child{border-bottom:1px solid var(--line)}
 @media(min-width:720px){.lx-chapter{grid-template-columns:260px 1fr;align-items:baseline}}
 .lx-chapter h3{
-  font-weight:600;font-size:17px;
+  font-weight:700;font-size:17px;
   margin:0;color:var(--ink);
 }
 .lx-chapter p{margin:0;font-size:15px;line-height:1.7;color:var(--ink-2);max-width:56ch}
 @media(max-width:719px){.lx-chapter p{margin-top:4px}}
 
-/* ---------- Manifesto ---------- */
-.lx-manifesto{
-  margin:clamp(64px,10vh,96px) auto 0;max-width:680px;text-align:center;
-  padding:28px 10px;
+/* ---------- Values — full-bleed warm band ---------- */
+.lx-values{
+  margin-top:clamp(72px,11vh,104px);
+  background:var(--surface);
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding-top:clamp(48px,7vh,72px);padding-bottom:clamp(48px,7vh,72px);
 }
-.lx-manifesto em{font-style:normal;color:var(--ink)}
-.lx-manifesto p{
-  margin:0;font-family:var(--serif);font-weight:500;
-  font-size:clamp(20px,3vw,28px);line-height:1.4;color:var(--ink);
+.lx-values-grid{margin-top:32px;display:grid;gap:0 40px;grid-template-columns:1fr}
+@media(min-width:760px){.lx-values-grid{grid-template-columns:1fr 1fr}}
+.lx-value{
+  display:grid;grid-template-columns:1fr;gap:0;
+  padding:18px 2px;border-top:1px solid var(--line);
 }
-.lx-manifesto .lx-attrib{
-  font-size:13px;color:var(--ink-3);margin-top:16px;
+.lx-values-grid .lx-value:last-child{border-bottom:1px solid var(--line)}
+@media(min-width:760px){
+  .lx-values-grid .lx-value:nth-last-child(2){border-bottom:1px solid var(--line)}
 }
+.lx-value .vi{display:none}
+.lx-value h4{font-weight:700;font-size:16px;margin:0;color:var(--ink)}
+.lx-value p{margin:3px 0 0;font-size:14px;line-height:1.6;color:var(--ink-2)}
 
 /* ---------- Collection ---------- */
-.lx-collection{margin-top:clamp(64px,10vh,96px)}
-.lx-vitrines{display:grid;gap:16px;grid-template-columns:1fr;margin-top:28px}
+.lx-collection{margin-top:clamp(72px,11vh,104px)}
+.lx-vitrines{display:grid;gap:16px;grid-template-columns:1fr;margin-top:32px}
 @media(min-width:620px){.lx-vitrines{grid-template-columns:1fr 1fr}}
 @media(min-width:1020px){.lx-vitrines{grid-template-columns:repeat(4,1fr)}}
 .lx-vitrine{
@@ -169,15 +186,15 @@
 }
 .lx-vitrine .art svg{width:100%;height:100%}
 .lx-vitrine h4{
-  font-weight:600;font-size:16px;
+  font-weight:700;font-size:16px;
   margin:0;color:var(--ink);
 }
-.lx-vitrine .mat{font-size:13px;line-height:1.55;color:var(--ink-3);margin-top:6px;flex:1}
+.lx-vitrine .mat{font-size:13px;line-height:1.55;color:var(--ink-2);margin-top:6px;flex:1}
 .lx-vitrine .rowline{
   display:flex;justify-content:space-between;align-items:center;gap:10px;
   margin-top:14px;padding-top:10px;border-top:1px solid var(--line);
 }
-.lx-vitrine .price{font-weight:600;font-size:16px;color:var(--ink)}
+.lx-vitrine .price{font-weight:700;font-size:16px;color:var(--ink)}
 .lx-vitrine .tagr{
   font-size:11px;
   color:var(--sage-ink);border:1px solid var(--sage-line);background:var(--sage-bg);
@@ -188,26 +205,26 @@
   max-width:62ch;margin:20px auto 0;line-height:1.6;text-align:center;
 }
 
-/* ---------- Values ---------- */
-.lx-values{margin-top:clamp(64px,10vh,96px)}
-.lx-values-grid{margin-top:28px;display:grid;gap:0 40px;grid-template-columns:1fr}
-@media(min-width:760px){.lx-values-grid{grid-template-columns:1fr 1fr}}
-.lx-value{
-  display:grid;grid-template-columns:1fr;gap:0;
-  padding:18px 2px;border-top:1px solid var(--line);
+/* ---------- Manifesto — full-bleed warm band ---------- */
+.lx-manifesto{
+  margin:clamp(72px,11vh,104px) 0 0;text-align:center;
+  padding:clamp(48px,7vh,72px) var(--pad,18px);
+  background:var(--surface);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
 }
-.lx-values-grid .lx-value:last-child{border-bottom:1px solid var(--line)}
-@media(min-width:760px){
-  .lx-values-grid .lx-value:nth-last-child(2){border-bottom:1px solid var(--line)}
+.lx-manifesto em{font-style:normal;color:var(--ink)}
+.lx-manifesto p{
+  margin:0 auto;max-width:680px;font-family:var(--serif);font-weight:600;
+  font-size:clamp(22px,3.2vw,32px);line-height:1.35;color:var(--ink);
 }
-.lx-value .vi{display:none}
-.lx-value h4{font-weight:600;font-size:16px;margin:0;color:var(--ink)}
-.lx-value p{margin:3px 0 0;font-size:14px;line-height:1.6;color:var(--ink-3)}
+.lx-manifesto .lx-attrib{
+  font-size:13px;color:var(--ink-3);margin-top:16px;
+}
 
 /* ---------- Founding circle ---------- */
 .lx-reserve{
-  margin:clamp(64px,10vh,96px) auto 0;max-width:680px;text-align:center;
-  padding:clamp(28px,4.5vw,48px) clamp(20px,4vw,44px);
+  margin:clamp(72px,11vh,104px) auto 0;max-width:680px;text-align:center;
+  padding:clamp(32px,5vw,56px) clamp(24px,4vw,48px);
   background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);
 }

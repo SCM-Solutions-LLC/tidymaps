@@ -14,7 +14,7 @@ img{max-width:100%;display:block}
 button{font-family:inherit;font-size:inherit;cursor:pointer}
 a{color:inherit;text-decoration:none}
 
-h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:-0.02em;line-height:1.1;margin:0}
+h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:-0.02em;line-height:1.1;margin:0}
 h1{font-size:clamp(36px,8vw,56px);letter-spacing:-0.03em;line-height:1.04}
 h2{font-size:clamp(24px,4.6vw,34px);letter-spacing:-0.025em}
 h3{font-size:clamp(18px,3vw,21px)}

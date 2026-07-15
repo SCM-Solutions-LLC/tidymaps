@@ -15,9 +15,9 @@
   --surface:   oklch(0.993 0.006 85);   /* porcelain */
   --surface-2: oklch(0.955 0.017 80);   /* oat */
   --surface-3: oklch(0.936 0.020 78);   /* deep oat */
-  --ink:       oklch(0.29 0.030 55);    /* walnut, not black */
-  --ink-2:     oklch(0.45 0.026 55);
-  --ink-3:     oklch(0.57 0.020 58);
+  --ink:       oklch(0.22 0.028 55);    /* walnut, deeper for contrast */
+  --ink-2:     oklch(0.38 0.024 55);
+  --ink-3:     oklch(0.52 0.018 58);
   --line:      oklch(0.895 0.018 75);
   --line-2:    oklch(0.842 0.022 72);
 
