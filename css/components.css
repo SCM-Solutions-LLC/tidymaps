@@ -1,5 +1,5 @@
 /* ---------- Cards & selectables ---------- */
-.card{background:color-mix(in oklch,var(--surface) 92%,transparent);border:1px solid color-mix(in oklch,#fff 55%,var(--line));border-radius:var(--radius);box-shadow:inset 0 1px 0 oklch(1 0 0/.7),var(--shadow);transition:box-shadow .2s}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:inset 0 1px 0 oklch(1 0 0/.65),var(--shadow);transition:box-shadow var(--dur,.18s)}
 .card:hover{box-shadow:0 1px 3px oklch(0.4 0.02 55 / .06), 0 10px 28px oklch(0.4 0.02 55 / .08)}
 .pad{padding:clamp(18px,4vw,26px)}
 .grid{display:grid;gap:12px}
@@ -9,9 +9,12 @@
 
 .opt{
   text-align:left;width:100%;background:var(--surface);border:1.5px solid var(--line);
-  border-radius:var(--radius-sm);padding:15px 16px;transition:.15s;display:flex;flex-wrap:wrap;gap:8px 13px;align-items:flex-start;color:var(--ink);
+  border-radius:var(--radius-sm);padding:15px 16px;display:flex;flex-wrap:wrap;gap:8px 13px;align-items:flex-start;color:var(--ink);
+  box-shadow:0 1px 2px oklch(0.42 0.03 55/.04);
+  transition:border-color var(--dur,.18s), background-color var(--dur,.18s), box-shadow var(--dur,.18s), transform var(--dur,.18s);
 }
-.opt:hover{border-color:var(--primary-line);background:var(--primary-bg)}
+.opt:hover{border-color:var(--primary-line);background:var(--primary-bg);transform:translateY(-1px);box-shadow:var(--shadow)}
+.opt:active{transform:translateY(0) scale(.995);box-shadow:0 1px 2px oklch(0.42 0.03 55/.06)}
 .opt.sel{border-color:var(--primary);background:var(--primary-bg);box-shadow:0 0 0 1px var(--primary)}
 .opt .ico{font-size:22px;line-height:1;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;color:var(--primary)}
 .opt .ico svg{width:22px;height:22px}
@@ -27,9 +30,11 @@
 .chips{display:flex;flex-wrap:wrap;gap:9px}
 .chip{
   background:var(--surface);border:1.5px solid var(--line-2);border-radius:999px;
-  padding:9px 15px;font-size:14px;font-weight:500;color:var(--ink-2);transition:.14s;
+  padding:9px 15px;font-size:14px;font-weight:500;color:var(--ink-2);
+  transition:border-color var(--dur,.18s), background-color var(--dur,.18s), color var(--dur,.18s), transform var(--dur,.18s);
 }
 .chip:hover{border-color:var(--primary-line);color:var(--ink)}
+.chip:active{transform:scale(.965)}
 .chip.sel{background:var(--primary);border-color:var(--primary);color:#fff}
 
 label.field{display:block;margin-bottom:16px}
@@ -46,7 +51,8 @@ textarea{resize:vertical;min-height:84px}
 
 /* segmented yes/no */
 .seg{display:inline-flex;border:1.5px solid var(--line-2);border-radius:9px;overflow:hidden;background:var(--surface)}
-.seg button{border:none;background:none;padding:8px 16px;font-size:13.5px;font-weight:500;color:var(--ink-2);transition:.14s}
+.seg button{border:none;background:none;padding:8px 16px;font-size:13.5px;font-weight:500;color:var(--ink-2);transition:background-color var(--dur,.18s), color var(--dur,.18s)}
+.seg button:active{background:var(--surface-3)}
 .seg button.sel{background:var(--primary);color:#fff}
 .qa{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line)}
 .qa:last-child{border-bottom:none}
@@ -97,7 +103,7 @@ textarea{resize:vertical;min-height:84px}
 .taglist{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 0}
 /* a pill that breaks across lines reads as broken — wrap around it, never inside it */
 .tag{font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 11px;color:var(--ink-2);white-space:nowrap}
-.tag.green{background:var(--primary-bg);border-color:var(--primary-line);color:var(--primary)}
+.tag.green{background:var(--sage-bg);border-color:var(--sage-line);color:var(--sage-ink)}
 .tag.warn{background:var(--warn-bg);border-color:oklch(.85 .06 65);color:var(--warn)}
 
 .problems{list-style:none;padding:0;margin:0;display:grid;gap:8px}

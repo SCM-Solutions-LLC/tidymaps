@@ -2,19 +2,22 @@
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
-  /* soft blush / peach / sage wash over the cream base — the same warmth
-     on every screen, from the landing through the report */
-  background:
-    radial-gradient(1000px 640px at 88% -8%, oklch(0.93 0.035 40 / .55), transparent 60%),
-    radial-gradient(840px 560px at -10% 26%, oklch(0.94 0.026 140 / .45), transparent 55%),
-    radial-gradient(920px 640px at 50% 115%, oklch(0.93 0.03 20 / .4), transparent 60%),
-    var(--bg);
+  /* one continuous warm atmosphere on every screen: parchment with the
+     faintest clay and sage corners, finished with paper grain */
+  background-image:
+    var(--paper-grain),
+    radial-gradient(1100px 700px at 92% -10%, oklch(0.93 0.028 55 / .5), transparent 58%),
+    radial-gradient(900px 620px at -12% 110%, oklch(0.936 0.02 140 / .38), transparent 55%);
+  background-color:var(--bg);
+  background-repeat:repeat, no-repeat, no-repeat;
   background-attachment:fixed;
   color:var(--ink);
   font-family:var(--sans);font-size:16px;line-height:1.55;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   padding-bottom:env(safe-area-inset-bottom);
 }
+/* visible, consistent keyboard focus everywhere */
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
 img{max-width:100%;display:block}
 button{font-family:inherit;font-size:inherit;cursor:pointer}
 a{color:inherit;text-decoration:none}
@@ -95,18 +98,18 @@ main{padding:0 var(--pad,18px)}
 }
 .btn svg{width:17px;height:17px;flex:none}
 .btn-primary{
-  background:linear-gradient(160deg, oklch(0.66 0.13 34), var(--primary-2));
+  background:linear-gradient(165deg, oklch(0.64 0.12 38), var(--primary-2));
   color:#fff;
-  box-shadow:inset 0 1px 0 oklch(1 0 0/.3), 0 4px 14px oklch(.55 .13 30/.28);
+  box-shadow:inset 0 1px 0 oklch(1 0 0/.28), 0 4px 14px oklch(.55 .12 35/.26);
 }
-.btn-primary:hover{transform:translateY(-1px);box-shadow:inset 0 1px 0 oklch(1 0 0/.3), 0 8px 20px oklch(.55 .13 30/.34)}
-.btn-primary:active{transform:translateY(0);background:oklch(0.50 0.15 30)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:inset 0 1px 0 oklch(1 0 0/.28), 0 8px 20px oklch(.55 .12 35/.32)}
+.btn-primary:active{transform:translateY(0) scale(.99);background:oklch(0.49 0.13 33);box-shadow:inset 0 1px 0 oklch(1 0 0/.15), 0 2px 8px oklch(.55 .12 35/.24)}
 .btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
 .btn-ghost:hover{border-color:var(--ink-3);background:var(--surface-2);transform:translateY(-1px)}
-.btn-ghost:active{transform:translateY(0)}
+.btn-ghost:active{transform:translateY(0) scale(.99);background:var(--surface-3)}
 .btn-block{width:100%}
 .btn-sm{padding:10px 16px;font-size:14px}
-.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none !important}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none !important;box-shadow:none !important}
 
 /* sticky footer nav for flow screens */
 .flow-foot{

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>TidyMap AI — Your home, in beautiful order</title>
-<meta name="description" content="Snap a few photos of your pantry, closet, or shelf and TidyMap composes a gentle, step-by-step organization plan around your family's real life — kid-safe, budget-kind, and beautiful. A prototype from SCM Solutions LLC." />
+<title>TidyMap AI — A calmer home, one space at a time</title>
+<meta name="description" content="Show TidyMap one overwhelming space — no tidying up first — and get a clear, step-by-step plan that fits around your family. Kid-safe, built on what you already own. Progress, not perfection. A prototype from SCM Solutions LLC." />
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -77,100 +77,97 @@
 <!-- ============================================================ 1. LANDING -->
 <section class="screen wide active" id="screen-landing">
 
-  <!-- Liquid glass scene: drifting light, warped through an SVG displacement filter -->
-  <div class="lx-scene" aria-hidden="true">
-    <svg width="0" height="0" style="position:absolute">
-      <filter id="lx-liquid" x="-20%" y="-20%" width="140%" height="140%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.011" numOctaves="2" seed="7" result="n"/>
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="110" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-    </svg>
-    <i class="lx-orb a"></i><i class="lx-orb b"></i><i class="lx-orb c"></i>
-  </div>
-
-  <!-- Hero -->
+  <!-- Hero: empathy before aspiration -->
   <div class="lx-hero lx-reveal">
-    <span class="lx-eyebrow rule-r">For homes full of life</span>
-    <h1 class="lx-h1">Your home, in<br><em>beautiful</em> order.</h1>
-    <p class="lx-lede">Snap a few photos of your pantry, closet, or that one shelf &mdash; no tidying up first, no apology. TidyMap composes a gentle, step-by-step plan that works around your family&rsquo;s real life: every shelf considered, every little hand accounted for, nothing to buy unless you want to.</p>
-    <div class="lx-actions">
-      <button class="lx-btn primary" onclick="go('space')">
-        Organize My Space
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </button>
-      <button class="lx-btn glass" onclick="runDemo()">See an Example Plan</button>
+    <div class="lx-hero-copy">
+      <span class="lx-eyebrow">Calm for busy households</span>
+      <h1 class="lx-h1">A calmer home,<br><em>one space</em> at a time.</h1>
+      <p class="lx-lede">School runs, work calls, snack raids &mdash; life fills every shelf. Show us one overwhelming space, exactly as it looks today, and TidyMap turns it into a clear, step-by-step plan that fits around your family. No tidying up first. No judgment. Nothing to buy unless you want to.</p>
+      <div class="lx-actions">
+        <button class="lx-btn primary" onclick="go('space')">
+          Start With One Space
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button class="lx-btn ghost" onclick="runDemo()">See an Example Plan</button>
+      </div>
+      <p class="lx-fine">No tidying up first &middot; use what you already own &middot; progress, not perfection</p>
     </div>
-    <p class="lx-fine">Photos in &middot; a plan you can follow &middot; kid-safe by design</p>
+
+    <!-- focal glass no. 1: a believable before & after -->
+    <div class="lx-console lxg lx-reveal">
+      <figure class="lx-frame">
+        <div class="pantry-vis messy" aria-hidden="true"><div class="row"><b></b><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div><div class="row"><b></b><b></b><b></b><b></b></div></div>
+        <figcaption><span>Before</span><span>Real life</span></figcaption>
+      </figure>
+      <div class="lx-console-mid">
+        <span class="lx-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        <span class="lx-console-note">One quiet<br>hour</span>
+      </div>
+      <figure class="lx-frame after">
+        <div class="pantry-vis tidy" aria-hidden="true"><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div></div>
+        <figcaption><span>After</span><span>Six calm zones</span></figcaption>
+      </figure>
+      <p class="lx-console-cap">A real pantry plan: better, not perfect &mdash; and it stays that way.</p>
+    </div>
   </div>
 
-  <!-- Before / after vitrine -->
-  <div class="lx-console lxg sheen lx-reveal" aria-hidden="true">
-    <figure class="lx-frame">
-      <div class="pantry-vis messy"><div class="row"><b></b><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div><div class="row"><b></b><b></b><b></b><b></b></div></div>
-      <figcaption><span>Before</span><span>Real life</span></figcaption>
-    </figure>
-    <div class="lx-console-mid">
-      <span class="lx-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-      <span class="lx-console-note">One quiet hour</span>
-    </div>
-    <figure class="lx-frame after">
-      <div class="pantry-vis tidy"><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div></div>
-      <figcaption><span>After</span><span>Six calm zones</span></figcaption>
-    </figure>
+  <!-- Quiet reassurance, hairlines not cards -->
+  <div class="lx-assure lx-reveal">
+    <div><div class="a-t">One space</div><div class="a-d">Start small &mdash; a pantry, a closet, one shelf. Not the whole house.</div></div>
+    <div><div class="a-t">Your schedule</div><div class="a-d">Steps sized to nap times, evenings, and the twenty minutes you actually have.</div></div>
+    <div><div class="a-t">$0 to start</div><div class="a-d">Every plan begins with what you already own. Buying is always optional.</div></div>
   </div>
 
-  <div class="lx-stats lx-reveal">
-    <div class="lx-stat lxg"><span class="v">01</span><span class="k">unhurried hour from photos to a finished space</span></div>
-    <div class="lx-stat lxg"><span class="v">06</span><span class="k">calm zones, each with a reason behind it</span></div>
-    <div class="lx-stat lxg"><span class="v">$0</span><span class="k">to start &mdash; we plan around what you already own</span></div>
+  <!-- How TidyMap helps: five honest beats -->
+  <div class="lx-story">
+    <header class="lx-sechead lx-reveal">
+      <span class="lx-eyebrow">How TidyMap helps</span>
+      <h2 class="lx-h2">From &ldquo;where do I even start?&rdquo; to started.</h2>
+    </header>
+    <div class="lx-chapters">
+      <div class="lx-chapter lx-reveal">
+        <span class="num">01</span>
+        <h3>We get it.</h3>
+        <p>The mess isn&rsquo;t a failing &mdash; it&rsquo;s a full life. The mental load of deciding where everything should go is exactly the part we take off your plate.</p>
+      </div>
+      <div class="lx-chapter lx-reveal">
+        <span class="num">02</span>
+        <h3>Show us one space.</h3>
+        <p>A few photos, exactly as it looks today &mdash; cracker crumbs and all. No tidying up first, no staging, no apology.</p>
+      </div>
+      <div class="lx-chapter lx-reveal">
+        <span class="num">03</span>
+        <h3>A plan around your household.</h3>
+        <p>Snacks where kids can reach them, hazards where they can&rsquo;t, everyday things at arm&rsquo;s height &mdash; measured to your shelves, built around the people who actually use them.</p>
+      </div>
+      <div class="lx-chapter lx-reveal">
+        <span class="num">04</span>
+        <h3>Small, doable steps.</h3>
+        <p>Each move is timed and explained. Pause for school pickup, come back after bedtime &mdash; it all counts, and nothing falls apart if life interrupts.</p>
+      </div>
+      <div class="lx-chapter lx-reveal">
+        <span class="num">05</span>
+        <h3>Products only if you want them.</h3>
+        <p>The plan works with what you own. Anything new is optional &mdash; support for the plan, never the plan itself.</p>
+      </div>
+    </div>
   </div>
 
   <!-- Manifesto -->
   <div class="lx-manifesto lx-reveal">
-    <p>&ldquo;A calm home isn&rsquo;t about owning less or buying more. It&rsquo;s knowing <em>where everything belongs</em>.&rdquo;</p>
+    <p>You&rsquo;re not failing. You&rsquo;re busy.<br><em>Progress, not perfection.</em></p>
     <div class="lx-attrib">The TidyMap Promise</div>
   </div>
 
-  <!-- Storytelling chapters -->
-  <div class="lx-story">
-    <header class="lx-sechead lx-reveal">
-      <span class="lx-eyebrow rule-r">The TidyMap Way</span>
-      <h2 class="lx-h2">From chaos to calm, gently</h2>
-    </header>
-    <div class="lx-chapters">
-      <div class="lx-chapter lxg sheen lx-reveal">
-        <span class="num">I.<small>The Photos</small></span>
-        <div>
-          <h3>Show us the room as it really lives.</h3>
-          <p>It starts easy. A few photos &mdash; no staging, no apology, cracker crumbs and all. TidyMap studies every shelf, every basket, every habit hiding in plain sight, and takes stock of what the room already holds: the bins you own, the space you forgot you had.</p>
-        </div>
-      </div>
-      <div class="lx-chapter lxg sheen lx-reveal">
-        <span class="num">II.<small>The Plan</small></span>
-        <div>
-          <h3>Everything gets a place, for a reason.</h3>
-          <p>Then, your plan. The everyday within arm&rsquo;s reach; the once-in-a-while up high; snacks where little hands can help themselves safely, and anything hazardous well out of theirs. Zone by zone, the room comes together &mdash; measured to your shelves, down to the inch.</p>
-        </div>
-      </div>
-      <div class="lx-chapter lxg sheen lx-reveal">
-        <span class="num">III.<small>The Hour</small></span>
-        <div>
-          <h3>Small, certain steps &mdash; done in about an hour.</h3>
-          <p>You move through it at your own pace &mdash; each step timed, each step explained, nap-time friendly. What&rsquo;s left isn&rsquo;t just a tidy shelf. It&rsquo;s a room that stays calm, because everything in it finally has a home.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- The Collection: high-end product showcase -->
+  <!-- A considered collection -->
   <div class="lx-collection">
-    <header class="lx-sechead lx-reveal">
-      <span class="lx-eyebrow rule-r">The Collection</span>
-      <h2 class="lx-h2">Pretty things that earn their place</h2>
-      <p class="lx-sub">When your plan calls for something new, it draws from pieces we&rsquo;d happily keep in our own homes &mdash; chosen for warmth, sturdiness, and how lovely they look on an open shelf, matched to your space to the half-inch.</p>
+    <header class="lx-sechead center lx-reveal">
+      <span class="lx-eyebrow">A considered collection</span>
+      <h2 class="lx-h2">Helpful things, chosen carefully</h2>
+      <p class="lx-sub">If your plan calls for something new, it comes from a short list of practical, lovely pieces we&rsquo;d keep in our own kitchens &mdash; matched to your shelves to the half-inch, and always optional.</p>
     </header>
     <div class="lx-vitrines">
-      <div class="lx-vitrine lxg sheen lx-reveal">
+      <div class="lx-vitrine lx-panel lx-reveal">
         <span class="no">No. 01</span>
         <span class="art" aria-hidden="true">
           <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -180,11 +177,11 @@
             <path d="M46 62h28" opacity=".3" stroke-dasharray="2 5"/>
           </svg>
         </span>
-        <h4>The Meridian Canister</h4>
-        <p class="mat">Hand-blown glass with a brass cap. Airtight, and pretty enough for the front row.</p>
-        <div class="rowline"><span class="price">$68</span><span class="tagr">TidyMap curated</span></div>
+        <h4>The Everyday Canister</h4>
+        <p class="mat">Airtight glass that keeps flour fresh and looks lovely doing it &mdash; sturdy enough for small helpers.</p>
+        <div class="rowline"><span class="price">$68</span><span class="tagr">Optional, always</span></div>
       </div>
-      <div class="lx-vitrine lxg sheen lx-reveal">
+      <div class="lx-vitrine lx-panel lx-reveal">
         <span class="no">No. 02</span>
         <span class="art" aria-hidden="true">
           <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -195,10 +192,10 @@
           </svg>
         </span>
         <h4>The Walnut Riser</h4>
-        <p class="mat">Warm oiled walnut. Doubles a shelf without making a fuss about it.</p>
-        <div class="rowline"><span class="price">$124</span><span class="tagr">TidyMap curated</span></div>
+        <p class="mat">Warm oiled walnut that doubles a shelf &mdash; suddenly the mugs have room to breathe.</p>
+        <div class="rowline"><span class="price">$124</span><span class="tagr">Optional, always</span></div>
       </div>
-      <div class="lx-vitrine lxg sheen lx-reveal">
+      <div class="lx-vitrine lx-panel lx-reveal">
         <span class="no">No. 03</span>
         <span class="art" aria-hidden="true">
           <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -208,10 +205,10 @@
           </svg>
         </span>
         <h4>The Sunday Turntable</h4>
-        <p class="mat">Brushed brass, silent spin. The far corner of a deep cabinet, finally within reach.</p>
-        <div class="rowline"><span class="price">$92</span><span class="tagr">TidyMap curated</span></div>
+        <p class="mat">A quiet spin brings the back of the deep cabinet within reach &mdash; no more archaeology before dinner.</p>
+        <div class="rowline"><span class="price">$92</span><span class="tagr">Optional, always</span></div>
       </div>
-      <div class="lx-vitrine lxg sheen lx-reveal">
+      <div class="lx-vitrine lx-panel lx-reveal">
         <span class="no">No. 04</span>
         <span class="art" aria-hidden="true">
           <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -220,61 +217,61 @@
             <path d="M44 50a16 16 0 0 1 32 0" opacity=".7"/>
           </svg>
         </span>
-        <h4>The Nursery Basket</h4>
-        <p class="mat">Hand-woven rattan, linen-lined. Soft corners, made for small treasures.</p>
-        <div class="rowline"><span class="price">$85</span><span class="tagr">TidyMap curated</span></div>
+        <h4>The Toy-Basket Basket</h4>
+        <p class="mat">Soft-cornered woven rattan that swallows the 6 p.m. floor sweep in one pass.</p>
+        <div class="rowline"><span class="price">$85</span><span class="tagr">Optional, always</span></div>
       </div>
     </div>
-    <p class="lx-collection-fine lx-reveal">Every piece is optional, always. A TidyMap plan begins with what you already own &mdash; the Collection appears only when you ask it to.</p>
+    <p class="lx-collection-fine lx-reveal">Every piece is optional, always. A TidyMap plan begins with what you already own &mdash; the collection appears only when you ask it to.</p>
   </div>
 
-  <!-- Our promises -->
+  <!-- What you can count on -->
   <div class="lx-values">
     <header class="lx-sechead lx-reveal">
-      <span class="lx-eyebrow rule-r">Our Promises</span>
-      <h2 class="lx-h2">What you can always count on</h2>
+      <span class="lx-eyebrow">What you can count on</span>
+      <h2 class="lx-h2">Promises we keep, quietly</h2>
     </header>
-    <div class="lx-values-grid">
-      <div class="lx-value lxg sheen lx-reveal">
+    <div class="lx-values-grid lx-reveal">
+      <div class="lx-value">
         <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-        <h4>Private by default</h4>
-        <p>Your rooms, your photos, your plan &mdash; made for you and seen by no one else. No judgment, ever.</p>
+        <div><h4>Private by default</h4><p>Your photos and your plan stay yours &mdash; never shared, never judged.</p></div>
       </div>
-      <div class="lx-value lxg sheen lx-reveal">
+      <div class="lx-value">
         <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></span>
-        <h4>Safe for little hands</h4>
-        <p>Snacks where kids can reach them, hazards where they can&rsquo;t. Every plan is family-aware.</p>
+        <div><h4>Safe for little hands</h4><p>Kid-reach and safety are planned in from the very first shelf.</p></div>
       </div>
-      <div class="lx-value lxg sheen lx-reveal">
+      <div class="lx-value">
         <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/></svg></span>
-        <h4>Start with what you own</h4>
-        <p>We plan around your bins and baskets first. $0 is the default &mdash; buying is always your call.</p>
+        <div><h4>Use what you already own</h4><p>$0 is the default. We never make buying the point.</p></div>
       </div>
-      <div class="lx-value lxg sheen lx-reveal">
+      <div class="lx-value">
+        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg></span>
+        <div><h4>Thoughtful restraint</h4><p>Nothing enters your plan &mdash; or your home &mdash; without a reason.</p></div>
+      </div>
+      <div class="lx-value">
         <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.2 8.5a3.5 3.5 0 1 1 0 7c-3.6 0-8.8-7-12.4-7a3.5 3.5 0 1 0 0 7c3.6 0 8.8-7 12.4-7z"/></svg></span>
-        <h4>Made to keep</h4>
-        <p>Systems that survive real life &mdash; busy mornings, snack raids, and all. Not tidy-for-a-day.</p>
+        <div><h4>Systems that last</h4><p>Built to survive busy mornings and snack raids &mdash; not tidy-for-a-day.</p></div>
       </div>
     </div>
   </div>
 
-  <!-- The TidyMap Circle: membership by invitation -->
+  <!-- Focal glass no. 2: the founding circle -->
   <div class="lx-reserve lxg lx-reveal">
-    <span class="lx-eyebrow rule-r">The TidyMap Circle</span>
-    <h2 class="lx-h2">Join the Circle, by <em>invitation</em>.</h2>
-    <p class="lx-lede">Each season we welcome a small circle of founding members. Members get first access to new spaces as we add them, a seasonal refresh of their plans, and a standing consultation &mdash; theirs whenever a room falls out of rhythm.</p>
+    <span class="lx-eyebrow">The Founding Circle</span>
+    <h2 class="lx-h2">Help shape TidyMap, from the <em>very start</em>.</h2>
+    <p class="lx-lede">We&rsquo;re inviting a small founding community of households to grow with us: first access to new spaces, seasonal refreshes of your plans, and a direct line to the people building this. It stays small so it stays personal &mdash; and there&rsquo;s a seat for you.</p>
     <div class="lx-invite" id="lx-invite-form">
       <input type="email" id="lx-email" placeholder="Your email" autocomplete="email" spellcheck="false" onkeydown="if(event.key==='Enter')requestInvite()">
       <button class="lx-btn primary" onclick="requestInvite()">Request an Invitation</button>
     </div>
     <div class="lx-invited hide" id="lx-invite-done">
       <span class="lx-seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-      <p class="lx-invited-h">Your request has been received.</p>
-      <p class="lx-invited-p">We&rsquo;ll write to <strong data-invite-email></strong> the moment a spot opens in the Circle.</p>
+      <p class="lx-invited-h">You&rsquo;re on the list.</p>
+      <p class="lx-invited-p">We&rsquo;ll write to <strong data-invite-email></strong> as soon as a seat opens. It won&rsquo;t be long.</p>
     </div>
-    <p class="lx-fine">Requests are answered in the order received &middot; we keep each season&rsquo;s circle small on purpose</p>
+    <p class="lx-fine">We answer requests in order &middot; the circle stays small so we can stay personal</p>
     <div class="lx-reserve-alt">
-      Can&rsquo;t wait? <button class="lx-linklike" onclick="go('space')">Organize a space now</button> &nbsp;&middot;&nbsp; <button class="lx-linklike" onclick="runDemo()">see an example plan</button>
+      Can&rsquo;t wait? <button class="lx-linklike" onclick="go('space')">Start with one space</button> &nbsp;&middot;&nbsp; <button class="lx-linklike" onclick="runDemo()">see an example plan</button>
     </div>
   </div>
 </section>
@@ -285,7 +282,7 @@
   <div class="wiz">
     <div class="wiz-main">
       <h2>What space are you organizing?</h2>
-      <p class="muted small" style="margin-top:6px">Pantry is the best place to start for this preview.</p>
+      <p class="muted small" style="margin-top:6px">Pantry is the best place to start for this preview &mdash; and you can change any of this later.</p>
       <div class="grid grid-auto" id="space-opts" style="margin-top:18px"></div>
 
       <div id="goal-block" class="hide" style="margin-top:30px">
@@ -411,9 +408,9 @@
 <!-- ============================================================ 6. LOADING -->
 <section class="screen" id="screen-loading">
   <div style="text-align:center;padding:18px 0">
-    <span class="eyebrow">Analyzing your space</span>
-    <h2 style="margin-top:12px">Figuring out your space</h2>
-    <p class="muted small" id="load-sub">Hang tight, this takes a moment.</p>
+    <span class="eyebrow">Building your plan</span>
+    <h2 style="margin-top:12px">Putting your plan together</h2>
+    <p class="muted small" id="load-sub">A moment while we study your space &mdash; no rush on your end.</p>
   </div>
   <div class="card pad">
     <div class="load-steps" id="load-steps"></div>
