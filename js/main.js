@@ -3,9 +3,9 @@
    ============================================================ */
 import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
 import { state, restoreGuestDraft } from './state.js';
-import { setRail, go, goNext, goBack, restart } from './router.js';
+import { setRail, go, goNext, goBack, restart, getCurrentScreen } from './router.js';
 import { getSession } from './auth.js';
-import { loadSpace } from './db.js';
+import { fetchSpace, applyLoadedSpace } from './db.js';
 import { buildAll } from './screens/index.js';
 import { runDemo, requestInvite, initLanding } from './screens/landing.js';
 import { handleDrop, handleFiles, handleVideoFile } from './screens/capture.js';
@@ -16,6 +16,7 @@ import { submitFeedback } from './screens/feedback.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
 import { dashSignOut } from './screens/dashboard.js';
 import { openViewer3d, saveArrangement, resetArrangement } from './screens/viewer3d.js';
+import { initializeRoute } from './startup.js';
 
 /* Expose every function referenced by inline on* handlers
    (in index.html and in injected template strings) */
@@ -46,27 +47,19 @@ if(localStorage.getItem('tidymap_key')){
 }
 
 // Session restore + deep links, then guest-draft recovery as the fallback.
-(async ()=>{
-  await setupAccount();          // no-op when the backend isn't configured
-  const params=new URLSearchParams(location.search);
-  const spaceId=params.get('space');
-  if(spaceId && getSession()){
-    try{
-      const data=await loadSpace(spaceId);
-      buildResults();
-      applySavedProgress((data.progress&&data.progress.stepsDone)||[]);
-      go('results');
-      return;
-    }catch(e){ toast(e.message); }
-  }
-  if(!getSession()){
-    const res=restoreGuestDraft();
-    if(res && res.planReady){
-      const savedSteps=[...(state.stepDone||[])];
-      buildResults();
-      applySavedProgress(savedSteps);
-      go('results');
-      toast('Welcome back — we restored your last plan');
-    }
-  }
-})();
+// Route restoration is guarded so delayed account setup cannot interrupt a
+// person who has already opened the wizard, results, or 3D viewer.
+initializeRoute({
+  setupAccount,
+  getSession,
+  currentScreen:getCurrentScreen,
+  search:location.search,
+  fetchSpace,
+  applyLoadedSpace,
+  restoreGuestDraft,
+  buildResults,
+  applySavedProgress,
+  getStepDone:()=>state.stepDone,
+  go,
+  toast,
+}).catch((e)=>console.error('startup restore failed', e));

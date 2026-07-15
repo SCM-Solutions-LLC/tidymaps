@@ -42,6 +42,7 @@ export async function openViewer3d(){
       ? 'Dimensions are estimated from your photos — add measurements in the wizard for exact scale.'
       : `Built from your measurements: ${geometry.width}″w × ${geometry.height}″h × ${geometry.depth}″d.`;
   }catch(e){
+    console.error('3D viewer failed', e);
     status.textContent='The 3D view could not load on this device — the plan above has everything.';
   }
 }

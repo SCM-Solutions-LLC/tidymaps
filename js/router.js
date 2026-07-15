@@ -21,6 +21,10 @@ export const FLOW_SCREENS = {
 };
 let current='landing';
 
+export function getCurrentScreen(){
+  return current;
+}
+
 export function setRail(){
   const idx=Math.max(0,FLOW.indexOf(current));
   const pct=Math.round(idx/(FLOW.length-2)*100);

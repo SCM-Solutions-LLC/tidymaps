@@ -84,12 +84,33 @@ Deno.serve(async (req) => {
               { text: instructions },
             ],
           }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
         }),
       },
     );
     if (!res.ok) {
       const detail = await res.text();
       console.error('gemini error', res.status, detail.slice(0, 500));
+      let reason = '';
+      let message = '';
+      try {
+        const parsed = JSON.parse(detail);
+        message = typeof parsed?.error?.message === 'string' ? parsed.error.message : '';
+        reason = parsed?.error?.details?.find(
+          (item: Record<string, unknown>) => typeof item?.reason === 'string',
+        )?.reason ?? '';
+      } catch {
+        // Keep the public response stable even if Google returns non-JSON.
+      }
+      if (reason.includes('API_KEY') || /api[-\s]?key/i.test(message)) {
+        return json(req, 503, { error: 'preview_misconfigured' });
+      }
+      if (res.status === 429 || reason === 'RATE_LIMIT_EXCEEDED') {
+        return json(req, 503, { error: 'upstream_quota' });
+      }
+      if (res.status === 400) {
+        return json(req, 502, { error: 'upstream_invalid_request' });
+      }
       return json(req, 502, { error: 'upstream', status: res.status });
     }
     const data = await res.json();
