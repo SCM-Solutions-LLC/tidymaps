@@ -8,7 +8,7 @@
 :root{
   --sans:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   --serif:"Fraunces","Source Serif 4",Georgia,serif;
-  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
   /* materials: parchment ground, porcelain + oat surfaces */
   --bg:        oklch(0.966 0.016 78);   /* parchment */

@@ -125,7 +125,7 @@
 .lx-assure .a-d{font-size:14px;color:var(--ink-3);margin-top:4px;line-height:1.55}
 
 /* ---------- Story ---------- */
-.lx-story{margin-top:clamp(56px,9vh,88px)}
+.lx-story{margin-top:clamp(64px,10vh,96px)}
 .lx-chapters{margin-top:28px;display:grid;gap:0}
 .lx-chapter{
   display:grid;gap:4px 24px;grid-template-columns:1fr;
@@ -142,7 +142,7 @@
 
 /* ---------- Manifesto ---------- */
 .lx-manifesto{
-  margin:clamp(56px,9vh,88px) auto 0;max-width:680px;text-align:center;
+  margin:clamp(64px,10vh,96px) auto 0;max-width:680px;text-align:center;
   padding:28px 10px;
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
 }
@@ -156,7 +156,7 @@
 }
 
 /* ---------- Collection ---------- */
-.lx-collection{margin-top:clamp(56px,9vh,88px)}
+.lx-collection{margin-top:clamp(64px,10vh,96px)}
 .lx-vitrines{display:grid;gap:16px;grid-template-columns:1fr;margin-top:28px}
 @media(min-width:620px){.lx-vitrines{grid-template-columns:1fr 1fr}}
 @media(min-width:1020px){.lx-vitrines{grid-template-columns:repeat(4,1fr)}}
@@ -189,7 +189,7 @@
 }
 
 /* ---------- Values ---------- */
-.lx-values{margin-top:clamp(56px,9vh,88px)}
+.lx-values{margin-top:clamp(64px,10vh,96px)}
 .lx-values-grid{margin-top:28px;display:grid;gap:0 40px;grid-template-columns:1fr}
 @media(min-width:760px){.lx-values-grid{grid-template-columns:1fr 1fr}}
 .lx-value{
@@ -206,7 +206,7 @@
 
 /* ---------- Founding circle ---------- */
 .lx-reserve{
-  margin:clamp(56px,9vh,88px) auto 0;max-width:680px;text-align:center;
+  margin:clamp(64px,10vh,96px) auto 0;max-width:680px;text-align:center;
   padding:clamp(28px,4.5vw,48px) clamp(20px,4vw,44px);
   background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);
