@@ -1,11 +1,17 @@
 import { prepareDemoPlanState } from '../state.js';
+import { state } from '../state.js';
 import { toast } from '../ui.js';
 import { go } from '../router.js';
 import { buildResults } from './results.js';
+import { getDemoScenario } from '../demo-scenarios.js';
+import { normalizeAi } from '../plan.js';
 
 /* ---------- Demo shortcut ---------- */
 export function runDemo(){
   prepareDemoPlanState();
+  const scenario = getDemoScenario('pantry', 'find', state.household);
+  state.ai = normalizeAi(scenario);
+  state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
   buildResults();
   go('results');
   toast('Loaded the example pantry plan');

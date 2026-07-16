@@ -116,9 +116,24 @@
 
 #screen-landing .pantry-vis{background:var(--surface-2);border-radius:var(--radius-sm);padding:7px}
 #screen-landing .pantry-vis .row{background:#fff}
-#screen-landing .pantry-vis .row b{background:var(--line-2)}
+#screen-landing .pantry-vis .row b{background:var(--line-2);border-radius:2px}
+/* messy: items vary in size, some tilted, uneven gaps */
+#screen-landing .pantry-vis.messy .row{gap:1px;align-items:end}
+#screen-landing .pantry-vis.messy .row b.sz-s{flex:.5;min-height:40%}
+#screen-landing .pantry-vis.messy .row b.sz-m{flex:1}
+#screen-landing .pantry-vis.messy .row b.sz-l{flex:1.6;min-height:85%}
+#screen-landing .pantry-vis.messy .row b.tilt{transform:rotate(-4deg);margin-top:-2px}
+#screen-landing .pantry-vis.messy .row b.gap{margin-left:3px}
+#screen-landing .pantry-vis.messy .row b{background:oklch(.78 .04 55)}
+#screen-landing .pantry-vis.messy .row:nth-child(odd) b{background:oklch(.74 .05 50)}
+/* tidy: uniform items, color-coded by zone, outlined shelves */
 #screen-landing .pantry-vis.tidy .row{outline:1px dashed var(--sage-line);outline-offset:-2px}
-#screen-landing .pantry-vis.tidy .row b{background:oklch(0.72 0.08 145/.75)}
+#screen-landing .pantry-vis.tidy .row b{border-radius:3px}
+#screen-landing .pantry-vis.tidy .row b.z1{background:oklch(.82 .06 70)}
+#screen-landing .pantry-vis.tidy .row b.z2{background:oklch(.72 .10 145)}
+#screen-landing .pantry-vis.tidy .row b.z3{background:oklch(.68 .08 230)}
+#screen-landing .pantry-vis.tidy .row b.z4{background:oklch(.74 .09 35)}
+#screen-landing .pantry-vis.tidy .row b.z5{background:oklch(.70 .07 300)}
 
 /* ---------- Reassurance strip — warm cream band ---------- */
 .lx-assure{
