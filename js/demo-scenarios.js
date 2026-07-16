@@ -692,6 +692,382 @@ function otherScenario() {
 
 /* ---------- Scenario lookup ---------- */
 
+function drawersScenario() {
+  return {
+    spaceType: 'Kitchen drawers',
+    summary: 'A bank of four kitchen drawers doing four different jobs badly: utensils tangled in the top drawer, cooking tools jammed at angles below, towels mixed with gadgets, and a deep bottom drawer of lids without pots. Nothing has a fixed spot, so every drawer gets rummaged daily.',
+    categories: ['Everyday utensils', 'Cooking tools', 'Kitchen towels', 'Food storage lids', 'Gadgets & rarely used tools', 'Foil & wraps', 'Takeout extras', 'Batteries & misc'],
+    features: [
+      {icon: 'drawer', title: '4 drawers', sub: 'One shallow, two standard, one deep'},
+      {icon: 'horizontal', title: 'Full-width top drawer', sub: 'Prime spot, currently mixed'},
+      {icon: 'bin', title: '1 loose utensil tray', sub: 'Too small for the drawer'},
+      {icon: 'down', title: 'Deep bottom drawer', sub: 'Good for tall or bulky items'},
+      {icon: 'empty', title: 'Wasted front strip', sub: 'Each drawer has unused space up front'}
+    ],
+    problems: [
+      'Utensils, gadgets, and takeout extras share drawers with no dividers',
+      'The one utensil tray slides around and is too small for the drawer',
+      'Food-storage lids have no matching containers nearby',
+      'Sharp tools sit loose where fingers reach in blind',
+      'Duplicates hide at the back of every drawer'
+    ],
+    opportunities: [
+      'Full-width dividers would give every tool a fixed slot',
+      'The deep drawer can hold containers WITH their lids, stored upright',
+      'Matching drawer jobs to kitchen zones cuts steps while cooking',
+      'A five-minute purge of duplicates frees a third of the space'
+    ],
+    map: [
+      {level: 'Top drawer', icon: 'up', zone: 'Everyday utensils · Measuring tools',
+        why: 'The easiest drawer to open one-handed should hold what you touch every day.',
+        eye: true, shelfIndex: 0,
+        safety: {flag: null, why: null},
+        items: [{name: 'Everyday utensils', size: 's', flags: []}, {name: 'Measuring tools', size: 's', flags: []}]},
+      {level: 'Second drawer', icon: 'middle', zone: 'Cooking tools · Sharp tools together',
+        why: 'Grouping sharp tools in one guarded spot keeps blind reaches safe.',
+        eye: false, shelfIndex: 1,
+        safety: {flag: 'keep-high', why: 'Sharp tools stay in one known drawer, out of low drawers kids open.'},
+        items: [{name: 'Cooking tools', size: 's', flags: []}, {name: 'Sharp tools', size: 's', flags: ['sharp']}]},
+      {level: 'Third drawer', icon: 'middle', zone: 'Kitchen towels · Foil & wraps',
+        why: 'Soft, flat items stack well in a standard drawer and free space elsewhere.',
+        eye: false, shelfIndex: 2,
+        safety: {flag: null, why: null},
+        items: [{name: 'Kitchen towels', size: 'm', flags: []}, {name: 'Foil & wraps', size: 's', flags: []}]},
+      {level: 'Deep bottom drawer', icon: 'down', zone: 'Food storage containers with lids · Bulky gadgets',
+        why: 'Deep drawers hold containers upright with lids on, so pairs never separate.',
+        eye: false, shelfIndex: 3,
+        safety: {flag: 'kid-safe', why: 'The reachable bottom drawer holds only safe, unbreakable items.'},
+        items: [{name: 'Containers & lids', size: 'm', flags: []}, {name: 'Bulky gadgets', size: 'm', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 24, height: 30, depth: 20, shelfCount: 4, shelfYFracs: [0.14, 0.38, 0.62, 0.86], estimated: true},
+    safetyNotes: [
+      'Sharp tools live together in the second drawer — never loose in a drawer children can open.',
+      'The bottom drawer holds only unbreakable, kid-safe items.'
+    ],
+    productNeeds: [
+      {type: 'drawer-organizer', qty: 3, purpose: 'Give every utensil and tool a fixed slot', targetZone: 'Top drawer', maxDims: {w_in: 22, h_in: 3, d_in: 19}, priority: 'high'},
+      {type: 'label-set', qty: 1, purpose: 'Label each drawer front so the whole household refiles correctly', targetZone: 'Every drawer', maxDims: null, priority: 'nice'}
+    ],
+    existingLede: 'Your existing utensil tray still works — it just needs to become one slot inside a full-width system.',
+    existing: [
+      {icon: 'bin', title: 'Reuse: utensil tray', detail: 'Slot it into the new divider layout for small items.'},
+      {icon: 'down', title: 'Deep bottom drawer', detail: 'Store containers upright with lids on.'},
+      {icon: 'horizontal', title: 'Full drawer widths', detail: 'Dividers turn dead front strips into usable slots.'}
+    ],
+    dontBuy: 'Skip single-purpose gadget organizers — full-width adjustable dividers cover every drawer shape.',
+    steps: [
+      {task: 'Empty all four drawers onto the counter', time: '10 min', why: 'You cannot slot things until you see everything at once.'},
+      {task: 'Pull out duplicates, broken tools, and takeout extras', time: '10 min', why: 'Most drawer clutter is things you would never choose to keep.'},
+      {task: 'Match every container to its lid — recycle strays', time: '5 min', why: 'Lids without containers are pure clutter.'},
+      {task: 'Group by job: daily utensils, cooking tools, towels, storage', time: '10 min', why: 'Each drawer gets exactly one job.'},
+      {task: 'Load drawers top to bottom by frequency of use', time: '10 min', why: 'The top drawer earns the everyday items.'},
+      {task: 'Place sharp tools together, edges facing one way', time: '5 min', why: 'Blind reaches stay safe when blades have a known home.'},
+      {task: 'Label the inside edge of each drawer', time: '5 min', why: 'Labels keep the system alive after busy weeks.'}
+    ],
+    time: '45–60 min',
+    cost: '$0 / $25–45'
+  };
+}
+
+function junkScenario() {
+  return {
+    spaceType: 'Junk drawer',
+    summary: 'One classic junk drawer: batteries rolling loose, a tangle of charging cables, takeout menus, three kinds of tape, pens that may or may not work, and small tools buried underneath. It all fits — it just has no zones, so finding anything means digging.',
+    categories: ['Batteries', 'Pens & markers', 'Tape & adhesives', 'Small tools', 'Charging cables', 'Keys & spares', 'Paper & menus', 'Odds & ends'],
+    features: [
+      {icon: 'drawer', title: '1 wide drawer', sub: 'Standard depth, full extension'},
+      {icon: 'horizontal', title: 'Full-width space', sub: 'Fits 4–6 small trays'},
+      {icon: 'empty', title: 'No dividers', sub: 'Everything migrates and mixes'}
+    ],
+    problems: [
+      'No zones — items migrate and bury each other',
+      'Dead batteries mixed with fresh ones',
+      'Cables tangle around everything else',
+      'Paper takes a third of the drawer and is never referenced',
+      'Half the pens do not work'
+    ],
+    opportunities: [
+      'Four to six small trays create instant zones',
+      'A two-minute pen test frees a surprising amount of space',
+      'Cables coiled and clipped take a quarter of their loose volume',
+      'Menus and paper can live in a folder elsewhere — or your phone'
+    ],
+    map: [
+      {level: 'The drawer', icon: 'middle', zone: 'Tools & tape · Batteries · Pens · Cables · Spares',
+        why: 'One tray per category — the drawer stays useful because every zone is obvious.',
+        eye: true, shelfIndex: 0,
+        safety: {flag: null, why: null},
+        items: [{name: 'Small tools', size: 's', flags: ['sharp']}, {name: 'Batteries', size: 's', flags: []}, {name: 'Pens & tape', size: 's', flags: []}, {name: 'Cables', size: 's', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 20, height: 6, depth: 20, shelfCount: 1, shelfYFracs: [0.5], estimated: true},
+    safetyNotes: [
+      'Utility knife and scissors point the same direction in their own tray, blades closed.'
+    ],
+    productNeeds: [
+      {type: 'drawer-organizer', qty: 1, purpose: 'A modular tray set that turns one pile into five zones', targetZone: 'The drawer', maxDims: {w_in: 19, h_in: 3, d_in: 19}, priority: 'high'},
+      {type: 'label-set', qty: 1, purpose: 'Label each tray so the drawer never re-junks', targetZone: 'The drawer', maxDims: null, priority: 'nice'}
+    ],
+    existingLede: 'Small boxes and jar lids you already own can zone this drawer today — trays just look nicer.',
+    existing: [
+      {icon: 'bin', title: 'Reuse: small boxes', detail: 'Check-sized boxes and lids make free drawer trays.'},
+      {icon: 'horizontal', title: 'Full drawer width', detail: 'Fits five zones across with room to spare.'}
+    ],
+    dontBuy: 'Skip the giant "junk drawer organizer" kits — a handful of small trays does the same job for less.',
+    steps: [
+      {task: 'Dump the entire drawer onto a towel', time: '2 min', why: 'A full reset beats sorting in place.'},
+      {task: 'Test every pen; toss the dead ones', time: '3 min', why: 'Dead pens are the #1 junk-drawer squatter.'},
+      {task: 'Check batteries — separate fresh from questionable', time: '3 min', why: 'Loose mystery batteries waste space and time.'},
+      {task: 'Coil each cable and clip or tie it', time: '5 min', why: 'Coiled cables take a quarter of the space.'},
+      {task: 'Relocate paper and menus out of the drawer', time: '3 min', why: 'Reference paper belongs in a folder, not prime kitchen space.'},
+      {task: 'Assign one tray per category and load them', time: '8 min', why: 'Obvious zones are what keep a junk drawer from re-junking.'},
+      {task: 'Label the trays', time: '3 min', why: 'Labels make the household put things back.'}
+    ],
+    time: '25–35 min',
+    cost: '$0 / $15–25'
+  };
+}
+
+function bathroomScenario() {
+  return {
+    spaceType: 'Bathroom vanity',
+    summary: 'An under-sink vanity cabinet plus two shallow drawers. Skincare, hair tools, cleaning sprays, and backstock all share the cabinet floor around the plumbing, so everything gets knocked over reaching past it. The drawers hold a mix of daily items and expired products.',
+    categories: ['Daily skincare', 'Hair tools & products', 'Cleaning supplies', 'Backstock (soap, paper)', 'First aid', 'Travel & samples', 'Makeup', 'Expired products'],
+    features: [
+      {icon: 'door', title: 'Under-sink cabinet', sub: 'Tall but interrupted by plumbing'},
+      {icon: 'drawer', title: '2 shallow drawers', sub: 'Prime spots, currently mixed'},
+      {icon: 'vertical', title: 'Unused cabinet height', sub: 'Air above the floor pile'},
+      {icon: 'empty', title: 'Open floor corners', sub: 'Around the P-trap'}
+    ],
+    problems: [
+      'Cleaning chemicals sit within easy reach next to skincare',
+      'Everything stacks on the cabinet floor, so back items are invisible',
+      'Expired products crowd out the ones in daily rotation',
+      'Hair tools tangle with their own cords',
+      'Backstock is scattered, so duplicates keep getting bought'
+    ],
+    opportunities: [
+      'Stacking bins around the plumbing double the cabinet capacity',
+      'A turntable makes corner skincare visible in one spin',
+      'The drawers can hold complete morning and evening routines',
+      'A five-minute expiry purge frees a third of the space'
+    ],
+    map: [
+      {level: 'Top drawer', icon: 'up', zone: 'Morning routine · Daily skincare',
+        why: 'The first drawer you open should run your whole morning.',
+        eye: true, shelfIndex: 0,
+        safety: {flag: null, why: null},
+        items: [{name: 'Daily skincare', size: 's', flags: []}, {name: 'Makeup', size: 's', flags: []}]},
+      {level: 'Second drawer', icon: 'middle', zone: 'Hair accessories · First aid basics',
+        why: 'Small, frequently grabbed items stay findable in shallow drawers.',
+        eye: false, shelfIndex: 1,
+        safety: {flag: null, why: null},
+        items: [{name: 'Hair accessories', size: 's', flags: []}, {name: 'First aid', size: 's', flags: []}]},
+      {level: 'Cabinet — upper zone', icon: 'vertical', zone: 'Cleaning supplies, up high in a caddy',
+        why: 'Chemicals go in one liftable caddy on the highest usable level.',
+        eye: false, shelfIndex: 2,
+        safety: {flag: 'lock-or-latch', why: 'Sprays and chemicals stay latched away from kids and pets.'},
+        items: [{name: 'Cleaning sprays', size: 'm', flags: ['chemical']}, {name: 'Chemical refills', size: 'm', flags: ['chemical']}]},
+      {level: 'Cabinet — floor', icon: 'down', zone: 'Backstock · Hair tools in a bin · Bulk paper',
+        why: 'Heavy and bulky items sit stable on the cabinet floor in labeled bins.',
+        eye: false, shelfIndex: 3,
+        safety: {flag: null, why: null},
+        items: [{name: 'Backstock', size: 'm', flags: []}, {name: 'Hair tools', size: 'm', flags: []}, {name: 'Bulk paper', size: 'l', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 30, height: 32, depth: 19, shelfCount: 4, shelfYFracs: [0.12, 0.32, 0.58, 0.86], estimated: true},
+    safetyNotes: [
+      'Cleaning chemicals live in one caddy on the highest level, behind a latch if small kids are in the house.',
+      'Nothing breakable sits above the toilet-paper reach zone.'
+    ],
+    productNeeds: [
+      {type: 'clear-bin', qty: 2, purpose: 'Stackable bins that work around the plumbing', targetZone: 'Cabinet — floor', maxDims: {w_in: 12, h_in: 8, d_in: 18}, priority: 'high'},
+      {type: 'turntable', qty: 1, purpose: 'Spin skincare into view in the deep corner', targetZone: 'Cabinet — floor', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
+      {type: 'drawer-organizer', qty: 2, purpose: 'Slot the routines so they stay separated', targetZone: 'Top drawer', maxDims: {w_in: 26, h_in: 2.5, d_in: 17}, priority: 'nice'},
+      {type: 'safety-latch', qty: 1, purpose: 'Latch the chemical zone away from small children', targetZone: 'Cabinet — upper zone', maxDims: null, priority: 'high'}
+    ],
+    existingLede: 'The cabinet has more height than floor — use what you own to build up, not out.',
+    existing: [
+      {icon: 'bin', title: 'Reuse: shoe-box bins', detail: 'Sturdy boxes become free backstock bins.'},
+      {icon: 'vertical', title: 'Cabinet height', detail: 'Stack bins two-high beside the plumbing.'},
+      {icon: 'drawer', title: 'Two shallow drawers', detail: 'Dedicate one per routine — morning and evening.'}
+    ],
+    dontBuy: 'Skip vanity-specific organizers sized for magazine bathrooms — standard stacking bins fit better around real plumbing.',
+    steps: [
+      {task: 'Empty the vanity and drawers completely', time: '10 min', why: 'Bathroom clutter hides expired products at every layer.'},
+      {task: 'Toss expired and empty products', time: '10 min', why: 'Usually a third of the volume goes straight to the bin.'},
+      {task: 'Group: daily, weekly, backstock, cleaning', time: '10 min', why: 'Frequency decides who gets the drawers.'},
+      {task: 'Load the drawers with daily routines only', time: '5 min', why: 'Prime spots are for everyday items, not someday items.'},
+      {task: 'Put all chemicals in one caddy, up high', time: '5 min', why: 'One liftable caddy is safer and easier to clean with.'},
+      {task: 'Bin the backstock and label the bins', time: '10 min', why: 'Visible backstock stops duplicate buying.'},
+      {task: 'Coil hair-tool cords and stand tools in a bin', time: '5 min', why: 'Tangled cords are why tools get dumped on the counter.'}
+    ],
+    time: '45–60 min',
+    cost: '$0 / $35–60'
+  };
+}
+
+function linenScenario() {
+  return {
+    spaceType: 'Linen closet',
+    summary: 'A five-shelf linen closet where sheet sets have separated from their pillowcases, towels lean in unstable stacks, and spare blankets compress everything below them. The top shelf is nearly empty while the middle shelves overflow.',
+    categories: ['Bath towels', 'Hand towels & washcloths', 'Sheet sets', 'Blankets & duvets', 'Guest bedding', 'Toiletry backstock', 'Beach towels', 'Heating pads & extras'],
+    features: [
+      {icon: 'shelf', title: '5 shelves', sub: 'Deep enough for double rows'},
+      {icon: 'up', title: 'Near-empty top shelf', sub: 'Perfect for rarely used bulk'},
+      {icon: 'vertical', title: 'Tall gaps between shelves', sub: 'Fits stacked bins'},
+      {icon: 'empty', title: 'Floor space', sub: 'Currently a laundry-basket parking spot'}
+    ],
+    problems: [
+      'Sheet sets split apart — matching a set means unfolding stacks',
+      'Towel stacks are too tall and topple when one is pulled',
+      'Bulky blankets crush the shelves below them',
+      'No zones by room or by person, so everyone digs',
+      'Backstock toiletries hide behind linens and expire'
+    ],
+    opportunities: [
+      'Folding sheet sets INTO one pillowcase keeps sets together forever',
+      'Two shorter towel stacks beat one tall one',
+      'Blankets belong up top in breathable bins',
+      'Labeled shelf zones let guests and kids self-serve'
+    ],
+    map: [
+      {level: 'Top shelf', icon: 'up', zone: 'Blankets · Duvets · Seasonal bedding',
+        why: 'Light but bulky items store safely overhead in breathable bins.',
+        eye: false, shelfIndex: 0,
+        safety: {flag: 'keep-high', why: 'Bulk stays overhead; nothing heavy or breakable up top.'},
+        items: [{name: 'Blankets', size: 'l', flags: []}, {name: 'Seasonal bedding', size: 'l', flags: []}]},
+      {level: 'Eye level', icon: 'eye', zone: 'Bath towels · Hand towels, in two short stacks',
+        why: 'The most-grabbed linens belong exactly at eye level.',
+        eye: true, shelfIndex: 1,
+        safety: {flag: null, why: null},
+        items: [{name: 'Bath towels', size: 'm', flags: []}, {name: 'Hand towels', size: 's', flags: []}]},
+      {level: 'Middle shelf', icon: 'middle', zone: 'Sheet sets, folded into their pillowcases, by bed size',
+        why: 'One package per set means no more matching hunt.',
+        eye: false, shelfIndex: 2,
+        safety: {flag: null, why: null},
+        items: [{name: 'Queen sets', size: 'm', flags: []}, {name: 'Twin sets', size: 'm', flags: []}, {name: 'Guest sets', size: 'm', flags: []}]},
+      {level: 'Lower shelf', icon: 'down', zone: 'Toiletry backstock · First-aid overflow, in labeled bins',
+        why: 'Backstock stays visible in bins so duplicates stop happening.',
+        eye: false, shelfIndex: 3,
+        safety: {flag: null, why: null},
+        items: [{name: 'Toiletry backstock', size: 'm', flags: []}, {name: 'First-aid overflow', size: 's', flags: []}]},
+      {level: 'Floor', icon: 'down', zone: 'Beach towels bin · Heating pads · Bulky extras',
+        why: 'Sturdy floor bins swallow the awkward, occasional items.',
+        eye: false, shelfIndex: 4,
+        safety: {flag: 'kid-safe', why: 'Floor level holds only soft, safe items kids can grab.'},
+        items: [{name: 'Beach towels', size: 'l', flags: []}, {name: 'Heating pads', size: 's', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 36, height: 78, depth: 16, shelfCount: 5, shelfYFracs: [0.10, 0.30, 0.50, 0.70, 0.92], estimated: true},
+    safetyNotes: [
+      'Only light, soft items overhead — pulling a blanket down should never bring anything hard with it.'
+    ],
+    productNeeds: [
+      {type: 'basket', qty: 2, purpose: 'Breathable baskets for blankets up top', targetZone: 'Top shelf', maxDims: {w_in: 16, h_in: 12, d_in: 15}, priority: 'nice'},
+      {type: 'clear-bin', qty: 2, purpose: 'Keep toiletry backstock visible and contained', targetZone: 'Lower shelf', maxDims: {w_in: 12, h_in: 8, d_in: 15}, priority: 'high'},
+      {type: 'label-set', qty: 1, purpose: 'Label shelf edges by zone so linens return home', targetZone: 'Every shelf', maxDims: null, priority: 'high'}
+    ],
+    existingLede: 'Pillowcases are the free organizing product here — every sheet set can be bundled inside one of its own.',
+    existing: [
+      {icon: 'basket', title: 'Reuse: laundry basket', detail: 'Becomes the beach-towel bin on the floor.'},
+      {icon: 'up', title: 'Empty top shelf', detail: 'Ready-made home for every blanket in the house.'},
+      {icon: 'shelf', title: 'Deep shelves', detail: 'Two short stacks front-to-back beat one tall stack.'}
+    ],
+    dontBuy: 'Skip matching wicker sets until the zones have survived a month — pillowcase bundling is free and does most of the work.',
+    steps: [
+      {task: 'Empty the closet one shelf at a time', time: '10 min', why: 'Linens hide worn-out strays in every stack.'},
+      {task: 'Retire thin towels and orphaned sheets to a rag bag', time: '10 min', why: 'Rag-bag candidates are taking up prime shelf space.'},
+      {task: 'Fold each sheet set into one of its pillowcases', time: '15 min', why: 'One bundle per set ends the matching hunt forever.'},
+      {task: 'Rebuild towels in two short stacks at eye level', time: '5 min', why: 'Short stacks stay standing when one towel is pulled.'},
+      {task: 'Move all blankets to bins on the top shelf', time: '10 min', why: 'Bulk overhead frees two whole shelves below.'},
+      {task: 'Bin the backstock on the lower shelf', time: '5 min', why: 'Visible backstock stops duplicate buying.'},
+      {task: 'Label every shelf edge', time: '5 min', why: 'Labels let the whole household refile correctly.'}
+    ],
+    time: '50–75 min',
+    cost: '$0 / $30–55'
+  };
+}
+
+function fridgeScenario() {
+  return {
+    spaceType: 'Fridge & freezer',
+    summary: 'A standard fridge where leftovers get lost behind condiments, produce wilts unseen in overstuffed drawers, and the door shelves carry heavy bottles they were not built for. The freezer below is a single avalanche of unlabeled bags.',
+    categories: ['Leftovers', 'Fresh produce', 'Dairy & eggs', 'Condiments & sauces', 'Drinks', 'Raw meat & fish', 'Frozen meals', 'Frozen vegetables & fruit'],
+    features: [
+      {icon: 'shelf', title: '4 fridge shelves', sub: 'One height-adjustable'},
+      {icon: 'drawer', title: '2 crisper drawers', sub: 'Humidity controls unused'},
+      {icon: 'door', title: 'Door shelves', sub: 'Warmest zone in the fridge'},
+      {icon: 'down', title: 'Freezer drawer', sub: 'Deep, currently one big pile'}
+    ],
+    problems: [
+      'Leftovers disappear behind taller items and expire',
+      'Raw meat sits above ready-to-eat food — a food-safety risk',
+      'Produce is double-bagged and invisible, so it wilts unused',
+      'Condiments occupy prime shelf space instead of the door',
+      'Frozen bags are unlabeled and undated'
+    ],
+    opportunities: [
+      'An "eat me first" bin at eye level rescues leftovers',
+      'Moving raw meat to the lowest shelf fixes the safety risk in one move',
+      'The crispers can actually work: one high humidity, one low',
+      'Upright frozen bags act like a file drawer — everything visible'
+    ],
+    map: [
+      {level: 'Top shelf', icon: 'up', zone: 'Drinks · Ready-to-eat items',
+        why: 'Tall bottles fit the tallest shelf, and grab-and-go stays in sight.',
+        eye: false, shelfIndex: 0,
+        safety: {flag: null, why: null},
+        items: [{name: 'Drinks', size: 'l', flags: []}, {name: 'Ready to eat', size: 'm', flags: []}]},
+      {level: 'Eye level', icon: 'eye', zone: '“Eat me first” leftovers bin · Dairy & eggs',
+        why: 'Leftovers only get eaten when they are the first thing you see.',
+        eye: true, shelfIndex: 1,
+        safety: {flag: null, why: null},
+        items: [{name: 'Leftovers bin', size: 'm', flags: []}, {name: 'Dairy & eggs', size: 'm', flags: ['fragile']}]},
+      {level: 'Lowest shelf', icon: 'down', zone: 'Raw meat & fish, on a tray',
+        why: 'Raw proteins belong at the bottom so nothing can drip onto ready food.',
+        eye: false, shelfIndex: 2,
+        safety: {flag: 'keep-high', why: 'Food safety: raw meat stays below everything ready to eat.'},
+        items: [{name: 'Raw meat & fish', size: 'm', flags: []}]},
+      {level: 'Crisper drawers', icon: 'drawer', zone: 'Leafy greens (high humidity) · Fruit (low humidity)',
+        why: 'Set correctly, the two drawers roughly double produce life.',
+        eye: false, shelfIndex: 3,
+        safety: {flag: null, why: null},
+        items: [{name: 'Leafy greens', size: 'm', flags: []}, {name: 'Fruit', size: 'm', flags: []}]},
+      {level: 'Freezer drawer', icon: 'down', zone: 'Bags filed upright · Meals dated on top',
+        why: 'Upright bags read like files — no more archaeology.',
+        eye: false, shelfIndex: 4,
+        safety: {flag: null, why: null},
+        items: [{name: 'Frozen vegetables', size: 'm', flags: []}, {name: 'Frozen meals', size: 'm', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 33, height: 66, depth: 24, shelfCount: 5, shelfYFracs: [0.10, 0.28, 0.46, 0.62, 0.85], estimated: true},
+    safetyNotes: [
+      'Raw meat always below ready-to-eat food — the one fridge rule that is about health, not tidiness.',
+      'Kid snacks and drinks sit on the lowest door shelf where small hands reach safely.'
+    ],
+    productNeeds: [
+      {type: 'clear-bin', qty: 3, purpose: 'Leftovers “eat me first” bin plus two zone bins', targetZone: 'Eye level', maxDims: {w_in: 10, h_in: 6, d_in: 14}, priority: 'high'},
+      {type: 'turntable', qty: 1, purpose: 'Spin sauces into view instead of digging', targetZone: 'Top shelf', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
+      {type: 'label-set', qty: 1, purpose: 'Date labels for leftovers and freezer bags', targetZone: 'Freezer drawer', maxDims: null, priority: 'high'}
+    ],
+    existingLede: 'The fridge already has the hardware — adjustable shelves, humidity controls, door racks. The plan mostly turns on features you own.',
+    existing: [
+      {icon: 'drawer', title: 'Crisper humidity controls', detail: 'High for leafy greens, low for fruit.'},
+      {icon: 'shelf', title: 'Adjustable shelf', detail: 'Drop it one notch to fit bottles upright.'},
+      {icon: 'door', title: 'Door shelves', detail: 'Perfect for condiments — the warmest zone is fine for them.'}
+    ],
+    dontBuy: 'Skip fridge-organizing hauls — three bins and a marker cover 90% of the payoff.',
+    steps: [
+      {task: 'Empty one zone at a time, tossing expired items', time: '15 min', why: 'A full fridge purge stalls; zone-by-zone finishes.'},
+      {task: 'Wipe shelves while they are clear', time: '5 min', why: 'A ten-second wipe now beats a deep clean later.'},
+      {task: 'Move raw meat to the lowest shelf on a tray', time: '2 min', why: 'This is the single most important food-safety fix.'},
+      {task: 'Set up the “eat me first” bin at eye level', time: '5 min', why: 'Leftovers only get eaten when they are seen.'},
+      {task: 'Set crispers: greens high humidity, fruit low', time: '2 min', why: 'Correct settings roughly double produce life.'},
+      {task: 'Move condiments to the door', time: '5 min', why: 'Frees prime shelf space for food that spoils.'},
+      {task: 'File freezer bags upright and date everything', time: '10 min', why: 'Upright bags end the freezer avalanche.'}
+    ],
+    time: '40–60 min',
+    cost: '$0 / $25–45'
+  };
+}
+
 const SCENARIO_FNS = {
   pantry:  pantryScenario,
   cabinet: cabinetScenario,
@@ -700,6 +1076,11 @@ const SCENARIO_FNS = {
   laundry: laundryScenario,
   kids:    kidsScenario,
   attic:   atticScenario,
+  drawers: drawersScenario,
+  junk:    junkScenario,
+  bathroom: bathroomScenario,
+  linen:   linenScenario,
+  fridge:  fridgeScenario,
   other:   otherScenario
 };
 

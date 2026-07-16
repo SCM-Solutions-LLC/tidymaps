@@ -50,6 +50,11 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "cost": string                               // e.g. "$0 / $40-80"
 }
 
+Geometry rules:
+- ALWAYS estimate geometry from the photos when the user gave no dimensions: judge width, height, and depth in inches from visible reference objects (cans ~4.5in tall, cereal boxes ~12in, standard shelving ~11-16in deep) and count the visible shelves or levels. Set estimated:true. Never omit geometry or return zeros.
+- If the space is L-shaped, wraps a corner, or spans multiple walls or bays: flatten it into ONE straight run — sum the wall widths into a single width, use the tallest section's height, use one shelfCount for the combined run, and say in summary that the space is L-shaped and has been mapped wall-by-wall. Assign map levels so each zone names its wall or section (e.g. "Left wall — eye level").
+- For drawers (kitchen drawers, junk drawers, vanities), treat each drawer as one map level counted top to bottom, and set geometry.height to the height of the drawer bank.
+
 Hard safety rules (apply whenever the household context says kids are present):
 - Heavy, chemical, sharp, or fragile items must NEVER be placed below 48 inches when kids ages 0-9 are present, unless that zone is flagged "lock-or-latch".
 - Kid-frequent items (snacks, cups, their own things) go on the lowest safe shelf so children can reach them without climbing.

@@ -1,56 +1,60 @@
 /* ============================================================
-   TidyMap — warm editorial studio
-   One material system for the whole site: parchment ground,
-   porcelain surfaces, walnut ink, terracotta as the single
-   accent, sage for reassurance and family-safe states.
-   Calm within real life — kitchen table, not hotel lobby.
+   TidyMap — Sunroom
+   Fresh white ground, leaf green as the single working accent,
+   honey for highlights, soft green-tinted neutrals. Rounded,
+   warm, family-first — a bright morning kitchen, not a gallery.
    ============================================================ */
 :root{
-  --sans:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  --serif:"Fraunces","Source Serif 4",Georgia,serif;
+  --sans:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  /* display face — variable name kept for compatibility across the codebase */
+  --serif:"Bricolage Grotesque","Figtree",-apple-system,"Segoe UI",system-ui,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
-  /* materials: white ground, warm cream bands */
-  --bg:        oklch(0.995 0.003 85);   /* clean white */
-  --surface:   oklch(0.955 0.020 72);   /* warm cream — visible contrast */
-  --surface-2: oklch(0.940 0.024 72);   /* deeper cream */
-  --surface-3: oklch(0.920 0.028 72);   /* deep warm */
-  --ink:       oklch(0.20 0.020 55);    /* near-black walnut */
-  --ink-2:     oklch(0.35 0.018 55);
-  --ink-3:     oklch(0.50 0.014 58);
-  --line:      oklch(0.88 0.016 75);
-  --line-2:    oklch(0.82 0.020 72);
+  /* materials: clean white ground, soft green-tinted washes */
+  --bg:        oklch(0.992 0.003 110);  /* warm white */
+  --surface:   oklch(0.966 0.008 120);  /* soft sunroom wash */
+  --surface-2: oklch(0.945 0.012 120);  /* deeper wash */
+  --surface-3: oklch(0.920 0.015 120);  /* deepest wash */
+  --ink:       oklch(0.25 0.014 120);   /* green-black */
+  --ink-2:     oklch(0.40 0.015 120);
+  --ink-3:     oklch(0.52 0.014 118);
+  --line:      oklch(0.905 0.011 115);
+  --line-2:    oklch(0.845 0.014 115);
 
-  /* terracotta — the single primary accent */
-  --primary:      oklch(0.55 0.145 32);
-  --primary-2:    oklch(0.48 0.150 30);
-  --primary-bg:   oklch(0.946 0.032 40);
-  --primary-line: oklch(0.845 0.058 40);
+  /* leaf green — the single primary accent */
+  --primary:      oklch(0.50 0.088 155);
+  --primary-2:    oklch(0.43 0.090 155);
+  --primary-bg:   oklch(0.950 0.022 150);
+  --primary-line: oklch(0.845 0.048 150);
 
-  /* sage — reassurance, safety, family-friendly states */
-  --sage:      oklch(0.55 0.080 145);
-  --sage-2:    oklch(0.45 0.085 148);
-  --sage-bg:   oklch(0.946 0.024 145);
-  --sage-line: oklch(0.845 0.042 145);
-  --sage-ink:  oklch(0.38 0.068 148);
+  /* sage — reassurance, safety, family-safe states (lighter kin of primary) */
+  --sage:      oklch(0.58 0.072 150);
+  --sage-2:    oklch(0.48 0.078 150);
+  --sage-bg:   oklch(0.948 0.024 148);
+  --sage-line: oklch(0.850 0.042 148);
+  --sage-ink:  oklch(0.40 0.068 150);
+
+  /* honey — warm highlight, used sparingly */
+  --honey:     oklch(0.885 0.078 90);
+  --honey-2:   oklch(0.72 0.105 82);
 
   /* legacy aliases kept so existing components stay coherent:
-     informational teal now resolves to sage, "good" is sage */
+     informational teal resolves to sage, "good" is sage */
   --teal:      var(--sage);
   --teal-bg:   var(--sage-bg);
   --teal-line: var(--sage-line);
   --teal-ink:  var(--sage-ink);
   --good:      var(--sage);
 
-  --clay:      oklch(0.62 0.085 55);
-  --clay-bg:   oklch(0.946 0.028 62);
-  --warn:      oklch(0.60 0.105 68);
-  --warn-bg:   oklch(0.948 0.032 68);
+  --clay:      oklch(0.62 0.098 80);
+  --clay-bg:   oklch(0.948 0.030 90);
+  --warn:      oklch(0.60 0.108 76);
+  --warn-bg:   oklch(0.950 0.034 86);
 
-  --radius: 10px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 3px oklch(0.30 0.02 55 / .08);
-  --shadow-lg: 0 4px 16px oklch(0.30 0.02 55 / .10);
+  --radius: 16px;
+  --radius-sm: 12px;
+  --shadow: 0 2px 8px oklch(0.35 0.02 130 / .06);
+  --shadow-lg: 0 14px 36px oklch(0.35 0.03 130 / .13);
   --maxw: 760px;
 
   /* motion — gentle and purposeful */

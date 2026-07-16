@@ -54,10 +54,19 @@ export function runLoading(){
   const wantsReal = backendConfigured() &&
     ((state.capture==='photos' && (state.uploadedFiles||[]).length) ||
      (state.capture==='video' && state.uploadedVideo));
+
+  // Final checklist row: keeps spinning until the analysis actually finishes,
+  // so progress reads top-to-bottom instead of a detached spinner up top.
+  const fin=document.createElement('div');
+  fin.className='load-step'; fin.id='ls-final';
+  fin.innerHTML=`<span class="dot">${ICON.check}</span><span>${
+    wantsReal ? 'Waiting for the AI analysis to finish' : 'Finalizing your personalized plan'
+  }</span>`;
+  wrap.appendChild(fin);
+
   let aiPromise=null;
   if(wantsReal){
-    document.getElementById('load-sub').innerHTML =
-      'Analyzing your space &middot; <span class="spin-ring"></span>';
+    document.getElementById('load-sub').textContent='Analyzing your space.';
     aiPromise = (async ()=>{
       let images;
       if(state.capture==='video'){
@@ -93,21 +102,24 @@ export function runLoading(){
   setTimeout(tick,400);
 }
 export function finishLoading(aiPromise){
-  const last=document.getElementById('ls-'+(LOAD_LABELS.length-1));
+  const fin=document.getElementById('ls-final');
+  if(fin) fin.classList.add('doing');
   const proceed=()=>{
     if(state.aiError){
       document.getElementById('load-sub').innerHTML =
         '<span style="color:var(--clay)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';
-      if(last) last.classList.add('err');
+      if(fin){ fin.classList.remove('doing'); fin.classList.add('err'); }
       // Fallback to demo scenario on AI failure too
       const scenario = getDemoScenario(state.space||'pantry', state.goal, state.household);
       state.ai = normalizeAi(scenario);
       state.planMeta = { model: 'demo', source: 'demo-fallback', analyzedAt: Date.now() };
       setTimeout(()=>{ buildResults(); go('review'); }, 1400);
     }else{
+      if(fin) fin.classList.replace('doing','done');
       buildResults();
-      setTimeout(()=>go('review'), 350);
+      setTimeout(()=>go('review'), 550);
     }
   };
-  if(aiPromise){ aiPromise.then(proceed); } else { proceed(); }
+  if(aiPromise){ aiPromise.then(proceed); }
+  else { setTimeout(proceed, 450); }   // let the final check land visually
 }

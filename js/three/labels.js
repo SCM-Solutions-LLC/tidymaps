@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Canvas-texture sprite labels — avoids pulling in the CSS2D renderer addon.
-export function makeLabelSprite(text, { size=13, color='#4a3f38', bg='rgba(255,255,255,.88)', pad=7 }={}){
+export function makeLabelSprite(text, { size=13, color='#3b4237', bg='rgba(255,255,255,.88)', pad=7 }={}){
   const dpr=2;
   const font=`600 ${size*dpr}px "DM Sans", sans-serif`;
   const c=document.createElement('canvas');
