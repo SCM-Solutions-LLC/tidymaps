@@ -6,6 +6,7 @@ export const SPACES = [
   {id:'drawers',ico:SVG.drawers,ttl:'Kitchen drawers'},
   {id:'junk',ico:SVG.junk,ttl:'Junk drawer'},
   {id:'closet',ico:SVG.closet,ttl:'Closet'},
+  {id:'walkin',ico:SVG.walkin,ttl:'Walk-in closet'},
   {id:'linen',ico:SVG.linen,ttl:'Linen closet'},
   {id:'bathroom',ico:SVG.bath,ttl:'Bathroom vanity'},
   {id:'fridge',ico:SVG.fridge,ttl:'Fridge &amp; freezer'},

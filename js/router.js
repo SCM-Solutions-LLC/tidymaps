@@ -78,7 +78,7 @@ export function updateGate(){
   fillRailSummaries();
 }
 // "Your answers so far" panel in the wizard context rail
-const SPACE_NAMES={pantry:'Pantry',cabinet:'Kitchen cabinet',drawers:'Kitchen drawers',junk:'Junk drawer',closet:'Closet',linen:'Linen closet',bathroom:'Bathroom vanity',fridge:'Fridge & freezer',garage:'Garage shelf',attic:'Attic / storage',laundry:'Laundry room',kids:'Kids’ storage',other:'Other'};
+const SPACE_NAMES={pantry:'Pantry',cabinet:'Kitchen cabinet',drawers:'Kitchen drawers',junk:'Junk drawer',closet:'Closet',walkin:'Walk-in closet',linen:'Linen closet',bathroom:'Bathroom vanity',fridge:'Fridge & freezer',garage:'Garage shelf',attic:'Attic / storage',laundry:'Laundry room',kids:'Kids’ storage',other:'Other'};
 const GOAL_NAMES={find:'Easier to find',clutter:'Less clutter',own:'Use what I own',capacity:'More capacity',kid:'Kid-friendly',minimal:'Minimal look',shop:'Product recs',unsure:'Best plan'};
 const CAPTURE_NAMES={photos:'Photos',video:'Video',demo:'Demo example'};
 export function fillRailSummaries(){

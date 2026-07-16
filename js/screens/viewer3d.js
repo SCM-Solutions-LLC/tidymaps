@@ -46,9 +46,9 @@ export async function openViewer3d(){
     let note=geometry.estimated
       ? 'Dimensions are estimated from your photos — add measurements in the wizard for exact scale.'
       : `Built from your measurements: ${geometry.width}″w × ${geometry.height}″h × ${geometry.depth}″d.`;
-    // Irregular spaces are flattened into one straight run — say so.
-    if(/\bl[\s-]?shape|corner|wrap(s|ped)? around|multiple walls?\b/i.test((state.ai&&state.ai.summary)||'')){
-      note+=' L-shaped and corner spaces are shown flattened into one straight run.';
+    // Irregular layouts are flattened into one straight run — say so.
+    if(/\b[lu][\s-]?shape|walk[\s-]?in|corner|wrap(s|ped)?|carousel|lazy susan|pull[\s-]?out|slide[\s-]?out|multiple (walls?|units?|bays?|sections?)|wall[\s-]?by[\s-]?wall|hanging rod/i.test((state.ai&&state.ai.summary)||'')){
+      note+=' Complex layouts (corners, multiple walls, rods, pull-outs) are shown flattened into one straight run — the level names tell you the real spot.';
     }
     status.textContent=note;
   }catch(e){

@@ -10,8 +10,8 @@ import { activeGeometry } from '../plan.js';
 const ICON_CHOICES = [
   ['shelf','Shelves'],['basket','Basket'],['bin','Bin / container'],['drawer','Drawer'],
   ['vertical','Vertical space'],['horizontal','Open side space'],['up','Top / high spot'],
-  ['down','Low / floor spot'],['door','Door / panel'],['hook','Missing feature'],
-  ['empty','Empty zone'],['label','Labels']
+  ['down','Low / floor spot'],['door','Door / panel'],['hook','Hanging rod / hooks'],
+  ['missing','Missing feature'],['empty','Empty zone'],['label','Labels']
 ];
 
 export function buildReview(){
