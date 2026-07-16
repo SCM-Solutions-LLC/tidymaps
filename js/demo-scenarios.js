@@ -1068,10 +1068,100 @@ function fridgeScenario() {
   };
 }
 
+function walkinScenario() {
+  return {
+    spaceType: 'Walk-in closet',
+    summary: 'A U-shaped walk-in closet mapped wall by wall: left wall, back wall, then right wall. Long clothes crowd a single rod, folded piles slump on the back shelves, shoes pile on the floor, and the high shelves hold an unplanned mix of bags and bedding. Every wall works harder once it has one clear job.',
+    categories: ['Hanging clothes', 'Folded knits & tees', 'Shoes', 'Bags & purses', 'Seasonal clothing', 'Accessories & belts', 'Spare bedding', 'Laundry overflow'],
+    features: [
+      {icon: 'shelf', title: '3 walls of storage', sub: 'Left, back, and right — mapped in walking order'},
+      {icon: 'hook', title: '2 hanging rods', sub: 'One sagging under double duty'},
+      {icon: 'up', title: 'High shelves on all walls', sub: 'Unplanned mix of bags and bedding'},
+      {icon: 'down', title: 'Open floor line', sub: 'Currently a shoe pile'},
+      {icon: 'empty', title: 'Back-wall shelf gap', sub: 'Half a shelf sits empty at eye level'}
+    ],
+    problems: [
+      'One rod carries long and short items, so nothing hangs freely',
+      'Folded piles topple because shelves have no dividers or bins',
+      'Shoes have no assigned spots and migrate across the floor',
+      'Seasonal items mix with daily wear on every wall',
+      'High shelves hold heavy bags over head height'
+    ],
+    opportunities: [
+      'Splitting the rods by length doubles usable hanging space',
+      'The empty back-wall shelf is prime real estate for daily folded items',
+      'A floor shoe rack turns the pile into a two-row grid',
+      'Seasonal items can retire to the high shelves in labeled bins'
+    ],
+    map: [
+      {level: 'Left wall — high shelf', icon: 'up', zone: 'Seasonal clothing · Spare bedding, in labeled bins',
+        why: 'Out-of-season items earn the hardest-to-reach spots.',
+        eye: false, shelfIndex: 0,
+        safety: {flag: 'keep-high', why: 'Only light, soft bins overhead — nothing heavy above head height.'},
+        items: [{name: 'Seasonal bins', size: 'l', flags: []}, {name: 'Spare bedding', size: 'l', flags: []}]},
+      {level: 'Left wall — hanging rod', icon: 'hook', zone: 'Long items: dresses · Coats · Jumpsuits',
+        why: 'Long items need the full-height drop only this rod provides.',
+        eye: false, shelfIndex: 1,
+        safety: {flag: null, why: null},
+        items: [{name: 'Dresses', size: 'l', flags: []}, {name: 'Coats', size: 'l', flags: []}]},
+      {level: 'Back wall — eye level', icon: 'eye', zone: 'Daily folded: knits · Tees · Jeans, in two short stacks per cubby',
+        why: 'The shelf you face when you walk in should hold what you wear most.',
+        eye: true, shelfIndex: 2,
+        safety: {flag: null, why: null},
+        items: [{name: 'Knits & tees', size: 'm', flags: []}, {name: 'Jeans', size: 'm', flags: []}]},
+      {level: 'Back wall — lower shelves', icon: 'down', zone: 'Bags & purses · Accessories in small bins',
+        why: 'Mid-low shelves keep accessories visible without crushing them.',
+        eye: false, shelfIndex: 3,
+        safety: {flag: null, why: null},
+        items: [{name: 'Bags & purses', size: 'm', flags: []}, {name: 'Accessories', size: 's', flags: []}]},
+      {level: 'Right wall — double rods', icon: 'hook', zone: 'Short items doubled up: shirts · Skirts · Folded-bar pants',
+        why: 'Two stacked rods fit twice the short items in the same wall space.',
+        eye: false, shelfIndex: 4,
+        safety: {flag: null, why: null},
+        items: [{name: 'Shirts', size: 'm', flags: []}, {name: 'Skirts', size: 'm', flags: []}]},
+      {level: 'Floor — full run', icon: 'down', zone: 'Shoe rack rows · Laundry basket · Step stool',
+        why: 'A low rack turns the shoe pile into a grid you can actually scan.',
+        eye: false, shelfIndex: 5,
+        safety: {flag: 'kid-safe', why: 'Floor level stays free of anything breakable or heavy.'},
+        items: [{name: 'Everyday shoes', size: 'm', flags: []}, {name: 'Laundry basket', size: 'l', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 96, height: 84, depth: 24, shelfCount: 6, shelfYFracs: [0.08, 0.24, 0.42, 0.58, 0.74, 0.92], estimated: true},
+    safetyNotes: [
+      'Heavy bags come down from overhead — high shelves hold only light, soft bins.',
+      'The step stool lives on the floor run so no one climbs shelves to reach the top.'
+    ],
+    productNeeds: [
+      {type: 'basket', qty: 3, purpose: 'Soft bins for seasonal clothing on the high shelves', targetZone: 'Left wall — high shelf', maxDims: {w_in: 16, h_in: 12, d_in: 22}, priority: 'high'},
+      {type: 'clear-bin', qty: 2, purpose: 'Keep accessories visible on the lower back shelves', targetZone: 'Back wall — lower shelves', maxDims: {w_in: 12, h_in: 6, d_in: 14}, priority: 'nice'},
+      {type: 'hook-rack', qty: 1, purpose: 'Belts and bags on the dead wall strip by the door', targetZone: 'Right wall — double rods', maxDims: {w_in: 18, h_in: 4, d_in: 4}, priority: 'nice'},
+      {type: 'label-set', qty: 1, purpose: 'Label bins and shelf edges so every wall keeps its job', targetZone: 'Every wall', maxDims: null, priority: 'high'}
+    ],
+    existingLede: 'Three walls, two rods, and a floor run — the hardware is already here. The plan just gives each wall one job.',
+    existing: [
+      {icon: 'hook', title: 'Two hanging rods', detail: 'Split by garment length: long on the left, doubled shorts on the right.'},
+      {icon: 'shelf', title: 'Back-wall shelf gap', detail: 'Becomes the daily folded zone you face walking in.'},
+      {icon: 'down', title: 'Full floor run', detail: 'Fits a two-row shoe rack plus the laundry basket.'}
+    ],
+    dontBuy: 'Skip closet-system overhauls — rod discipline, a shoe rack, and labeled bins deliver most of the result.',
+    steps: [
+      {task: 'Empty one wall at a time — left, back, then right', time: '20 min', why: 'Walk-ins overwhelm; wall-by-wall keeps it finishable.'},
+      {task: 'Pull a donate pile as you go', time: '10 min', why: 'Every hanger you free is hanging space you get back.'},
+      {task: 'Split hanging by length: long left, short right', time: '10 min', why: 'Length-sorted rods stop the crush and double capacity.'},
+      {task: 'Rebuild the back wall with daily folded items', time: '10 min', why: 'Your most-worn items belong where you look first.'},
+      {task: 'Bin seasonal items and lift them to the high shelves', time: '10 min', why: 'Out-of-season clothes should not occupy prime space.'},
+      {task: 'Set the shoe rack on the floor run and fill it', time: '10 min', why: 'Assigned shoe spots end the pile for good.'},
+      {task: 'Label bins and shelf edges by wall', time: '5 min', why: 'Labels keep three walls doing three different jobs.'}
+    ],
+    time: '60–90 min',
+    cost: '$0 / $40–70'
+  };
+}
+
 const SCENARIO_FNS = {
   pantry:  pantryScenario,
   cabinet: cabinetScenario,
   closet:  closetScenario,
+  walkin:  walkinScenario,
   garage:  garageScenario,
   laundry: laundryScenario,
   kids:    kidsScenario,

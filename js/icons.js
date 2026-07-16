@@ -20,6 +20,7 @@ export const SVG = {
   junk:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="10" rx="2"/><path d="M9 12h.01M13.5 14h.01M16 11h.01M7 15h.01M12 9.5h.01"/><path d="M10 5h4"/></svg>',
   bath:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.7 3 4 3.7 4 4.5V17a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-5H4"/><path d="M10 5 8 7"/><path d="M7 19v2M17 19v2"/></svg>',
   linen:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="11" width="16" height="5" rx="1.5"/><path d="M6 20h12"/></svg>',
+  walkin:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M6 8h12"/><path d="M9 8v4M15 8v4"/><path d="M3 16h18"/></svg>',
   fridge:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 10h14"/><path d="M9 5v2M9 13v3"/></svg>',
 
   // CAPTURE
@@ -70,6 +71,9 @@ export const SVG = {
 
   // Household / safety
   shield:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>',
+
+  // Hanging rods & hooks
+  hook:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18"/><path d="M12 5v3"/><path d="M15.5 12.5a3.5 3.5 0 1 1-3.5-3.5"/></svg>',
 };
 
 /* Keep backward compat alias */
@@ -88,7 +92,8 @@ export function iconFor(name){
     vertical:SVG.arrowsV, height:SVG.arrowsV,
     down:SVG.arrowDown, lower:SVG.arrowDown, bottom:SVG.arrowDown,
     up:SVG.arrowUp, top:SVG.arrowUp,
-    hook:SVG.xCircle, none:SVG.xCircle, missing:SVG.xCircle, x:SVG.xCircle,
+    hook:SVG.hook, rod:SVG.hook, hanger:SVG.hook, hooks:SVG.hook,
+    none:SVG.xCircle, missing:SVG.xCircle, x:SVG.xCircle,
     door:SVG.door, eye:SVG.eye, daily:SVG.eye, middle:SVG.alignCenter,
     empty:SVG.minusCircle, keep:SVG.minusCircle, space:SVG.arrowsH,
     spice:SVG.layoutGrid, label:SVG.tag, riser:SVG.trendingUp, jar:SVG.box
