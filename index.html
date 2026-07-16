@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>TidyMap AI — A calmer home, one space at a time</title>
-<meta name="description" content="Show TidyMap one overwhelming space — no tidying up first — and get a clear, step-by-step plan that fits around your family. Kid-safe, built on what you already own. Progress, not perfection. A prototype from SCM Solutions LLC." />
+<meta name="description" content="Show TidyMap one overwhelming space — no tidying up first — and get a clear, step-by-step plan that fits around your family. Kid-safe, built on what you already own. Progress, not perfection." />
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,7 +34,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>
       </span>
       <span>TidyMap&nbsp;AI</span>
-      <span class="mvp">Prototype</span>
     </a>
     <span class="spacer"></span>
     <button class="restart hide" id="acct-signin" onclick="openAuth()">Sign in</button>
@@ -44,11 +43,11 @@
   <div class="rail"><i id="rail"></i></div>
 </header>
 
-<!-- Sign-in modal: email -> 6-digit code, no passwords, no redirects -->
+<!-- Sign-in modal: email -> verification code, no passwords, no redirects -->
 <div class="modal-backdrop hide" id="auth-modal" onclick="if(event.target===this)closeAuth()">
   <div class="modal">
     <h3 style="font-family:var(--sans);font-weight:600;font-size:17px">Save your spaces</h3>
-    <p class="small muted" style="margin:8px 0 0">Sign in with your email and we&rsquo;ll send a 6-digit code &mdash; no password to remember.</p>
+    <p class="small muted" style="margin:8px 0 0">Sign in with your email and we&rsquo;ll send a verification code &mdash; no password to remember.</p>
     <div id="auth-step-email">
       <label class="field" style="margin-top:16px"><span>Email</span>
         <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" spellcheck="false">
@@ -59,8 +58,8 @@
       </div>
     </div>
     <div id="auth-step-code" class="hide">
-      <label class="field" style="margin-top:16px"><span>6-digit code</span>
-        <input type="text" id="auth-code" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6" style="font-family:var(--mono);letter-spacing:.35em;font-size:18px">
+      <label class="field" style="margin-top:16px"><span>Verification code</span>
+        <input type="text" id="auth-code" placeholder="12345678" inputmode="numeric" autocomplete="one-time-code" maxlength="8" style="font-family:var(--mono);letter-spacing:.25em;font-size:18px">
       </label>
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px">
         <button class="btn btn-primary btn-sm" id="auth-verify-btn" onclick="verifyAuthCode()">Sign in</button>
@@ -93,7 +92,7 @@
     <!-- focal glass no. 1: a believable before & after -->
     <div class="lx-console lxg lx-reveal">
       <figure class="lx-frame">
-        <div class="pantry-vis messy" aria-hidden="true"><div class="row"><b></b><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div><div class="row"><b></b><b></b><b></b><b></b></div></div>
+        <div class="pantry-vis messy" aria-hidden="true"><div class="row"><b class="sz-s"></b><b class="sz-l"></b><b class="sz-s tilt"></b><b class="sz-m"></b><b class="sz-s gap"></b></div><div class="row"><b class="sz-l"></b><b class="sz-s tilt"></b></div><div class="row"><b class="sz-m"></b><b class="sz-s"></b><b class="sz-l tilt"></b><b class="sz-s"></b></div><div class="row"><b class="sz-s"></b></div><div class="row"><b class="sz-m"></b><b class="sz-l"></b><b class="sz-s tilt"></b><b class="sz-m"></b><b class="sz-s"></b></div></div>
         <figcaption><span>Before</span><span>Real life</span></figcaption>
       </figure>
       <div class="lx-console-mid">
@@ -101,8 +100,8 @@
         <span class="lx-console-note">One quiet<br>hour</span>
       </div>
       <figure class="lx-frame after">
-        <div class="pantry-vis tidy" aria-hidden="true"><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b><b></b></div><div class="row"><b></b><b></b><b></b></div><div class="row"><b></b></div></div>
-        <figcaption><span>After</span><span>Six calm zones</span></figcaption>
+        <div class="pantry-vis tidy" aria-hidden="true"><div class="row"><b class="z1"></b><b class="z1"></b></div><div class="row"><b class="z2"></b><b class="z2"></b><b class="z2"></b></div><div class="row"><b class="z3"></b><b class="z3"></b></div><div class="row"><b class="z4"></b><b class="z4"></b><b class="z4"></b></div><div class="row"><b class="z5"></b></div></div>
+        <figcaption><span>After</span><span>Five calm zones</span></figcaption>
       </figure>
       <p class="lx-console-cap">A real pantry plan: better, not perfect &mdash; and it stays that way.</p>
     </div>
@@ -409,21 +408,21 @@
 </section>
 
 <!-- ============================================================ 7. DETECTION REVIEW -->
-<section class="screen" id="screen-review">
+<section class="screen" id="screen-review" style="max-width:780px">
   <div class="step-head"><span class="step-num">06</span><span class="step-kicker">Confirm what we found</span></div>
-  <h2>Did we get this right?</h2>
-  <div class="helper" style="margin:14px 0 22px">
+  <h2 style="font-size:clamp(24px,4vw,32px)">Did we get this right?</h2>
+  <div class="helper" style="margin:12px 0 20px;font-size:14px">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     <span>Confirming this helps us create a more realistic organization plan. Nothing here has to be perfect.</span>
   </div>
 
-  <span class="eyebrow">Detected existing features</span>
-  <div class="grid" id="rev-features" style="margin-top:12px"></div>
+  <span class="eyebrow" style="font-size:13px">Detected existing features</span>
+  <div class="grid" id="rev-features" style="margin-top:10px"></div>
 
-  <span class="eyebrow" style="display:block;margin-top:30px">Detected item categories</span>
-  <p class="small muted" style="margin:8px 0 0">Tap to remove anything that isn&rsquo;t in your space, or add what we missed.</p>
-  <div class="chips" id="rev-cats" style="margin-top:14px"></div>
-  <div style="display:flex;gap:9px;margin-top:14px">
+  <span class="eyebrow" style="display:block;margin-top:24px;font-size:13px">Detected item categories</span>
+  <p class="small muted" style="margin:6px 0 0;font-size:13.5px">Tap to remove anything that isn&rsquo;t in your space, or add what we missed.</p>
+  <div class="chips" id="rev-cats" style="margin-top:12px"></div>
+  <div style="display:flex;gap:9px;margin-top:12px">
     <input type="text" id="add-cat" placeholder="Add a missing category&hellip;">
     <button class="btn btn-ghost btn-sm" onclick="addCategory()" style="white-space:nowrap">+ Add</button>
   </div>
@@ -693,7 +692,7 @@
       <span>TidyMap AI</span>
     </div>
     <div class="footer-links">
-      <span>A prototype by <a href="https://scmsolutions.org">SCM Solutions</a></span>
+      <span>Built by <a href="https://scmsolutions.org">SCM Solutions</a></span>
       <span>No tidying up first. Use what you already own. Progress, not perfection.</span>
     </div>
     <div class="footer-legal">

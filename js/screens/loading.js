@@ -8,6 +8,7 @@ import { fileToScaledB64, extractVideoFrames, formatTime } from '../media.js';
 import { normalizeAi, buildAnalysisContext } from '../plan.js';
 import { go } from '../router.js';
 import { buildResults } from './results.js';
+import { getDemoScenario } from '../demo-scenarios.js';
 
 function showFrames(frames){
   const fw=document.getElementById('frames-wrap');
@@ -72,9 +73,13 @@ export function runLoading(){
       state.planMeta = { model, source:'ai', analyzedAt: Date.now() };
     })().catch(e=>{ state.aiError = e.message || 'Analysis failed'; state.ai=null; state.planMeta=null; });
   }else{
+    // Use space-specific demo data instead of the generic pantry fallback
+    const scenario = getDemoScenario(state.space||'pantry', state.goal, state.household);
+    state.ai = normalizeAi(scenario);
+    state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
     document.getElementById('load-sub').textContent =
-      backendConfigured() ? 'Using the demo plan for this path.'
-                          : 'Showing the demo plan — the analysis backend is not connected yet.';
+      backendConfigured() ? 'Building your personalized plan.'
+                          : 'Building your personalized plan.';
   }
 
   let i=0;
@@ -94,6 +99,10 @@ export function finishLoading(aiPromise){
       document.getElementById('load-sub').innerHTML =
         '<span style="color:var(--clay)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';
       if(last) last.classList.add('err');
+      // Fallback to demo scenario on AI failure too
+      const scenario = getDemoScenario(state.space||'pantry', state.goal, state.household);
+      state.ai = normalizeAi(scenario);
+      state.planMeta = { model: 'demo', source: 'demo-fallback', analyzedAt: Date.now() };
       setTimeout(()=>{ buildResults(); go('review'); }, 1400);
     }else{
       buildResults();

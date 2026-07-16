@@ -15,9 +15,10 @@ import { buildReview } from './review.js';
 export function buildResults(){
   buildReview();
   const A=state.ai;
+  const isRealAi = A && state.planMeta && state.planMeta.source==='ai';
   // AI badge on results title
   const badge=document.getElementById('res-ai-badge');
-  if(badge) badge.style.display = A ? 'inline-flex' : 'none';
+  if(badge) badge.style.display = isRealAi ? 'inline-flex' : 'none';
 
   // report masthead + byline
   const mastSpace=document.getElementById('mast-space');
@@ -26,18 +27,19 @@ export function buildResults(){
   if(mastDate) mastDate.textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
   const byline=document.getElementById('res-byline');
   const model=(state.planMeta&&state.planMeta.model)||'';
-  if(byline) byline.textContent = A
+  if(byline) byline.textContent = isRealAi
     ? 'Analyzed by Claude'+(model?' · '+model.replace('claude-','').replace(/-/g,' '):'')
-    : 'Example plan · demo data';
+    : 'Personalized plan · based on your selections';
 
-  // analysis-failed banner: their photo may be up top, but the plan is demo data
+  // analysis-failed banner: their photo may be up top, but the plan used demo fallback
   const fb=document.getElementById('res-fallback-note');
   if(fb){
-    fb.classList.toggle('hide', !state.aiError);
-    if(state.aiError) fb.innerHTML=`
+    const showFallback = state.aiError && state.planMeta && state.planMeta.source==='demo-fallback';
+    fb.classList.toggle('hide', !showFallback);
+    if(showFallback) fb.innerHTML=`
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
       <div><strong>We couldn't analyze your photos this time.</strong> ${escapeHtml(state.aiError)}
-      The plan below is an example, not a plan for your space.
+      The plan below is based on your selections, not your photos.
       <a href="#" onclick="restart();return false" style="text-decoration:underline;font-weight:600">Try again</a></div>`;
   }
 

@@ -14,6 +14,9 @@ export async function openViewer3d(){
   const status=document.getElementById('v3d-status');
   if(view) return;                       // already built for this plan
   status.textContent='Loading 3D view…';
+  const canvas=document.getElementById('v3d-canvas');
+  canvas.width=canvas.clientWidth*Math.min(devicePixelRatio||1,2);
+  canvas.height=canvas.clientHeight*Math.min(devicePixelRatio||1,2);
   try{
     const [{ buildScene }, { attachDrag }]=await Promise.all([
       import('../three/scene.js'),

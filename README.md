@@ -2,7 +2,7 @@
 
 **TidyMap AI** — an AI home organization planner. Upload photos or a short video of a messy space (pantry, closet, garage shelf) and get a practical organization plan: what goes where, a move-by-move checklist with time estimates, and optional storage upgrades.
 
-A prototype by SCM Solutions LLC.
+Built by SCM Solutions LLC.
 
 **Live site:** https://scm-solutions-llc.github.io/tidymaps/
 

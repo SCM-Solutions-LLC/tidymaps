@@ -10,7 +10,7 @@ import { buildAll } from './screens/index.js';
 import { runDemo, requestInvite, initLanding } from './screens/landing.js';
 import { handleDrop, handleFiles, handleVideoFile } from './screens/capture.js';
 import { segPick } from './screens/details.js';
-import { markFeat, removeFeat, addCategory } from './screens/review.js';
+import { markFeat, removeFeat, addCategory, editFeat, saveFeatEdit, cancelFeatEdit } from './screens/review.js';
 import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, buildResults, applySavedProgress, pickProduct, generateAfter } from './screens/results.js';
 import { submitFeedback } from './screens/feedback.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
@@ -25,7 +25,7 @@ Object.assign(window, {
   addCategory, toast, uncheckAllUpgrades, setUpgrades,
   runDemo, requestInvite, submitFeedback,
   handleDrop, handleFiles, handleVideoFile,
-  segPick, markFeat, removeFeat,
+  segPick, markFeat, removeFeat, editFeat, saveFeatEdit, cancelFeatEdit,
   toggleUpgrade, toggleStep, skipStep, pickProduct, generateAfter,
   openAuth, closeAuth, sendAuthCode, verifyAuthCode, dashSignOut,
   openViewer3d, saveArrangement, resetArrangement,

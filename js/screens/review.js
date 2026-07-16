@@ -12,14 +12,17 @@ export function buildReview(){
     const card=document.createElement('div'); card.className='feat'; card.id='rf-'+i;
     card.style.flexDirection='column'; card.style.gap='10px';
     card.innerHTML=`
-      <div style="display:flex;gap:11px;align-items:flex-start;width:100%">
+      <div style="display:flex;gap:13px;align-items:flex-start;width:100%">
         <span class="fi">${f.ico}</span>
-        <div><span class="ft">${f.ttl}</span><span class="fd">${f.sub}</span></div>
+        <div style="flex:1;min-width:0">
+          <span class="ft" id="rf-ttl-${i}">${f.ttl}</span>
+          <span class="fd" id="rf-sub-${i}">${f.sub}</span>
+        </div>
       </div>
       <div style="display:flex;gap:6px;margin-left:auto">
-        <button class="btn btn-sm btn-ghost" data-act="ok" onclick="markFeat(${i},'ok',this)" style="padding:6px 12px;font-size:12px">Correct</button>
-        <button class="btn btn-sm btn-ghost" onclick="toast('Edit is mocked in this prototype')" style="padding:6px 12px;font-size:12px">Edit</button>
-        <button class="btn btn-sm btn-ghost" onclick="removeFeat(${i})" style="padding:6px 12px;font-size:12px">Remove</button>
+        <button class="btn btn-sm btn-ghost" data-act="ok" onclick="markFeat(${i},'ok',this)" style="padding:7px 14px;font-size:13px">Correct</button>
+        <button class="btn btn-sm btn-ghost" onclick="editFeat(${i})" style="padding:7px 14px;font-size:13px">Edit</button>
+        <button class="btn btn-sm btn-ghost" onclick="removeFeat(${i})" style="padding:7px 14px;font-size:13px">Remove</button>
       </div>`;
     fwrap.appendChild(card);
   });
@@ -29,6 +32,38 @@ export function markFeat(i,act,btn){
   const card=document.getElementById('rf-'+i);
   card.style.borderColor='var(--primary)'; card.style.background='var(--primary-bg)';
   btn.classList.add('mark'); btn.style.background='var(--primary)'; btn.style.color='#fff'; btn.style.borderColor='var(--primary)';
+}
+export function editFeat(i){
+  const card=document.getElementById('rf-'+i);
+  if(card.querySelector('.feat-edit-form')) return;
+  const f=state.features[i];
+  const form=document.createElement('div');
+  form.className='feat-edit-form';
+  form.innerHTML=`
+    <input type="text" id="rf-edit-ttl-${i}" value="${escapeHtml(f.ttl)}" placeholder="Feature name">
+    <input type="text" id="rf-edit-sub-${i}" value="${escapeHtml(f.sub)}" placeholder="Description">
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-sm btn-primary" onclick="saveFeatEdit(${i})" style="padding:6px 14px;font-size:12px">Save</button>
+      <button class="btn btn-sm btn-ghost" onclick="cancelFeatEdit(${i})" style="padding:6px 14px;font-size:12px">Cancel</button>
+    </div>`;
+  card.appendChild(form);
+  form.querySelector('input').focus();
+}
+export function saveFeatEdit(i){
+  const ttl=document.getElementById('rf-edit-ttl-'+i).value.trim();
+  const sub=document.getElementById('rf-edit-sub-'+i).value.trim();
+  if(!ttl){ toast('Name cannot be empty'); return; }
+  state.features[i].ttl=ttl;
+  state.features[i].sub=sub;
+  document.getElementById('rf-ttl-'+i).textContent=ttl;
+  document.getElementById('rf-sub-'+i).textContent=sub;
+  cancelFeatEdit(i);
+  toast('Feature updated');
+}
+export function cancelFeatEdit(i){
+  const card=document.getElementById('rf-'+i);
+  const form=card.querySelector('.feat-edit-form');
+  if(form) form.remove();
 }
 export function removeFeat(i){
   const card=document.getElementById('rf-'+i);
