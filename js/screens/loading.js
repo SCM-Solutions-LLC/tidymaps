@@ -71,7 +71,7 @@ export function runLoading(){
       let images;
       if(state.capture==='video'){
         const frames = await (framesPromise||Promise.resolve([]));
-        if(!frames.length) throw new Error('We could not read frames from that video — try photos instead.');
+        if(!frames.length) throw new Error('We could not read frames from that video. Try photos instead.');
         images = frames.map(fr=>({ media_type:'image/jpeg', data:fr.data }));
       }else{
         const files=(state.uploadedFiles||[]).slice(0,5);

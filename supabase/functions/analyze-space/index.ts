@@ -53,13 +53,13 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
 Layout & geometry rules — handle ANY space configuration:
 - ALWAYS estimate geometry from the photos when the user gave no dimensions: judge width, height, and depth in inches from visible reference objects (cans ~4.5in tall, cereal boxes ~12in, standard shelving ~11-16in deep) and count the visible storage levels. Set estimated:true. Never omit geometry or return zeros.
 - The map is a flat list of levels; project EVERY real-world layout into it: one map row per distinct storage level or section, shelfIndex counting 0,1,2,... from the top down (or in walking order for multi-wall spaces), shelfCount = number of map rows, and geometry = the overall envelope (total run width, tallest height, deepest depth).
-- Name every level so the user recognizes the physical spot: "Back wall — eye level", "Left run — top shelf", "Corner carousel", "Pull-out rack 2", "Hanging rod", "Drawer 3 of 4", "Cabinet floor", "Door rack".
+- Name every level so the user recognizes the physical spot, using a colon locator for multi-part spaces: "Back wall: eye level", "Left run: top shelf", "Corner carousel", "Pull-out rack 2", "Hanging rod", "Drawer 3 of 4", "Cabinet floor", "Door rack".
 - L-shaped, U-shaped, corner, or multi-wall spaces (walk-in closets/pantries, garages): work wall by wall in walking order (left wall, back wall, right wall), prefix each level with its wall, and state the layout in summary.
 - Drawer banks: one level per drawer, top to bottom; geometry.height = the drawer-bank height. Corner drawers and angled units are still one level each.
 - Rotating or sliding hardware (lazy susans, corner carousels, pull-out racks and baskets, slide-out pantries): each is its own level named for what it is; treat its usable surface like a shelf.
-- Closets with rods: a hanging rod is its own level (e.g. "Hanging rod — long items"); shelves above or below it get their own rows.
+- Closets with rods: a hanging rod is its own level (e.g. "Hanging rod: long items"); shelves above or below it get their own rows.
 - Mixed spaces (shelves + drawers + floor + hooks + door racks): include every distinct storage surface as its own level, ordered top to bottom.
-- Multiple freestanding units side by side: treat them as one combined run, left to right, and prefix levels with the unit ("Unit 2 — middle shelf").
+- Multiple freestanding units side by side: treat them as one combined run, left to right, and prefix levels with the unit ("Unit 2: middle shelf").
 - If a space has more than 10 distinct levels, group the least-used surfaces into a single "Bulk storage" row so the plan stays actionable.
 
 Hard safety rules (apply whenever the household context says kids are present):
@@ -70,6 +70,7 @@ Hard safety rules (apply whenever the household context says kids are present):
 Product rules:
 - productNeeds.maxDims must fit the available space: depth at most the shelf depth minus 0.5 in clearance. If dimensions are unknown, set maxDims to null.
 - Only suggest products that solve a problem you can actually see. Prefer fewer, higher-impact needs.
+Writing style for ALL user-facing text (summary, whys, steps, problems, everything): plain, friendly, everyday words. Short sentences. Write like a helpful friend, not a designer. NEVER use an em dash (—) anywhere; use a period, comma, or colon instead.
 Keep all text concise and practical. If the images do not show a storage space, still return the JSON with spaceType:"Unclear" and explain in summary.`;
 
 interface Body {

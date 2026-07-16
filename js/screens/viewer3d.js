@@ -36,7 +36,7 @@ export async function openViewer3d(){
         const hazardous=flags.some(f=>['chemical','sharp','heavy','fragile'].includes(f));
         const kidShelf=shelf.row && shelf.row.safety && shelf.row.safety.flag==='kid-safe';
         if(kids && hazardous && kidShelf){
-          toast('Heads up: “'+item.userData.name+'” within kids’ reach — we recommend a higher shelf');
+          toast('Heads up: “'+item.userData.name+'” is within kids’ reach. We recommend a higher shelf.');
         }
         markDirty();
       },
@@ -44,16 +44,16 @@ export async function openViewer3d(){
     resizeHandler=()=>view && view.setSize();
     addEventListener('resize', resizeHandler);
     let note=geometry.estimated
-      ? 'Dimensions are estimated from your photos — add measurements in the wizard for exact scale.'
+      ? 'Dimensions are estimated from your photos. Add measurements in the wizard for exact scale.'
       : `Built from your measurements: ${geometry.width}″w × ${geometry.height}″h × ${geometry.depth}″d.`;
     // Irregular layouts are flattened into one straight run — say so.
     if(/\b[lu][\s-]?shape|walk[\s-]?in|corner|wrap(s|ped)?|carousel|lazy susan|pull[\s-]?out|slide[\s-]?out|multiple (walls?|units?|bays?|sections?)|wall[\s-]?by[\s-]?wall|hanging rod/i.test((state.ai&&state.ai.summary)||'')){
-      note+=' Complex layouts (corners, multiple walls, rods, pull-outs) are shown flattened into one straight run — the level names tell you the real spot.';
+      note+=' Corners, extra walls, rods, and pull-outs are shown as one straight run here. The level names tell you the real spot.';
     }
     status.textContent=note;
   }catch(e){
     console.error('3D viewer failed', e);
-    status.textContent='The 3D view could not load on this device — the plan above has everything.';
+    status.textContent='The 3D view could not load on this device. The plan above has everything you need.';
   }
 }
 

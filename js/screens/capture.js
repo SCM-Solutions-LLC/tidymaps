@@ -84,8 +84,8 @@ export function handleFiles(fileList){
   const newFiles=[...fileList].filter(f=>f.type.startsWith('image/'));
   if(!newFiles.length) return;
   const room=5-state.uploadedFiles.length;
-  if(room<=0){ toast('5 photos is plenty — remove one to add another'); return; }
-  if(newFiles.length>room) toast('Using the first '+room+' — 5 photos is plenty');
+  if(room<=0){ toast('5 photos is plenty. Remove one to add another.'); return; }
+  if(newFiles.length>room) toast('Using the first '+room+'. 5 photos is plenty.');
   state.uploadedFiles=state.uploadedFiles.concat(newFiles.slice(0,room));
   renderPhotoPreviews();
 }

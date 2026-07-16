@@ -80,9 +80,22 @@ export function buildScene({ geometry, map, placements, canvas }){
   const shelves=[];   // {index, y, hitbox, rowMeta}
   const rowsByShelf=new Map();
   map.forEach(row=>{ rowsByShelf.set(row.shelfIndex, row); });
-  shelfFracs.forEach((frac,i)=>{
-    const y=Math.max(T, H*(1-frac));
-    if(y<H-T*2) addBox(W-2*T, T, D-T, 0, y-T/2, T/4, shelfMat);
+  // Shelf Y positions: clamp below the top panel, and snap near-floor levels
+  // onto the cabinet floor so "floor" zones sit where the eye expects them.
+  const shelfYs=shelfFracs.map(frac=>{
+    let y=Math.max(T, Math.min(H*(1-frac), H-T-3.2));
+    if(frac>=0.86) y=T;
+    return y;
+  });
+  // headroom above each shelf (to the next shelf up, or the top panel)
+  const gapAbove=shelfYs.map(y=>{
+    const above=shelfYs.filter(o=>o>y+0.5);
+    const ceil=above.length?Math.min(...above):H-T;
+    return Math.max(2.2, ceil-y);
+  });
+
+  shelfYs.forEach((y,i)=>{
+    if(y<H-T*2 && y>T*1.6) addBox(W-2*T, T, D-T, 0, y-T/2, T/4, shelfMat);
     const row=rowsByShelf.get(i)||null;
     // accent strip along the shelf front for eye-level / safety rows
     if(row){
@@ -125,9 +138,10 @@ export function buildScene({ geometry, map, placements, canvas }){
       mesh.userData={ itemId:id, name:it.name, flags:it.flags||[], size:it.size,
         shelfIndex: placed?placed.shelfIndex:row.shelfIndex,
         slot: placed?placed.slot:idx,
-        baseColor:color };
+        baseColor:color, baseH:h };
       scene.add(mesh);
-      const label=makeLabelSprite(it.name, { size:11, bg:'rgba(255,255,255,.94)' });
+      const shortName=it.name.length>18?it.name.slice(0,17)+'…':it.name;
+      const label=makeLabelSprite(shortName, { size:10, bg:'rgba(255,255,255,.92)' });
       label.center.set(0.5,0);
       mesh.userData.label=label;
       scene.add(label);
@@ -135,7 +149,8 @@ export function buildScene({ geometry, map, placements, canvas }){
     });
   });
 
-  // lay items out in slot order per shelf
+  // lay items out in slot order per shelf; heights squeeze to the shelf gap
+  // so nothing pokes through the shelf above or the top of the unit
   function reflow(){
     shelves.forEach(sh=>{
       const here=items.filter(m=>m.userData.shelfIndex===sh.index)
@@ -143,14 +158,18 @@ export function buildScene({ geometry, map, placements, canvas }){
       here.forEach((m,i)=>{ m.userData.slot=i; });
       const n=here.length;
       if(!n) return;
+      const maxH=Math.max(1.6,(gapAbove[sh.index]||8)-1.4);
       const usable=W-2*T-2;
       const cell=usable/n;
       here.forEach((m,i)=>{
         const w=Math.min(cell*0.78, 10);
         m.scale.x=w;
+        m.scale.y=Math.min(m.userData.baseH||m.scale.y, maxH);
         const x=-usable/2+cell*(i+0.5);
         m.position.set(x, sh.y+m.scale.y/2, T/2);
-        m.userData.label.position.set(x, sh.y+m.scale.y+0.5, D/2+0.5);
+        // stagger label heights on crowded shelves so they stop overlapping
+        const lift=n>3?(i%2)*2.2:0;
+        m.userData.label.position.set(x, sh.y+m.scale.y+0.5+lift, D/2+0.5);
       });
     });
   }

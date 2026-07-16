@@ -62,7 +62,7 @@ export async function buildDashboard(){
 
   if(!spaces.length){
     const empty=document.createElement('div'); empty.className='dash-empty';
-    empty.textContent='No saved spaces yet — organize one and tap Save.';
+    empty.textContent='No saved spaces yet. Organize one and tap Save.';
     grid.prepend(empty);
   }
 }
