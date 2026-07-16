@@ -15,17 +15,19 @@ export async function openViewer3d(){
   if(view) return;                       // already built for this plan
   status.textContent='Loading 3D view…';
   const canvas=document.getElementById('v3d-canvas');
-  canvas.width=canvas.clientWidth*Math.min(devicePixelRatio||1,2);
-  canvas.height=canvas.clientHeight*Math.min(devicePixelRatio||1,2);
   try{
     const [{ buildScene }, { attachDrag }]=await Promise.all([
       import('../three/scene.js'),
       import('../three/interact.js'),
     ]);
+    // Wait for the screen transition to lay the canvas out; a 0-width canvas
+    // renders an invisible scene and looks like "3D is broken".
+    for(let i=0;i<20 && !canvas.clientWidth;i++){
+      await new Promise(r=>requestAnimationFrame(r));
+    }
     const geometry=activeGeometry();
     const map=activeMapV2();
     const placements=(state.arrangement && state.arrangement.placements)||[];
-    const canvas=document.getElementById('v3d-canvas');
     view=buildScene({ geometry, map, placements, canvas });
     const kids=state.household.kids.present==='yes';
     detach=attachDrag(view, {
@@ -41,9 +43,14 @@ export async function openViewer3d(){
     });
     resizeHandler=()=>view && view.setSize();
     addEventListener('resize', resizeHandler);
-    status.textContent=geometry.estimated
+    let note=geometry.estimated
       ? 'Dimensions are estimated from your photos — add measurements in the wizard for exact scale.'
       : `Built from your measurements: ${geometry.width}″w × ${geometry.height}″h × ${geometry.depth}″d.`;
+    // Irregular spaces are flattened into one straight run — say so.
+    if(/\bl[\s-]?shape|corner|wrap(s|ped)? around|multiple walls?\b/i.test((state.ai&&state.ai.summary)||'')){
+      note+=' L-shaped and corner spaces are shown flattened into one straight run.';
+    }
+    status.textContent=note;
   }catch(e){
     console.error('3D viewer failed', e);
     status.textContent='The 3D view could not load on this device — the plan above has everything.';

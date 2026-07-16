@@ -15,13 +15,17 @@
 }
 
 .lx-h1{
-  font-family:var(--serif);font-weight:600;letter-spacing:-.025em;line-height:1.06;
-  font-size:clamp(40px,6vw,62px);margin:16px 0 0;color:var(--ink);
+  font-family:var(--serif);font-weight:700;letter-spacing:-.02em;line-height:1.08;
+  font-size:clamp(36px,5.5vw,54px);margin:16px 0 0;color:var(--ink);
 }
-.lx-h1 em,.lx-h2 em{font-style:normal;color:var(--ink)}
+.lx-h1 em,.lx-h2 em{
+  font-style:normal;color:var(--ink);
+  background:linear-gradient(transparent 66%, var(--honey) 66%);
+  padding:0 .04em;border-radius:2px;
+}
 .lx-h2{
-  font-family:var(--serif);font-weight:600;letter-spacing:-.02em;line-height:1.12;
-  font-size:clamp(28px,4vw,42px);margin:12px 0 0;color:var(--ink);
+  font-family:var(--serif);font-weight:700;letter-spacing:-.015em;line-height:1.14;
+  font-size:clamp(26px,3.8vw,38px);margin:12px 0 0;color:var(--ink);
 }
 .lx-lede{
   font-size:clamp(16px,2vw,19px);line-height:1.7;color:var(--ink-2);
@@ -55,21 +59,21 @@
 /* ---------- Buttons ---------- */
 .lx-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  border-radius:var(--radius-sm);font-weight:600;font-size:15px;
-  padding:15px 30px;line-height:1;border:1px solid transparent;
-  transition:background .16s, border-color .16s, transform .1s;
+  border-radius:999px;font-weight:600;font-size:15px;
+  padding:15px 32px;line-height:1;border:1px solid transparent;
+  transition:background .16s, border-color .16s, transform .1s, box-shadow .16s;
 }
 .lx-btn svg{width:16px;height:16px;flex:none}
 .lx-btn.primary{
   background:var(--primary);color:#fff;
-  box-shadow:0 2px 8px oklch(0.55 0.14 32 / .25);
+  box-shadow:0 4px 14px oklch(0.50 0.09 155 / .28);
 }
-.lx-btn.primary:hover{background:var(--primary-2);transform:translateY(-1px);box-shadow:0 4px 12px oklch(0.55 0.14 32 / .30)}
-.lx-btn.primary:active{background:oklch(0.44 0.15 30);transform:none;box-shadow:none}
+.lx-btn.primary:hover{background:var(--primary-2);transform:translateY(-1px);box-shadow:0 6px 18px oklch(0.50 0.09 155 / .32)}
+.lx-btn.primary:active{background:oklch(0.38 0.09 155);transform:none;box-shadow:none}
 .lx-btn.ghost{
   background:#fff;color:var(--ink);border-color:var(--line-2);
 }
-.lx-btn.ghost:hover{border-color:var(--ink-3);background:var(--surface)}
+.lx-btn.ghost:hover{border-color:var(--primary);color:var(--primary-2);background:var(--primary-bg)}
 .lx-btn.ghost:active{background:var(--surface-2)}
 .lx-btn:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
 
@@ -124,16 +128,16 @@
 #screen-landing .pantry-vis.messy .row b.sz-l{flex:1.6;min-height:85%}
 #screen-landing .pantry-vis.messy .row b.tilt{transform:rotate(-4deg);margin-top:-2px}
 #screen-landing .pantry-vis.messy .row b.gap{margin-left:3px}
-#screen-landing .pantry-vis.messy .row b{background:oklch(.78 .04 55)}
-#screen-landing .pantry-vis.messy .row:nth-child(odd) b{background:oklch(.74 .05 50)}
+#screen-landing .pantry-vis.messy .row b{background:oklch(.80 .035 110)}
+#screen-landing .pantry-vis.messy .row:nth-child(odd) b{background:oklch(.76 .04 105)}
 /* tidy: uniform items, color-coded by zone, outlined shelves */
 #screen-landing .pantry-vis.tidy .row{outline:1px dashed var(--sage-line);outline-offset:-2px}
 #screen-landing .pantry-vis.tidy .row b{border-radius:3px}
-#screen-landing .pantry-vis.tidy .row b.z1{background:oklch(.82 .06 70)}
-#screen-landing .pantry-vis.tidy .row b.z2{background:oklch(.72 .10 145)}
-#screen-landing .pantry-vis.tidy .row b.z3{background:oklch(.68 .08 230)}
-#screen-landing .pantry-vis.tidy .row b.z4{background:oklch(.74 .09 35)}
-#screen-landing .pantry-vis.tidy .row b.z5{background:oklch(.70 .07 300)}
+#screen-landing .pantry-vis.tidy .row b.z1{background:oklch(.85 .065 90)}
+#screen-landing .pantry-vis.tidy .row b.z2{background:oklch(.74 .078 150)}
+#screen-landing .pantry-vis.tidy .row b.z3{background:oklch(.78 .05 230)}
+#screen-landing .pantry-vis.tidy .row b.z4{background:oklch(.79 .06 115)}
+#screen-landing .pantry-vis.tidy .row b.z5{background:oklch(.78 .04 320)}
 
 /* ---------- Reassurance strip — warm cream band ---------- */
 .lx-assure{
@@ -247,12 +251,12 @@
 .lx-invite{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:520px;margin:28px auto 0;position:relative;z-index:2}
 .lx-invite input{
   flex:1;min-width:220px;font-family:inherit;font-size:15px;color:var(--ink);
-  background:#fff;border:1.5px solid var(--line-2);border-radius:var(--radius-sm);
-  padding:14px 18px;
+  background:#fff;border:1.5px solid var(--line-2);border-radius:999px;
+  padding:14px 22px;
   transition:border-color .16s;
 }
 .lx-invite input::placeholder{color:var(--ink-3)}
-.lx-invite input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px oklch(0.55 0.14 32/.12)}
+.lx-invite input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px oklch(0.50 0.09 155/.15)}
 .lx-invite input.err{border-color:oklch(0.58 0.17 28);animation:lx-shake .32s}
 @keyframes lx-shake{25%{transform:translateX(-5px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
 
@@ -276,7 +280,7 @@
 
 /* ---------- Card hover ---------- */
 .lx-vitrine{transition:transform .2s ease, box-shadow .2s ease}
-.lx-vitrine:hover{transform:translateY(-4px);box-shadow:0 8px 24px oklch(0.30 0.02 55 / .12)}
+.lx-vitrine:hover{transform:translateY(-4px);box-shadow:0 8px 24px oklch(0.35 0.03 130 / .12)}
 
 /* ---------- Scroll reveal ---------- */
 .lx-reveal{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.2,.6,.3,1), transform .6s cubic-bezier(.2,.6,.3,1)}

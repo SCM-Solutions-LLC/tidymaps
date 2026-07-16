@@ -26,7 +26,7 @@ export function attachDrag(view, { onDrop }={}){
     dragShelf=shelves.find(s=>s.index===dragging.userData.shelfIndex)||null;
     controls.enabled=false;
     dragging.position.y+=1.2;
-    dragging.material.emissive=new THREE.Color(0x332211);
+    dragging.material.emissive=new THREE.Color(0x1c2b20);
     canvas.setPointerCapture(e.pointerId);
   }
 

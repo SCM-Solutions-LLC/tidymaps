@@ -7,14 +7,14 @@ import { makeLabelSprite } from './labels.js';
    are inches. */
 
 const COLORS = {
-  bg: 0xf9f2ec,
-  carcass: 0xf3e9df,
-  shelf: 0xe8dccf,
-  eye: 0xc4674a,       // terracotta
-  kidSafe: 0x5d9c72,   // green
-  keepHigh: 0xcc8b3a,  // amber
+  bg: 0xf5f7f1,
+  carcass: 0xebeee3,
+  shelf: 0xdfe4d4,
+  eye: 0x3a7350,       // leaf green — prime real estate
+  kidSafe: 0x7db894,   // lighter mint — kid-safe zones
+  keepHigh: 0xc9973d,  // honey amber — keep-high / caution
 };
-const ITEM_PALETTE = [0xcb7a58, 0xd9a05b, 0x7ea37a, 0x6b93b8, 0xa084b8, 0x9aa65c];
+const ITEM_PALETTE = [0xb0885a, 0xd9a05b, 0x7ea37a, 0x6b93b8, 0xa084b8, 0x9aa65c];
 const SIZE_H = { s: 3.4, m: 5.4, l: 8.2 };
 
 function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,32); }
@@ -22,29 +22,41 @@ function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').slic
 export function itemIdFor(shelfIndex, idx, name){ return `${shelfIndex}-${idx}-${slug(name)}`; }
 
 export function buildScene({ geometry, map, placements, canvas }){
-  const W=geometry.width, H=geometry.height, D=geometry.depth, T=0.75;
+  // Defensive: whatever the analysis produced, render *something* sensible.
+  const W=Math.max(8, Number(geometry.width)||30);
+  const H=Math.max(10, Number(geometry.height)||60);
+  const D=Math.max(4, Number(geometry.depth)||14);
+  const T=0.75;
+  const NSH=Math.max(1, Math.round(Number(geometry.shelfCount))||(map?map.length:5)||5);
+  const fracs=(Array.isArray(geometry.shelfYFracs) && geometry.shelfYFracs.length
+    ? geometry.shelfYFracs.map(Number).filter(n=>Number.isFinite(n)&&n>=0&&n<=1)
+    : []);
+  const shelfFracs=fracs.length?fracs
+    :Array.from({length:NSH},(_,i)=>0.08+0.82*(NSH===1?0.5:i/(NSH-1)));
 
   const renderer=new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'low-power' });
   renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
   const scene=new THREE.Scene();
   scene.background=new THREE.Color(COLORS.bg);
 
-  const camera=new THREE.PerspectiveCamera(42, 1, 1, H*20);
-  // frame the whole unit: camera sits H*1.5 away along a front-right-high axis
+  // frame by the unit's largest span so short-wide spaces (drawers) and
+  // tall-narrow ones (closets) both fit the view
+  const S=Math.max(H, W*0.95, D*1.3);
+  const camera=new THREE.PerspectiveCamera(42, 1, 1, S*20);
   const target=new THREE.Vector3(0, H*0.46, 0);
-  camera.position.copy(new THREE.Vector3(0.55, 0.36, 1).normalize().multiplyScalar(H*1.55).add(target));
+  camera.position.copy(new THREE.Vector3(0.55, 0.36, 1).normalize().multiplyScalar(S*1.55).add(target));
 
   const controls=new OrbitControls(camera, canvas);
   controls.target.copy(target);
   controls.enablePan=false;
   controls.enableDamping=true;
   controls.dampingFactor=0.08;
-  controls.minDistance=H*0.7;
-  controls.maxDistance=H*3.2;
+  controls.minDistance=S*0.7;
+  controls.maxDistance=S*3.2;
   controls.maxPolarAngle=Math.PI*0.52;
   controls.update();
 
-  scene.add(new THREE.HemisphereLight(0xfff6ea, 0x8f8378, 1.05));
+  scene.add(new THREE.HemisphereLight(0xfdfff5, 0x8b9184, 1.05));
   const dir=new THREE.DirectionalLight(0xffffff, 1.25);
   dir.position.set(W, H*1.4, D*2.2);
   scene.add(dir);
@@ -68,7 +80,7 @@ export function buildScene({ geometry, map, placements, canvas }){
   const shelves=[];   // {index, y, hitbox, rowMeta}
   const rowsByShelf=new Map();
   map.forEach(row=>{ rowsByShelf.set(row.shelfIndex, row); });
-  geometry.shelfYFracs.forEach((frac,i)=>{
+  shelfFracs.forEach((frac,i)=>{
     const y=Math.max(T, H*(1-frac));
     if(y<H-T*2) addBox(W-2*T, T, D-T, 0, y-T/2, T/4, shelfMat);
     const row=rowsByShelf.get(i)||null;
@@ -83,15 +95,15 @@ export function buildScene({ geometry, map, placements, canvas }){
           new THREE.MeshBasicMaterial({ color:accent }));
       }
       const label=makeLabelSprite(row.lv + (row.safety&&row.safety.flag?`  ·  ${row.safety.flag.replace(/-/g,' ')}`:''),
-        { color:'#4a3f38' });
+        { color:'#3b4237' });
       label.position.set(-W/2+label.scale.x/2+1.5, y+3.4, D/2+0.6);
       scene.add(label);
     }
     // generous invisible hitbox for drag targeting
     const hit=new THREE.Mesh(
-      new THREE.BoxGeometry(W-2*T, Math.max(6, H/geometry.shelfCount*0.85), D),
+      new THREE.BoxGeometry(W-2*T, Math.max(6, H/NSH*0.85), D),
       new THREE.MeshBasicMaterial({ visible:false }));
-    hit.position.set(0, y+Math.max(3, H/geometry.shelfCount*0.42), 0);
+    hit.position.set(0, y+Math.max(3, H/NSH*0.42), 0);
     hit.userData={ shelfIndex:i, shelfY:y, row };
     scene.add(hit);
     shelves.push({ index:i, y, hitbox:hit, row });
@@ -145,8 +157,8 @@ export function buildScene({ geometry, map, placements, canvas }){
   reflow();
 
   function setSize(){
-    const w=canvas.clientWidth||canvas.parentElement.clientWidth;
-    const h=canvas.clientHeight||Math.min(innerHeight*0.68, 560);
+    const w=canvas.clientWidth||canvas.parentElement.clientWidth||640;
+    const h=canvas.clientHeight||Math.min(innerHeight*0.68, 560)||420;
     renderer.setSize(w, h, false);
     camera.aspect=w/h;
     camera.updateProjectionMatrix();

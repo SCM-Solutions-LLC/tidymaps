@@ -3,7 +3,12 @@ import { SVG } from './icons.js';
 export const SPACES = [
   {id:'pantry',ico:SVG.pantry,ttl:'Pantry',rec:true},
   {id:'cabinet',ico:SVG.cabinet,ttl:'Kitchen cabinet'},
+  {id:'drawers',ico:SVG.drawers,ttl:'Kitchen drawers'},
+  {id:'junk',ico:SVG.junk,ttl:'Junk drawer'},
   {id:'closet',ico:SVG.closet,ttl:'Closet'},
+  {id:'linen',ico:SVG.linen,ttl:'Linen closet'},
+  {id:'bathroom',ico:SVG.bath,ttl:'Bathroom vanity'},
+  {id:'fridge',ico:SVG.fridge,ttl:'Fridge &amp; freezer'},
   {id:'garage',ico:SVG.garage,ttl:'Garage shelf'},
   {id:'attic',ico:SVG.attic,ttl:'Attic / storage area'},
   {id:'laundry',ico:SVG.laundry,ttl:'Laundry room'},
@@ -145,4 +150,4 @@ export const LOAD_LABELS = [
   'Creating organization zones','Building your move-by-move plan','Preparing optional upgrades'
 ];
 
-export const AFTER_PALETTE=['oklch(0.72 0.12 35)','oklch(0.74 0.11 70)','oklch(0.64 0.08 150)','oklch(0.62 0.09 235)','oklch(0.66 0.10 300)','oklch(0.68 0.11 110)'];
+export const AFTER_PALETTE=['oklch(0.70 0.09 90)','oklch(0.74 0.11 70)','oklch(0.64 0.08 150)','oklch(0.62 0.09 235)','oklch(0.66 0.10 300)','oklch(0.68 0.11 110)'];

@@ -112,16 +112,17 @@ export function activeProductNeeds(){
     ? state.ai.productNeeds : DEMO_PRODUCT_NEEDS;
 }
 
-// The edit brief for the photorealistic "after" render: reorganize only,
-// preserve the actual room.
+// The edit brief for the photorealistic "after" render. The transformation
+// must be dramatic and cover the WHOLE frame — an after photo that changed
+// two items reads as a bug, not a plan.
 export function buildGeminiBrief(){
   const lines=activeMapV2().map(m=>{
     const safety=(m.safety&&m.safety.why)?` (${m.safety.why})`:'';
     return `- ${m.lv}: ${m.zone}${safety}`;
   });
-  return 'Edit this photo. Keep the exact same room, camera angle, lighting, wall color, floor, and the shelving architecture completely unchanged. Only reorganize the visible contents so the space looks tidy and fully organized following this plan:\n'
+  return 'Edit this photo into its fully organized AFTER version. Keep the exact same room, camera angle, lighting, wall color, floor, and shelving architecture unchanged — but completely transform the CONTENTS of the entire visible space. Every shelf, surface, drawer, and corner in frame must be visibly reorganized; do not leave any area untouched. Follow this zone plan:\n'
     + lines.join('\n')
-    + '\nGroup items into clearly separated zones, face labels forward, align containers neatly. Do not add people, text overlays, or any items that are not plausibly already in the photo. Photorealistic result.';
+    + '\nApply the transformation everywhere at once: clear all loose clutter from floors and surfaces, group every visible item into its mapped zone with clear separation between zones, stand containers upright in straight rows, face all labels forward, stack like items together, and leave visible breathing room on each shelf. The before-to-after difference must be obvious at a single glance — the space should look dramatically tidier while staying photorealistic and plausible. Do not add people, text overlays, or any items that could not already be in the photo.';
 }
 
 // Assemble the context object the analyze-space edge function expects
