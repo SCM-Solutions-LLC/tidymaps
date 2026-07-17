@@ -120,9 +120,12 @@ export function buildGeminiBrief(){
     const safety=(m.safety&&m.safety.why)?` (${m.safety.why})`:'';
     return `- ${m.lv}: ${m.zone}${safety}`;
   });
-  return 'Edit this photo into its fully organized AFTER version. Keep the exact same room, camera angle, lighting, wall color, floor, and shelving architecture unchanged — but completely transform the CONTENTS of the entire visible space. Every shelf, surface, drawer, and corner in frame must be visibly reorganized; do not leave any area untouched. Follow this zone plan:\n'
+  return 'TASK: dramatically reorganize everything in this photo. The output must look like a completely different, professionally organized version of this exact space. If your result would look nearly identical to the input photo, you have failed the task; the transformation must be unmistakable at a glance.\n\n'
+    + 'Physically rearrange the items: pick up every visible object and place it in its mapped zone below. Stand containers upright in straight front-facing rows, group like items together, stack neatly, clear ALL loose clutter off the floor and surfaces, and leave visible empty breathing room on every shelf. Straighten anything tilted. Brighten the scene slightly so the result reads clean and well lit.\n\n'
+    + 'Zone plan (place items accordingly):\n'
     + lines.join('\n')
-    + '\nCRITICAL — reuse the photo\'s own items: every object in the result must be one of the actual items visible in the original photo (same product, same packaging, same colors), picked up and moved into its mapped zone. Do not replace items with generic lookalikes, do not invent new containers or products, and do not delete items except obvious trash. The viewer should recognize each of their own belongings, now grouped by zone: containers upright in straight rows, labels facing forward, like items stacked together, clutter cleared from floors and surfaces, and visible breathing room on each shelf. The before-to-after difference must be obvious at a single glance while staying photorealistic and plausible. No people and no text overlays.';
+    + '\n\nReuse the photo\'s own items: the SAME products, packaging, and colors that appear in the original, just relocated and tidied. Do not invent new products, people, or text overlays.\n'
+    + 'Keep unchanged: the room itself, camera angle, walls, floor, and shelf architecture. Everything ON the shelves and floor must visibly move.';
 }
 
 // Assemble the context object the analyze-space edge function expects

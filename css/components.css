@@ -412,3 +412,49 @@ textarea{resize:vertical;min-height:84px}
 }
 .sa *{transform-box:view-box}
 .sa .p-flash{transform-origin:24px 26px}
+
+/* ---------- Results readability round ---------- */
+/* summary bullets under the one-sentence lede */
+.summary-points{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.summary-points:empty{display:none}
+.summary-points li{position:relative;padding-left:22px;font-size:14.5px;line-height:1.6;color:var(--ink-2)}
+.summary-points li::before{content:"";position:absolute;left:4px;top:9px;width:6px;height:6px;border-radius:50%;background:var(--sage)}
+
+/* safety notes: labeled so the green + shield explains itself */
+.sn-head{display:flex;gap:10px;align-items:flex-start;margin:20px 0 4px}
+.sn-head > svg{width:17px;height:17px;color:var(--primary-2);flex:none;margin-top:2px}
+.sn-head strong{display:block;font-size:14.5px}
+.sn-head span{display:block;font-size:12.5px;color:var(--ink-3);margin-top:2px;line-height:1.5;max-width:64ch}
+
+/* map labels: wall chip + readable level name */
+.shelf{grid-template-columns:104px 1fr}
+.shelf .label{padding:14px 10px}
+.shelf .label .lv-wall{font-family:var(--mono);font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-bottom:6px}
+.shelf.eye .label .lv-wall{border-color:var(--primary-line);color:var(--primary-2)}
+.shelf .label .lv{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;line-height:1.3;color:var(--ink-2)}
+.shelf.eye .label .lv{color:var(--primary-2)}
+
+/* steps: view toggle + one-at-a-time focus mode */
+.steps-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 14px}
+#focus-pos{display:none;font-variant-numeric:tabular-nums}
+#ch-steps.focus-mode #focus-pos{display:inline}
+#focus-nav{display:none;gap:10px;margin-top:14px;align-items:center}
+#ch-steps.focus-mode #focus-nav{display:flex}
+#ch-steps.focus-mode #res-steps .task{display:none}
+#ch-steps.focus-mode #res-steps .task.current{display:grid;border-color:var(--primary-line);box-shadow:var(--shadow-lg)}
+#ch-steps.focus-mode .progwrap{position:static}
+#focus-nav .btn[disabled]{opacity:.4}
+
+/* shopping cards: image-forward, details tucked away */
+.prod{grid-template-columns:auto auto 1fr auto;align-items:flex-start}
+.prod .pic{width:76px;height:76px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);position:relative;overflow:hidden;display:grid;place-items:center}
+.prod .pic img{width:100%;height:100%;object-fit:contain;background:#fff}
+.prod .pic .pic-ico{display:none;color:var(--clay)}
+.prod .pic.noimg .pic-ico{display:grid;place-items:center}
+.prod .pic .pic-ico svg{width:30px;height:30px}
+.prod .pname{display:inline-block;font-weight:600;font-size:14.5px;line-height:1.45;text-decoration:underline;text-underline-offset:3px;color:var(--primary-2);margin-top:6px}
+.prod .pretail{font-size:12.5px;color:var(--ink-3);margin-top:3px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.prod .pmore{margin-top:10px}
+.prod .pmore summary{font-size:12.5px;font-weight:600;color:var(--ink-3);cursor:pointer;list-style-position:inside}
+.prod .pmore summary:hover{color:var(--ink)}
+.prod .pmore .pmeta{margin-top:10px}
