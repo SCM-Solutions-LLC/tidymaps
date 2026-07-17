@@ -16,6 +16,15 @@ export const SPACES = [
   {id:'kids',ico:SVG.kids,ttl:'Kids’ storage'},
   {id:'other',ico:SVG.other,ttl:'Other'}
 ];
+/* Space picker groups: keeps 14 options scannable, especially on phones */
+export const SPACE_GROUPS = [
+  {id:'kitchen', label:'Kitchen',            spaces:['pantry','cabinet','drawers','junk','fridge']},
+  {id:'closets', label:'Closets & clothes',  spaces:['closet','walkin','linen']},
+  {id:'bath',    label:'Bathroom & laundry', spaces:['bathroom','laundry']},
+  {id:'storage', label:'Garage & storage',   spaces:['garage','attic']},
+  {id:'more',    label:'Kids & more',        spaces:['kids','other']}
+];
+
 export const GOALS = [
   ['find','Make items easier to find'],
   ['clutter','Reduce visual clutter'],
@@ -24,10 +33,10 @@ export const GOALS = [
   ['kid','Make it kid-friendly'],
   ['minimal','Create a minimal look'],
   ['shop','Prepare for storage product recommendations'],
-  ['unsure','I’m not sure — suggest the best plan']
+  ['unsure','I’m not sure. Suggest the best plan']
 ];
 export const CAPTURE = [
-  {id:'photos',ico:SVG.camera,ttl:'Upload photos',sub:'Best for most spaces — 3 to 5 photos'},
+  {id:'photos',ico:SVG.camera,ttl:'Upload photos',sub:'Best for most spaces. 3 to 5 photos'},
   {id:'video',ico:SVG.video,ttl:'Record or upload a short video',sub:'We extract key frames automatically'},
   {id:'demo',ico:SVG.sparkles,ttl:'Use demo example',sub:'See a finished plan with sample data'}
 ];

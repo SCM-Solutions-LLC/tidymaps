@@ -114,3 +114,9 @@
 
 /* Chapter end actions */
 .report-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:52px;padding-top:22px;border-top:2px solid var(--ink)}
+
+/* Collapsible chapters: tap the heading to fold a section away */
+.chapter .ch-head{cursor:pointer;position:relative;user-select:none;padding-right:28px}
+.chapter .ch-head::after{content:"";position:absolute;right:6px;top:50%;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:translateY(-70%) rotate(45deg);transition:transform .18s}
+.chapter.collapsed .ch-head::after{transform:translateY(-30%) rotate(-135deg)}
+.chapter.collapsed > *:not(.ch-head){display:none}

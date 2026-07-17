@@ -57,11 +57,11 @@ export function buildResults(){
     'Similar items are spread across multiple shelves','Frequently used snacks are too high',
     'Canned goods are hard to see','Loose packets are creating clutter',
     'Bulk items are taking up prime shelf space','Heavy items should be moved lower'];
-  document.getElementById('res-problems').innerHTML=problems.map(p=>`<li>${escapeHtml(p)}</li>`).join('');
+  document.getElementById('res-problems').innerHTML=problems.map(bulletHtml).join('');
   const opps = (A&&A.opportunities.length)?A.opportunities:[
     'Existing baskets are underused','Unused vertical space above the cans',
     'Right-side open shelf space is free','Lower shelf can safely hold heavy items'];
-  document.getElementById('res-opps').innerHTML=opps.map(p=>`<li>${escapeHtml(p)}</li>`).join('');
+  document.getElementById('res-opps').innerHTML=opps.map(bulletHtml).join('');
 
   // household safety notes (only present when the plan carries them)
   const notesWrap=document.getElementById('res-safety-notes');
@@ -112,6 +112,15 @@ export function buildResults(){
 
   // photorealistic before/after (only when we have the user's photo)
   setupAfterPhoto();
+}
+
+/* Short headline with an expandable detail — long bullets read at a glance */
+function bulletHtml(text){
+  const t=String(text);
+  const m=t.match(/^(.{10,60}?[,.;:])\s+(.{12,})$/);
+  if(!m) return `<li>${escapeHtml(t)}</li>`;
+  const head=m[1].replace(/[,.;:]$/,'');
+  return `<li class="pt"><button class="pt-h" type="button" onclick="this.closest('li').classList.toggle('open')">${escapeHtml(head)}<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><div class="pt-d">${escapeHtml(t)}</div></li>`;
 }
 
 /* ---------- Photorealistic after-render (Gemini via edge function) ---------- */
@@ -227,7 +236,7 @@ export function renderUpgrades(){
       `<a href="${l.url}" target="_blank" rel="noopener" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
     const picker=options.length>1?`
       <select onchange="pickProduct(${i},this.value)" style="width:auto;max-width:100%;padding:7px 10px;font-size:13px;margin-top:8px">
-        ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} — $${o.product.price_usd}</option>`).join('')}
+        ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
       </select>`:'';
     const chosen=sel.productId?`
       <div class="pchoice">
@@ -250,7 +259,7 @@ export function renderUpgrades(){
         </div>
         <div class="small muted" style="margin-top:8px">Search instead: ${links}</div>
       </div>
-      <span class="cost">${sel.price_usd!=null?'$'+Math.round(sel.price_usd*sel.qty):'—'}</span>
+      <span class="cost">${sel.price_usd!=null?'$'+Math.round(sel.price_usd*sel.qty):'–'}</span>
     </div>`;
   }).join('');
   renderShopping();
@@ -284,7 +293,7 @@ export function renderShopping(){
   const picked=(state.shopping||[]).filter(s=>s.checked);
   const list=document.getElementById('res-shopping');
   list.innerHTML=picked.length?picked.map(s=>
-    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'—'}</span></li>`).join(''):
+    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
     '<li><span class="muted">No items selected — you\'re on the $0 plan.</span></li>';
   const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
   const unpriced=picked.some(s=>s.price_usd==null);
@@ -293,6 +302,28 @@ export function renderShopping(){
   const note=document.getElementById('res-price-asof');
   if(note) note.textContent=asOf?`Prices approximate, checked ${asOf}. Links open the retailer's page.`:'';
 }
+/* Practical, real tips matched to what each step asks the user to do */
+const TIP_RULES=[
+  [/expired|duplicate|donate|toss|purge|trash|edit/i,'Use three piles: keep, donate, trash. Set a 10 minute timer. Decisions get faster after the first few items.'],
+  [/empty|pull everything|dump|unload|one wall at a time|one zone at a time/i,'Lay a towel or sheet on the floor first and unload onto it. The mess stays contained and easy to sort.'],
+  [/group|sort|similar|categor/i,'Do not aim for perfect categories. If two things get used together, store them together. You can refine later.'],
+  [/heavy/i,'Keep heavy items between knee and waist height, and slide them along the shelf instead of lifting when you can.'],
+  [/label/i,'Masking tape and a marker work as well as a label maker. Label the shelf edge, not the container, so swaps stay easy.'],
+  [/basket|bin|container|tray|caddy/i,'Measure shelf depth before assigning a bin, and leave a finger of space so it slides out easily.'],
+  [/top shelf|bulk|overflow|up high|rarely/i,'Use the step stool rule: anything you need a stool for should be something you use less than once a month.'],
+  [/rod|hang/i,'Hang items by length. Short items together free up the floor or shelf space underneath them.'],
+  [/shoe/i,'Store one of each pair toe out and heel out. You see both the front and the size at a glance.'],
+  [/fold/i,'Fold on a flat surface, not in the air. Stacks come out even and stay standing.'],
+  [/photo/i,'Take it from the same angle as your before photo. The comparison is worth it, and it helps the system stick.'],
+  [/coil|cable/i,'Coil each cable around your hand, then clip or tie it. Coiled cables take a quarter of the space.'],
+  [/zone|assign|home/i,'Say each zone out loud as you finish it. Naming the spot helps the whole household remember it.'],
+];
+function tipFor(s){
+  const hay=(s.t+' '+(s.w||''));
+  for(const [re,tip] of TIP_RULES){ if(re.test(hay)) return tip; }
+  return 'Finish one shelf completely before starting the next. Small finished wins keep you going.';
+}
+
 export function renderSteps(list){
   const wrap=document.getElementById('res-steps'); wrap.innerHTML='';
   state.stepDone=new Array(list.length).fill(false);
@@ -308,13 +339,18 @@ export function renderSteps(list){
         <div class="acts">
           <button class="mark" onclick="toggleStep(${i})">Mark complete</button>
           <button onclick="skipStep(${i})">Skip</button>
-          <button onclick="toast('Help is mocked — a tip would appear here')">Need help?</button>
+          <button onclick="toggleStepTip(${i})">Need help?</button>
         </div>
+        <div class="step-tip hide" id="step-tip-${i}">${ICON.why}<span>${escapeHtml(tipFor(s))}</span></div>
       </div>`;
     wrap.appendChild(t);
   });
   state.stepCount=list.length;
   updateProgress();
+}
+export function toggleStepTip(i){
+  const el=document.getElementById('step-tip-'+i);
+  if(el) el.classList.toggle('hide');
 }
 export function toggleStep(i){
   state.stepDone[i]=!state.stepDone[i];
@@ -350,6 +386,9 @@ export function renderAfter(mode){
   const cab=document.getElementById('after-cabinet');
   const map=activeMap();
   let colorI=0;
+  // Cap chips per shelf and keep rows single-line so switching modes never
+  // changes the drawing's size — only its contents.
+  const MAXC=4;
   cab.innerHTML=map.map((m,ri)=>{
     let items=parseZone(m.zone);
     const isLast=ri===map.length-1;
@@ -359,18 +398,19 @@ export function renderAfter(mode){
     if(mode==='Kid-friendly setup' && isLast){ shelfCls=' kid'; tag='<span class="cab-tag kidt">kid reach</span>'; }
     let row;
     if(mode==='Hidden storage'){
-      const n=Math.max(1,Math.ceil(items.length/2));
+      const n=Math.min(MAXC, Math.max(1,Math.ceil(items.length/2)));
       row=Array.from({length:n}).map(()=>`<span class="cab-item bin">${SVG.shoppingBag}<span class="nm">Basket</span></span>`).join('');
     }else{
-      row=items.map(it=>{
+      const extra=Math.max(0, items.length-MAXC);
+      row=items.slice(0,MAXC).map(it=>{
         const c=AFTER_PALETTE[(colorI++)%AFTER_PALETTE.length];
         const bin=(mode==='More bins');
         const label=(mode==='More labels')?`<span class="lbl">${escapeHtml(it).slice(0,10)}</span>`:'';
         const lead=bin?SVG.archive:`<span class="sw" style="background:${c}"></span>`;
         return `<span class="cab-item${bin?' bin':''}">${lead}<span class="nm">${escapeHtml(it)}</span>${label}</span>`;
-      }).join('');
+      }).join('')+(extra?`<span class="cab-item more"><span class="nm">+${extra} more</span></span>`:'');
     }
-    if(!row) row='<span class="cab-item"><span class="nm" style="color:var(--ink-3)">&mdash;</span></span>';
+    if(!row) row='<span class="cab-item"><span class="nm" style="color:var(--ink-3)">open</span></span>';
     return `<div class="cab-shelf${shelfCls}"><div class="cab-lv"><span>${escapeHtml(m.lv)}</span>${tag}</div><div class="cab-row">${row}</div></div>`;
   }).join('');
 }

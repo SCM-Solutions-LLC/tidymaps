@@ -10,7 +10,7 @@ async function doSave(){
   try{
     toast('Saving…');
     await saveSpace(defaultSpaceName());
-    toast('Saved — find it under “My spaces”');
+    toast('Saved. Find it under “My spaces”.');
   }catch(e){
     toast(e.message);
   }
@@ -25,14 +25,14 @@ export function buildSave(){
     b.innerHTML=`<span class="ico">${ico}</span><span class="ttl">${t}</span>`;
     b.onclick=()=>{
       if(t==='Save plan'){
-        if(!backendConfigured()){ toast('Saving needs the backend — not connected yet'); return; }
+        if(!backendConfigured()){ toast('Saving is not available yet'); return; }
         if(!getSession()){ openAuth('save'); return; }
         doSave();
         return;
       }
       if(t==='Start another space'){ restart(); return; }
       if(t==='Compare before &amp; after'){ go('results'); setTimeout(()=>document.getElementById('after-tabs').scrollIntoView({behavior:'smooth'}),200); return; }
-      toast(t.replace('&amp;','&')+' — coming soon');
+      toast(t.replace('&amp;','&')+' is coming soon');
     };
     wrap.appendChild(b);
   });

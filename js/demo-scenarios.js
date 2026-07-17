@@ -1,5 +1,5 @@
 /* ============================================================
-   Demo scenarios — space-specific sample data for every space type.
+   Demo scenarios. Space-specific sample data for every space type.
 
    getDemoScenario(spaceType, goal, household) returns a raw plan
    object ready to pass through normalizeAi() in js/plan.js.
@@ -85,7 +85,7 @@ function pantryScenario() {
       {icon: 'down', title: 'Lower shelf', detail: 'Move heavy items here for stability.'},
       {icon: 'keep', title: 'Keep one zone empty', detail: 'Leave room near the front for daily access.'}
     ],
-    dontBuy: 'Skip the door-mounted spice rack for now — you have enough shelf space and the door may not support the weight.',
+    dontBuy: 'Skip the door-mounted spice rack for now. You have enough shelf space and the door may not support the weight.',
     steps: [
       {task: 'Remove expired or duplicate items first', time: '10 min', why: 'This creates space before reorganizing anything.'},
       {task: 'Pull similar items into groups', time: '15 min', why: 'Similar items need to live together so the system is easy to maintain.'},
@@ -157,14 +157,14 @@ function cabinetScenario() {
       {type: 'door-rack', qty: 1, purpose: 'Mount a small rack for pot lids or foil and wrap', targetZone: 'Inside door', maxDims: {w_in: 12, h_in: 18, d_in: 3}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label shelf zones so everyone puts things back correctly', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'The adjustable shelves and built-in vertical slots give you a head start — no purchases needed to start.',
+    existingLede: 'The adjustable shelves and built-in vertical slots give you a head start. No purchases needed to start.',
     existing: [
       {icon: 'layers', title: 'Adjustable shelf pins', detail: 'Move shelves to match the tallest items in each zone.'},
       {icon: 'vertical', title: 'Vertical divider slots', detail: 'Use for baking sheets and cutting boards standing upright.'},
       {icon: 'horizontal', title: 'Corner lazy-susan space', detail: 'Place a small turntable or group oils here.'},
       {icon: 'door', title: 'Inside-door surface', detail: 'Hang a small hook strip for pot holders or measuring cups.'}
     ],
-    dontBuy: 'Skip plate-stacking racks — they often create more problems than they solve. Just limit stack height instead.',
+    dontBuy: 'Skip plate-stacking racks. They often create more problems than they solve. Just limit stack height instead.',
     steps: [
       {task: 'Empty the cabinet completely', time: '5 min', why: 'You need to see every item to sort and reassign properly.'},
       {task: 'Match every food storage container with its lid', time: '10 min', why: 'Orphaned lids and lidless containers waste space.'},
@@ -194,7 +194,7 @@ function closetScenario() {
     ],
     problems: [
       'Work and casual clothes share one rod with no separation, making mornings slower',
-      'Shoes are piled on the floor with no system — pairs get separated',
+      'Shoes are piled on the floor with no system. Pairs get separated',
       'The top shelf is a catch-all for anything without a home',
       'Seasonal items take up prime space year-round',
       'Accessories like belts and scarves have no dedicated spot'
@@ -212,12 +212,12 @@ function closetScenario() {
         eye: false, shelfIndex: 0,
         safety: {flag: 'keep-high', why: 'Heavy luggage should be stored carefully to avoid falling when pulled down.'},
         items: [{name: 'Seasonal boxes', size: 'l', flags: ['heavy']}, {name: 'Luggage', size: 'l', flags: ['heavy']}, {name: 'Hat boxes', size: 'm', flags: []}]},
-      {level: 'Hanging rod — left', icon: 'eye', zone: 'Work clothes · Blazers · Dress shirts',
+      {level: 'Hanging rod: left', icon: 'eye', zone: 'Work clothes · Blazers · Dress shirts',
         why: 'Work outfits on one side lets you dress quickly without scanning the whole rod.',
         eye: true, shelfIndex: 1,
         safety: {flag: null, why: null},
         items: [{name: 'Work shirts & blouses', size: 'm', flags: []}, {name: 'Blazers & jackets', size: 'l', flags: []}, {name: 'Dress pants & skirts', size: 'm', flags: []}]},
-      {level: 'Hanging rod — right', icon: 'middle', zone: 'Casual wear · Weekend clothes · Workout gear',
+      {level: 'Hanging rod: right', icon: 'middle', zone: 'Casual wear · Weekend clothes · Workout gear',
         why: 'Casual items separated from work clothes reduces visual scanning.',
         eye: false, shelfIndex: 2,
         safety: {flag: null, why: null},
@@ -231,23 +231,23 @@ function closetScenario() {
     geometry: {unit: 'in', width: 48, height: 84, depth: 24, shelfCount: 4, shelfYFracs: [0.08, 0.35, 0.55, 0.90], estimated: true},
     safetyNotes: [
       'Heavy luggage on the top shelf should be stored toward the back with lighter items in front.',
-      'Avoid over-stacking the top shelf — items can fall when you reach blindly.'
+      'Avoid over-stacking the top shelf. Items can fall when you reach blindly.'
     ],
     productNeeds: [
       {type: 'basket', qty: 3, purpose: 'Labeled bins on the top shelf for seasonal items', targetZone: 'Top shelf', maxDims: {w_in: 14, h_in: 12, d_in: 22}, priority: 'high'},
       {type: 'hook-rack', qty: 1, purpose: 'Over-door hooks for bags, belts, and next-day outfit', targetZone: 'Door back', maxDims: {w_in: 18, h_in: 60, d_in: 3}, priority: 'high'},
       {type: 'shelf-riser', qty: 1, purpose: 'Add a second level below short-hanging items', targetZone: 'Floor level', maxDims: {w_in: 24, h_in: 14, d_in: 14}, priority: 'nice'},
-      {type: 'clear-bin', qty: 2, purpose: 'Floor bins for shoes — keeps pairs together and visible', targetZone: 'Floor level', maxDims: {w_in: 14, h_in: 8, d_in: 22}, priority: 'nice'},
+      {type: 'clear-bin', qty: 2, purpose: 'Floor bins for shoes. Keeps pairs together and visible', targetZone: 'Floor level', maxDims: {w_in: 14, h_in: 8, d_in: 22}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label each rod section and shelf zone', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'The single rod, top shelf, and floor area are already three distinct zones — they just need assignment.',
+    existingLede: 'The single rod, top shelf, and floor area are already three distinct zones. They just need assignment.',
     existing: [
       {icon: 'horizontal', title: 'Existing rod space', detail: 'Divide into work (left) and casual (right) with a simple divider or hanger color.'},
       {icon: 'up', title: 'Top shelf', detail: 'Clear and assign to seasonal-only items in labeled bins.'},
       {icon: 'down', title: 'Floor space', detail: 'Line up shoes in pairs or add a low rack.'},
       {icon: 'door', title: 'Door back', detail: 'Hang hooks for bags, scarves, and daily accessories.'}
     ],
-    dontBuy: 'Skip full closet system kits — a few targeted additions (hooks, bins) usually solve 80% of the problem for a fraction of the cost.',
+    dontBuy: 'Skip full closet system kits. A few targeted additions (hooks, bins) usually solve 80% of the problem for a fraction of the cost.',
     steps: [
       {task: 'Pull everything out and sort into keep, donate, and trash', time: '20 min', why: 'You cannot organize what you have not edited. Reducing volume is the single biggest improvement.'},
       {task: 'Group clothing by type: work, casual, seasonal, workout', time: '10 min', why: 'Categories let you assign zones that make sense.'},
@@ -276,7 +276,7 @@ function garageScenario() {
     ],
     problems: [
       'Chemicals (paint thinner, cleaners) sit next to sports gear and kids’ toys',
-      'Heavy power tools are on an upper shelf — risk of injury when reaching up',
+      'Heavy power tools are on an upper shelf. Risk of injury when reaching up',
       'Holiday decorations take up a full shelf year-round but are accessed twice a year',
       'Hardware and fasteners are loose in a box with no way to find what you need',
       'Extension cords are tangled in a pile'
@@ -329,12 +329,12 @@ function garageScenario() {
       {type: 'safety-latch', qty: 1, purpose: 'Lock chemical shelf if young children access the garage', targetZone: 'Top shelf', maxDims: null, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label every bin and zone for quick identification', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'The pegboard and three cardboard boxes are a starting point — replace the boxes with clear bins and put the pegboard to work.',
+    existingLede: 'The pegboard and three cardboard boxes are a starting point. Replace the boxes with clear bins and put the pegboard to work.',
     existing: [
       {icon: 'vertical', title: 'Pegboard wall space', detail: 'Hang frequently used hand tools here to free a full shelf.'},
       {icon: 'bin', title: '3 cardboard boxes', detail: 'Replace with labeled clear bins or line with plastic bags for now.'},
       {icon: 'down', title: 'Floor space', detail: 'Dedicate to bulky sports and garden gear.'},
-      {icon: 'layers', title: '5 heavy-duty shelves', detail: 'Every shelf can hold 100+ lbs — use the capacity strategically.'}
+      {icon: 'layers', title: '5 heavy-duty shelves', detail: 'Every shelf can hold 100+ lbs. Use the capacity strategically.'}
     ],
     dontBuy: 'Skip ceiling-mounted storage unless you have confirmed the joists can hold the weight. Wall-mounted hooks are safer and easier.',
     steps: [
@@ -415,7 +415,7 @@ function laundryScenario() {
     existingLede: 'The laundry basket, folding surface, and the wall space beside the shelves all have organizing potential right now.',
     existing: [
       {icon: 'bin', title: 'Existing laundry basket', detail: 'Keep it on the floor below the shelves for dirty items.'},
-      {icon: 'horizontal', title: 'Dryer-top folding surface', detail: 'Keep clear for active folding — do not let it become storage.'},
+      {icon: 'horizontal', title: 'Dryer-top folding surface', detail: 'Keep clear for active folding. Do not let it become storage.'},
       {icon: 'vertical', title: 'Empty wall space', detail: 'Install a hook strip for the iron and a small drying bar.'},
       {icon: 'layers', title: '4 bracket shelves', detail: 'Assign each shelf a single purpose: supplies, daily products, textiles, tools.'}
     ],
@@ -448,7 +448,7 @@ function kidsScenario() {
       {icon: 'down', title: 'Floor space in front', sub: 'Current play area'}
     ],
     problems: [
-      'No category separation — toys, books, and art supplies are mixed on every shelf',
+      'No category separation. Toys, books, and art supplies are mixed on every shelf',
       'Small game pieces and art supplies pose a choking risk for younger children',
       'Building blocks overflow their bin and end up on the floor',
       'Books stacked horizontally make it hard to pull one out without toppling the pile',
@@ -496,14 +496,14 @@ function kidsScenario() {
       {type: 'shelf-riser', qty: 1, purpose: 'Create a front-facing book display ledge on the wall', targetZone: 'Wall beside shelf', maxDims: {w_in: 24, h_in: 4, d_in: 5}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Picture labels so pre-readers know where items go back', targetZone: 'Every bin', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'Two fabric bins and three wall hooks are already installed — they just need better assignments.',
+    existingLede: 'Two fabric bins and three wall hooks are already installed. They just need better assignments.',
     existing: [
       {icon: 'bin', title: '2 fabric bins', detail: 'Empty, sort, and assign one to blocks and one to stuffed animals.'},
       {icon: 'horizontal', title: '3 wall hooks', detail: 'Assign to backpack, dress-up favorites, and a daily jacket.'},
-      {icon: 'down', title: 'Floor play area', detail: 'Keep clear of storage — this is the play zone, not overflow.'},
+      {icon: 'down', title: 'Floor play area', detail: 'Keep clear of storage. This is the play zone, not overflow.'},
       {icon: 'vertical', title: 'Wall space beside shelf', detail: 'Ideal for a picture-book ledge or more hooks.'}
     ],
-    dontBuy: 'Skip tall storage towers — kids should reach every shelf independently. A 48-inch max height is safer and more practical.',
+    dontBuy: 'Skip tall storage towers. Kids should reach every shelf independently. A 48-inch max height is safer and more practical.',
     steps: [
       {task: 'Pull everything off the shelves and sort into categories', time: '15 min', why: 'You will likely find broken toys, missing pieces, and items to donate. Editing first is key.'},
       {task: 'Set aside small-piece games and puzzles for the top shelf', time: '5 min', why: 'Small pieces need adult supervision and should be kept separate.'},
@@ -536,7 +536,7 @@ function atticScenario() {
       'Cardboard boxes are deteriorating and some have moisture damage',
       'Items untouched for 3+ years may no longer be needed',
       'Camping gear is buried behind holiday decorations and requires moving 4 boxes to reach',
-      'No system for seasonal rotation — summer gear blocks winter decorations in November'
+      'No system for seasonal rotation. Summer gear blocks winter decorations in November'
     ],
     opportunities: [
       'Replacing cardboard with clear bins makes contents visible even in low light',
@@ -575,7 +575,7 @@ function atticScenario() {
     geometry: {unit: 'in', width: 60, height: 72, depth: 24, shelfCount: 5, shelfYFracs: [0.08, 0.28, 0.48, 0.70, 0.92], estimated: true},
     safetyNotes: [
       'Heavy bins should always be on lower shelves to prevent injury when pulling them down.',
-      'Check for moisture damage and mildew before reorganizing — damaged items may need to be discarded.'
+      'Check for moisture damage and mildew before reorganizing. Damaged items may need to be discarded.'
     ],
     productNeeds: [
       {type: 'clear-bin', qty: 6, purpose: 'Replace cardboard boxes so contents are visible in low light', targetZone: 'Every shelf', maxDims: {w_in: 18, h_in: 14, d_in: 22}, priority: 'high'},
@@ -584,22 +584,22 @@ function atticScenario() {
       {type: 'hook-rack', qty: 1, purpose: 'Hang luggage or duffle bags from rafters to free shelf space', targetZone: 'Rafters above', maxDims: null, priority: 'nice'},
       {type: 'basket', qty: 2, purpose: 'Corral loose camping accessories and sports gear', targetZone: 'Lower shelf', maxDims: {w_in: 16, h_in: 12, d_in: 22}, priority: 'nice'}
     ],
-    existingLede: 'The five shelves and rafter space above give you more capacity than you think — the real issue is visibility and rotation.',
+    existingLede: 'The five shelves and rafter space above give you more capacity than you think. The real issue is visibility and rotation.',
     existing: [
-      {icon: 'layers', title: '5 shelves', detail: 'Assign each shelf a clear season or category — no mixing.'},
+      {icon: 'layers', title: '5 shelves', detail: 'Assign each shelf a clear season or category. No mixing.'},
       {icon: 'up', title: 'Exposed rafters', detail: 'Hang lightweight luggage or duffle bags to free a shelf.'},
       {icon: 'down', title: 'Floor space', detail: 'Reserve for oversized items like luggage, camp chairs, and coolers.'},
       {icon: 'horizontal', title: 'Deep shelf depth', detail: 'Use the 24-inch depth by placing current-season items in front.'}
     ],
-    dontBuy: 'Skip vacuum-seal bags for holiday decorations — fragile ornaments can crack under compression. Use structured bins instead.',
+    dontBuy: 'Skip vacuum-seal bags for holiday decorations. Fragile ornaments can crack under compression. Use structured bins instead.',
     steps: [
       {task: 'Pull everything out and sort into keep, donate, and trash', time: '30 min', why: 'Attics accumulate items that are no longer needed. Editing first is critical.'},
       {task: 'Check all boxes for moisture damage or mildew', time: '10 min', why: 'Damaged items can ruin neighboring boxes if not removed.'},
       {task: 'Replace deteriorating cardboard boxes with clear bins', time: '15 min', why: 'Clear bins survive attic temperature swings and let you see contents in dim light.'},
-      {task: 'Label every bin with bold, large-print labels', time: '10 min', why: 'Faded handwriting was the original problem — solve it permanently.'},
+      {task: 'Label every bin with bold, large-print labels', time: '10 min', why: 'Faded handwriting was the original problem. Solve it permanently.'},
       {task: 'Place current-season items at eye level, off-season behind', time: '10 min', why: 'Seasonal rotation means you never dig through out-of-season items.'},
       {task: 'Move heavy camping and sports gear to the lower shelf', time: '10 min', why: 'Heavy items at height are unsafe in any storage area.'},
-      {task: 'Hang luggage from rafters if possible', time: '10 min', why: 'Luggage is bulky but lightweight — perfect for rafter hooks.'},
+      {task: 'Hang luggage from rafters if possible', time: '10 min', why: 'Luggage is bulky but lightweight. Perfect for rafter hooks.'},
       {task: 'Write an annual review date on each bin', time: '5 min', why: 'A date prompts you to re-evaluate contents instead of storing them forever.'},
       {task: 'Take a final photo', time: '2 min', why: 'This helps track progress and compare before / after.'}
     ],
@@ -621,7 +621,7 @@ function otherScenario() {
       {icon: 'x', title: 'No labels', sub: 'Nothing is marked'}
     ],
     problems: [
-      'No category system — items are placed wherever they fit at the moment',
+      'No category system. Items are placed wherever they fit at the moment',
       'Frequently used items are blocked by rarely used ones',
       'A bin of miscellaneous items has become a catch-all with no structure',
       'Some items have been here so long their purpose is unclear',
@@ -667,7 +667,7 @@ function otherScenario() {
       {type: 'drawer-organizer', qty: 1, purpose: 'Sort small items like cables, batteries, and office supplies', targetZone: 'Eye level', maxDims: {w_in: 12, h_in: 4, d_in: 13}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label every zone and bin so the system stays organized', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'You already have shelves and at least one bin — the first step is sorting, not shopping.',
+    existingLede: 'You already have shelves and at least one bin. The first step is sorting, not shopping.',
     existing: [
       {icon: 'layers', title: '4 shelves', detail: 'Each shelf gets one purpose: daily, weekly, monthly, seasonal.'},
       {icon: 'bin', title: '1 existing bin', detail: 'Empty and re-assign to a single category instead of miscellaneous.'},
@@ -741,24 +741,24 @@ function drawersScenario() {
     ],
     geometry: {unit: 'in', width: 24, height: 30, depth: 20, shelfCount: 4, shelfYFracs: [0.14, 0.38, 0.62, 0.86], estimated: true},
     safetyNotes: [
-      'Sharp tools live together in the second drawer — never loose in a drawer children can open.',
+      'Sharp tools live together in the second drawer. Never loose in a drawer children can open.',
       'The bottom drawer holds only unbreakable, kid-safe items.'
     ],
     productNeeds: [
       {type: 'drawer-organizer', qty: 3, purpose: 'Give every utensil and tool a fixed slot', targetZone: 'Top drawer', maxDims: {w_in: 22, h_in: 3, d_in: 19}, priority: 'high'},
       {type: 'label-set', qty: 1, purpose: 'Label each drawer front so the whole household refiles correctly', targetZone: 'Every drawer', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'Your existing utensil tray still works — it just needs to become one slot inside a full-width system.',
+    existingLede: 'Your existing utensil tray still works. It just needs to become one slot inside a full-width system.',
     existing: [
       {icon: 'bin', title: 'Reuse: utensil tray', detail: 'Slot it into the new divider layout for small items.'},
       {icon: 'down', title: 'Deep bottom drawer', detail: 'Store containers upright with lids on.'},
       {icon: 'horizontal', title: 'Full drawer widths', detail: 'Dividers turn dead front strips into usable slots.'}
     ],
-    dontBuy: 'Skip single-purpose gadget organizers — full-width adjustable dividers cover every drawer shape.',
+    dontBuy: 'Skip single-purpose gadget organizers. Full-width adjustable dividers cover every drawer shape.',
     steps: [
       {task: 'Empty all four drawers onto the counter', time: '10 min', why: 'You cannot slot things until you see everything at once.'},
       {task: 'Pull out duplicates, broken tools, and takeout extras', time: '10 min', why: 'Most drawer clutter is things you would never choose to keep.'},
-      {task: 'Match every container to its lid — recycle strays', time: '5 min', why: 'Lids without containers are pure clutter.'},
+      {task: 'Match every container to its lid. Recycle strays', time: '5 min', why: 'Lids without containers are pure clutter.'},
       {task: 'Group by job: daily utensils, cooking tools, towels, storage', time: '10 min', why: 'Each drawer gets exactly one job.'},
       {task: 'Load drawers top to bottom by frequency of use', time: '10 min', why: 'The top drawer earns the everyday items.'},
       {task: 'Place sharp tools together, edges facing one way', time: '5 min', why: 'Blind reaches stay safe when blades have a known home.'},
@@ -772,7 +772,7 @@ function drawersScenario() {
 function junkScenario() {
   return {
     spaceType: 'Junk drawer',
-    summary: 'One classic junk drawer: batteries rolling loose, a tangle of charging cables, takeout menus, three kinds of tape, pens that may or may not work, and small tools buried underneath. It all fits — it just has no zones, so finding anything means digging.',
+    summary: 'One classic junk drawer: batteries rolling loose, a tangle of charging cables, takeout menus, three kinds of tape, pens that may or may not work, and small tools buried underneath. It all fits. It just has no zones, so finding anything means digging.',
     categories: ['Batteries', 'Pens & markers', 'Tape & adhesives', 'Small tools', 'Charging cables', 'Keys & spares', 'Paper & menus', 'Odds & ends'],
     features: [
       {icon: 'drawer', title: '1 wide drawer', sub: 'Standard depth, full extension'},
@@ -780,7 +780,7 @@ function junkScenario() {
       {icon: 'empty', title: 'No dividers', sub: 'Everything migrates and mixes'}
     ],
     problems: [
-      'No zones — items migrate and bury each other',
+      'No zones. Items migrate and bury each other',
       'Dead batteries mixed with fresh ones',
       'Cables tangle around everything else',
       'Paper takes a third of the drawer and is never referenced',
@@ -790,11 +790,11 @@ function junkScenario() {
       'Four to six small trays create instant zones',
       'A two-minute pen test frees a surprising amount of space',
       'Cables coiled and clipped take a quarter of their loose volume',
-      'Menus and paper can live in a folder elsewhere — or your phone'
+      'Menus and paper can live in a folder elsewhere. Or your phone'
     ],
     map: [
       {level: 'The drawer', icon: 'middle', zone: 'Tools & tape · Batteries · Pens · Cables · Spares',
-        why: 'One tray per category — the drawer stays useful because every zone is obvious.',
+        why: 'One tray per category. The drawer stays useful because every zone is obvious.',
         eye: true, shelfIndex: 0,
         safety: {flag: null, why: null},
         items: [{name: 'Small tools', size: 's', flags: ['sharp']}, {name: 'Batteries', size: 's', flags: []}, {name: 'Pens & tape', size: 's', flags: []}, {name: 'Cables', size: 's', flags: []}]}
@@ -807,16 +807,16 @@ function junkScenario() {
       {type: 'drawer-organizer', qty: 1, purpose: 'A modular tray set that turns one pile into five zones', targetZone: 'The drawer', maxDims: {w_in: 19, h_in: 3, d_in: 19}, priority: 'high'},
       {type: 'label-set', qty: 1, purpose: 'Label each tray so the drawer never re-junks', targetZone: 'The drawer', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'Small boxes and jar lids you already own can zone this drawer today — trays just look nicer.',
+    existingLede: 'Small boxes and jar lids you already own can zone this drawer today. Trays just look nicer.',
     existing: [
       {icon: 'bin', title: 'Reuse: small boxes', detail: 'Check-sized boxes and lids make free drawer trays.'},
       {icon: 'horizontal', title: 'Full drawer width', detail: 'Fits five zones across with room to spare.'}
     ],
-    dontBuy: 'Skip the giant "junk drawer organizer" kits — a handful of small trays does the same job for less.',
+    dontBuy: 'Skip the giant "junk drawer organizer" kits. A handful of small trays does the same job for less.',
     steps: [
       {task: 'Dump the entire drawer onto a towel', time: '2 min', why: 'A full reset beats sorting in place.'},
       {task: 'Test every pen; toss the dead ones', time: '3 min', why: 'Dead pens are the #1 junk-drawer squatter.'},
-      {task: 'Check batteries — separate fresh from questionable', time: '3 min', why: 'Loose mystery batteries waste space and time.'},
+      {task: 'Check batteries. Separate fresh from questionable', time: '3 min', why: 'Loose mystery batteries waste space and time.'},
       {task: 'Coil each cable and clip or tie it', time: '5 min', why: 'Coiled cables take a quarter of the space.'},
       {task: 'Relocate paper and menus out of the drawer', time: '3 min', why: 'Reference paper belongs in a folder, not prime kitchen space.'},
       {task: 'Assign one tray per category and load them', time: '8 min', why: 'Obvious zones are what keep a junk drawer from re-junking.'},
@@ -862,12 +862,12 @@ function bathroomScenario() {
         eye: false, shelfIndex: 1,
         safety: {flag: null, why: null},
         items: [{name: 'Hair accessories', size: 's', flags: []}, {name: 'First aid', size: 's', flags: []}]},
-      {level: 'Cabinet — upper zone', icon: 'vertical', zone: 'Cleaning supplies, up high in a caddy',
+      {level: 'Cabinet: upper zone', icon: 'vertical', zone: 'Cleaning supplies, up high in a caddy',
         why: 'Chemicals go in one liftable caddy on the highest usable level.',
         eye: false, shelfIndex: 2,
         safety: {flag: 'lock-or-latch', why: 'Sprays and chemicals stay latched away from kids and pets.'},
         items: [{name: 'Cleaning sprays', size: 'm', flags: ['chemical']}, {name: 'Chemical refills', size: 'm', flags: ['chemical']}]},
-      {level: 'Cabinet — floor', icon: 'down', zone: 'Backstock · Hair tools in a bin · Bulk paper',
+      {level: 'Cabinet: floor', icon: 'down', zone: 'Backstock · Hair tools in a bin · Bulk paper',
         why: 'Heavy and bulky items sit stable on the cabinet floor in labeled bins.',
         eye: false, shelfIndex: 3,
         safety: {flag: null, why: null},
@@ -879,18 +879,18 @@ function bathroomScenario() {
       'Nothing breakable sits above the toilet-paper reach zone.'
     ],
     productNeeds: [
-      {type: 'clear-bin', qty: 2, purpose: 'Stackable bins that work around the plumbing', targetZone: 'Cabinet — floor', maxDims: {w_in: 12, h_in: 8, d_in: 18}, priority: 'high'},
-      {type: 'turntable', qty: 1, purpose: 'Spin skincare into view in the deep corner', targetZone: 'Cabinet — floor', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
+      {type: 'clear-bin', qty: 2, purpose: 'Stackable bins that work around the plumbing', targetZone: 'Cabinet: floor', maxDims: {w_in: 12, h_in: 8, d_in: 18}, priority: 'high'},
+      {type: 'turntable', qty: 1, purpose: 'Spin skincare into view in the deep corner', targetZone: 'Cabinet: floor', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
       {type: 'drawer-organizer', qty: 2, purpose: 'Slot the routines so they stay separated', targetZone: 'Top drawer', maxDims: {w_in: 26, h_in: 2.5, d_in: 17}, priority: 'nice'},
-      {type: 'safety-latch', qty: 1, purpose: 'Latch the chemical zone away from small children', targetZone: 'Cabinet — upper zone', maxDims: null, priority: 'high'}
+      {type: 'safety-latch', qty: 1, purpose: 'Latch the chemical zone away from small children', targetZone: 'Cabinet: upper zone', maxDims: null, priority: 'high'}
     ],
-    existingLede: 'The cabinet has more height than floor — use what you own to build up, not out.',
+    existingLede: 'The cabinet has more height than floor. Use what you own to build up, not out.',
     existing: [
       {icon: 'bin', title: 'Reuse: shoe-box bins', detail: 'Sturdy boxes become free backstock bins.'},
       {icon: 'vertical', title: 'Cabinet height', detail: 'Stack bins two-high beside the plumbing.'},
-      {icon: 'drawer', title: 'Two shallow drawers', detail: 'Dedicate one per routine — morning and evening.'}
+      {icon: 'drawer', title: 'Two shallow drawers', detail: 'Dedicate one per routine. Morning and evening.'}
     ],
-    dontBuy: 'Skip vanity-specific organizers sized for magazine bathrooms — standard stacking bins fit better around real plumbing.',
+    dontBuy: 'Skip vanity-specific organizers sized for magazine bathrooms. Standard stacking bins fit better around real plumbing.',
     steps: [
       {task: 'Empty the vanity and drawers completely', time: '10 min', why: 'Bathroom clutter hides expired products at every layer.'},
       {task: 'Toss expired and empty products', time: '10 min', why: 'Usually a third of the volume goes straight to the bin.'},
@@ -917,7 +917,7 @@ function linenScenario() {
       {icon: 'empty', title: 'Floor space', sub: 'Currently a laundry-basket parking spot'}
     ],
     problems: [
-      'Sheet sets split apart — matching a set means unfolding stacks',
+      'Sheet sets split apart. Matching a set means unfolding stacks',
       'Towel stacks are too tall and topple when one is pulled',
       'Bulky blankets crush the shelves below them',
       'No zones by room or by person, so everyone digs',
@@ -958,20 +958,20 @@ function linenScenario() {
     ],
     geometry: {unit: 'in', width: 36, height: 78, depth: 16, shelfCount: 5, shelfYFracs: [0.10, 0.30, 0.50, 0.70, 0.92], estimated: true},
     safetyNotes: [
-      'Only light, soft items overhead — pulling a blanket down should never bring anything hard with it.'
+      'Only light, soft items overhead. Pulling a blanket down should never bring anything hard with it.'
     ],
     productNeeds: [
       {type: 'basket', qty: 2, purpose: 'Breathable baskets for blankets up top', targetZone: 'Top shelf', maxDims: {w_in: 16, h_in: 12, d_in: 15}, priority: 'nice'},
       {type: 'clear-bin', qty: 2, purpose: 'Keep toiletry backstock visible and contained', targetZone: 'Lower shelf', maxDims: {w_in: 12, h_in: 8, d_in: 15}, priority: 'high'},
       {type: 'label-set', qty: 1, purpose: 'Label shelf edges by zone so linens return home', targetZone: 'Every shelf', maxDims: null, priority: 'high'}
     ],
-    existingLede: 'Pillowcases are the free organizing product here — every sheet set can be bundled inside one of its own.',
+    existingLede: 'Pillowcases are the free organizing product here. Every sheet set can be bundled inside one of its own.',
     existing: [
       {icon: 'basket', title: 'Reuse: laundry basket', detail: 'Becomes the beach-towel bin on the floor.'},
       {icon: 'up', title: 'Empty top shelf', detail: 'Ready-made home for every blanket in the house.'},
       {icon: 'shelf', title: 'Deep shelves', detail: 'Two short stacks front-to-back beat one tall stack.'}
     ],
-    dontBuy: 'Skip matching wicker sets until the zones have survived a month — pillowcase bundling is free and does most of the work.',
+    dontBuy: 'Skip matching wicker sets until the zones have survived a month. Pillowcase bundling is free and does most of the work.',
     steps: [
       {task: 'Empty the closet one shelf at a time', time: '10 min', why: 'Linens hide worn-out strays in every stack.'},
       {task: 'Retire thin towels and orphaned sheets to a rag bag', time: '10 min', why: 'Rag-bag candidates are taking up prime shelf space.'},
@@ -999,7 +999,7 @@ function fridgeScenario() {
     ],
     problems: [
       'Leftovers disappear behind taller items and expire',
-      'Raw meat sits above ready-to-eat food — a food-safety risk',
+      'Raw meat sits above ready-to-eat food. A food-safety risk',
       'Produce is double-bagged and invisible, so it wilts unused',
       'Condiments occupy prime shelf space instead of the door',
       'Frozen bags are unlabeled and undated'
@@ -1008,7 +1008,7 @@ function fridgeScenario() {
       'An "eat me first" bin at eye level rescues leftovers',
       'Moving raw meat to the lowest shelf fixes the safety risk in one move',
       'The crispers can actually work: one high humidity, one low',
-      'Upright frozen bags act like a file drawer — everything visible'
+      'Upright frozen bags act like a file drawer. Everything visible'
     ],
     map: [
       {level: 'Top shelf', icon: 'up', zone: 'Drinks · Ready-to-eat items',
@@ -1032,14 +1032,14 @@ function fridgeScenario() {
         safety: {flag: null, why: null},
         items: [{name: 'Leafy greens', size: 'm', flags: []}, {name: 'Fruit', size: 'm', flags: []}]},
       {level: 'Freezer drawer', icon: 'down', zone: 'Bags filed upright · Meals dated on top',
-        why: 'Upright bags read like files — no more archaeology.',
+        why: 'Upright bags read like files. No more archaeology.',
         eye: false, shelfIndex: 4,
         safety: {flag: null, why: null},
         items: [{name: 'Frozen vegetables', size: 'm', flags: []}, {name: 'Frozen meals', size: 'm', flags: []}]}
     ],
     geometry: {unit: 'in', width: 33, height: 66, depth: 24, shelfCount: 5, shelfYFracs: [0.10, 0.28, 0.46, 0.62, 0.85], estimated: true},
     safetyNotes: [
-      'Raw meat always below ready-to-eat food — the one fridge rule that is about health, not tidiness.',
+      'Raw meat always below ready-to-eat food. The one fridge rule that is about health, not tidiness.',
       'Kid snacks and drinks sit on the lowest door shelf where small hands reach safely.'
     ],
     productNeeds: [
@@ -1047,13 +1047,13 @@ function fridgeScenario() {
       {type: 'turntable', qty: 1, purpose: 'Spin sauces into view instead of digging', targetZone: 'Top shelf', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Date labels for leftovers and freezer bags', targetZone: 'Freezer drawer', maxDims: null, priority: 'high'}
     ],
-    existingLede: 'The fridge already has the hardware — adjustable shelves, humidity controls, door racks. The plan mostly turns on features you own.',
+    existingLede: 'The fridge already has the hardware. Adjustable shelves, humidity controls, door racks. The plan mostly turns on features you own.',
     existing: [
       {icon: 'drawer', title: 'Crisper humidity controls', detail: 'High for leafy greens, low for fruit.'},
       {icon: 'shelf', title: 'Adjustable shelf', detail: 'Drop it one notch to fit bottles upright.'},
-      {icon: 'door', title: 'Door shelves', detail: 'Perfect for condiments — the warmest zone is fine for them.'}
+      {icon: 'door', title: 'Door shelves', detail: 'Perfect for condiments. The warmest zone is fine for them.'}
     ],
-    dontBuy: 'Skip fridge-organizing hauls — three bins and a marker cover 90% of the payoff.',
+    dontBuy: 'Skip fridge-organizing hauls. Three bins and a marker cover 90% of the payoff.',
     steps: [
       {task: 'Empty one zone at a time, tossing expired items', time: '15 min', why: 'A full fridge purge stalls; zone-by-zone finishes.'},
       {task: 'Wipe shelves while they are clear', time: '5 min', why: 'A ten-second wipe now beats a deep clean later.'},
@@ -1074,7 +1074,7 @@ function walkinScenario() {
     summary: 'A U-shaped walk-in closet mapped wall by wall: left wall, back wall, then right wall. Long clothes crowd a single rod, folded piles slump on the back shelves, shoes pile on the floor, and the high shelves hold an unplanned mix of bags and bedding. Every wall works harder once it has one clear job.',
     categories: ['Hanging clothes', 'Folded knits & tees', 'Shoes', 'Bags & purses', 'Seasonal clothing', 'Accessories & belts', 'Spare bedding', 'Laundry overflow'],
     features: [
-      {icon: 'shelf', title: '3 walls of storage', sub: 'Left, back, and right — mapped in walking order'},
+      {icon: 'shelf', title: '3 walls of storage', sub: 'Left, back, and right. Mapped in walking order'},
       {icon: 'hook', title: '2 hanging rods', sub: 'One sagging under double duty'},
       {icon: 'up', title: 'High shelves on all walls', sub: 'Unplanned mix of bags and bedding'},
       {icon: 'down', title: 'Open floor line', sub: 'Currently a shoe pile'},
@@ -1094,32 +1094,32 @@ function walkinScenario() {
       'Seasonal items can retire to the high shelves in labeled bins'
     ],
     map: [
-      {level: 'Left wall — high shelf', icon: 'up', zone: 'Seasonal clothing · Spare bedding, in labeled bins',
+      {level: 'Left wall: high shelf', icon: 'up', zone: 'Seasonal clothing · Spare bedding, in labeled bins',
         why: 'Out-of-season items earn the hardest-to-reach spots.',
         eye: false, shelfIndex: 0,
-        safety: {flag: 'keep-high', why: 'Only light, soft bins overhead — nothing heavy above head height.'},
+        safety: {flag: 'keep-high', why: 'Only light, soft bins overhead. Nothing heavy above head height.'},
         items: [{name: 'Seasonal bins', size: 'l', flags: []}, {name: 'Spare bedding', size: 'l', flags: []}]},
-      {level: 'Left wall — hanging rod', icon: 'hook', zone: 'Long items: dresses · Coats · Jumpsuits',
+      {level: 'Left wall: hanging rod', icon: 'hook', zone: 'Long items: dresses · Coats · Jumpsuits',
         why: 'Long items need the full-height drop only this rod provides.',
         eye: false, shelfIndex: 1,
         safety: {flag: null, why: null},
         items: [{name: 'Dresses', size: 'l', flags: []}, {name: 'Coats', size: 'l', flags: []}]},
-      {level: 'Back wall — eye level', icon: 'eye', zone: 'Daily folded: knits · Tees · Jeans, in two short stacks per cubby',
+      {level: 'Back wall: eye level', icon: 'eye', zone: 'Daily folded: knits · Tees · Jeans, in two short stacks per cubby',
         why: 'The shelf you face when you walk in should hold what you wear most.',
         eye: true, shelfIndex: 2,
         safety: {flag: null, why: null},
         items: [{name: 'Knits & tees', size: 'm', flags: []}, {name: 'Jeans', size: 'm', flags: []}]},
-      {level: 'Back wall — lower shelves', icon: 'down', zone: 'Bags & purses · Accessories in small bins',
+      {level: 'Back wall: lower shelves', icon: 'down', zone: 'Bags & purses · Accessories in small bins',
         why: 'Mid-low shelves keep accessories visible without crushing them.',
         eye: false, shelfIndex: 3,
         safety: {flag: null, why: null},
         items: [{name: 'Bags & purses', size: 'm', flags: []}, {name: 'Accessories', size: 's', flags: []}]},
-      {level: 'Right wall — double rods', icon: 'hook', zone: 'Short items doubled up: shirts · Skirts · Folded-bar pants',
+      {level: 'Right wall: double rods', icon: 'hook', zone: 'Short items doubled up: shirts · Skirts · Folded-bar pants',
         why: 'Two stacked rods fit twice the short items in the same wall space.',
         eye: false, shelfIndex: 4,
         safety: {flag: null, why: null},
         items: [{name: 'Shirts', size: 'm', flags: []}, {name: 'Skirts', size: 'm', flags: []}]},
-      {level: 'Floor — full run', icon: 'down', zone: 'Shoe rack rows · Laundry basket · Step stool',
+      {level: 'Floor: full run', icon: 'down', zone: 'Shoe rack rows · Laundry basket · Step stool',
         why: 'A low rack turns the shoe pile into a grid you can actually scan.',
         eye: false, shelfIndex: 5,
         safety: {flag: 'kid-safe', why: 'Floor level stays free of anything breakable or heavy.'},
@@ -1127,24 +1127,24 @@ function walkinScenario() {
     ],
     geometry: {unit: 'in', width: 96, height: 84, depth: 24, shelfCount: 6, shelfYFracs: [0.08, 0.24, 0.42, 0.58, 0.74, 0.92], estimated: true},
     safetyNotes: [
-      'Heavy bags come down from overhead — high shelves hold only light, soft bins.',
+      'Heavy bags come down from overhead. High shelves hold only light, soft bins.',
       'The step stool lives on the floor run so no one climbs shelves to reach the top.'
     ],
     productNeeds: [
-      {type: 'basket', qty: 3, purpose: 'Soft bins for seasonal clothing on the high shelves', targetZone: 'Left wall — high shelf', maxDims: {w_in: 16, h_in: 12, d_in: 22}, priority: 'high'},
-      {type: 'clear-bin', qty: 2, purpose: 'Keep accessories visible on the lower back shelves', targetZone: 'Back wall — lower shelves', maxDims: {w_in: 12, h_in: 6, d_in: 14}, priority: 'nice'},
-      {type: 'hook-rack', qty: 1, purpose: 'Belts and bags on the dead wall strip by the door', targetZone: 'Right wall — double rods', maxDims: {w_in: 18, h_in: 4, d_in: 4}, priority: 'nice'},
+      {type: 'basket', qty: 3, purpose: 'Soft bins for seasonal clothing on the high shelves', targetZone: 'Left wall: high shelf', maxDims: {w_in: 16, h_in: 12, d_in: 22}, priority: 'high'},
+      {type: 'clear-bin', qty: 2, purpose: 'Keep accessories visible on the lower back shelves', targetZone: 'Back wall: lower shelves', maxDims: {w_in: 12, h_in: 6, d_in: 14}, priority: 'nice'},
+      {type: 'hook-rack', qty: 1, purpose: 'Belts and bags on the dead wall strip by the door', targetZone: 'Right wall: double rods', maxDims: {w_in: 18, h_in: 4, d_in: 4}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label bins and shelf edges so every wall keeps its job', targetZone: 'Every wall', maxDims: null, priority: 'high'}
     ],
-    existingLede: 'Three walls, two rods, and a floor run — the hardware is already here. The plan just gives each wall one job.',
+    existingLede: 'Three walls, two rods, and a floor run. The hardware is already here. The plan just gives each wall one job.',
     existing: [
       {icon: 'hook', title: 'Two hanging rods', detail: 'Split by garment length: long on the left, doubled shorts on the right.'},
       {icon: 'shelf', title: 'Back-wall shelf gap', detail: 'Becomes the daily folded zone you face walking in.'},
       {icon: 'down', title: 'Full floor run', detail: 'Fits a two-row shoe rack plus the laundry basket.'}
     ],
-    dontBuy: 'Skip closet-system overhauls — rod discipline, a shoe rack, and labeled bins deliver most of the result.',
+    dontBuy: 'Skip closet-system overhauls. Rod discipline, a shoe rack, and labeled bins deliver most of the result.',
     steps: [
-      {task: 'Empty one wall at a time — left, back, then right', time: '20 min', why: 'Walk-ins overwhelm; wall-by-wall keeps it finishable.'},
+      {task: 'Empty one wall at a time. Left, back, then right', time: '20 min', why: 'Walk-ins overwhelm; wall-by-wall keeps it finishable.'},
       {task: 'Pull a donate pile as you go', time: '10 min', why: 'Every hanger you free is hanging space you get back.'},
       {task: 'Split hanging by length: long left, short right', time: '10 min', why: 'Length-sorted rods stop the crush and double capacity.'},
       {task: 'Rebuild the back wall with daily folded items', time: '10 min', why: 'Your most-worn items belong where you look first.'},
@@ -1231,7 +1231,7 @@ function applyGoal(plan, goal) {
       // Drop product needs to essentials
       plan.productNeeds = plan.productNeeds.filter(p => p.priority === 'high').slice(0, 2);
       plan.cost = '$0';
-      plan.dontBuy = 'This plan uses only what you already own — no purchases required.';
+      plan.dontBuy = 'This plan uses only what you already own. No purchases required.';
       break;
 
     case 'find':

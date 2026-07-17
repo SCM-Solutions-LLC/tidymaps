@@ -45,7 +45,7 @@ export async function sendAuthCode(){
     await sendCode(email);
     document.getElementById('auth-step-email').classList.add('hide');
     document.getElementById('auth-step-code').classList.remove('hide');
-    msg.textContent='Code sent to '+email+' — it can take a minute to arrive.';
+    msg.textContent='Code sent to '+email+'. It can take a minute to arrive.';
     setTimeout(()=>document.getElementById('auth-code').focus(),50);
   }catch(e){
     msg.textContent=e.message;

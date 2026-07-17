@@ -293,3 +293,51 @@ textarea{resize:vertical;min-height:84px}
 .footer-legal{font-size:12px;color:var(--ink-3);line-height:1.7}
 .footer-legal span{display:block}
 @media(min-width:680px){.footer-legal{text-align:right}}
+
+/* expandable problem/opportunity bullets: headline first, detail on tap */
+.problems .pt-h{display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;font:inherit;font-size:14.5px;color:var(--ink-2);text-align:left;font-weight:600;cursor:pointer}
+.problems .pt-h svg{flex:none;transition:transform .18s;color:var(--ink-3)}
+.problems .pt.open .pt-h svg{transform:rotate(180deg)}
+.problems .pt-d{display:none;margin-top:5px;font-size:13.5px;color:var(--ink-3);line-height:1.55}
+.problems .pt.open .pt-d{display:block}
+
+/* real per-step tips */
+.step-tip{display:flex;gap:9px;align-items:flex-start;background:var(--sage-bg);border:1px solid var(--sage-line);border-radius:10px;padding:11px 13px;margin-top:10px;font-size:13.5px;color:var(--sage-ink);line-height:1.5}
+.step-tip svg{width:16px;height:16px;flex:none;margin-top:1px}
+
+/* before/after preview: single-line rows so mode switches never resize it */
+.cab-row{flex-wrap:nowrap;overflow:hidden}
+.cab-item{min-width:0;flex:none}
+.cab-item.more{background:var(--surface-2);border-style:dashed;color:var(--ink-3)}
+
+/* grouped space picker */
+.space-group{border:1.5px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+.sg-head{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;background:#fff;border:none;font-weight:700;font-size:15px;color:var(--ink);text-align:left;cursor:pointer}
+.sg-head .sg-count{margin-left:auto;font-size:12px;font-weight:600;color:var(--ink-3);background:var(--surface-2);border-radius:99px;padding:2px 9px}
+.sg-head svg{width:16px;height:16px;color:var(--ink-3);transition:transform .18s;flex:none}
+.space-group.open .sg-head svg{transform:rotate(180deg)}
+.space-group .sg-body{display:none;padding:2px 12px 14px}
+.space-group.open .sg-body{display:grid}
+@media(max-width:519px){
+  #space-opts .grid-auto{grid-template-columns:1fr}
+  #space-opts .opt{flex-wrap:nowrap;align-items:center;padding:12px 14px}
+}
+
+/* nowrap chip rows must not inflate the layout's minimum width */
+.ba > div,.cab,.cab-shelf,.cab-row{min-width:0}
+/* one-line shelf headers so mode tags never change the drawing's height */
+.cab-lv{flex-wrap:nowrap;min-width:0}
+.cab-lv > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cab-tag{flex:none;white-space:nowrap}
+.cab-item .lbl{white-space:nowrap}
+/* the after pane always matches the before pane's height; rows share it equally */
+.ba .after .cab .cab-shelf{min-height:0;overflow:hidden}
+.ba .before .pantry-vis{max-height:340px}
+/* fixed-height illustration rows: mode switches swap contents, never size */
+.ba .after .cab{flex:none;grid-auto-rows:56px}
+.ba .ba-h{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* stack the panes on phones (the base .ba rule used to override this) */
+@media(max-width:560px){
+  .ba{grid-template-columns:1fr}
+  .ba .before{border-right:none;border-bottom:1px solid var(--line)}
+}
