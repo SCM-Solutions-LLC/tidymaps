@@ -39,30 +39,23 @@ product links.
 
 ## Sign-in emails (custom SMTP)
 
-Supabase's built-in email sender is for testing only: a few emails per hour,
-no delivery guarantee. For real users, connect a sending service. Recommended
-setup with Resend (free tier covers 3,000 emails/month):
+Sign-in codes are delivered through Resend using the verified
+`scmsolutions.org` domain (DNS records live at Porkbun). Current setup,
+configured in the Supabase Dashboard -> Authentication:
 
-1. Create an account at resend.com and add the domain `scmsolutions.org`
-   (Domains -> Add Domain). Resend shows DNS records (DKIM/SPF); add them
-   wherever scmsolutions.org DNS is managed, then wait for "Verified".
-2. In Resend, create an API key (Sending access is enough).
-3. In the Supabase Dashboard -> Authentication -> SMTP Settings, enable
-   custom SMTP and enter:
-   - Sender email: `codes@scmsolutions.org` (any address on the verified domain)
-   - Sender name:  `TidyMap AI`
-   - Host: `smtp.resend.com`  ·  Port: `465`
-   - Username: `resend`  ·  Password: the API key
-4. Dashboard -> Authentication -> Rate Limits: raise "emails per hour"
-   from the default 30 to a level you're comfortable with.
-5. Dashboard -> Authentication -> Email Templates -> Magic Link: paste
-   `supabase/templates/otp-email.html` as the body and set the subject to
-   `Your TidyMap sign-in code: {{ .Token }}`. The template shows the
-   8-digit code large and centered, in the site's style.
+- Sender: `tidymap@scmsolutions.org` via `smtp.resend.com`
+- Subject: "Your TidyMap Sign-In Code" with an 8-digit code, 1-hour expiry
+- The email template is managed in the dashboard (Email Templates -> Magic
+  Link). A branded alternative that matches the site's design is kept at
+  `supabase/templates/otp-email.html` if you ever want to swap it in.
 
-The email says codes expire in one hour (the Supabase default). If you
-shorten "Email OTP Expiration" under Authentication -> Providers -> Email,
-update the wording in the template to match.
+Operational notes:
+- Rate limit: Dashboard -> Authentication -> Rate Limits caps auth emails
+  at 30/hour by default even with custom SMTP. Raise it before any launch.
+- If you shorten "Email OTP Expiration" (Authentication -> Providers ->
+  Email), update the expiry wording in the email template to match.
+- Resend's dashboard (resend.com) shows delivery status per email if a
+  code ever seems to go missing.
 
 ## Backend (Supabase)
 
