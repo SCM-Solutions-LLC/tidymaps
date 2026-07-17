@@ -5,6 +5,8 @@ import { go } from '../router.js';
 import { buildResults } from './results.js';
 import { getDemoScenario } from '../demo-scenarios.js';
 import { normalizeAi } from '../plan.js';
+import { submitInviteRequest } from '../db.js';
+import { withAffiliate, affiliatesConfigured } from '../affiliates.js';
 
 /* ---------- Demo shortcut ---------- */
 export function runDemo(){
@@ -30,6 +32,8 @@ export function requestInvite(){
     return;
   }
   try{ localStorage.setItem(INVITE_KEY,email); }catch(e){}
+  // store the request in the database so the owner actually sees it
+  submitInviteRequest(email).catch(()=>{});
   showInviteConfirmed(email);
   toast('Your request has been received');
 }
@@ -65,6 +69,13 @@ export function initLanding(){
     const saved=localStorage.getItem(INVITE_KEY);
     if(saved) showInviteConfirmed(saved);
   }catch(e){}
+
+  // route product links through affiliate programs when IDs are configured
+  document.querySelectorAll('#screen-landing a.tagr[data-retailer]').forEach(a=>{
+    a.href=withAffiliate(a.href, a.dataset.retailer);
+  });
+  const affNote=document.getElementById('affil-note');
+  if(affNote && affiliatesConfigured()) affNote.classList.remove('hide');
 
   initAppbarScroll();
 

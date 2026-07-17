@@ -4,6 +4,7 @@ import { state, persistGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, buildGeminiBrief } from '../plan.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
+import { withAffiliate, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
 import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.js';
 import { fileToScaledB64 } from '../media.js';
@@ -240,7 +241,7 @@ export function renderUpgrades(){
       </select>`:'';
     const chosen=sel.productId?`
       <div class="pchoice">
-        <a href="${sel.url}" target="_blank" rel="noopener">${escapeHtml(sel.name)}</a>
+        <a href="${withAffiliate(sel.url, sel.retailer)}" target="_blank" rel="noopener">${escapeHtml(sel.name)}</a>
         <span class="muted">at ${escapeHtml(sel.retailer)}</span>
         ${badge.txt?`<span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}
       </div>${picker}`:
@@ -300,7 +301,8 @@ export function renderShopping(){
   document.getElementById('res-shop-total').textContent=(total?'$'+Math.round(total):'$0')+(unpriced?'+':'');
   const asOf=priceAsOf();
   const note=document.getElementById('res-price-asof');
-  if(note) note.textContent=asOf?`Prices approximate, checked ${asOf}. Links open the retailer's page.`:'';
+  if(note) note.textContent=(asOf?`Prices approximate, checked ${asOf}. Links open the retailer's page.`:'')
+    +(affiliatesConfigured()?' '+AFFILIATE_DISCLOSURE:'');
 }
 /* Practical, real tips matched to what each step asks the user to do */
 const TIP_RULES=[
@@ -324,14 +326,57 @@ function tipFor(s){
   return 'Finish one shelf completely before starting the next. Small finished wins keep you going.';
 }
 
+/* ---------- Animated step illustrations ----------
+   Each step gets a small looping motion graphic matched to what the
+   step asks for, so the checklist reads at a glance. */
+const ART_RULES=[
+  [/expired|duplicate|donate|toss|purge|trash|declutter|retire/i,'purge'],
+  [/empty|pull everything|dump|unload|take everything|one wall at a time|one zone at a time/i,'unload'],
+  [/wipe|clean|dust/i,'wipe'],
+  [/label/i,'label'],
+  [/hang|rod/i,'hang'],
+  [/fold/i,'fold'],
+  [/photo/i,'photo'],
+  [/basket|bin|caddy|tray|corral|file .*upright|containers? with|stand tools/i,'contain'],
+  [/group|sort|similar|together|categor|match|split|separate/i,'group'],
+  [/top shelf|up high|overhead|bulk|backup|rarely|lift/i,'moveUp'],
+  [/heavy|lowest shelf|lower shelf|bottom|floor|raw meat/i,'moveDown'],
+  [/zone|assign|home|section|crisper|door/i,'zones'],
+];
+function stepArtType(s){
+  const hay=s.t+' '+(s.w||'');
+  for(const [re,type] of ART_RULES){ if(re.test(hay)) return type; }
+  return 'done';
+}
+const A_WRAP=(cls,inner)=>`<svg class="sa sa-${cls}" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const STEP_ART={
+  purge:A_WRAP('purge',`<rect x="4" y="31" width="11" height="11" rx="2"/><rect x="18.5" y="31" width="11" height="11" rx="2"/><rect x="33" y="31" width="11" height="11" rx="2"/>
+    <rect class="d1" x="6.5" y="8" width="7" height="7" rx="1.5"/><rect class="d2" x="20.5" y="6" width="7" height="7" rx="1.5"/><rect class="d3" x="35" y="9" width="7" height="7" rx="1.5"/>`),
+  unload:A_WRAP('unload',`<path d="M8 30v10a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2V30"/><path d="M6 30h36"/>
+    <rect class="u1" x="13" y="20" width="8" height="8" rx="1.5"/><rect class="u2" x="27" y="20" width="8" height="8" rx="1.5"/>`),
+  wipe:A_WRAP('wipe',`<path d="M6 36h36"/><rect class="w-dust" x="8" y="28" width="32" height="6" rx="2"/><circle class="w-pad" cx="12" cy="24" r="6"/>`),
+  label:A_WRAP('label',`<rect x="9" y="16" width="30" height="24" rx="3"/><rect class="l-tag" x="16" y="24" width="16" height="8" rx="1.5"/><path class="l-line" d="M19 28h10"/>`),
+  hang:A_WRAP('hang',`<path d="M4 12h40"/><g class="h1"><path d="M18 12v4"/><path d="M12 20l6-4 6 4"/><path d="M12 20v14h12V20"/></g><g class="h2"><path d="M34 12v4"/><path d="M29 20l5-4 5 4"/><path d="M29 20v8h10v-8"/></g>`),
+  fold:A_WRAP('fold',`<path d="M8 40h32"/><rect x="12" y="28" width="24" height="12" rx="2"/><rect class="f-flap" x="12" y="16" width="24" height="12" rx="2"/>`),
+  photo:A_WRAP('photo',`<rect x="8" y="14" width="32" height="24" rx="4"/><circle cx="24" cy="26" r="6"/><path d="M18 14l2.5-4h7L30 14"/><circle class="p-flash" cx="24" cy="26" r="3"/>`),
+  contain:A_WRAP('contain',`<path d="M10 26h28l-3 14a3 3 0 0 1-3 2.4H16a3 3 0 0 1-3-2.4z"/><rect class="c1" x="14" y="8" width="8" height="8" rx="1.5"/><rect class="c2" x="27" y="8" width="8" height="8" rx="1.5"/>`),
+  moveUp:A_WRAP('up',`<path d="M8 12h32M8 38h32"/><rect class="m-box" x="19" y="27" width="10" height="10" rx="1.5"/><path class="m-arrow" d="M38 32v-12M34 24l4-4 4 4"/>`),
+  moveDown:A_WRAP('down',`<path d="M8 12h32M8 38h32"/><rect class="m-box2" x="19" y="13" width="10" height="10" rx="1.5"/><path class="m-arrow" d="M38 18v12M34 26l4 4 4-4"/>`),
+  zones:A_WRAP('zones',`<rect x="8" y="8" width="32" height="32" rx="3"/><rect class="z1" x="12" y="12" width="24" height="7" rx="1.5"/><rect class="z2" x="12" y="21" width="24" height="7" rx="1.5"/><rect class="z3" x="12" y="30" width="24" height="7" rx="1.5"/>`),
+  group:A_WRAP('group',`<circle class="g1" cx="12" cy="14" r="4.5"/><circle class="g2" cx="36" cy="12" r="4.5"/><circle class="g3" cx="10" cy="36" r="4.5"/><circle class="g4" cx="38" cy="34" r="4.5"/>`),
+  done:A_WRAP('done',`<circle cx="24" cy="24" r="17"/><path class="dn-check" d="M15 24.5l6.5 6.5L33 18"/>`),
+};
+
 export function renderSteps(list){
   const wrap=document.getElementById('res-steps'); wrap.innerHTML='';
   state.stepDone=new Array(list.length).fill(false);
   list.forEach((s,i)=>{
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;
+    const art=STEP_ART[stepArtType(s)]||STEP_ART.done;
     t.innerHTML=`
       <button class="check" onclick="toggleStep(${i})">${ICON.check}</button>
       <div>
+        <span class="step-art">${art}</span>
         <div class="num">Step ${i+1}</div>
         <div class="tname">${escapeHtml(s.t)}</div>
         <div class="meta"><span class="time">${SVG.clock} ${escapeHtml(s.m)}</span></div>
