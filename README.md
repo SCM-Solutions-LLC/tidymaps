@@ -37,6 +37,26 @@ Once any ID is filled in, every product and search link on the site routes
 through it automatically, and the required FTC disclosure appears next to
 product links.
 
+## Sign-in emails (custom SMTP)
+
+Sign-in codes are delivered through Resend using the verified
+`scmsolutions.org` domain (DNS records live at Porkbun). Current setup,
+configured in the Supabase Dashboard -> Authentication:
+
+- Sender: `tidymap@scmsolutions.org` via `smtp.resend.com`
+- Subject: "Your TidyMap Sign-In Code" with an 8-digit code, 1-hour expiry
+- The email template is managed in the dashboard (Email Templates -> Magic
+  Link). A branded alternative that matches the site's design is kept at
+  `supabase/templates/otp-email.html` if you ever want to swap it in.
+
+Operational notes:
+- Rate limit: Dashboard -> Authentication -> Rate Limits caps auth emails
+  at 30/hour by default even with custom SMTP. Raise it before any launch.
+- If you shorten "Email OTP Expiration" (Authentication -> Providers ->
+  Email), update the expiry wording in the email template to match.
+- Resend's dashboard (resend.com) shows delivery status per email if a
+  code ever seems to go missing.
+
 ## Backend (Supabase)
 
 Analysis runs server-side through Supabase Edge Functions so API keys never

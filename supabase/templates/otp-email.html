@@ -1,0 +1,37 @@
+<!-- TidyMap sign-in code email.
+     Paste into: Supabase Dashboard -> Authentication -> Email Templates -> Magic Link / OTP.
+     Suggested subject:  Your TidyMap sign-in code: {{ .Token }}
+     Uses inline styles and a table layout so it renders in every mail client. -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f0;padding:32px 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background-color:#ffffff;border:1px solid #e3e4dc;border-radius:16px;">
+        <tr>
+          <td style="padding:32px 32px 24px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+            <div style="font-size:18px;font-weight:700;color:#23251f;">
+              <span style="display:inline-block;width:12px;height:12px;background-color:#3a7350;border-radius:3px;"></span>
+              TidyMap AI
+            </div>
+            <p style="margin:22px 0 6px;font-size:16px;color:#23251f;font-weight:700;">Here is your sign-in code</p>
+            <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#6b6f64;">Enter it on the TidyMap sign-in screen. No password needed.</p>
+            <div style="background-color:#e9f2ea;border:1px solid #c2dcc8;border-radius:12px;padding:18px;text-align:center;">
+              <span style="font-family:'Courier New',monospace;font-size:30px;font-weight:700;letter-spacing:6px;color:#2f5e41;">{{ .Token }}</span>
+            </div>
+            <p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#6b6f64;">
+              This code expires in one hour and only works once.
+              If you did not try to sign in to TidyMap, you can safely ignore this email. Nothing happens without the code.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px 24px;border-top:1px solid #eef0e7;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#a2a698;">
+              TidyMap AI is built by SCM Solutions LLC.<br>
+              Questions? Email <a href="mailto:contact@scmsolutions.org" style="color:#3a7350;">contact@scmsolutions.org</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
