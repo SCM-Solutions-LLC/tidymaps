@@ -6,9 +6,9 @@ import { buildResults } from './results.js';
 import { getDemoScenario } from '../demo-scenarios.js';
 import { normalizeAi } from '../plan.js';
 import { submitInviteRequest } from '../db.js';
-import { withAffiliate, affiliatesConfigured } from '../affiliates.js';
+import { affiliatesConfigured } from '../affiliates.js';
 
-/* ---------- Demo shortcut ---------- */
+/* ---------- Sample plan shortcut ---------- */
 export function runDemo(){
   prepareDemoPlanState();
   const scenario = getDemoScenario('pantry', 'find', state.household);
@@ -16,14 +16,14 @@ export function runDemo(){
   state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
   buildResults();
   go('results');
-  toast('Loaded the example pantry plan');
+  toast('Loaded the sample pantry plan');
 }
 
-/* ---------- Private Registry: invitation requests ---------- */
+/* ---------- Email updates signup ---------- */
 const INVITE_KEY='tidymap_invite_email';
 
 export function requestInvite(){
-  const input=document.getElementById('lx-email');
+  const input=document.getElementById('signup-email');
   const email=(input.value||'').trim();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
     input.classList.add('err'); input.focus();
@@ -34,13 +34,13 @@ export function requestInvite(){
   try{ localStorage.setItem(INVITE_KEY,email); }catch(e){}
   // store the request in the database so the owner actually sees it
   submitInviteRequest(email).catch(()=>{});
-  showInviteConfirmed(email);
-  toast('Your request has been received');
+  showSignupConfirmed(email);
+  toast('You’re signed up');
 }
 
-function showInviteConfirmed(email){
-  const form=document.getElementById('lx-invite-form');
-  const done=document.getElementById('lx-invite-done');
+function showSignupConfirmed(email){
+  const form=document.getElementById('signup-form');
+  const done=document.getElementById('signup-done');
   if(!form||!done) return;
   form.classList.add('hide');
   done.classList.remove('hide');
@@ -63,43 +63,15 @@ function initAppbarScroll(){
   },{passive:true});
 }
 
-/* ---------- Landing setup: restore invite state, scroll reveals ---------- */
+/* ---------- Landing setup: restore signup state ---------- */
 export function initLanding(){
   try{
     const saved=localStorage.getItem(INVITE_KEY);
-    if(saved) showInviteConfirmed(saved);
+    if(saved) showSignupConfirmed(saved);
   }catch(e){}
 
-  // route product links through affiliate programs when IDs are configured
-  document.querySelectorAll('#screen-landing a.tagr[data-retailer]').forEach(a=>{
-    a.href=withAffiliate(a.href, a.dataset.retailer);
-  });
   const affNote=document.getElementById('affil-note');
   if(affNote && affiliatesConfigured()) affNote.classList.remove('hide');
 
   initAppbarScroll();
-
-  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const allReveal=document.querySelectorAll('#screen-landing .lx-reveal');
-  const staggered=document.querySelectorAll('#screen-landing .lx-chapter, #screen-landing .lx-value, #screen-landing .lx-vitrine');
-
-  if(!('IntersectionObserver' in window) || reducedMotion){
-    allReveal.forEach(el=>el.classList.add('in'));
-    staggered.forEach(el=>el.classList.add('in'));
-    return;
-  }
-
-  const io=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
-    });
-  },{threshold:.12, rootMargin:'0px 0px -40px 0px'});
-  allReveal.forEach(el=>io.observe(el));
-
-  const staggerIo=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){ e.target.classList.add('in'); staggerIo.unobserve(e.target); }
-    });
-  },{threshold:.08, rootMargin:'0px 0px -30px 0px'});
-  staggered.forEach(el=>staggerIo.observe(el));
 }

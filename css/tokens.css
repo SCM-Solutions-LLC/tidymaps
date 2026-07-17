@@ -1,33 +1,51 @@
 /* ============================================================
-   TidyMap — Sunroom
-   Fresh white ground, leaf green as the single working accent,
-   honey for highlights, soft green-tinted neutrals. Rounded,
-   warm, family-first — a bright morning kitchen, not a gallery.
+   TidyMap — Household service
+   A nearly flat warm-white canvas, charcoal ink, and one
+   recognizable tomato-red accent. One self-hosted humanist
+   sans for everything. Restrained shadows, tighter radii.
+   Photography and real product output carry the visual weight.
    ============================================================ */
+
+/* Self-hosted brand typeface: Figtree (SIL OFL, see vendor/fonts/) */
+@font-face{
+  font-family:"Figtree";
+  font-style:normal;
+  font-weight:300 900;
+  font-display:swap;
+  src:url("../vendor/fonts/figtree-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face{
+  font-family:"Figtree";
+  font-style:italic;
+  font-weight:300 900;
+  font-display:swap;
+  src:url("../vendor/fonts/figtree-latin-wght-italic.woff2") format("woff2-variations");
+}
+
 :root{
   --sans:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  /* display face — variable name kept for compatibility across the codebase */
-  --serif:"Bricolage Grotesque","Figtree",-apple-system,"Segoe UI",system-ui,sans-serif;
+  /* one family everywhere — the old display-face variable resolves to it */
+  --serif:var(--sans);
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
-  /* materials: clean white ground, soft green-tinted washes */
-  --bg:        oklch(0.992 0.003 110);  /* warm white */
-  --surface:   oklch(0.966 0.008 120);  /* soft sunroom wash */
-  --surface-2: oklch(0.945 0.012 120);  /* deeper wash */
-  --surface-3: oklch(0.920 0.015 120);  /* deepest wash */
-  --ink:       oklch(0.25 0.014 120);   /* green-black */
-  --ink-2:     oklch(0.40 0.015 120);
-  --ink-3:     oklch(0.52 0.014 118);
-  --line:      oklch(0.905 0.011 115);
-  --line-2:    oklch(0.845 0.014 115);
+  /* materials: flat warm white, soft warm-gray washes */
+  --bg:        oklch(0.977 0.005 90);   /* warm white */
+  --surface:   oklch(0.955 0.006 90);   /* soft wash */
+  --surface-2: oklch(0.935 0.007 90);   /* deeper wash */
+  --surface-3: oklch(0.910 0.008 90);   /* deepest wash */
+  --ink:       oklch(0.235 0.010 110);  /* charcoal with a green cast */
+  --ink-2:     oklch(0.38 0.010 110);
+  --ink-3:     oklch(0.51 0.010 108);
+  --line:      oklch(0.900 0.008 95);
+  --line-2:    oklch(0.840 0.010 95);
 
-  /* leaf green — the single primary accent */
-  --primary:      oklch(0.50 0.088 155);
-  --primary-2:    oklch(0.43 0.090 155);
-  --primary-bg:   oklch(0.950 0.022 150);
-  --primary-line: oklch(0.845 0.048 150);
+  /* tomato red — the single brand accent */
+  --primary:      oklch(0.545 0.185 31);
+  --primary-2:    oklch(0.475 0.170 31);
+  --primary-bg:   oklch(0.958 0.018 33);
+  --primary-line: oklch(0.870 0.055 33);
 
-  /* sage — reassurance, safety, family-safe states (lighter kin of primary) */
+  /* sage green — reserved for safety, reuse, and "good" states */
   --sage:      oklch(0.58 0.072 150);
   --sage-2:    oklch(0.48 0.078 150);
   --sage-bg:   oklch(0.948 0.024 148);
@@ -51,15 +69,15 @@
   --warn:      oklch(0.60 0.108 76);
   --warn-bg:   oklch(0.950 0.034 86);
 
-  --radius: 16px;
-  --radius-sm: 12px;
-  --shadow: 0 2px 8px oklch(0.35 0.02 130 / .06);
-  --shadow-lg: 0 14px 36px oklch(0.35 0.03 130 / .13);
+  --radius: 10px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px oklch(0.30 0.01 100 / .07);
+  --shadow-lg: 0 8px 24px oklch(0.30 0.01 100 / .10);
   --maxw: 760px;
 
-  /* motion — gentle and purposeful */
+  /* motion — minimal and purposeful */
   --ease: cubic-bezier(.2,.7,.3,1);
-  --dur: .18s;
+  --dur: .15s;
 
   --paper-grain: none;
 }

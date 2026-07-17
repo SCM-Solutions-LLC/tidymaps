@@ -1,5 +1,5 @@
 /* ============================================================
-   TidyMap AI — entry point
+   TidyMap — entry point
    ============================================================ */
 import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
 import { state, restoreGuestDraft } from './state.js';

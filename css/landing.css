@@ -1,0 +1,145 @@
+/* ============================================================
+   TidyMap — landing page. Scoped to #screen-landing.
+   A household service, not a digital atelier: flat canvas,
+   one red accent, real photography and real product output.
+   Photo slots degrade gracefully until the shots exist
+   (see docs/asset-plan.md).
+   ============================================================ */
+
+/* ---------- Shared section rhythm ---------- */
+.home-sec{padding:clamp(56px,9vh,88px) 0 0}
+.home-sec > h2{
+  font-size:clamp(26px,3.6vw,34px);font-weight:700;letter-spacing:-.02em;line-height:1.15;
+  margin:0;color:var(--ink);
+}
+.home-sec > .sec-sub{font-size:16.5px;line-height:1.6;color:var(--ink-2);margin:10px 0 0;max-width:58ch}
+
+.home-link{
+  background:none;border:none;padding:0;font:inherit;font-weight:600;
+  color:var(--primary);cursor:pointer;text-decoration:none;
+}
+.home-link:hover{color:var(--primary-2);text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- Hero ---------- */
+.home-hero{
+  display:grid;gap:36px;align-items:center;
+  padding:clamp(32px,6vh,64px) 0 8px;
+}
+@media(min-width:920px){.home-hero{grid-template-columns:46fr 54fr;gap:clamp(40px,5vw,72px)}}
+.home-hero h1{
+  font-size:clamp(38px,5.4vw,60px);font-weight:800;letter-spacing:-.03em;line-height:1.04;
+  margin:0;color:var(--ink);
+}
+.home-hero .hero-lede{
+  font-size:clamp(16.5px,2vw,19px);line-height:1.65;color:var(--ink-2);
+  max-width:46ch;margin:20px 0 0;
+}
+.hero-actions{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:30px}
+.hero-actions .btn-primary{padding:15px 28px;font-size:16px}
+.hero-fine{font-size:13.5px;color:var(--ink-3);margin-top:18px}
+
+.hero-photo{margin:0;min-width:0}
+.hero-photo img{
+  width:100%;aspect-ratio:4/3;object-fit:cover;display:block;
+  border-radius:var(--radius);border:1px solid var(--line);
+}
+.hero-photo figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
+/* until the hero photograph exists, the copy stands alone */
+.home-hero.no-photo{grid-template-columns:1fr;padding-bottom:0}
+.home-hero.no-photo .hero-photo{display:none}
+.home-hero.no-photo h1{max-width:16ch}
+
+/* ---------- One real household story ---------- */
+.story-grid{display:grid;gap:28px;margin-top:30px;align-items:start}
+@media(min-width:960px){.story-grid{grid-template-columns:340px minmax(0,1fr) 250px;gap:44px}}
+@media(min-width:700px) and (max-width:959px){.story-grid{grid-template-columns:300px minmax(0,1fr)}}
+.story-photo{margin:0;min-width:0}
+.story-photo img{
+  width:100%;aspect-ratio:4/5;object-fit:cover;display:block;
+  border-radius:var(--radius);border:1px solid var(--line);
+}
+.story-photo figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
+.story-grid.no-photo{grid-template-columns:minmax(0,1fr)}
+@media(min-width:700px){.story-grid.no-photo{grid-template-columns:minmax(0,1fr) 250px}}
+.story-grid.no-photo .story-photo{display:none}
+
+.story-label{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 4px}
+.story-table{width:100%;border-collapse:collapse;font-size:14.5px}
+.story-table th{
+  text-align:left;font-size:13px;font-weight:700;color:var(--ink);
+  padding:10px 14px 10px 0;border-bottom:1px solid var(--line-2);
+}
+.story-table td{
+  padding:11px 14px 11px 0;border-bottom:1px solid var(--line);
+  color:var(--ink-2);line-height:1.5;vertical-align:top;
+}
+.story-table td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+.story-notes p{font-size:14px;line-height:1.6;color:var(--ink-2);margin:0 0 14px}
+.story-foot{margin-top:22px;font-size:14px;color:var(--ink-3)}
+
+/* ---------- Real product screenshots ---------- */
+.product-shots{display:grid;gap:36px;margin-top:34px}
+.product-shot{margin:0;display:grid;gap:14px;align-items:start;min-width:0}
+@media(min-width:880px){.product-shot{grid-template-columns:250px minmax(0,1fr);gap:40px}}
+.product-shot img{
+  width:100%;display:block;border-radius:var(--radius);
+  border:1px solid var(--line-2);box-shadow:var(--shadow);
+}
+.product-shot figcaption h3{font-size:17px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
+.product-shot figcaption p{font-size:14.5px;line-height:1.6;color:var(--ink-2);margin:6px 0 0;max-width:38ch}
+@media(min-width:880px){.product-shot figcaption{position:sticky;top:calc(var(--appbar-h,57px) + 20px)}}
+
+/* ---------- Method ---------- */
+.how-list{margin-top:26px;display:grid;gap:0}
+.how-step{
+  display:grid;gap:4px 28px;grid-template-columns:1fr;
+  padding:22px 2px;border-top:1px solid var(--line);
+}
+.how-list .how-step:last-child{border-bottom:1px solid var(--line)}
+@media(min-width:720px){.how-step{grid-template-columns:280px 1fr;align-items:baseline}}
+.how-step h3{font-size:17px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
+.how-step h3 .n{color:var(--primary);margin-right:10px;font-variant-numeric:tabular-nums}
+.how-step p{margin:0;font-size:15px;line-height:1.65;color:var(--ink-2);max-width:56ch}
+
+/* ---------- Practical promises ---------- */
+.promise-list{margin-top:26px;display:grid;gap:20px 44px;grid-template-columns:1fr}
+@media(min-width:720px){.promise-list{grid-template-columns:1fr 1fr}}
+.promise-list div h3{font-size:16px;font-weight:700;margin:0;color:var(--ink)}
+.promise-list div p{font-size:14.5px;line-height:1.6;color:var(--ink-2);margin:5px 0 0;max-width:44ch}
+
+/* ---------- Credibility ---------- */
+.about-grid{display:grid;gap:32px;margin-top:28px}
+@media(min-width:880px){.about-grid{grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:64px}}
+.about-lede p{font-size:16px;line-height:1.7;color:var(--ink-2);margin:0 0 16px;max-width:56ch}
+.about-facts{display:grid;gap:0;align-self:start}
+.about-facts > div{padding:16px 2px;border-top:1px solid var(--line)}
+.about-facts > div:last-child{border-bottom:1px solid var(--line)}
+.about-facts h3{font-size:14.5px;font-weight:700;margin:0;color:var(--ink)}
+.about-facts p{font-size:14px;line-height:1.6;color:var(--ink-2);margin:4px 0 0}
+.about-facts a{color:var(--primary);font-weight:600}
+.about-facts a:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- Email signup ---------- */
+.home-signup{
+  margin-top:clamp(56px,9vh,88px);padding:30px clamp(20px,3.5vw,36px) 34px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+}
+.home-signup h2{font-size:20px;font-weight:700;letter-spacing:-.015em;margin:0;color:var(--ink)}
+.home-signup .sec-sub{font-size:15px;color:var(--ink-2);margin:6px 0 0}
+.signup-row{display:flex;gap:10px;flex-wrap:wrap;max-width:520px;margin-top:18px}
+.signup-row input{
+  flex:1;min-width:210px;font-family:inherit;font-size:15px;color:var(--ink);
+  background:#fff;border:1px solid var(--line-2);border-radius:var(--radius-sm);
+  padding:12px 14px;transition:border-color .15s;
+}
+.signup-row input::placeholder{color:var(--ink-3)}
+.signup-row input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px oklch(0.545 0.185 31/.14)}
+.signup-row input.err{border-color:var(--primary);animation:signup-shake .32s}
+@keyframes signup-shake{25%{transform:translateX(-5px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+.signup-done{margin-top:18px;font-size:15px;color:var(--sage-ink)}
+.signup-done strong{color:var(--ink)}
+.signup-fine{font-size:13px;color:var(--ink-3);margin:12px 0 0}
+
+@media (prefers-reduced-motion: reduce){
+  .signup-row input.err{animation:none}
+}

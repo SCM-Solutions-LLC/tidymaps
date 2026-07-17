@@ -20,32 +20,42 @@ h2{font-size:clamp(23px,4.4vw,32px);letter-spacing:-0.018em}
 h3{font-size:clamp(18px,3vw,21px)}
 p{margin:0 0 1em}
 .lede{font-size:clamp(17px,2.4vw,20px);color:var(--ink-2);line-height:1.5}
-.eyebrow{font-size:13px;font-weight:600;color:var(--primary)}
+.eyebrow{font-size:13px;font-weight:600;color:var(--ink-2)}
 .muted{color:var(--ink-3)}
 .small{font-size:13.5px;line-height:1.5}
 
 /* ---------- App shell ---------- */
 .appbar{
   position:sticky;top:0;z-index:50;
-  background:#fff;
+  background:var(--bg);
   border-bottom:1px solid var(--line);
   transition:box-shadow .25s ease;
 }
-.appbar.scrolled{box-shadow:0 2px 12px oklch(0.35 0.02 130 / .08)}
+.appbar.scrolled{box-shadow:0 2px 10px oklch(0.30 0.01 100 / .07)}
 .appbar-inner{
-  max-width:1100px;margin:0 auto;padding:12px var(--pad,18px);
-  display:flex;align-items:center;gap:12px;min-width:0;
+  max-width:1100px;margin:0 auto;padding:14px var(--pad,18px);
+  display:flex;align-items:center;gap:14px;min-width:0;
 }
-.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.01em;min-width:0}
-.brand > span:not(.logo){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.brand .logo{
-  width:28px;height:28px;border-radius:6px;flex:none;
-  background:var(--primary);
-  display:grid;place-items:center;color:#fff;
+.brand{
+  font-weight:800;font-size:21px;letter-spacing:-.025em;min-width:0;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.brand .logo svg{width:17px;height:17px}
-.brand .mvp{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);
-  border:1px solid var(--line-2);border-radius:5px;padding:2px 6px;text-transform:uppercase}
+/* landing-only site nav; wizard/report screens show workflow controls instead */
+.site-nav{display:none;align-items:center;gap:26px;margin-left:26px}
+.site-nav a,.site-nav button{
+  background:none;border:none;padding:0;font-size:15px;font-weight:500;color:var(--ink);
+  white-space:nowrap;transition:color .15s;
+}
+.site-nav a:hover,.site-nav button:hover{color:var(--primary)}
+body[data-screen="landing"] .site-nav{display:flex}
+@media(max-width:719px){body[data-screen="landing"] .site-nav{display:none}}
+.appbar .navlink{
+  background:none;border:none;padding:8px 4px;font-size:15px;font-weight:500;color:var(--ink);
+  white-space:nowrap;flex:none;transition:color .15s;
+}
+.appbar .navlink:hover{color:var(--primary)}
+#nav-cta{display:none;flex:none}
+body[data-screen="landing"] #nav-cta{display:inline-flex}
 .appbar .spacer{flex:1}
 .appbar .restart{
   font-size:13px;
@@ -53,8 +63,8 @@ p{margin:0 0 1em}
   transition:.16s;white-space:nowrap;flex:none;
 }
 .appbar .restart:hover{color:var(--ink);border-color:var(--ink-3)}
+body[data-screen="landing"] .appbar .restart{display:none}
 @media(max-width:419px){
-  .brand .mvp{display:none}
   .appbar .restart{padding:7px 10px;letter-spacing:.04em}
 }
 
@@ -79,19 +89,18 @@ main{padding:0 var(--pad,18px)}
 .step-head .step-num{font-size:15px;font-weight:600;color:var(--primary)}
 .step-head .step-kicker{font-size:13px;color:var(--ink-3)}
 
-/* ---------- Buttons — friendly pills ---------- */
+/* ---------- Buttons — solid, square-shouldered ---------- */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:9px;
-  border:1px solid transparent;border-radius:999px;font-weight:600;font-size:15px;
+  border:1px solid transparent;border-radius:var(--radius-sm);font-weight:600;font-size:15px;
   padding:13px 24px;transition:background .16s, border-color .16s, box-shadow .16s;line-height:1;
 }
 .btn svg{width:17px;height:17px;flex:none}
 .btn-primary{
   background:var(--primary);color:#fff;
-  box-shadow:0 3px 10px oklch(0.50 0.09 155 / .22);
 }
-.btn-primary:hover{background:var(--primary-2);box-shadow:0 4px 14px oklch(0.50 0.09 155 / .28)}
-.btn-primary:active{background:oklch(0.38 0.09 155);box-shadow:none}
+.btn-primary:hover{background:var(--primary-2)}
+.btn-primary:active{background:oklch(0.42 0.16 31)}
 .btn-ghost{background:#fff;color:var(--ink);border-color:var(--line-2)}
 .btn-ghost:hover{border-color:var(--primary);color:var(--primary-2);background:var(--primary-bg)}
 .btn-ghost:active{background:var(--surface-2)}
