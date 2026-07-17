@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { withAffiliate } from './affiliates.js';
 
 /* Dimension-aware product matching against the curated catalog
    (data/catalog.json — real SKUs with cross-referenced dimensions). */
@@ -81,8 +82,8 @@ export function searchLinks(need){
   if(depth) q+=` max ${Math.floor(depth)} inch deep`;
   const enc=encodeURIComponent(q);
   return [
-    {retailer:'Amazon', url:`https://www.amazon.com/s?k=${enc}`},
-    {retailer:'Target', url:`https://www.target.com/s?searchTerm=${enc}`},
-    {retailer:'The Container Store', url:`https://www.containerstore.com/s?q=${enc}`},
+    {retailer:'Amazon', url:withAffiliate(`https://www.amazon.com/s?k=${enc}`,'Amazon')},
+    {retailer:'Target', url:withAffiliate(`https://www.target.com/s?searchTerm=${enc}`,'Target')},
+    {retailer:'The Container Store', url:withAffiliate(`https://www.containerstore.com/s?q=${enc}`,'The Container Store')},
   ];
 }

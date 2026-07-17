@@ -20,6 +20,23 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000.
 
+## Affiliate links
+
+Product links can earn a commission once you join each retailer's program
+(shoppers pay the same price). Paste your IDs into `js/affiliates.js`:
+
+- **Amazon Associates** (affiliate-program.amazon.com): set the `value` of the
+  Amazon entry to your tracking tag, e.g. `tidymap-20`.
+- **Target Partners** and **Walmart Creator** (both run on impact.com): after
+  approval you get a deep-link template. Paste it as `wrap`, keeping `{url}`
+  where the product URL goes.
+- **The Container Store** (via CJ / impact): same `wrap` pattern.
+- **IKEA** has no US affiliate program, so those links stay plain.
+
+Once any ID is filled in, every product and search link on the site routes
+through it automatically, and the required FTC disclosure appears next to
+product links.
+
 ## Backend (Supabase)
 
 Analysis runs server-side through Supabase Edge Functions so API keys never

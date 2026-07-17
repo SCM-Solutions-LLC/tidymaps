@@ -153,3 +153,13 @@ export async function submitFeedbackRow(row){
   const { error } = await c.from('feedback').insert({ ...row, user_id: u?u.id:null });
   return !error;
 }
+
+// Founding Circle: store the request where the owner can see it.
+// A duplicate email means "already on the list", which is success for the user.
+export async function submitInviteRequest(email){
+  const c=supa();
+  if(!c) return false;
+  const u=getUser();
+  const { error } = await c.from('invite_requests').insert({ email, user_id: u?u.id:null });
+  return !error || error.code==='23505';
+}

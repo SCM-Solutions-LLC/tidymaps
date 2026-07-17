@@ -341,3 +341,74 @@ textarea{resize:vertical;min-height:84px}
   .ba{grid-template-columns:1fr}
   .ba .before{border-right:none;border-bottom:1px solid var(--line)}
 }
+
+/* ---------- Animated step illustrations ---------- */
+.task{position:relative}
+.step-art{position:absolute;top:12px;right:12px;width:58px;height:58px;border-radius:12px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;pointer-events:none}
+.step-art .sa{width:42px;height:42px;overflow:visible}
+.task .tname,.task .why2{padding-right:64px}
+@media(max-width:419px){.step-art{width:46px;height:46px}.step-art .sa{width:34px;height:34px}.task .tname,.task .why2{padding-right:52px}}
+
+.sa .d1,.sa .u1,.sa .c1{fill:var(--primary-bg);stroke:var(--primary)}
+.sa .d2,.sa .u2,.sa .c2{fill:var(--honey);stroke:var(--honey-2)}
+.sa .d3{fill:var(--sage-bg);stroke:var(--sage)}
+.sa .m-box,.sa .m-box2{fill:var(--primary-bg);stroke:var(--primary)}
+.sa .m-arrow{stroke:var(--primary)}
+.sa .z1{fill:var(--honey);stroke:none}.sa .z2{fill:var(--primary-bg);stroke:none}.sa .z3{fill:var(--sage-bg);stroke:none}
+.sa .g1,.sa .g3{fill:var(--primary-bg);stroke:var(--primary)}
+.sa .g2,.sa .g4{fill:var(--honey);stroke:var(--honey-2)}
+.sa .l-tag{fill:var(--honey);stroke:var(--honey-2)}
+.sa .w-pad{fill:var(--primary-bg);stroke:var(--primary)}
+.sa .w-dust{fill:var(--surface-3);stroke:none}
+.sa .p-flash{fill:var(--honey);stroke:none}
+.sa .dn-check{stroke:var(--primary);stroke-width:3}
+.sa .f-flap{fill:var(--primary-bg);stroke:var(--primary)}
+.sa .c1{animation:sa-slide-in 2.6s var(--ease) infinite}
+.sa .c2{animation:sa-slide-in 2.6s var(--ease) .5s infinite}
+@keyframes sa-slide-in{0%,15%{transform:translateY(0);opacity:1}55%,70%{transform:translateY(16px);opacity:1}85%,100%{transform:translateY(16px);opacity:0}}
+.sa .d1{animation:sa-drop 2.8s ease-in infinite}
+.sa .d2{animation:sa-drop 2.8s ease-in .45s infinite}
+.sa .d3{animation:sa-drop 2.8s ease-in .9s infinite}
+@keyframes sa-drop{0%,20%{transform:translateY(0);opacity:1}55%{transform:translateY(19px);opacity:1}70%,100%{transform:translateY(19px);opacity:0}}
+.sa .u1{animation:sa-rise 2.8s ease-out infinite}
+.sa .u2{animation:sa-rise 2.8s ease-out .5s infinite}
+@keyframes sa-rise{0%,20%{transform:translateY(8px);opacity:0}35%{opacity:1}60%,75%{transform:translateY(-8px);opacity:1}90%,100%{transform:translateY(-8px);opacity:0}}
+.sa-wipe .w-pad{animation:sa-sweep 2.4s var(--ease) infinite}
+@keyframes sa-sweep{0%,10%{transform:translateX(0)}55%,65%{transform:translateX(24px)}100%{transform:translateX(0)}}
+.sa-wipe .w-dust{transform-origin:40px 31px;animation:sa-fade-dust 2.4s var(--ease) infinite}
+@keyframes sa-fade-dust{0%,10%{transform:scaleX(1);opacity:.9}55%,100%{transform:scaleX(0);opacity:0}}
+.sa-label .l-tag{animation:sa-tag 2.6s var(--ease) infinite}
+@keyframes sa-tag{0%,12%{transform:translateY(-14px);opacity:0}35%,80%{transform:translateY(0);opacity:1}95%,100%{transform:translateY(0);opacity:1}}
+.sa-label .l-line{stroke:var(--honey-2);animation:sa-fade 2.6s var(--ease) .3s infinite}
+@keyframes sa-fade{0%,25%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
+.sa-hang .h1{animation:sa-hang-l 2.8s var(--ease) infinite}
+.sa-hang .h2{animation:sa-hang-r 2.8s var(--ease) infinite}
+@keyframes sa-hang-l{0%,15%{transform:translateX(7px)}50%,85%{transform:translateX(0)}100%{transform:translateX(7px)}}
+@keyframes sa-hang-r{0%,15%{transform:translateX(-7px)}50%,85%{transform:translateX(0)}100%{transform:translateX(-7px)}}
+.sa-fold .f-flap{transform-origin:24px 28px;animation:sa-fold 2.8s var(--ease) infinite}
+@keyframes sa-fold{0%,20%{transform:scaleY(1)}55%,85%{transform:scaleY(0.12)}100%{transform:scaleY(1)}}
+.sa-photo .p-flash{animation:sa-flash 2.4s ease-out infinite}
+@keyframes sa-flash{0%,42%{opacity:0;transform:scale(1)}50%{opacity:.9;transform:scale(2.6)}62%,100%{opacity:0;transform:scale(1)}}
+.sa-up .m-box{animation:sa-move-up 2.8s var(--ease) infinite}
+@keyframes sa-move-up{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(-14px)}100%{transform:translateY(0)}}
+.sa-down .m-box2{animation:sa-move-down 2.8s var(--ease) infinite}
+@keyframes sa-move-down{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(14px)}100%{transform:translateY(0)}}
+.sa-zones .z1{animation:sa-fade 3s var(--ease) infinite}
+.sa-zones .z2{animation:sa-fade 3s var(--ease) .35s infinite}
+.sa-zones .z3{animation:sa-fade 3s var(--ease) .7s infinite}
+.sa-group .g1{animation:sa-g1 3s var(--ease) infinite}
+.sa-group .g2{animation:sa-g2 3s var(--ease) infinite}
+.sa-group .g3{animation:sa-g3 3s var(--ease) infinite}
+.sa-group .g4{animation:sa-g4 3s var(--ease) infinite}
+@keyframes sa-g1{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(7px,7px)}100%{transform:translate(0,0)}}
+@keyframes sa-g2{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-7px,9px)}100%{transform:translate(0,0)}}
+@keyframes sa-g3{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(9px,-7px)}100%{transform:translate(0,0)}}
+@keyframes sa-g4{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-9px,-5px)}100%{transform:translate(0,0)}}
+.sa-done .dn-check{stroke-dasharray:30;animation:sa-draw 2.6s var(--ease) infinite}
+@keyframes sa-draw{0%,15%{stroke-dashoffset:30}50%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:30}}
+
+@media (prefers-reduced-motion: reduce){
+  .step-art *{animation:none !important}
+}
+.sa *{transform-box:view-box}
+.sa .p-flash{transform-origin:24px 26px}
