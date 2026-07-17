@@ -23,12 +23,12 @@
 .opt.sel .tick{background:var(--primary);border-color:var(--primary)}
 .opt .tick svg{width:13px;height:13px;color:#fff;opacity:0;transition:.15s}
 .opt.sel .tick svg{opacity:1}
-.opt .rec{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);background:var(--primary-bg);border:1px solid var(--primary-line);border-radius:5px;padding:2px 6px;margin-left:auto;flex:none}
+.opt .rec{font-size:9.5px;font-weight:600;color:var(--primary);background:var(--primary-bg);border:1px solid var(--primary-line);border-radius:5px;padding:2px 6px;margin-left:auto;flex:none}
 
 /* chip-style multiselect */
 .chips{display:flex;flex-wrap:wrap;gap:9px}
 .chip{
-  background:#fff;border:1.5px solid var(--line-2);border-radius:999px;
+  background:#fff;border:1.5px solid var(--line-2);border-radius:8px;
   padding:9px 17px;font-size:14px;font-weight:500;color:var(--ink-2);
   transition:border-color .16s, background-color .16s, color .16s;
 }
@@ -49,7 +49,7 @@ textarea{resize:vertical;min-height:84px}
 .helper svg{width:16px;height:16px;flex:none;color:var(--primary);margin-top:2px}
 
 /* segmented yes/no */
-.seg{display:inline-flex;border:1.5px solid var(--line-2);border-radius:999px;overflow:hidden;background:var(--surface-2)}
+.seg{display:inline-flex;border:1.5px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--surface-2)}
 .seg button{border:none;background:var(--surface-2);padding:9px 22px;font-size:14px;font-weight:600;color:var(--ink-2);transition:background-color var(--dur,.18s), color var(--dur,.18s), box-shadow var(--dur,.18s)}
 .seg button:hover{background:var(--surface-3);color:var(--ink)}
 .seg button:active{background:var(--surface-3)}
@@ -87,7 +87,7 @@ textarea{resize:vertical;min-height:84px}
 .frame{aspect-ratio:4/3;border-radius:9px;border:1px solid var(--line-2);position:relative;overflow:hidden;
   background:linear-gradient(135deg,var(--surface-3),var(--surface-2));opacity:0;transform:scale(.9);transition:.4s}
 .frame.in{opacity:1;transform:none}
-.frame::after{content:attr(data-t);position:absolute;left:5px;bottom:4px;font-family:var(--mono);font-size:8.5px;color:var(--ink-3);background:var(--surface);padding:1px 4px;border-radius:3px}
+.frame::after{content:attr(data-t);position:absolute;left:5px;bottom:4px;font-variant-numeric:tabular-nums;font-size:8.5px;color:var(--ink-3);background:var(--surface);padding:1px 4px;border-radius:3px}
 .frame .pantry-mini{position:absolute;inset:6px;display:grid;grid-template-rows:repeat(4,1fr);gap:3px}
 .frame .pantry-mini i{background:var(--surface);border-radius:2px;border:1px solid var(--line)}
 
@@ -114,7 +114,7 @@ textarea{resize:vertical;min-height:84px}
 /* organization map — shelves */
 .shelf{display:grid;grid-template-columns:64px 1fr;gap:0;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:10px;background:var(--surface)}
 .shelf .label{background:var(--surface-3);padding:18px 10px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border-right:1px solid var(--line)}
-.shelf .label .lv{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.shelf .label .lv{font-size:9px;font-weight:600;color:var(--ink-3)}
 .shelf .label .ic{margin-top:3px;color:var(--ink-3);display:flex;align-items:center;justify-content:center}
 .shelf .label .ic svg{width:20px;height:20px}
 .shelf .body{padding:16px 15px}
@@ -154,11 +154,11 @@ textarea{resize:vertical;min-height:84px}
 .task .check svg{width:14px;height:14px;color:#fff;opacity:0;transition:.18s}
 .task.done .check{background:var(--primary);border-color:var(--primary)}
 .task.done .check svg{opacity:1}
-.task .num{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.task .num{font-variant-numeric:tabular-nums;font-size:11px;color:var(--ink-3)}
 .task .tname{font-weight:600;font-size:15px;margin:2px 0 0}
 .task.done .tname{text-decoration:line-through;color:var(--ink-3)}
 .task .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center}
-.task .time{font-family:var(--mono);font-size:11px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;gap:5px}
+.task .time{font-variant-numeric:tabular-nums;font-size:11px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;gap:5px}
 .task .time svg{width:12px;height:12px}
 .task .why2{font-size:13px;color:var(--ink-3);margin-top:8px;line-height:1.45}
 .task .acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
@@ -170,12 +170,12 @@ textarea{resize:vertical;min-height:84px}
 /* sticks just below the appbar; --appbar-h is measured by ui.js on load/resize */
 .progwrap{position:sticky;top:var(--appbar-h,57px);z-index:5;background:var(--bg);padding:12px 0 14px;margin-bottom:4px}
 .progwrap .lab{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:7px}
-.progbar{height:9px;background:var(--surface-3);border-radius:999px;overflow:hidden}
+.progbar{height:9px;background:var(--surface-3);border-radius:8px;overflow:hidden}
 .progbar > i{display:block;height:100%;width:0;background:var(--primary);transition:width .35s cubic-bezier(.2,.7,.3,1)}
 
 /* after preview */
 .after-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
-.after-tab{font-size:13px;font-weight:500;border:1.5px solid var(--line-2);background:#fff;border-radius:999px;padding:8px 16px;color:var(--ink-2);transition:.14s}
+.after-tab{font-size:13px;font-weight:500;border:1.5px solid var(--line-2);background:#fff;border-radius:8px;padding:8px 16px;color:var(--ink-2);transition:.14s}
 .after-tab.sel{background:var(--ink);border-color:var(--ink);color:#fff}
 .after-stage{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
 /* illustrated "after" cabinet */
@@ -185,8 +185,8 @@ textarea{resize:vertical;min-height:84px}
 .cab-shelf{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 9px;position:relative;display:flex;flex-direction:column;justify-content:center}
 .cab-shelf.eye{border-color:var(--primary-line);box-shadow:0 0 0 1px var(--primary-line)}
 .cab-shelf.kid{border-color:var(--good);box-shadow:0 0 0 1px color-mix(in oklch,var(--good) 50%,transparent)}
-.cab-lv{font-family:var(--mono);font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
-.cab-tag{font-family:var(--mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:1px 5px;flex:none}
+.cab-lv{font-size:8.5px;font-weight:600;color:var(--ink-3);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.cab-tag{font-size:8px;font-weight:600;border-radius:4px;padding:1px 5px;flex:none}
 .cab-tag.eyet{color:var(--primary-2);background:var(--primary-bg);border:1px solid var(--primary-line)}
 .cab-tag.kidt{color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent)}
 .cab-row{display:flex;flex-wrap:wrap;gap:5px}
@@ -196,12 +196,12 @@ textarea{resize:vertical;min-height:84px}
 .cab-item.bin{background:var(--primary-bg);border-color:var(--primary-line);color:var(--primary-2)}
 .cab-item.bin .sw{border-radius:1px}
 .cab-item svg{width:11px;height:11px;flex:none;opacity:.7}
-.cab-item .lbl{font-family:var(--mono);font-size:7.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:3px;padding:0 3px;margin-left:2px}
+.cab-item .lbl{font-size:7.5px;font-weight:600;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:3px;padding:0 3px;margin-left:2px}
 .ba{display:grid;grid-template-columns:1fr 1fr}
 /* both panes flex vertically so the before sketch and the after cabinet
    stretch to the same height and their shelf rows line up */
 .ba > div{padding:14px;display:flex;flex-direction:column}
-.ba .ba-h{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.ba .ba-h{font-size:10px;font-weight:600;color:var(--ink-3);margin-bottom:10px}
 .ba .before{background:var(--surface-2);border-right:1px solid var(--line)}
 .ba .before .pantry-vis{flex:1;aspect-ratio:auto;min-height:240px}
 .ba .after .cab{flex:1;grid-auto-rows:1fr}
@@ -236,7 +236,7 @@ textarea{resize:vertical;min-height:84px}
 .shopping{list-style:none;padding:0;margin:0}
 .shopping li{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14.5px}
 .shopping li:last-child{border-bottom:none}
-.shopping li .qcost{color:var(--ink-3);font-family:var(--mono);font-size:13px;flex:none;white-space:nowrap}
+.shopping li .qcost{color:var(--ink-3);font-variant-numeric:tabular-nums;font-size:13px;flex:none;white-space:nowrap}
 
 .callout{border-radius:var(--radius-sm);padding:14px 16px;font-size:13.5px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
 .callout svg{width:18px;height:18px;flex:none;margin-top:1px}
@@ -247,7 +247,7 @@ textarea{resize:vertical;min-height:84px}
 
 /* clears the flow footer; --foot-h is maintained by the router when the footer shows/hides */
 .toast{position:fixed;left:50%;bottom:calc(var(--foot-h,16px) + 16px);transform:translateX(-50%) translateY(20px);z-index:90;
-  background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;font-weight:500;
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;
   box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.3s;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -429,7 +429,7 @@ textarea{resize:vertical;min-height:84px}
 /* map labels: wall chip + readable level name */
 .shelf{grid-template-columns:104px 1fr}
 .shelf .label{padding:14px 10px}
-.shelf .label .lv-wall{font-family:var(--mono);font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-bottom:6px}
+.shelf .label .lv-wall{font-size:8.5px;font-weight:600;color:var(--ink-3);background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-bottom:6px}
 .shelf.eye .label .lv-wall{border-color:var(--primary-line);color:var(--primary-2)}
 .shelf .label .lv{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;line-height:1.3;color:var(--ink-2)}
 .shelf.eye .label .lv{color:var(--primary-2)}

@@ -39,6 +39,9 @@ export function go(id){
   const el=document.getElementById('screen-'+id);
   el.classList.add('active');
   current=id;
+  // the appbar shows site navigation on the landing page and
+  // workflow controls (Start over, My spaces) everywhere else
+  document.body.dataset.screen=id;
   setRail();
   // footer
   const foot=document.getElementById('flow-foot');

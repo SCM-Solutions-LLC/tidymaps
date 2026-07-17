@@ -3,32 +3,29 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>TidyMap AI: A calmer home, one space at a time</title>
-<meta name="description" content="Take photos of one messy space and get a clear, step-by-step plan that fits your family. No tidying up first. Kid-safe and built on what you already own. Progress, not perfection." />
+<title>TidyMap: A practical plan for the space that keeps getting away from you</title>
+<meta name="description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own. No tidying up first." />
 <link rel="canonical" href="https://scmsolutions.org/tidymaps/" />
-<meta name="theme-color" content="#3a7350" />
+<meta name="theme-color" content="#c94a2e" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="TidyMap AI" />
-<meta property="og:title" content="TidyMap AI: A calmer home, one space at a time" />
-<meta property="og:description" content="Take photos of one messy space and get a clear, step-by-step plan that fits your family. No tidying up first. Free to use." />
+<meta property="og:site_name" content="TidyMap" />
+<meta property="og:title" content="TidyMap: A practical plan for the space that keeps getting away from you" />
+<meta property="og:description" content="Send a few honest photos of one space. Get a clear plan built around your shelves, routines, budget, and what you already own. Free to use." />
 <meta property="og:url" content="https://scmsolutions.org/tidymaps/" />
 <meta property="og:image" content="https://scmsolutions.org/tidymaps/assets/og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="TidyMap AI: A calmer home, one space at a time" />
-<meta name="twitter:description" content="Take photos of one messy space and get a clear, step-by-step plan that fits your family." />
+<meta name="twitter:title" content="TidyMap: A practical plan for the space that keeps getting away from you" />
+<meta name="twitter:description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own." />
 <meta name="twitter:image" content="https://scmsolutions.org/tidymaps/assets/og.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:ital,wght@0,400..700;1,400..600&display=swap" rel="stylesheet" />
 <link rel="icon" href="assets/favicon.svg" />
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/components.css" />
 <link rel="stylesheet" href="css/screens.css" />
 <link rel="stylesheet" href="css/report.css" />
-<link rel="stylesheet" href="css/luxury.css" />
+<link rel="stylesheet" href="css/landing.css" />
 <script type="importmap">
 {
   "imports": {
@@ -38,20 +35,21 @@
 }
 </script>
 </head>
-<body>
+<body data-screen="landing">
 
 <header class="appbar">
   <div class="appbar-inner">
-    <a class="brand" href="#" onclick="go('landing');return false;">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>
-      </span>
-      <span>TidyMap&nbsp;AI</span>
-    </a>
+    <a class="brand" href="#" onclick="go('landing');return false;">TidyMap</a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="#how">How it works</a>
+      <button onclick="runDemo()">Sample plan</button>
+      <a href="privacy.html">Privacy</a>
+    </nav>
     <span class="spacer"></span>
-    <button class="restart hide" id="acct-signin" onclick="openAuth()">Sign in</button>
-    <button class="restart hide" id="acct-btn" onclick="go('dashboard')">My spaces</button>
+    <button class="navlink hide" id="acct-signin" onclick="openAuth()">Sign in</button>
+    <button class="navlink hide" id="acct-btn" onclick="go('dashboard')">My spaces</button>
     <button class="restart" onclick="restart()">Start over</button>
+    <button class="btn btn-primary btn-sm" id="nav-cta" onclick="go('space')">Plan a space</button>
   </div>
   <div class="rail"><i id="rail"></i></div>
 </header>
@@ -78,7 +76,7 @@
         <input type="text" id="auth-code" placeholder="12345678" inputmode="numeric" autocomplete="one-time-code" maxlength="8" style="font-family:var(--mono);letter-spacing:.25em;font-size:18px;text-align:center">
       </label>
       <button class="btn btn-primary btn-block" id="auth-verify-btn" onclick="verifyAuthCode()">Sign in</button>
-      <p class="small auth-alt"><button class="lx-linklike" onclick="sendAuthCode()">Resend code</button></p>
+      <p class="small auth-alt"><button class="home-link" onclick="sendAuthCode()">Resend code</button></p>
     </div>
     <p class="small auth-micro">No passwords, ever.</p>
     <p class="small" id="auth-msg" style="margin:6px 0 0;min-height:1.2em"></p>
@@ -90,195 +88,171 @@
 <!-- ============================================================ 1. LANDING -->
 <section class="screen wide active" id="screen-landing">
 
-  <!-- Hero: empathy before aspiration -->
-  <div class="lx-hero lx-reveal">
-    <div class="lx-hero-copy">
-      <span class="lx-eyebrow">Calm for busy households</span>
-      <h1 class="lx-h1">A calmer home, <em>one space at a time.</em></h1>
-      <p class="lx-lede">Life is busy, and every shelf shows it. Take a few photos of one messy space and TidyMap gives you a clear, step-by-step plan that fits your family. No tidying up first. No judgment. Nothing to buy unless you want to.</p>
-      <div class="lx-actions">
-        <button class="lx-btn primary" onclick="go('space')">Start with one space</button>
-        <button class="lx-btn ghost" onclick="runDemo()">See an example plan</button>
+  <!-- Hero: plain promise on the left, a real household photo on the right.
+       Until the photo exists the copy stands alone (see docs/asset-plan.md). -->
+  <div class="home-hero">
+    <div class="hero-copy">
+      <h1>Make one hard&#8209;working space easier to live with.</h1>
+      <p class="hero-lede">Send a few honest photos. Get a clear plan built around your shelves, routines, budget, and what you already own.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="go('space')">Plan my space</button>
+        <button class="home-link" onclick="runDemo()">View a sample plan</button>
       </div>
-      <p class="lx-fine">Takes 2 minutes. No sign-up required. Free to use.</p>
+      <p class="hero-fine">Free while in early access. No sign-up needed to try it.</p>
     </div>
+    <figure class="hero-photo">
+      <img src="assets/photos/hero-pantry.jpg" alt="A family pantry mid-week: cereal boxes, labeled bins, and water bottles on ordinary white shelves" onerror="this.closest('.home-hero').classList.add('no-photo')">
+    </figure>
+  </div>
 
-    <!-- focal glass no. 1: a believable before & after -->
-    <div class="lx-console lxg lx-reveal">
-      <figure class="lx-frame">
-        <div class="pantry-vis messy" aria-hidden="true"><div class="row"><b class="sz-s"></b><b class="sz-l"></b><b class="sz-s tilt"></b><b class="sz-m"></b><b class="sz-s gap"></b></div><div class="row"><b class="sz-l"></b><b class="sz-s tilt"></b></div><div class="row"><b class="sz-m"></b><b class="sz-s"></b><b class="sz-l tilt"></b><b class="sz-s"></b></div><div class="row"><b class="sz-s"></b></div><div class="row"><b class="sz-m"></b><b class="sz-l"></b><b class="sz-s tilt"></b><b class="sz-m"></b><b class="sz-s"></b></div></div>
-        <figcaption><span>Before</span><span>Real life</span></figcaption>
+  <!-- One household example, grounded in the product's own sample plan -->
+  <div class="home-sec" id="story">
+    <h2>A pantry that works before school</h2>
+    <p class="sec-sub">See the real space, the plan, and what changed.</p>
+    <div class="story-grid">
+      <figure class="story-photo">
+        <img src="assets/photos/story-pantry-before.jpg" alt="The pantry before the plan: full shelves holding a mix of snacks, cans, cereal, and bulk bags" onerror="this.closest('.story-grid').classList.add('no-photo')">
+        <figcaption>The space, exactly as photographed. No tidying up first.</figcaption>
       </figure>
-      <div class="lx-console-mid">
-        <span class="lx-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        <span class="lx-console-note">One quiet<br>hour</span>
+      <div class="story-plan">
+        <p class="story-label">Plan excerpt</p>
+        <table class="story-table">
+          <thead><tr><th scope="col">Zone</th><th scope="col">What goes here</th></tr></thead>
+          <tbody>
+            <tr><td>Top shelf</td><td>Bulk overflow, backup paper goods, rarely used items</td></tr>
+            <tr><td>Eye level</td><td>Daily snacks, breakfast items, coffee &amp; tea</td></tr>
+            <tr><td>Middle shelf</td><td>Canned goods, pasta, grains, dinner ingredients</td></tr>
+            <tr><td>Lower shelf</td><td>Kid snacks, heavy items, large containers</td></tr>
+            <tr><td>Door / side</td><td>Spices, sauces, small packets</td></tr>
+          </tbody>
+        </table>
+        <p class="story-foot">Nine steps, 45&ndash;90 minutes, $0 to start. This excerpt comes from TidyMap&rsquo;s sample pantry plan &middot; <button class="home-link" onclick="runDemo()">open the full plan</button></p>
       </div>
-      <figure class="lx-frame after">
-        <div class="pantry-vis tidy" aria-hidden="true"><div class="row"><b class="z1"></b><b class="z1"></b></div><div class="row"><b class="z2"></b><b class="z2"></b><b class="z2"></b></div><div class="row"><b class="z3"></b><b class="z3"></b></div><div class="row"><b class="z4"></b><b class="z4"></b><b class="z4"></b></div><div class="row"><b class="z5"></b></div></div>
-        <figcaption><span>After</span><span>Five calm zones</span></figcaption>
+      <div class="story-notes">
+        <p class="story-label">Notes</p>
+        <p>Kid snacks sit on the lower shelf, so nobody climbs for them.</p>
+        <p>Heavy jars and cans stay at waist height or below.</p>
+        <p>The two baskets already in the pantry corral the loose packets. Nothing new to buy.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- The real product: actual screenshots, not mockups -->
+  <div class="home-sec" id="product">
+    <h2>What you actually get</h2>
+    <p class="sec-sub">Real screenshots of a TidyMap plan, taken from the sample pantry above.</p>
+    <div class="product-shots">
+      <figure class="product-shot">
+        <figcaption>
+          <h3>Where things go</h3>
+          <p>Every shelf becomes a zone, with the reason for each placement and the safety notes that apply to your household.</p>
+        </figcaption>
+        <img src="assets/product/plan-map.png" alt="Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons" loading="lazy">
       </figure>
-      <p class="lx-console-cap">A real pantry plan. Better, not perfect, and it stays that way.</p>
+      <figure class="product-shot">
+        <figcaption>
+          <h3>Step-by-step</h3>
+          <p>Short, timed steps you can work through around a normal day. Check them off, or take them one at a time.</p>
+        </figcaption>
+        <img src="assets/product/plan-steps.png" alt="Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking" loading="lazy">
+      </figure>
+      <figure class="product-shot">
+        <figcaption>
+          <h3>Optional purchases</h3>
+          <p>If you opt in, suggestions are real products from ordinary retailers, sized to your shelves. The $0 plan works without them.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through retailer links. Prices stay the same for you.</span></p>
+        </figcaption>
+        <img src="assets/product/plan-shopping.png" alt="Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices" loading="lazy">
+      </figure>
     </div>
   </div>
 
-  <!-- Quiet reassurance -->
-  <div class="lx-assure lx-bleed lx-reveal">
-    <div><div class="a-t">One space</div><div class="a-d">Start small. One pantry, one closet, one shelf. Not the whole house.</div></div>
-    <div><div class="a-t">Your schedule</div><div class="a-d">Short steps that fit nap time, an evening, or twenty free minutes.</div></div>
-    <div><div class="a-t">$0 to start</div><div class="a-d">Every plan begins with what you already own. Buying is always optional.</div></div>
-  </div>
-
-  <!-- How TidyMap helps: five honest beats -->
-  <div class="lx-story">
-    <header class="lx-sechead lx-reveal">
-      <span class="lx-eyebrow">How TidyMap helps</span>
-      <h2 class="lx-h2">From &ldquo;where do I even start?&rdquo; to started.</h2>
-    </header>
-    <div class="lx-chapters">
-      <div class="lx-chapter lx-reveal">
-        <h3>We get it.</h3>
-        <p>The mess is not a failing. It is a full life. We take on the hardest part: deciding where everything should go.</p>
+  <!-- Method -->
+  <div class="home-sec" id="how">
+    <h2>How it works</h2>
+    <div class="how-list">
+      <div class="how-step">
+        <h3><span class="n">1</span>Share the space as it is</h3>
+        <p>Take a few photos, exactly as it looks today. No tidying up first, and nothing to measure unless you want sharper product suggestions.</p>
       </div>
-      <div class="lx-chapter lx-reveal">
-        <h3>Show us one space.</h3>
-        <p>Take a few photos, exactly as it looks today. Crumbs and all. No tidying up first, no staging, no apology.</p>
+      <div class="how-step">
+        <h3><span class="n">2</span>Review a plan made for your household</h3>
+        <p>TidyMap reads what&rsquo;s on your shelves, then drafts where everything should live around your routines, your kids and pets, and your budget. You confirm what it found before the plan is built.</p>
       </div>
-      <div class="lx-chapter lx-reveal">
-        <h3>A plan around your household.</h3>
-        <p>Snacks where kids can reach them. Hazards where they can&rsquo;t. Everyday things at arm&rsquo;s height, measured to your shelves and built around the people who use them.</p>
-      </div>
-      <div class="lx-chapter lx-reveal">
-        <h3>Small, doable steps.</h3>
-        <p>Each move is timed and explained. Pause for school pickup and come back after bedtime. It all counts, and nothing falls apart if life interrupts.</p>
-      </div>
-      <div class="lx-chapter lx-reveal">
-        <h3>Products only if you want them.</h3>
-        <p>The plan works with what you own. Anything new is optional. It supports the plan, it is never the plan itself.</p>
+      <div class="how-step">
+        <h3><span class="n">3</span>Work through it one manageable step at a time</h3>
+        <p>Each step is short and timed. Pause for school pickup, come back after bedtime, and the plan holds together.</p>
       </div>
     </div>
   </div>
 
-  <!-- What you can count on -->
-  <div class="lx-values lx-bleed">
-    <header class="lx-sechead lx-reveal">
-      <span class="lx-eyebrow">What you can count on</span>
-      <h2 class="lx-h2">Promises we keep, quietly</h2>
-    </header>
-    <div class="lx-values-grid lx-reveal">
-      <div class="lx-value">
-        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-        <div><h4>Private by default</h4><p>Your photos and your plan stay yours. Never shared, never judged.</p></div>
+  <!-- Practical promises -->
+  <div class="home-sec" id="promises">
+    <h2>What we promise</h2>
+    <div class="promise-list">
+      <div>
+        <h3>We start with what you own.</h3>
+        <p>Every plan begins at $0, built on your existing shelves, bins, and baskets.</p>
       </div>
-      <div class="lx-value">
-        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></span>
-        <div><h4>Safe for little hands</h4><p>Kid-reach and safety are planned in from the very first shelf.</p></div>
+      <div>
+        <h3>Safety is planned in.</h3>
+        <p>With kids or pets in the house, hazards go up high or behind a latch, and their own things stay reachable.</p>
       </div>
-      <div class="lx-value">
-        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/></svg></span>
-        <div><h4>Use what you already own</h4><p>$0 is the default. We never make buying the point.</p></div>
+      <div>
+        <h3>Purchases are always optional.</h3>
+        <p>Product suggestions stay off unless you ask for them, and the plan works without them.</p>
       </div>
-      <div class="lx-value">
-        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg></span>
-        <div><h4>Thoughtful restraint</h4><p>Nothing goes in your plan, or your home, without a reason.</p></div>
-      </div>
-      <div class="lx-value">
-        <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.2 8.5a3.5 3.5 0 1 1 0 7c-3.6 0-8.8-7-12.4-7a3.5 3.5 0 1 0 0 7c3.6 0 8.8-7 12.4-7z"/></svg></span>
-        <div><h4>Systems that last</h4><p>Built to survive busy mornings and snack raids, not tidy for a day.</p></div>
+      <div>
+        <h3>Your plan can be adjusted.</h3>
+        <p>Change a zone, lower the effort, or swap a step. It&rsquo;s your space; the plan follows.</p>
       </div>
     </div>
   </div>
 
-  <!-- A considered collection -->
-  <div class="lx-collection">
-    <header class="lx-sechead center lx-reveal">
-      <span class="lx-eyebrow">A considered collection</span>
-      <h2 class="lx-h2">Helpful things, chosen carefully</h2>
-      <p class="lx-sub">If your plan calls for something new, it comes from a short list of real, well-reviewed products. Each one is matched to your shelf sizes, and always optional.</p>
-    </header>
-    <div class="lx-vitrines">
-      <div class="lx-vitrine lx-panel lx-reveal">
-        <span class="art" aria-hidden="true">
-          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="40" y="32" width="40" height="60" rx="9"/>
-            <rect x="36" y="18" width="48" height="12" rx="6"/>
-            <path d="M49 46v32" opacity=".45"/>
-            <path d="M46 62h28" opacity=".3" stroke-dasharray="2 5"/>
-          </svg>
-        </span>
-        <h4>OXO POP Airtight Container</h4>
-        <p class="mat">Keeps flour and sugar fresh, stacks neatly, and opens with one button. Sturdy enough for small helpers.</p>
-        <div class="rowline"><span class="price">$22.99</span><a class="tagr" data-retailer="Walmart" href="https://www.walmart.com/ip/OXO-Good-Grips-POP-Container-Big-Square-Short-2-8-Qt/5250807410" target="_blank" rel="noopener">View at Walmart</a></div>
+  <!-- Credibility -->
+  <div class="home-sec" id="about">
+    <h2>Who&rsquo;s behind this</h2>
+    <div class="about-grid">
+      <div class="about-lede">
+        <p>TidyMap is built by SCM Solutions, a small team, and is currently in early access. We started it after watching capable, busy households lose the same twenty minutes every day to spaces that had quietly stopped working.</p>
+        <p>The organizing rules behind every plan are ordinary professional practice: things you use daily live at eye level, heavy items stay low, kid items stay reachable, and hazards don&rsquo;t. The AI&rsquo;s job is narrower than you might expect.</p>
       </div>
-      <div class="lx-vitrine lx-panel lx-reveal">
-        <span class="art" aria-hidden="true">
-          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 92h88"/>
-            <path d="M24 92V68h38V46h38v46"/>
-            <path d="M24 68h38" opacity=".45"/>
-            <path d="M62 46h38" opacity=".45"/>
-          </svg>
-        </span>
-        <h4>IKEA VARIERA Shelf Insert</h4>
-        <p class="mat">A simple steel riser that turns one shelf into two. The mugs finally get their own level.</p>
-        <div class="rowline"><span class="price">$11.99</span><a class="tagr" data-retailer="IKEA" href="https://www.ikea.com/us/en/p/variera-shelf-insert-white-60136623/" target="_blank" rel="noopener">View at IKEA</a></div>
-      </div>
-      <div class="lx-vitrine lx-panel lx-reveal">
-        <span class="art" aria-hidden="true">
-          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <ellipse cx="60" cy="58" rx="42" ry="15"/>
-            <path d="M18 58v9c0 8.3 18.8 15 42 15s42-6.7 42-15v-9" opacity=".6"/>
-            <circle cx="60" cy="58" r="4.5"/>
-          </svg>
-        </span>
-        <h4>OXO 16&Prime; Lazy Susan</h4>
-        <p class="mat">One spin brings the back of a deep cabinet within reach. No more digging before dinner.</p>
-        <div class="rowline"><span class="price">$22.99</span><a class="tagr" data-retailer="Walmart" href="https://www.walmart.com/ip/Multi-Purpose-Turntable-16-inch/131483980" target="_blank" rel="noopener">View at Walmart</a></div>
-      </div>
-      <div class="lx-vitrine lx-panel lx-reveal">
-        <span class="art" aria-hidden="true">
-          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M28 50h64l-7 38a9 9 0 0 1-8.9 7H43.9a9 9 0 0 1-8.9-7z"/>
-            <path d="M33.5 64h53M36.5 78h47" opacity=".4"/>
-            <path d="M44 50a16 16 0 0 1 32 0" opacity=".7"/>
-          </svg>
-        </span>
-        <h4>Y-Weave Storage Basket</h4>
-        <p class="mat">A soft woven basket that swallows the 6 p.m. toy sweep in one pass. Cheap enough to buy three.</p>
-        <div class="rowline"><span class="price">$6.00</span><a class="tagr" data-retailer="Target" href="https://www.target.com/p/y-weave-medium-decorative-storage-basket-brightroom/-/A-53816617" target="_blank" rel="noopener">View at Target</a></div>
+      <div class="about-facts">
+        <div>
+          <h3>What the AI does</h3>
+          <p>It reads your photos to catalog what&rsquo;s actually on your shelves and how much room you have, then applies the placement rules above.</p>
+        </div>
+        <div>
+          <h3>What it doesn&rsquo;t do</h3>
+          <p>It doesn&rsquo;t judge, doesn&rsquo;t sell your data, and doesn&rsquo;t invent products. Suggestions come from a hand-checked list of real retailer items.</p>
+        </div>
+        <div>
+          <h3>How photos are handled</h3>
+          <p>Photos are used to build your plan. If you don&rsquo;t sign in, they aren&rsquo;t stored after the analysis. Details in the <a href="privacy.html">privacy policy</a>.</p>
+        </div>
+        <div>
+          <h3>Early access</h3>
+          <p>TidyMap is free while we finish building it. Some rough edges remain; the feedback form at the end of every plan goes straight to us.</p>
+        </div>
       </div>
     </div>
-    <p class="lx-collection-fine lx-reveal">Every piece is optional, always. A TidyMap plan begins with what you already own. Products only appear if you ask for them. Prices are approximate and links open the retailer&rsquo;s page.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through these links. Prices stay the same for you.</span></p>
   </div>
 
-  <!-- Manifesto -->
-  <div class="lx-manifesto lx-bleed lx-reveal">
-    <p>You&rsquo;re not failing. You&rsquo;re busy. Progress, not perfection.</p>
-  </div>
-
-  <!-- Focal glass no. 2: the founding circle -->
-  <div class="lx-reserve lxg lx-reveal">
-    <span class="lx-eyebrow">The Founding Circle</span>
-    <h2 class="lx-h2">Help shape TidyMap from the very start.</h2>
-    <p class="lx-lede">We&rsquo;re inviting a small founding group of households to grow with us. You get first access to new spaces, seasonal refreshes of your plans, and a direct line to the people building it. It stays small so it stays personal. There&rsquo;s a seat for you.</p>
-    <div class="lx-invite" id="lx-invite-form">
-      <input type="email" id="lx-email" placeholder="Your email" autocomplete="email" spellcheck="false" onkeydown="if(event.key==='Enter')requestInvite()">
-      <button class="lx-btn primary" onclick="requestInvite()">Request an Invitation</button>
+  <!-- Email signup -->
+  <div class="home-signup" id="signup">
+    <h2>Occasional updates</h2>
+    <p class="sec-sub">Get occasional product updates and practical organizing ideas.</p>
+    <div class="signup-row" id="signup-form">
+      <input type="email" id="signup-email" placeholder="Your email" autocomplete="email" spellcheck="false" aria-label="Email address" onkeydown="if(event.key==='Enter')requestInvite()">
+      <button class="btn btn-primary" onclick="requestInvite()">Sign up</button>
     </div>
-    <div class="lx-invited hide" id="lx-invite-done">
-      <span class="lx-seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-      <p class="lx-invited-h">You&rsquo;re on the list.</p>
-      <p class="lx-invited-p">We&rsquo;ll write to <strong data-invite-email></strong> as soon as a seat opens. It won&rsquo;t be long.</p>
-    </div>
-    <p class="lx-fine">No spam, ever. We answer requests in order. The circle stays small so we can stay personal.</p>
-    <div class="lx-reserve-alt">
-      Can&rsquo;t wait? <button class="lx-linklike" onclick="go('space')">Start with one space</button> &nbsp;&middot;&nbsp; <button class="lx-linklike" onclick="runDemo()">see an example plan</button>
-    </div>
+    <p class="signup-done hide" id="signup-done">Thanks. We&rsquo;ll write to <strong data-invite-email></strong>.</p>
+    <p class="signup-fine">A couple of emails a month at most. Unsubscribe any time.</p>
   </div>
 </section>
 
 <!-- ============================================================ 2. SPACE SELECTION -->
 <section class="screen has-rail" id="screen-space">
-  <div class="step-head"><span class="step-num">01</span><span class="step-kicker">Your space</span></div>
+  <div class="step-head"><span class="step-num">Step 1 of 6</span><span class="step-kicker">Your space</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>What space are you organizing?</h2>
@@ -299,7 +273,7 @@
 
 <!-- ============================================================ 3. HOUSEHOLD -->
 <section class="screen has-rail" id="screen-household">
-  <div class="step-head"><span class="step-num">02</span><span class="step-kicker">Your household</span></div>
+  <div class="step-head"><span class="step-num">Step 2 of 6</span><span class="step-kicker">Your household</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>Who uses this space?</h2>
@@ -334,7 +308,7 @@
 
 <!-- ============================================================ 4. CAPTURE -->
 <section class="screen has-rail" id="screen-capture">
-  <div class="step-head"><span class="step-num">03</span><span class="step-kicker">Show us the space</span></div>
+  <div class="step-head"><span class="step-num">Step 3 of 6</span><span class="step-kicker">Show us the space</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>How do you want to show us the space?</h2>
@@ -351,7 +325,7 @@
 
 <!-- ============================================================ 4. SPACE DETAILS -->
 <section class="screen has-rail" id="screen-details">
-  <div class="step-head"><span class="step-num">04</span><span class="step-kicker">Space details &middot; optional</span></div>
+  <div class="step-head"><span class="step-num">Step 4 of 6</span><span class="step-kicker">Space details &middot; optional</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>A few optional details</h2>
@@ -385,7 +359,7 @@
 
 <!-- ============================================================ 5. PREFERENCES -->
 <section class="screen has-rail" id="screen-prefs">
-  <div class="step-head"><span class="step-num">05</span><span class="step-kicker">Preferences</span></div>
+  <div class="step-head"><span class="step-num">Step 5 of 6</span><span class="step-kicker">Preferences</span></div>
   <div class="wiz">
     <div class="wiz-main">
       <h2>What should your plan prioritize?</h2>
@@ -423,7 +397,7 @@
 
 <!-- ============================================================ 7. DETECTION REVIEW -->
 <section class="screen" id="screen-review" style="max-width:780px">
-  <div class="step-head"><span class="step-num">06</span><span class="step-kicker">Confirm what we found</span></div>
+  <div class="step-head"><span class="step-num">Step 6 of 6</span><span class="step-kicker">Confirm what we found</span></div>
   <h2 style="font-size:clamp(24px,4vw,32px)">Did we get this right?</h2>
   <div class="helper" style="margin:12px 0 20px;font-size:14px">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -455,7 +429,7 @@
     <h2 id="res-title">Here&rsquo;s your plan</h2>
     <div class="report-byline">
       <span id="res-byline">Example plan &middot; demo data</span>
-      <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:500">Analyzed by Claude</span>
+      <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-size:11.5px;color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:600">Analyzed by Claude</span>
     </div>
     <div id="res-fallback-note" class="callout warn hide" style="margin-top:18px"></div>
   </header>
@@ -464,19 +438,19 @@
     <nav class="report-toc" aria-label="Plan chapters">
       <div class="toc-h">In this plan</div>
       <ol>
-        <li><a href="#ch-summary"><span class="tn">01</span>Summary</a></li>
-        <li><a href="#ch-map"><span class="tn">02</span>The map</a></li>
-        <li><a href="#ch-reuse"><span class="tn">03</span>Use what you own</a></li>
-        <li><a href="#ch-steps"><span class="tn">04</span>Move by move</a></li>
-        <li><a href="#ch-after"><span class="tn">05</span>Before &amp; after</a></li>
-        <li><a href="#ch-shop" id="toc-shop" class="hide"><span class="tn">06</span>Upgrades &amp; shopping</a></li>
+        <li><a href="#ch-summary">Summary</a></li>
+        <li><a href="#ch-map">Where things go</a></li>
+        <li><a href="#ch-reuse">Use what you own</a></li>
+        <li><a href="#ch-steps">Step-by-step</a></li>
+        <li><a href="#ch-after">Before &amp; after</a></li>
+        <li><a href="#ch-shop" id="toc-shop" class="hide">Optional purchases</a></li>
       </ol>
     </nav>
 
     <div class="report-main">
       <!-- 01. Summary -->
       <section class="chapter" id="ch-summary">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><span class="ch-num">01</span><div class="ch-titles"><span class="eyebrow">The space</span><h3>Summary</h3></div></div>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Summary</h3></div></div>
         <p class="summary-lede" id="res-summary"></p>
         <ul class="summary-points" id="res-summary-points"></ul>
         <div class="kpis" id="res-kpis"></div>
@@ -490,7 +464,7 @@
             <ul class="problems" id="res-problems"></ul>
           </div>
           <div>
-            <div class="small" style="font-weight:600;margin-bottom:8px;color:var(--primary)">Biggest opportunities</div>
+            <div class="small" style="font-weight:600;margin-bottom:8px;color:var(--sage-ink)">Biggest opportunities</div>
             <ul class="problems opps" id="res-opps"></ul>
           </div>
         </div>
@@ -499,13 +473,13 @@
 
       <!-- 02. Organization map -->
       <section class="chapter" id="ch-map">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><span class="ch-num">02</span><div class="ch-titles"><span class="eyebrow">Where everything goes</span><h3>The map</h3></div></div>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Where things go</h3></div></div>
         <div id="res-map"></div>
       </section>
 
       <!-- 03. Use existing first -->
       <section class="chapter" id="ch-reuse">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><span class="ch-num">03</span><div class="ch-titles"><span class="eyebrow">Use what you&rsquo;ve got</span><h3>Use what you already have first</h3></div></div>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Use what you already have first</h3></div></div>
         <div class="card pad" style="background:var(--primary-bg);border-color:var(--primary-line)">
           <p style="margin:0 0 14px;font-size:15px;color:var(--ink-2)" id="res-existing-lede"></p>
           <div class="feat-grid" id="res-existing"></div>
@@ -518,7 +492,7 @@
 
       <!-- 04. Move-by-move -->
       <section class="chapter" id="ch-steps">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><span class="ch-num">04</span><div class="ch-titles"><span class="eyebrow">Your step-by-step guide</span><h3>Move by move</h3>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Step-by-step</h3>
           <p class="ch-sub">Work top to bottom. Mark steps complete as you go.</p></div></div>
         <div class="progwrap">
           <div class="lab"><span id="prog-text">Step 0 of 9 complete</span><span id="prog-pct" class="muted">0%</span></div>
@@ -540,7 +514,7 @@
 
       <!-- 05. Before/After -->
       <section class="chapter" id="ch-after">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><span class="ch-num">05</span><div class="ch-titles"><span class="eyebrow">Before &amp; after</span><h3>What it could look like</h3>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>What it could look like</h3>
           <p class="ch-sub">An illustrated layout of the recommended plan. Each shelf is a labeled zone.</p></div></div>
 
         <!-- Photorealistic preview: the user's own photo, reorganized by AI -->
@@ -586,7 +560,7 @@
       <!-- 06. Optional upgrades + shopping -->
       <section class="chapter" id="ch-shop">
         <div id="res-upgrades-wrap" class="hide">
-          <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><span class="ch-num">06</span><div class="ch-titles"><span class="eyebrow">Optional upgrades</span><h3>Upgrades &amp; shopping</h3>
+          <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Optional purchases</h3>
             <p class="ch-sub">Only because you said you&rsquo;re open to buying storage products. The $0 plan above works without any of these.</p></div></div>
           <div id="res-upgrades"></div>
           <div class="callout warn" style="margin-top:8px">
@@ -710,14 +684,11 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-brand">
-      <span class="footer-logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>
-      </span>
-      <span>TidyMap AI</span>
+      <span>TidyMap</span>
     </div>
     <div class="footer-links">
-      <span>Built by <a href="https://scmsolutions.org">SCM Solutions</a></span>
-      <span>No tidying up first. Use what you already own. Progress, not perfection.</span>
+      <span>Built by <a href="https://scmsolutions.org">SCM Solutions</a> &middot; <a href="mailto:contact@scmsolutions.org">contact@scmsolutions.org</a></span>
+      <span>Organizing plans built from photos of your real space, starting with what you already own.</span>
     </div>
     <div class="footer-legal">
       <span>&copy; 2026 SCM Solutions LLC</span>
