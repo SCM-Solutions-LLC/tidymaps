@@ -458,10 +458,6 @@
       <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:500">Analyzed by Claude</span>
     </div>
     <div id="res-fallback-note" class="callout warn hide" style="margin-top:18px"></div>
-    <div id="report-hero" class="hide">
-      <img alt="Your space, as photographed" src="">
-      <span class="hero-tag">Your space &middot; as photographed</span>
-    </div>
   </header>
 
   <div class="report-body">
@@ -482,6 +478,7 @@
       <section class="chapter" id="ch-summary">
         <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><span class="ch-num">01</span><div class="ch-titles"><span class="eyebrow">The space</span><h3>Summary</h3></div></div>
         <p class="summary-lede" id="res-summary"></p>
+        <ul class="summary-points" id="res-summary-points"></ul>
         <div class="kpis" id="res-kpis"></div>
         <div style="margin-top:20px">
           <div class="small" style="font-weight:600;margin-bottom:6px">Detected item categories</div>
@@ -527,7 +524,18 @@
           <div class="lab"><span id="prog-text">Step 0 of 9 complete</span><span id="prog-pct" class="muted">0%</span></div>
           <div class="progbar"><i id="prog-bar"></i></div>
         </div>
+        <div class="steps-bar">
+          <span class="seg steps-toggle">
+            <button data-v="all" class="sel" onclick="setStepsView('all')">All steps</button>
+            <button data-v="focus" onclick="setStepsView('focus')">One at a time</button>
+          </span>
+          <span class="small muted" id="focus-pos"></span>
+        </div>
         <div class="steps" id="res-steps"></div>
+        <div class="focus-nav" id="focus-nav">
+          <button class="btn btn-ghost btn-sm" id="focus-prev" onclick="focusNav(-1)">&larr; Previous</button>
+          <button class="btn btn-primary btn-sm" id="focus-done" onclick="focusDone()">Complete and next &rarr;</button>
+        </div>
       </section>
 
       <!-- 05. Before/After -->

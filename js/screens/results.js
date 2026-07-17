@@ -44,9 +44,18 @@ export function buildResults(){
       <a href="#" onclick="restart();return false" style="text-decoration:underline;font-weight:600">Try again</a></div>`;
   }
 
-  // summary
-  document.getElementById('res-summary').textContent = A ? A.summary :
+  // summary: first sentence as the lede, the rest as scannable bullets
+  const sumText = A ? A.summary :
     'We detected snacks, canned goods, spices, baking supplies, breakfast items, paper goods, and overflow items. The main issue is that similar items are spread across multiple shelves, daily-use items are mixed with rarely used items, and vertical space is underused.';
+  const sents=sumText.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(Boolean);
+  const sumPoints=document.getElementById('res-summary-points');
+  if(sents.length>=3){
+    document.getElementById('res-summary').textContent=sents[0];
+    if(sumPoints) sumPoints.innerHTML=sents.slice(1).map(s=>`<li>${escapeHtml(s)}</li>`).join('');
+  }else{
+    document.getElementById('res-summary').textContent=sumText;
+    if(sumPoints) sumPoints.innerHTML='';
+  }
   // kpis
   const kpis=[
     ['Space type', A?A.spaceType:'Pantry'],['Categories',state.cats.length+' found'],
@@ -58,17 +67,21 @@ export function buildResults(){
     'Similar items are spread across multiple shelves','Frequently used snacks are too high',
     'Canned goods are hard to see','Loose packets are creating clutter',
     'Bulk items are taking up prime shelf space','Heavy items should be moved lower'];
-  document.getElementById('res-problems').innerHTML=problems.map(bulletHtml).join('');
+  document.getElementById('res-problems').innerHTML=problems.map(p=>`<li>${escapeHtml(p)}</li>`).join('');
   const opps = (A&&A.opportunities.length)?A.opportunities:[
     'Existing baskets are underused','Unused vertical space above the cans',
     'Right-side open shelf space is free','Lower shelf can safely hold heavy items'];
-  document.getElementById('res-opps').innerHTML=opps.map(bulletHtml).join('');
+  document.getElementById('res-opps').innerHTML=opps.map(p=>`<li>${escapeHtml(p)}</li>`).join('');
 
   // household safety notes (only present when the plan carries them)
   const notesWrap=document.getElementById('res-safety-notes');
   if(notesWrap){
-    notesWrap.innerHTML=activeSafetyNotes().map(n=>
-      `<div class="safety-note">${SVG.shield}<span>${escapeHtml(n)}</span></div>`).join('');
+    const notes=activeSafetyNotes();
+    notesWrap.innerHTML=notes.length?
+      `<div class="sn-head">${SVG.shield}<div><strong>Safety notes for your household</strong>
+        <span>The green notes below are placements chosen for safety, based on what you told us about kids, pets, and reach. The plan already follows them.</span></div></div>`
+      + notes.map(n=>`<div class="safety-note">${SVG.shield}<span>${escapeHtml(n)}</span></div>`).join('')
+      :'';
   }
 
   // map — v2 rows carry per-shelf safety flags
@@ -78,9 +91,15 @@ export function buildResults(){
     const flag=m.safety&&m.safety.flag;
     const badge=flag?`<span class="tag ${flag==='kid-safe'?'green':'warn'}" style="margin-left:8px;vertical-align:2px">${SAFETY_LABEL[flag]}</span>`:'';
     const safetyWhy=(m.safety&&m.safety.why)?`<div class="why">${SVG.shield}<span>${escapeHtml(m.safety.why)}</span></div>`:'';
+    // "Left wall: eye level shelf" reads as a wall chip + a level name
+    const parts=String(m.lv||'').split(/:\s*/);
+    const wall=parts.length>1?parts[0]:null;
+    const lvl=parts.length>1?parts.slice(1).join(': '):m.lv;
     return `
     <div class="shelf ${m.eye?'eye':''}">
-      <div class="label"><span class="lv">${escapeHtml(m.lv)}</span><span class="ic">${m.ic}</span></div>
+      <div class="label">
+        ${wall?`<span class="lv-wall">${escapeHtml(wall)}</span>`:''}
+        <span class="lv">${escapeHtml(lvl)}</span><span class="ic">${m.ic}</span></div>
       <div class="body"><div class="zone">${escapeHtml(m.zone)}${badge}</div>
         <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div>${safetyWhy}</div>
     </div>`;
@@ -115,15 +134,6 @@ export function buildResults(){
   setupAfterPhoto();
 }
 
-/* Short headline with an expandable detail — long bullets read at a glance */
-function bulletHtml(text){
-  const t=String(text);
-  const m=t.match(/^(.{10,60}?[,.;:])\s+(.{12,})$/);
-  if(!m) return `<li>${escapeHtml(t)}</li>`;
-  const head=m[1].replace(/[,.;:]$/,'');
-  return `<li class="pt"><button class="pt-h" type="button" onclick="this.closest('li').classList.toggle('open')">${escapeHtml(head)}<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><div class="pt-d">${escapeHtml(t)}</div></li>`;
-}
-
 /* ---------- Photorealistic after-render (Gemini via edge function) ---------- */
 function beforePhotoSrc(){
   if(state.uploadedFiles && state.uploadedFiles.length) return URL.createObjectURL(state.uploadedFiles[0]);
@@ -135,8 +145,6 @@ function setupAfterPhoto(){
   const wrap=document.getElementById('after-photo'); if(!wrap) return;
   const beforeUrl=beforePhotoSrc();
   state._beforeUrl=beforeUrl;
-  const hero=document.getElementById('report-hero');
-  if(hero){ hero.classList.toggle('hide',!beforeUrl); if(beforeUrl) hero.querySelector('img').src=beforeUrl; }
   const afterUrl=state.afterRenderB64 ? 'data:image/png;base64,'+state.afterRenderB64 : (state.afterRenderUrl||null);
   wrap.classList.toggle('hide', !beforeUrl);
   if(!beforeUrl) return;
@@ -217,6 +225,7 @@ function initShopping(){
       price_usd: top?top.product.price_usd:null,
       url: top?top.product.url:null,
       retailer: top?top.product.retailer:null,
+      img: top?(top.product.img||null):null,
       fit: top?top.fit:'unknown',
     };
   });
@@ -235,30 +244,35 @@ export function renderUpgrades(){
     const badge=fitBadge(sel.fit);
     const links=searchLinks(need).map(l=>
       `<a href="${l.url}" target="_blank" rel="noopener" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
+    const img=sel.img
+      ?`<img src="${sel.img}" alt="" loading="lazy" onerror="this.parentElement.classList.add('noimg');this.remove()">`
+      :'';
     const picker=options.length>1?`
-      <select onchange="pickProduct(${i},this.value)" style="width:auto;max-width:100%;padding:7px 10px;font-size:13px;margin-top:8px">
+      <label class="field" style="margin:10px 0 0"><span>Swap for a different product</span>
+      <select onchange="pickProduct(${i},this.value)" style="padding:9px 11px;font-size:13px">
         ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
-      </select>`:'';
-    const chosen=sel.productId?`
-      <div class="pchoice">
-        <a href="${withAffiliate(sel.url, sel.retailer)}" target="_blank" rel="noopener">${escapeHtml(sel.name)}</a>
-        <span class="muted">at ${escapeHtml(sel.retailer)}</span>
-        ${badge.txt?`<span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}
-      </div>${picker}`:
-      `<div style="margin-top:8px;font-size:13px" class="muted">No catalog match for this space — use the search links below.</div>`;
+      </select></label>`:'';
+    const main=sel.productId?`
+      <a class="pname" href="${withAffiliate(sel.url, sel.retailer)}" target="_blank" rel="noopener">${escapeHtml(sel.name)}</a>
+      <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}</div>`:
+      `<div class="pretail">No exact match in our catalog. Search: ${links}</div>`;
     return `
     <div class="prod${sel.checked?'':' excluded'}">
       <input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list">
-      <span class="pic">${SVG[TYPE_ICON[need.type]]||SVG.box}</span>
+      <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${SVG[TYPE_ICON[need.type]]||SVG.box}</span></span>
       <div>
         <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${need.priority==='high'?'<span class="tag green">recommended</span>':''}</h4>
         <div class="pwhy">${escapeHtml(need.purpose)}</div>
-        ${chosen}
-        <div class="pmeta">
-          <span>${SVG.mapPin} ${escapeHtml(need.targetZone||'Anywhere')}</span>
-          ${need.maxDims?`<span>${SVG.ruler} Max ${need.maxDims.w_in}″w × ${need.maxDims.h_in}″h × ${need.maxDims.d_in}″d</span>`:''}
-        </div>
-        <div class="small muted" style="margin-top:8px">Search instead: ${links}</div>
+        ${main}
+        <details class="pmore">
+          <summary>Details &amp; other options</summary>
+          <div class="pmeta">
+            <span>${SVG.mapPin} ${escapeHtml(need.targetZone||'Anywhere')}</span>
+            ${need.maxDims?`<span>${SVG.ruler} Max ${need.maxDims.w_in}″w × ${need.maxDims.h_in}″h × ${need.maxDims.d_in}″d</span>`:''}
+          </div>
+          ${picker}
+          <div class="small muted" style="margin-top:10px">Search instead: ${links}</div>
+        </details>
       </div>
       <span class="cost">${sel.price_usd!=null?'$'+Math.round(sel.price_usd*sel.qty):'–'}</span>
     </div>`;
@@ -272,7 +286,7 @@ export function pickProduct(i, productId){
   if(!m) return;
   Object.assign(state.shopping[i],{
     productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd,
-    url:m.product.url, retailer:m.product.retailer, fit:m.fit,
+    url:m.product.url, retailer:m.product.retailer, img:m.product.img||null, fit:m.fit,
   });
   renderUpgrades();
   persistShopping();
@@ -392,10 +406,45 @@ export function renderSteps(list){
   });
   state.stepCount=list.length;
   updateProgress();
+  setStepsView(state.stepsView||'all');
 }
 export function toggleStepTip(i){
   const el=document.getElementById('step-tip-'+i);
   if(el) el.classList.toggle('hide');
+}
+
+/* ---------- "One at a time" focus mode for the checklist ---------- */
+let focusIdx=0;
+function firstOpenStep(){
+  const i=(state.stepDone||[]).findIndex(d=>!d);
+  return i<0 ? Math.max(0,(state.stepCount||1)-1) : i;
+}
+function focusShow(i){
+  focusIdx=Math.max(0, Math.min((state.stepCount||1)-1, i));
+  document.querySelectorAll('#res-steps .task').forEach((t,k)=>t.classList.toggle('current', k===focusIdx));
+  const pos=document.getElementById('focus-pos');
+  if(pos) pos.textContent='Step '+(focusIdx+1)+' of '+state.stepCount;
+  const prev=document.getElementById('focus-prev');
+  if(prev) prev.disabled = focusIdx===0;
+  const done=document.getElementById('focus-done');
+  if(done){
+    const last=focusIdx===state.stepCount-1;
+    done.textContent = state.stepDone[focusIdx]
+      ? (last ? 'All done' : 'Next step →')
+      : (last ? 'Complete' : 'Complete and next →');
+  }
+}
+export function setStepsView(v){
+  state.stepsView=v;
+  const ch=document.getElementById('ch-steps');
+  if(ch) ch.classList.toggle('focus-mode', v==='focus');
+  document.querySelectorAll('.steps-toggle button').forEach(b=>b.classList.toggle('sel', b.dataset.v===v));
+  if(v==='focus') focusShow(firstOpenStep());
+}
+export function focusNav(d){ focusShow(focusIdx+d); }
+export function focusDone(){
+  if(!state.stepDone[focusIdx]) toggleStep(focusIdx);
+  focusShow(focusIdx < state.stepCount-1 ? focusIdx+1 : focusIdx);
 }
 export function toggleStep(i){
   state.stepDone[i]=!state.stepDone[i];

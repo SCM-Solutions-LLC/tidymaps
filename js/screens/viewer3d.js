@@ -1,5 +1,5 @@
 import { state, persistGuestDraft } from '../state.js';
-import { toast } from '../ui.js';
+import { toast, escapeHtml } from '../ui.js';
 import { go } from '../router.js';
 import { activeGeometry, activeMapV2 } from '../plan.js';
 import { getSession } from '../auth.js';
@@ -43,6 +43,9 @@ export async function openViewer3d(){
     });
     resizeHandler=()=>view && view.setSize();
     addEventListener('resize', resizeHandler);
+    openViewer3d._retried=false;
+    // if the GPU drops the context (tab backgrounded, driver reset), rebuild next open
+    canvas.addEventListener('webglcontextlost', ()=>{ disposeViewer3d(); }, { once:true });
     let note=geometry.estimated
       ? 'Dimensions are estimated from your photos. Add measurements in the wizard for exact scale.'
       : `Built from your measurements: ${geometry.width}″w × ${geometry.height}″h × ${geometry.depth}″d.`;
@@ -53,7 +56,17 @@ export async function openViewer3d(){
     status.textContent=note;
   }catch(e){
     console.error('3D viewer failed', e);
-    status.textContent='The 3D view could not load on this device. The plan above has everything you need.';
+    // One automatic retry: covers transient GPU failures and the module-cache
+    // mismatch that can happen when the site deploys mid-visit.
+    if(!openViewer3d._retried){
+      openViewer3d._retried=true;
+      disposeViewer3d();
+      await new Promise(r=>setTimeout(r, 700));
+      return openViewer3d();
+    }
+    openViewer3d._retried=false;
+    const why=String((e&&e.message)||e).slice(0,140);
+    status.innerHTML='The 3D view could not load ('+escapeHtml(why)+'). Reloading the page usually fixes this. The plan above has everything you need.';
   }
 }
 
