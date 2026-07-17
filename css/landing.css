@@ -44,7 +44,11 @@
   border-radius:var(--radius);border:1px solid var(--line);
 }
 .hero-photo figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
-/* until the hero photograph exists, the copy stands alone */
+/* while real photography is pending, the product's 3D view stands in */
+.hero-photo .cap-fallback{display:none}
+.home-hero.alt-visual .cap-fallback{display:block}
+.home-hero.alt-visual .hero-photo img{aspect-ratio:auto;background:#fff}
+/* if the stand-in is missing too, the copy stands alone */
 .home-hero.no-photo{grid-template-columns:1fr;padding-bottom:0}
 .home-hero.no-photo .hero-photo{display:none}
 .home-hero.no-photo h1{max-width:16ch}
@@ -90,6 +94,14 @@
 @media(min-width:880px){.product-shot figcaption{position:sticky;top:calc(var(--appbar-h,57px) + 20px)}}
 
 /* ---------- Method ---------- */
+.how-grid{display:grid;gap:32px;margin-top:4px;align-items:start}
+@media(min-width:920px){.how-grid{grid-template-columns:minmax(0,1fr) 350px;gap:56px}}
+.how-shot{margin:0;min-width:0}
+.how-shot img{
+  width:100%;display:block;border-radius:var(--radius);
+  border:1px solid var(--line-2);box-shadow:var(--shadow);
+}
+.how-shot figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
 .how-list{margin-top:26px;display:grid;gap:0}
 .how-step{
   display:grid;gap:4px 28px;grid-template-columns:1fr;

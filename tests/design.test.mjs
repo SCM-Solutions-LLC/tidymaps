@@ -53,7 +53,10 @@ test('signup asks plainly, with no exclusivity framing', () => {
 
 test('landing shows real evidence: sample-plan excerpt and product screenshots', () => {
   assert.ok(landing.includes('Plan excerpt'), 'household story lost its plan excerpt');
-  for (const shot of ['assets/product/plan-map.png', 'assets/product/plan-steps.png', 'assets/product/plan-shopping.png']) {
+  for (const shot of [
+    'assets/product/plan-map.png', 'assets/product/plan-steps.png', 'assets/product/plan-shopping.png',
+    'assets/product/hero-3d.png', 'assets/product/wizard-household.png',
+  ]) {
     assert.ok(landing.includes(shot), `missing product screenshot slot: ${shot}`);
     assert.ok(existsSync(new URL(`../${shot}`, import.meta.url)), `screenshot file missing on disk: ${shot}`);
   }
