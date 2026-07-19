@@ -8,6 +8,7 @@ import { fileToScaledB64, extractVideoFrames, formatTime } from '../media.js';
 import { normalizeAi, buildAnalysisContext } from '../plan.js';
 import { go } from '../router.js';
 import { buildResults } from './results.js';
+import { track } from '../telemetry.js';
 import { getDemoScenario } from '../demo-scenarios.js';
 
 function showFrames(frames){
@@ -105,6 +106,11 @@ export function finishLoading(aiPromise){
   const fin=document.getElementById('ls-final');
   if(fin) fin.classList.add('doing');
   const proceed=()=>{
+    track('plan_created', {
+      space: state.space || 'unknown',
+      source: (state.planMeta && state.planMeta.source) || (state.aiError ? 'demo-fallback' : 'demo'),
+      steps: (state.ai && state.ai.steps) ? state.ai.steps.length : 0,
+    });
     if(state.aiError){
       document.getElementById('load-sub').innerHTML =
         '<span style="color:var(--clay)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';

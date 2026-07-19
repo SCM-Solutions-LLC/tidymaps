@@ -3,6 +3,7 @@ import { ICON } from '../icons.js';
 import { state } from '../state.js';
 import { go } from '../router.js';
 import { submitFeedbackRow } from '../db.js';
+import { track, flush } from '../telemetry.js';
 
 /* ---------- Feedback ---------- */
 export function buildFeedback(){
@@ -35,5 +36,12 @@ export function submitFeedback(){
     comments: (document.getElementById('fb-text')||{}).value||null,
     next_space: state.fbNext||null,
   }).catch(()=>{});
+  // The pay-for-it signal: fbUseful is a fixed choice ("I would pay for
+  // this" among them), joined against step_checked depth per anon_id.
+  // Free-text comments deliberately stay out of telemetry.
+  track('feedback_submitted', {
+    useful: state.fbUseful||'', vs: state.fbVs||'', nextSpace: state.fbNext||'',
+  });
+  flush(); // the session usually ends right after — don't wait the debounce
   go('done');
 }
