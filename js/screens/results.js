@@ -12,6 +12,7 @@ import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { classifyAction, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { track } from '../telemetry.js';
+import { applyCategoryEdits } from '../personalize.js';
 import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
@@ -539,6 +540,15 @@ export function setUpgrades(on){
 
 /* Called from goNext() when leaving the review screen */
 export function syncCategoriesToResults(){
+  // The user's review-screen category list is authoritative: unticked
+  // categories leave every zone, added ones get a home in exactly one zone —
+  // then the whole report re-renders from the edited plan. Works for both
+  // AI and demo plans, since these edits happen after analysis.
+  if(state.ai && state.cats){
+    applyCategoryEdits(state.ai, state.cats);
+    buildResults();
+    return; // buildResults re-renders the tags and KPI below
+  }
   document.getElementById('res-cat-tags').innerHTML=state.cats.map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('');
   const catKpi=document.querySelector('#res-kpis .kpi:nth-child(2) .v');
   if(catKpi) catKpi.textContent=state.cats.length+' found';

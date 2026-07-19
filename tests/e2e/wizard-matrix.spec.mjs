@@ -142,6 +142,56 @@ test('no-kid household shows no KID safety content (safety rules fire only when 
   for (const b of badges) expect(b, `kid-safe zone badge leaked: ${b}`).not.toMatch(/kid/i);
 });
 
+test('wizard answers personalize the plan: prefs cited, effort sized, $0 = no purchases, review edits authoritative', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.getByRole('button', { name: 'Plan my space' }).click();
+  const closed = page.locator('#space-opts .sg-head[aria-expanded="false"]');
+  while (await closed.count()) await closed.first().click();
+  await page.locator('#space-opts .opt', { hasText: 'Pantry' }).first().click();
+  await page.locator('#goal-opts .opt', { hasText: 'easier to find' }).click();
+  await page.locator('#flow-next').click();
+  await page.locator('#hh-kids-seg button[data-v="no"]').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#capture-opts .opt', { hasText: 'Use demo example' }).click();
+  await page.locator('#flow-next').click();
+  // details: rental household, no drilling possible
+  await page.locator('.seg[data-id="rental"] button', { hasText: 'Yes' }).click();
+  await page.locator('#flow-next').click();
+  // prefs: distinctive choices + $0 budget + quick effort
+  await page.locator('#pref-chips .chip', { hasText: 'Labels and categories' }).click();
+  await page.locator('#pref-chips .chip', { hasText: 'Use only what I already own' }).click();
+  await page.locator('#budget-chips .chip', { hasText: '$0' }).click();
+  await page.locator('#effort-opts .opt', { hasText: 'Quick 30-minute reset' }).click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next', { hasText: 'Build my plan' }).waitFor({ timeout: 20_000 });
+
+  // Review-screen category edit: remove a lexically distinct category (other
+  // kept categories like "Kids’ snacks" legitimately share words with
+  // "Snacks", so the assertion needs a word that appears nowhere else).
+  const firstCat = 'Paper goods';
+  await page.locator('#rev-cats .chip', { hasText: firstCat }).click();
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/);
+
+  // Effort sizes the checklist (Quick ≈ 6, never the full template list).
+  const stepCount = await page.locator('#res-steps .task').count();
+  expect(stepCount).toBeLessThanOrEqual(6);
+
+  // The user's answers are cited verbatim in the plan they see.
+  const stepsText = await page.locator('#res-steps').textContent();
+  expect(stepsText).toMatch(/labels and categories/i);
+  expect(stepsText).toMatch(/already own/i);
+
+  // $0 budget → the shopping upsell stays off.
+  await expect(page.locator('#res-upgrades-wrap')).toHaveClass(/hide/);
+
+  // The removed category is gone from the shelf map, not just the tag list.
+  const mapText = await page.locator('#res-map').textContent();
+  expect(mapText.toLowerCase()).not.toContain('paper');
+  const tagsText = await page.locator('#res-cat-tags').textContent();
+  expect(tagsText.toLowerCase()).not.toContain('paper');
+});
+
 test('product links are https and point at known retailers', async ({ page }) => {
   await driveWizard(page, 'pantry');
   // Turn the optional upgrades section on if it isn't already.
