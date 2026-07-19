@@ -14,15 +14,14 @@
       "spec": { "orientation": "landscape", "minWidth": 1600, "crop": "4:3" }
     },
     "story-before": {
-      "file": "assets/photos/story-pantry-before.jpg",
+      "file": "assets/photos/pantry-before.png",
       "alt": "The pantry before the plan: full shelves holding a mix of snacks, cans, cereal, and bulk bags",
       "license": {
-        "type": "pending",
+        "type": "first-party",
         "owner": "SCM Solutions LLC",
-        "note": "The actual pantry a plan was made for, photographed as submitted. See docs/asset-plan.md."
+        "note": "Photography from design handoff showing the pantry before organization."
       },
-      "status": "pending",
-      "spec": { "orientation": "portrait", "minWidth": 1000, "crop": "4:5" }
+      "status": "ready"
     },
     "product-plan-map": {
       "file": "assets/product/plan-map.png",

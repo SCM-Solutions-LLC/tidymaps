@@ -59,8 +59,9 @@ async function driveWizard(page, spaceId, { kids = 'no' } = {}) {
   // Space: click the room card that contains this space, then pick it.
   const ROOM_FOR = {
     pantry:'Kitchen', cabinet:'Kitchen', drawers:'Kitchen', junk:'Kitchen', fridge:'Kitchen',
-    closet:'Bedroom', walkin:'Bedroom', linen:'Bedroom',
-    bathroom:'Bathroom', laundry:'Bathroom', garage:'Bathroom', attic:'Bathroom', kids:'Bathroom', other:'Bathroom',
+    closet:'Bedroom', walkin:'Bedroom',
+    bathroom:'Bathroom', linen:'Bathroom', laundry:'Bathroom',
+    garage:'Storage', attic:'Storage', kids:'Storage', other:'Storage',
   };
   await page.locator('#room-cards .room-card', { hasText: ROOM_FOR[spaceId] }).click();
   await expect(page.locator('#space-opts .opt').first()).toBeVisible();
