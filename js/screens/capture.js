@@ -3,6 +3,11 @@ import { SVG, ICON } from '../icons.js';
 import { state } from '../state.js';
 import { toast } from '../ui.js';
 import { updateGate } from '../router.js';
+import { assessImageFile, qualityLabel } from '../imageQuality.js';
+
+/* Per-file quality verdicts, keyed by the File object so they survive reorder
+   and removal. Advisory only: a flagged photo still uploads if the user keeps it. */
+const photoQuality = new WeakMap();
 
 export function buildCapture(){
   const wrap=document.getElementById('capture-opts'); wrap.innerHTML='';
@@ -86,8 +91,16 @@ export function handleFiles(fileList){
   const room=5-state.uploadedFiles.length;
   if(room<=0){ toast('5 photos is plenty. Remove one to add another.'); return; }
   if(newFiles.length>room) toast('Using the first '+room+'. 5 photos is plenty.');
-  state.uploadedFiles=state.uploadedFiles.concat(newFiles.slice(0,room));
+  const added=newFiles.slice(0,room);
+  state.uploadedFiles=state.uploadedFiles.concat(added);
   renderPhotoPreviews();
+  // Assess each new photo off the main thread; re-render as verdicts land so a
+  // "Too dark"/"Blurry" badge appears without holding up the preview.
+  added.forEach(file=>{
+    assessImageFile(file).then(a=>{
+      if(a){ photoQuality.set(file, a); if(state.uploadedFiles.includes(file)) renderPhotoPreviews(); }
+    });
+  });
 }
 
 export function renderPhotoPreviews(){
@@ -98,6 +111,7 @@ export function renderPhotoPreviews(){
   wrap.style.display='block';
   count.textContent=state.uploadedFiles.length;
   grid.innerHTML='';
+  let flagged=0;
   state.uploadedFiles.forEach((file,i)=>{
     const div=document.createElement('div');
     div.style.cssText='position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--surface-2)';
@@ -109,12 +123,37 @@ export function renderPhotoPreviews(){
     rm.style.cssText='position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:14px;cursor:pointer;display:grid;place-items:center;line-height:1';
     rm.innerHTML='&times;';
     rm.onclick=(e)=>{e.stopPropagation();state.uploadedFiles.splice(i,1);renderPhotoPreviews();};
+    div.appendChild(img);div.appendChild(rm);
+    const warn=qualityLabel(photoQuality.get(file));
+    if(warn){
+      flagged++;
+      div.style.borderColor='var(--clay)';
+      const flag=document.createElement('div');
+      flag.style.cssText='position:absolute;top:4px;left:4px;padding:2px 7px;border-radius:999px;background:var(--clay);color:#fff;font-size:10px;font-weight:600;line-height:1.4';
+      flag.textContent=warn;
+      div.appendChild(flag);
+    }
     const name=document.createElement('div');
     name.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:3px 6px;background:linear-gradient(transparent,rgba(0,0,0,.5));color:#fff;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
     name.textContent=file.name;
-    div.appendChild(img);div.appendChild(rm);div.appendChild(name);
+    div.appendChild(name);
     grid.appendChild(div);
   });
+  // Advisory line: a retake usually gives a better plan, but nothing is blocked.
+  let note=document.getElementById('photo-quality-note');
+  if(flagged){
+    if(!note){
+      note=document.createElement('p');
+      note.id='photo-quality-note'; note.className='small';
+      note.style.cssText='margin:10px 0 0;color:var(--clay)';
+      grid.after(note);
+    }
+    note.textContent=flagged===1
+      ? 'One photo looks dark or blurry. Retaking it in better light usually gives a sharper plan, but you can continue.'
+      : flagged+' photos look dark or blurry. Retaking them in better light usually gives a sharper plan, but you can continue.';
+  }else if(note){
+    note.remove();
+  }
 }
 
 export function handleVideoFile(fileList){

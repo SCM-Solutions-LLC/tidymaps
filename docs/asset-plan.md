@@ -4,6 +4,23 @@ The landing page is designed around real assets, not illustrations. Product
 screenshots are generated from the app itself (see below). The photographs
 must be shot by us — stock photography would defeat the point.
 
+## Imagery manifest (source of truth)
+
+Every keyed image the app shows is declared in `data/images.json` with its
+file, alt text, license/provenance, and a `status` of `ready` or `pending`.
+The app consumes it through `js/images.js` (`hydrateImages` fills ready
+images from the manifest; pending slots fall back to the design's `onerror`
+collapse). The build-time guard in `tests/images.test.mjs` runs in CI and
+fails the build if a referenced key is undeclared, a `ready` file is missing
+from disk, an entry lacks alt/license, or an external stock/CDN hotlink
+creeps back in — so a broken image is caught at build time, never as a
+runtime 404.
+
+Workflow to ship a new photo: drop the file at its manifest `file` path, flip
+that entry's `status` from `pending` to `ready`, and the guard enforces the
+rest. To add a brand-new slot, add a keyed entry and reference it from markup
+with `data-img="<key>"`.
+
 ## Photo slots on the landing page
 
 The page degrades gracefully while these files are missing: if an image 404s,
