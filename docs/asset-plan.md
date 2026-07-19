@@ -23,9 +23,11 @@ with `data-img="<key>"`.
 
 ## Photo slots on the landing page
 
-The page degrades gracefully while these files are missing: if an image 404s,
-its `onerror` handler collapses the slot and the layout reflows. Drop the
-files in and the sections light up — no code changes needed.
+The page degrades gracefully while these files are missing. The hero slot
+falls back to a real product visual (`assets/product/hero-3d.png`, the sample
+plan in the 3D view) with its own caption; the story slot collapses and the
+layout reflows. Drop the photo files in and they take over automatically —
+no code changes needed, and the fallback caption hides itself.
 
 | File | Where it appears | What to shoot |
 |---|---|---|
@@ -75,7 +77,10 @@ its key path, declare `{ file, status: "ready", license }` in the manifest.
 
 `assets/product/plan-map.png`, `plan-steps.png`, and `plan-shopping.png` are
 real screenshots of the sample pantry plan, captured from the running app at
-a 920px-wide viewport. To regenerate after a product change:
+a 920px-wide viewport. `hero-3d.png` is the same plan in the 3D viewer
+(the interim hero visual), and `wizard-household.png` is the "Who uses this
+space?" step with example selections, shown beside How it works. To
+regenerate after a product change:
 
 1. Serve the repo root over HTTP.
 2. Load the site, click "View a sample plan".

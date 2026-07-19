@@ -42,6 +42,18 @@
       "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own sample plan." },
       "status": "ready"
     },
+    "product-hero-3d": {
+      "file": "assets/product/hero-3d.png",
+      "alt": "The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the app's own 3D viewer; interim hero stand-in until real photography lands." },
+      "status": "ready"
+    },
+    "product-wizard-household": {
+      "file": "assets/product/wizard-household.png",
+      "alt": "Screenshot of the TidyMap planner asking who uses the space: kids and their ages, pets, and reaching or mobility needs",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own wizard household step with example selections." },
+      "status": "ready"
+    },
     "og": {
       "file": "assets/og.png",
       "alt": "TidyMap: a practical plan for one hard-working storage space",

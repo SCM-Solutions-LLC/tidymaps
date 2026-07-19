@@ -101,7 +101,12 @@
       <p class="hero-fine">Free while in early access. No sign-up needed to try it.</p>
     </div>
     <figure class="hero-photo">
-      <img data-img="hero-home" src="assets/photos/hero-pantry.jpg" alt="A family pantry mid-week: cereal boxes, labeled bins, and water bottles on ordinary white shelves" onerror="this.closest('.home-hero').classList.add('no-photo')">
+      <!-- Real photography takes this slot automatically once the file exists
+           and its manifest entry flips to ready (docs/asset-plan.md). Until
+           then, the product's own 3D view stands in via the onerror chain:
+           photo -> 3D stand-in + caption -> text-only collapse. -->
+      <img data-img="hero-home" src="assets/photos/hero-pantry.jpg" alt="A family pantry mid-week: cereal boxes, labeled bins, and water bottles on ordinary white shelves" onerror="if(this.dataset.fb){this.closest('.home-hero').classList.add('no-photo')}else{this.dataset.fb=1;this.closest('.home-hero').classList.add('alt-visual');this.alt='The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf';this.src='assets/product/hero-3d.png'}">
+      <figcaption class="cap-fallback">The sample pantry plan in TidyMap&rsquo;s 3D view. Drag any item to a different shelf to try another arrangement.</figcaption>
     </figure>
   </div>
 
@@ -169,19 +174,25 @@
   <!-- Method -->
   <div class="home-sec" id="how">
     <h2>How it works</h2>
-    <div class="how-list">
-      <div class="how-step">
-        <h3><span class="n">1</span>Share the space as it is</h3>
-        <p>Take a few photos, exactly as it looks today. No tidying up first, and nothing to measure unless you want sharper product suggestions.</p>
+    <div class="how-grid">
+      <div class="how-list">
+        <div class="how-step">
+          <h3><span class="n">1</span>Share the space as it is</h3>
+          <p>Take a few photos, exactly as it looks today. No tidying up first, and nothing to measure unless you want sharper product suggestions.</p>
+        </div>
+        <div class="how-step">
+          <h3><span class="n">2</span>Review a plan made for your household</h3>
+          <p>TidyMap reads what&rsquo;s on your shelves, then drafts where everything should live around your routines, your kids and pets, and your budget. You confirm what it found before the plan is built.</p>
+        </div>
+        <div class="how-step">
+          <h3><span class="n">3</span>Work through it one manageable step at a time</h3>
+          <p>Each step is short and timed. Pause for school pickup, come back after bedtime, and the plan holds together.</p>
+        </div>
       </div>
-      <div class="how-step">
-        <h3><span class="n">2</span>Review a plan made for your household</h3>
-        <p>TidyMap reads what&rsquo;s on your shelves, then drafts where everything should live around your routines, your kids and pets, and your budget. You confirm what it found before the plan is built.</p>
-      </div>
-      <div class="how-step">
-        <h3><span class="n">3</span>Work through it one manageable step at a time</h3>
-        <p>Each step is short and timed. Pause for school pickup, come back after bedtime, and the plan holds together.</p>
-      </div>
+      <figure class="how-shot">
+        <img data-img="product-wizard-household" src="assets/product/wizard-household.png" alt="Screenshot of the TidyMap planner asking who uses the space: kids and their ages, pets, and reaching or mobility needs" loading="lazy">
+        <figcaption>The planner asks who uses the space before it places anything.</figcaption>
+      </figure>
     </div>
   </div>
 
