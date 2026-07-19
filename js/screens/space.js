@@ -9,11 +9,11 @@ const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const ROOMS = [
   {id:'kitchen', label:'Kitchen', sub:'Pantry, cabinets &amp; drawers', groups:['kitchen'],
    photo:'assets/photos/ex-cab-after.png'},
-  {id:'bedroom', label:'Bedroom', sub:'Closet &amp; walk-in', groups:['bedroom'],
+  {id:'bedroom', label:'Bedroom', sub:'Closet &amp; dresser', groups:['bedroom'],
    photo:'assets/photos/ex-storage-after.png'},
-  {id:'bath',    label:'Bathroom &amp; laundry', sub:'Vanity, linen closet &amp; laundry', groups:['bath'],
+  {id:'bath',    label:'Bathroom &amp; hall', sub:'Vanity &amp; linen closet', groups:['bath'],
    photo:'assets/photos/ex-drawertower.png'},
-  {id:'storage', label:'Storage &amp; more', sub:'Garage, attic &amp; utility', groups:['storage'],
+  {id:'storage', label:'Storage', sub:'Garage, attic &amp; utility', groups:['storage'],
    photo:'assets/photos/ex-garage-shelving.png'},
 ];
 
