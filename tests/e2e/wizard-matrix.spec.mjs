@@ -54,14 +54,16 @@ function watchRequests(page) {
 
 async function driveWizard(page, spaceId, { kids = 'no' } = {}) {
   await page.goto('/index.html');
-  await page.getByRole('button', { name: 'Plan my space' }).click();
+  await page.locator('#screen-landing .btn-primary').first().click();
 
-  // Space: open every group (closed groups hide their options), pick the space.
-  // Click the first still-closed head until none remain — clicking mutates
-  // aria-expanded, so a snapshot of the filtered list would go stale.
-  await expect(page.locator('#space-opts .space-group').first()).toBeVisible();
-  const closed = page.locator('#space-opts .sg-head[aria-expanded="false"]');
-  while (await closed.count()) await closed.first().click();
+  // Space: click the room card that contains this space, then pick it.
+  const ROOM_FOR = {
+    pantry:'Kitchen', cabinet:'Kitchen', drawers:'Kitchen', junk:'Kitchen', fridge:'Kitchen',
+    closet:'Bedroom', walkin:'Bedroom', linen:'Bedroom',
+    bathroom:'Bathroom', laundry:'Bathroom', garage:'Bathroom', attic:'Bathroom', kids:'Bathroom', other:'Bathroom',
+  };
+  await page.locator('#room-cards .room-card', { hasText: ROOM_FOR[spaceId] }).click();
+  await expect(page.locator('#space-opts .opt').first()).toBeVisible();
   await page.locator('#space-opts .opt', { hasText: SPACE_LABEL[spaceId].replace(' / storage area', '') })
     .first().click();
   await page.locator('#goal-opts .opt', { hasText: 'easier to find' }).click();
@@ -144,9 +146,9 @@ test('no-kid household shows no KID safety content (safety rules fire only when 
 
 test('wizard answers personalize the plan: prefs cited, effort sized, $0 = no purchases, review edits authoritative', async ({ page }) => {
   await page.goto('/index.html');
-  await page.getByRole('button', { name: 'Plan my space' }).click();
-  const closed = page.locator('#space-opts .sg-head[aria-expanded="false"]');
-  while (await closed.count()) await closed.first().click();
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).click();
+  await expect(page.locator('#space-opts .opt').first()).toBeVisible();
   await page.locator('#space-opts .opt', { hasText: 'Pantry' }).first().click();
   await page.locator('#goal-opts .opt', { hasText: 'easier to find' }).click();
   await page.locator('#flow-next').click();
