@@ -14,11 +14,31 @@ export async function initializeRoute({
   getStepDone,
   go,
   toast,
+  loadSharedPlan,
 }){
   await setupAccount();
   if(currentScreen()!=='landing') return { status:'skipped-navigation' };
 
   const params=new URLSearchParams(search);
+
+  // Read-only share links work for anyone — no session required, and the
+  // visitor's own guest draft is left untouched (shareView blocks the writer).
+  const shareId=params.get('share');
+  if(shareId && loadSharedPlan){
+    try{
+      await loadSharedPlan(shareId);
+      if(currentScreen()!=='landing') return { status:'skipped-navigation' };
+      buildResults();
+      go('results');
+      toast('You’re viewing a shared plan — read-only');
+      return { status:'shared-view' };
+    }catch(e){
+      toast((e && (e.code==='http_404'||e.code==='not_found'))
+        ? 'That share link is no longer active.'
+        : 'Could not open that shared plan.');
+    }
+  }
+
   const spaceId=params.get('space');
   if(spaceId && getSession()){
     try{

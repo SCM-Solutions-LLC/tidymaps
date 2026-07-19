@@ -102,8 +102,10 @@
     </div>
     <figure class="hero-photo">
       <!-- Real photography takes this slot automatically once the file exists
-           (docs/asset-plan.md). Until then, the product's own 3D view stands in. -->
-      <img src="assets/photos/hero-pantry.jpg" alt="A family pantry mid-week: cereal boxes, labeled bins, and water bottles on ordinary white shelves" onerror="if(this.dataset.fb){this.closest('.home-hero').classList.add('no-photo')}else{this.dataset.fb=1;this.closest('.home-hero').classList.add('alt-visual');this.alt='The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf';this.src='assets/product/hero-3d.png'}">
+           and its manifest entry flips to ready (docs/asset-plan.md). Until
+           then, the product's own 3D view stands in via the onerror chain:
+           photo -> 3D stand-in + caption -> text-only collapse. -->
+      <img data-img="hero-home" src="assets/photos/hero-pantry.jpg" alt="A family pantry mid-week: cereal boxes, labeled bins, and water bottles on ordinary white shelves" onerror="if(this.dataset.fb){this.closest('.home-hero').classList.add('no-photo')}else{this.dataset.fb=1;this.closest('.home-hero').classList.add('alt-visual');this.alt='The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf';this.src='assets/product/hero-3d.png'}">
       <figcaption class="cap-fallback">The sample pantry plan in TidyMap&rsquo;s 3D view. Drag any item to a different shelf to try another arrangement.</figcaption>
     </figure>
   </div>
@@ -114,7 +116,7 @@
     <p class="sec-sub">See the real space, the plan, and what changed.</p>
     <div class="story-grid">
       <figure class="story-photo">
-        <img src="assets/photos/story-pantry-before.jpg" alt="The pantry before the plan: full shelves holding a mix of snacks, cans, cereal, and bulk bags" onerror="this.closest('.story-grid').classList.add('no-photo')">
+        <img data-img="story-before" src="assets/photos/story-pantry-before.jpg" alt="The pantry before the plan: full shelves holding a mix of snacks, cans, cereal, and bulk bags" onerror="this.closest('.story-grid').classList.add('no-photo')">
         <figcaption>The space, exactly as photographed. No tidying up first.</figcaption>
       </figure>
       <div class="story-plan">
@@ -150,21 +152,21 @@
           <h3>Where things go</h3>
           <p>Every shelf becomes a zone, with the reason for each placement and the safety notes that apply to your household.</p>
         </figcaption>
-        <img src="assets/product/plan-map.png" alt="Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons" loading="lazy">
+        <img data-img="product-plan-map" src="assets/product/plan-map.png" alt="Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons" loading="lazy">
       </figure>
       <figure class="product-shot">
         <figcaption>
           <h3>Step-by-step</h3>
           <p>Short, timed steps you can work through around a normal day. Check them off, or take them one at a time.</p>
         </figcaption>
-        <img src="assets/product/plan-steps.png" alt="Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking" loading="lazy">
+        <img data-img="product-plan-steps" src="assets/product/plan-steps.png" alt="Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking" loading="lazy">
       </figure>
       <figure class="product-shot">
         <figcaption>
           <h3>Optional purchases</h3>
           <p>If you opt in, suggestions are real products from ordinary retailers, sized to your shelves. The $0 plan works without them.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through retailer links. Prices stay the same for you.</span></p>
         </figcaption>
-        <img src="assets/product/plan-shopping.png" alt="Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices" loading="lazy">
+        <img data-img="product-plan-shopping" src="assets/product/plan-shopping.png" alt="Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices" loading="lazy">
       </figure>
     </div>
   </div>
@@ -188,7 +190,7 @@
         </div>
       </div>
       <figure class="how-shot">
-        <img src="assets/product/wizard-household.png" alt="Screenshot of the TidyMap planner asking who uses the space: kids and their ages, pets, and reaching or mobility needs" loading="lazy">
+        <img data-img="product-wizard-household" src="assets/product/wizard-household.png" alt="Screenshot of the TidyMap planner asking who uses the space: kids and their ages, pets, and reaching or mobility needs" loading="lazy">
         <figcaption>The planner asks who uses the space before it places anything.</figcaption>
       </figure>
     </div>
@@ -440,6 +442,7 @@
       <span id="res-byline">Example plan &middot; demo data</span>
       <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-size:11.5px;color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:600">Analyzed by Claude</span>
     </div>
+    <div id="res-share-note" class="callout hide" style="margin-top:18px"></div>
     <div id="res-fallback-note" class="callout warn hide" style="margin-top:18px"></div>
   </header>
 
@@ -594,10 +597,10 @@
         </div>
       </section>
 
-      <div class="report-actions">
+      <div class="report-actions" id="res-actions">
         <button class="btn btn-primary" onclick="openViewer3d()">Open the 3D view</button>
-        <button class="btn btn-ghost" onclick="go('customize')">Adjust this plan</button>
-        <button class="btn btn-ghost" onclick="go('save')">Save &amp; share</button>
+        <button class="btn btn-ghost" data-owner-only onclick="go('customize')">Adjust this plan</button>
+        <button class="btn btn-ghost" data-owner-only onclick="go('save')">Save &amp; share</button>
       </div>
     </div>
   </div>

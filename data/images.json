@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "note": "Versioned imagery manifest. Every keyed image the app references lives here with its alt text and license/provenance. status 'ready' means the file is present and cleared to ship; 'pending' means the slot is declared and specced but the art has not been produced yet (the UI collapses it gracefully). The build-time guard in tests/images.test.mjs fails CI if a referenced key is missing, a 'ready' file is absent from disk, or an entry lacks alt/license — so a broken key surfaces at build time instead of a runtime 404.",
+  "images": {
+    "hero-home": {
+      "file": "assets/photos/hero-pantry.jpg",
+      "alt": "A family pantry mid-week: cereal boxes, labeled bins, and water bottles on ordinary white shelves",
+      "license": {
+        "type": "pending",
+        "owner": "SCM Solutions LLC",
+        "note": "Shoot per docs/asset-plan.md: a real consenting household, written permission before publishing, natural light, no staging."
+      },
+      "status": "pending",
+      "spec": { "orientation": "landscape", "minWidth": 1600, "crop": "4:3" }
+    },
+    "story-before": {
+      "file": "assets/photos/story-pantry-before.jpg",
+      "alt": "The pantry before the plan: full shelves holding a mix of snacks, cans, cereal, and bulk bags",
+      "license": {
+        "type": "pending",
+        "owner": "SCM Solutions LLC",
+        "note": "The actual pantry a plan was made for, photographed as submitted. See docs/asset-plan.md."
+      },
+      "status": "pending",
+      "spec": { "orientation": "portrait", "minWidth": 1000, "crop": "4:5" }
+    },
+    "product-plan-map": {
+      "file": "assets/product/plan-map.png",
+      "alt": "Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own sample plan." },
+      "status": "ready"
+    },
+    "product-plan-steps": {
+      "file": "assets/product/plan-steps.png",
+      "alt": "Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own sample plan." },
+      "status": "ready"
+    },
+    "product-plan-shopping": {
+      "file": "assets/product/plan-shopping.png",
+      "alt": "Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own sample plan." },
+      "status": "ready"
+    },
+    "product-hero-3d": {
+      "file": "assets/product/hero-3d.png",
+      "alt": "The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the app's own 3D viewer; interim hero stand-in until real photography lands." },
+      "status": "ready"
+    },
+    "product-wizard-household": {
+      "file": "assets/product/wizard-household.png",
+      "alt": "Screenshot of the TidyMap planner asking who uses the space: kids and their ages, pets, and reaching or mobility needs",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own wizard household step with example selections." },
+      "status": "ready"
+    },
+    "og": {
+      "file": "assets/og.png",
+      "alt": "TidyMap: a practical plan for one hard-working storage space",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the live hero, 1200x630." },
+      "status": "ready"
+    }
+  }
+}

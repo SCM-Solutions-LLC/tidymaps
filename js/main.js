@@ -2,7 +2,10 @@
    TidyMap — entry point
    ============================================================ */
 import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
-import { state, restoreGuestDraft } from './state.js';
+import { state, restoreGuestDraft, applySharedSpace } from './state.js';
+import { fetchSharedSpace } from './api.js';
+import { normalizeAi } from './plan.js';
+import { track } from './telemetry.js';
 import { setRail, go, goNext, goBack, restart, getCurrentScreen } from './router.js';
 import { getSession } from './auth.js';
 import { fetchSpace, applyLoadedSpace } from './db.js';
@@ -62,4 +65,13 @@ initializeRoute({
   getStepDone:()=>state.stepDone,
   go,
   toast,
+  // Read-only share links: fetch the sanitized payload, apply it as a
+  // share view (blocks draft writes), and normalize the plan for rendering.
+  loadSharedPlan: async (shareId)=>{
+    const { space } = await fetchSharedSpace(shareId);
+    applySharedSpace(space);
+    state.ai = normalizeAi(space.plan);
+    state.planMeta = space.planMeta || null;
+    track('shared_plan_viewed', {});
+  },
 }).catch((e)=>console.error('startup restore failed', e));

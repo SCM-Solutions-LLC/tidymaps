@@ -146,6 +146,23 @@ export async function deleteSpace(id){
   await c.from('spaces').delete().eq('id', id);
 }
 
+/* ---------- Read-only share links ----------
+   Enabling generates an unguessable share_id; anyone with the link can view
+   the sanitized plan via the get-shared-space edge function. Disabling nulls
+   the id, which revokes every copy of the link instantly. */
+export async function setShareEnabled(on){
+  const { c } = requireClient();
+  if(!state.activeSpaceId) throw new Error('Save this space first, then share it.');
+  const shareId = on ? crypto.randomUUID() : null;
+  const { error } = await c.from('spaces').update({ share_id: shareId }).eq('id', state.activeSpaceId);
+  if(error) throw new Error('Sharing failed — please try again.');
+  return shareId;
+}
+
+export function shareUrlFor(shareId){
+  return `${location.origin}${location.pathname}?share=${shareId}`;
+}
+
 export async function submitFeedbackRow(row){
   const c=supa();
   if(!c) return false;

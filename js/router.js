@@ -1,4 +1,5 @@
-import { state, persistGuestDraft, clearGuestDraft } from './state.js';
+import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia } from './state.js';
+import { track } from './telemetry.js';
 import { setFootHeightVar } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll } from './screens/index.js';
@@ -42,6 +43,7 @@ export function go(id){
   // the appbar shows site navigation on the landing page and
   // workflow controls (Start over, My spaces) everywhere else
   document.body.dataset.screen=id;
+  track('screen_viewed', { screen:id });   // wizard funnel / drop-off
   setRail();
   // footer
   const foot=document.getElementById('flow-foot');
@@ -57,6 +59,10 @@ export function go(id){
   setFootHeightVar();
   fillRailSummaries();
   if(id==='dashboard') buildDashboard();
+  // The plan is finished at 'done'. For signed-out visitors this is where the
+  // landing page's photo promise is enforced: photos were only ever held in
+  // memory for the analysis, and they're dropped here.
+  if(id==='done' && !getSession()) clearGuestMedia();
   if(!getSession()) persistGuestDraft();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -108,6 +114,7 @@ export function fillRailSummaries(){
 export function restart(){
   state.space=state.goal=state.capture=state.budget=state.effort=null;
   state.prefs=new Set(); state.upgrades=false;
+  state.shareView=false; delete state.sharedName;
   state.cats=[]; state.features=[];
   state.uploadedFiles=[]; state.uploadedVideo=null; state.frames=[];
   state.dims=null;
