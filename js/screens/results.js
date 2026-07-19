@@ -11,6 +11,7 @@ import { fileToScaledB64 } from '../media.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { classifyAction, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
+import { track } from '../telemetry.js';
 import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
@@ -32,6 +33,17 @@ export function buildResults(){
   if(byline) byline.textContent = isRealAi
     ? 'Analyzed by Claude'+(model?' · '+model.replace('claude-','').replace(/-/g,' '):'')
     : 'Personalized plan · based on your selections';
+
+  // product-click intent, delegated so it survives re-renders of the list
+  // (property assignment keeps this idempotent across buildResults calls)
+  const upWrap=document.getElementById('res-upgrades');
+  if(upWrap) upWrap.onclick=(e)=>{
+    const a=e.target.closest('a[href]');
+    if(!a) return;
+    let retailer='unknown';
+    try{ retailer=new URL(a.href).hostname.replace(/^www\./,''); }catch(_){}
+    track('product_clicked', { retailer, productType:a.classList.contains('pname')?'pick':'search' });
+  };
 
   // read-only share view: banner up top, owner-only actions hidden, and all
   // persistence already blocked (shareView guards the guest-draft writer;
@@ -209,8 +221,10 @@ export async function generateAfter(){
     const res=await renderAfterApi(image, buildGeminiBrief(), state.activeSpaceId);
     state.afterRenderB64=res.image.data;
     setupAfterPhoto();
+    track('after_render_requested', { ok:true });
     toast('Photo preview ready — drag the slider');
   }catch(e){
+    track('after_render_requested', { ok:false });
     note.textContent=renderAfterErrorMessage(e);
   }finally{
     btn.disabled=false;
@@ -452,6 +466,13 @@ export function toggleStep(i){
   document.getElementById('task-'+i).classList.toggle('done',state.stepDone[i]);
   document.querySelector('#task-'+i+' .mark').textContent=state.stepDone[i]?'Completed':'Mark complete';
   updateProgress();
+  if(state.stepDone[i]){
+    // checkedCount is the core engagement depth signal (>= 3 = worked the plan)
+    track('step_checked', {
+      index:i, total:state.stepCount||0,
+      checkedCount:(state.stepDone||[]).filter(Boolean).length,
+    });
+  }
   if(getSession()) updateSpacePatch({progress:{stepsDone:state.stepDone}});
   else persistGuestDraft();
 }

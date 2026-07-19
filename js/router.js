@@ -1,4 +1,5 @@
 import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia } from './state.js';
+import { track } from './telemetry.js';
 import { setFootHeightVar } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll } from './screens/index.js';
@@ -42,6 +43,7 @@ export function go(id){
   // the appbar shows site navigation on the landing page and
   // workflow controls (Start over, My spaces) everywhere else
   document.body.dataset.screen=id;
+  track('screen_viewed', { screen:id });   // wizard funnel / drop-off
   setRail();
   // footer
   const foot=document.getElementById('flow-foot');

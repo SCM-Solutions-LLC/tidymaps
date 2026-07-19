@@ -5,6 +5,7 @@ import { backendConfigured } from '../config.js';
 import { getSession } from '../auth.js';
 import { saveSpace, defaultSpaceName, setShareEnabled, shareUrlFor } from '../db.js';
 import { openAuth, registerAuthIntent } from './account.js';
+import { track } from '../telemetry.js';
 
 async function doSave(){
   try{
@@ -23,6 +24,7 @@ async function doShare(){
     toast('Creating your share link…');
     await saveSpace(defaultSpaceName());
     const shareId=await setShareEnabled(true);
+    track('share_link_created', {});
     const url=shareUrlFor(shareId);
     try{
       await navigator.clipboard.writeText(url);
