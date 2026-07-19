@@ -8,13 +8,13 @@ const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 
 const ROOMS = [
   {id:'kitchen', label:'Kitchen', sub:'Pantry, cabinets &amp; drawers', groups:['kitchen'],
-   photo:'assets/photos/ex-cab-after.png'},
+   photo:'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?fm=jpg&q=80&w=800&auto=format&fit=crop'},
   {id:'bedroom', label:'Bedroom', sub:'Closet &amp; dresser', groups:['bedroom'],
-   photo:'assets/photos/ex-storage-after.png'},
+   photo:'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?fm=jpg&q=80&w=800&auto=format&fit=crop'},
   {id:'bath',    label:'Bathroom &amp; hall', sub:'Vanity &amp; linen closet', groups:['bath'],
-   photo:'assets/photos/ex-drawertower.png'},
+   photo:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?fm=jpg&q=80&w=800&auto=format&fit=crop'},
   {id:'storage', label:'Storage', sub:'Garage, attic &amp; utility', groups:['storage'],
-   photo:'assets/photos/ex-garage-shelving.png'},
+   photo:'https://images.unsplash.com/photo-1426927308491-6380b6a9936f?fm=jpg&q=80&w=800&auto=format&fit=crop'},
 ];
 
 export function buildSpace(){
@@ -28,13 +28,10 @@ export function buildSpace(){
     const card=document.createElement('button');
     card.type='button';
     card.className='room-card';
-    const hasPhoto=!!room.photo;
     card.innerHTML=`
-      ${hasPhoto?`<img src="${room.photo}" alt="${room.label}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">`:''}
-      <div class="rc-fallback" style="${hasPhoto?'display:none':''}"></div>
-      <div class="rc-gradient"></div>
-      <div class="rc-label"><h3>${room.label}</h3><p>${room.sub}</p></div>
+      <div class="rc-img">${room.photo?`<img src="${room.photo}" alt="${room.label}" loading="lazy">`:''}</div>
       <span class="rc-check">${CHECK}</span>
+      <div class="rc-label"><h3>${room.label}</h3><p>${room.sub}</p></div>
     `;
     card.onclick=()=>{
       cardWrap.querySelectorAll('.room-card').forEach(c=>c.classList.remove('sel'));
