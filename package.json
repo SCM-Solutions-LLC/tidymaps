@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "playwright": "^1.61.1"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
   }
 }

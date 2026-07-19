@@ -1,8 +1,10 @@
 import { preflight, json } from '../_shared/cors.ts';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
+import { validatePlan } from '../_shared/planSchema.js';
 
 const MODEL = 'claude-sonnet-4-6';
+const MAX_ATTEMPTS = 2;
 const MAX_IMAGES = 6;
 const MAX_B64_CHARS = 2_100_000; // ~1.5 MB binary per image
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -141,7 +143,12 @@ Deno.serve(async (req) => {
   content.push({ type: 'text', text: `${PROMPT_HEAD}\n\nContext: ${buildContext(body.context)}` });
 
   const requestId = crypto.randomUUID();
-  try {
+
+  type ModelResult =
+    | { ok: true; rawText: string; plan: unknown }
+    | { ok: false; retryable: boolean; status: number; error: string; detail: string };
+
+  async function callModelOnce(messages: unknown[]): Promise<ModelResult> {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -149,39 +156,70 @@ Deno.serve(async (req) => {
         'x-api-key': Deno.env.get('ANTHROPIC_API_KEY') ?? '',
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 8192,
-        messages: [{ role: 'user', content }],
-      }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 8192, messages }),
     });
     if (!res.ok) {
       const detail = await res.text();
-      console.error('anthropic error', res.status, detail.slice(0, 500));
-      return json(req, 502, { error: 'upstream', status: res.status, detail: detail.slice(0, 300) });
+      return { ok: false, retryable: false, status: 502, error: 'upstream', detail: detail.slice(0, 300) };
     }
     const data = await res.json();
     const txt = (data.content ?? [])
       .filter((b: { type: string }) => b.type === 'text')
       .map((b: { text: string }) => b.text).join('').trim();
     if (data.stop_reason === 'max_tokens') {
-      console.error('anthropic response truncated', requestId, 'tail:', txt.slice(-200));
-      return json(req, 502, { error: 'truncated', detail: 'model output hit the token limit' });
+      return { ok: false, retryable: true, status: 502, error: 'truncated', detail: 'model output hit the token limit' };
     }
     const a = txt.indexOf('{');
     const b = txt.lastIndexOf('}');
     if (a < 0 || b < 0) {
-      console.error('no json in response', requestId, 'head:', txt.slice(0, 200));
-      return json(req, 502, { error: 'no_json_in_response', detail: txt.slice(0, 200) });
+      return { ok: false, retryable: true, status: 502, error: 'no_json_in_response', detail: txt.slice(0, 200) };
     }
-    let plan: unknown;
     try {
-      plan = JSON.parse(txt.slice(a, b + 1));
+      return { ok: true, rawText: txt, plan: JSON.parse(txt.slice(a, b + 1)) };
     } catch {
-      console.error('unparseable json', requestId, 'tail:', txt.slice(-200));
-      return json(req, 502, { error: 'unparseable_json', detail: txt.slice(-200) });
+      return { ok: false, retryable: true, status: 502, error: 'unparseable_json', detail: txt.slice(-200) };
     }
-    return json(req, 200, { plan, model: MODEL, requestId });
+  }
+
+  try {
+    let messages: unknown[] = [{ role: 'user', content }];
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const result = await callModelOnce(messages);
+      const isLastAttempt = attempt === MAX_ATTEMPTS - 1;
+
+      if (!result.ok) {
+        console.error('analyze-space model call failed', requestId, attempt, result.error, result.detail.slice(0, 200));
+        if (!result.retryable || isLastAttempt) {
+          return json(req, result.status, { error: result.error, detail: result.detail });
+        }
+        messages = [
+          ...messages,
+          { role: 'assistant', content: result.detail || '(empty response)' },
+          { role: 'user', content: 'That was not a single valid JSON object. Return ONLY the JSON object described above, with no markdown fences and no other text.' },
+        ];
+        continue;
+      }
+
+      const validation = validatePlan(result.plan, body.context ?? {});
+      if (validation.ok) {
+        return json(req, 200, { plan: validation.value, model: MODEL, requestId });
+      }
+
+      console.error('analyze-space plan validation failed', requestId, attempt, validation.errors);
+      if (isLastAttempt) {
+        return json(req, 502, { error: 'validation_failed', detail: validation.errors.slice(0, 8) });
+      }
+      messages = [
+        ...messages,
+        { role: 'assistant', content: result.rawText },
+        {
+          role: 'user',
+          content: `Your JSON had these problems:\n- ${validation.errors.join('\n- ')}\n\nReturn ONLY the corrected JSON object with the same schema, fixing every listed problem. Do not introduce new ones.`,
+        },
+      ];
+    }
+    // Unreachable: the loop above always returns on its last attempt.
+    return json(req, 502, { error: 'internal' });
   } catch (e) {
     console.error('analyze-space failed', requestId, e);
     return json(req, 502, { error: 'upstream_unreachable' });
