@@ -1,9 +1,11 @@
 /* ============================================================
    Demo scenarios. Space-specific sample data for every space type.
 
-   getDemoScenario(spaceType, goal, household) returns a raw plan
-   object ready to pass through normalizeAi() in js/plan.js.
+   getDemoScenario(spaceType, goal, household, answers) returns a raw
+   plan object ready to pass through normalizeAi() in js/plan.js —
+   personalized by every wizard answer via js/personalize.js.
    ============================================================ */
+import { applyAnswers } from './personalize.js';
 
 /* ---------- Base scenarios keyed by space id ---------- */
 
@@ -1274,6 +1276,11 @@ function applyHousehold(plan, household) {
   if (!kidsPresent && !/kids/i.test(plan.spaceType || '')) {
     plan.safetyNotes = (plan.safetyNotes || []).filter(n => !KID_WORDS.test(n));
     (plan.map || []).forEach(m => {
+      if (KID_WORDS.test(m.why || '')) {
+        // scrub kid-referencing sentences from placement rationales too
+        const kept = String(m.why).split(/(?<=[.!])\s+/).filter(s => !KID_WORDS.test(s));
+        m.why = kept.join(' ').trim() || 'Placed here for easy, safe access.';
+      }
       if (!m.safety) return;
       if (m.safety.flag === 'kid-safe' || KID_WORDS.test(m.safety.why || '')) {
         m.safety = { flag: null, why: null };
@@ -1337,18 +1344,22 @@ function applyHousehold(plan, household) {
 
 /**
  * Returns a raw plan object for the given space type, ready to pass
- * through normalizeAi().  Adapts based on goal and household context.
+ * through normalizeAi().  Adapts based on goal, household, and — when the
+ * full wizard answer set is provided — every preference, toggle, budget,
+ * effort level, and measurement the user gave (see js/personalize.js).
  *
  * @param {string} spaceType  - space id: pantry, cabinet, closet, garage, attic, laundry, kids, other
  * @param {string|null} goal  - goal id: find, clutter, own, capacity, kid, minimal, shop, unsure
  * @param {object|null} household - { kids:{present}, pets:{present}, mobility:[] }
+ * @param {object|null} answers - { prefs[], budget, effort, toggles{}, dims } from the wizard
  */
-export function getDemoScenario(spaceType, goal, household) {
+export function getDemoScenario(spaceType, goal, household, answers) {
   const fn = SCENARIO_FNS[spaceType] || SCENARIO_FNS.other;
   const plan = fn();
 
   applyGoal(plan, goal);
   applyHousehold(plan, household);
+  if (answers) applyAnswers(plan, answers);
 
   return plan;
 }

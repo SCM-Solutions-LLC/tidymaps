@@ -12,14 +12,16 @@ const KID_WORDS = /kid|child|little hands|small hands/i;
 function kidTraces(plan) {
   const notes = (plan.safetyNotes || []).filter(n => KID_WORDS.test(n));
   const flags = (plan.map || []).filter(m => m.safety && (m.safety.flag === 'kid-safe' || KID_WORDS.test(m.safety.why || '')));
-  return { notes, flags };
+  const whys = (plan.map || []).filter(m => KID_WORDS.test(m.why || ''));
+  return { notes, flags, whys };
 }
 
 test("household kids:'no' (wizard string) produces no kid safety content", () => {
   const plan = getDemoScenario('pantry', 'find', { kids: { present: 'no', ages: [] }, pets: { present: null, types: [] }, mobility: [], notes: '' });
-  const { notes, flags } = kidTraces(plan);
+  const { notes, flags, whys } = kidTraces(plan);
   assert.deepEqual(notes, [], `kid-referencing notes leaked: ${notes.join(' | ')}`);
   assert.deepEqual(flags.map(f => f.level), [], 'kid-safe flags leaked');
+  assert.deepEqual(whys.map(m => m.why), [], 'kid-referencing zone rationales leaked');
 });
 
 test('null household (skipped step) produces no kid safety content', () => {
