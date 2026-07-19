@@ -53,6 +53,12 @@ export function renderAfter(image, instructions, spaceId = null){
   return callFn('render-after', { image, instructions, spaceId });
 }
 
+// shareId: uuid from a read-only share link; returns { space } (sanitized —
+// see supabase/functions/_shared/sharePayload.js for exactly what's included)
+export function fetchSharedSpace(shareId){
+  return callFn('get-shared-space', { shareId });
+}
+
 export function renderAfterErrorMessage(error){
   if(error && error.code==='rate_limited') return error.message;
   if(error && error.code==='preview_misconfigured'){

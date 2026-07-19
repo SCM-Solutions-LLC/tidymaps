@@ -33,6 +33,19 @@ export function buildResults(){
     ? 'Analyzed by Claude'+(model?' · '+model.replace('claude-','').replace(/-/g,' '):'')
     : 'Personalized plan · based on your selections';
 
+  // read-only share view: banner up top, owner-only actions hidden, and all
+  // persistence already blocked (shareView guards the guest-draft writer;
+  // activeSpaceId is null so server patches never fire)
+  const shareNote=document.getElementById('res-share-note');
+  if(shareNote){
+    shareNote.classList.toggle('hide', !state.shareView);
+    if(state.shareView){
+      shareNote.textContent=`You’re viewing “${state.sharedName||'a shared plan'}” — a read-only plan someone shared with you. Checking off steps here won’t change their copy.`;
+    }
+  }
+  document.querySelectorAll('#screen-results [data-owner-only]')
+    .forEach(b=>b.classList.toggle('hide', !!state.shareView));
+
   // analysis-failed banner: their photo may be up top, but the plan used demo fallback
   const fb=document.getElementById('res-fallback-note');
   if(fb){

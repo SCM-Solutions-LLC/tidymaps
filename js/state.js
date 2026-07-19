@@ -11,6 +11,7 @@ export const state = {
   activeSpaceId:null,   // set when a saved space is open (signed-in)
   shopping:null,        // chosen purchase items
   arrangement:null,     // 3D arrangement state
+  shareView:false,      // viewing someone else's plan via a read-only share link
 };
 
 // Demo plans must never inherit a real user's media or saved-plan state.
@@ -42,6 +43,8 @@ export function prepareDemoPlanState(target=state){
   target.beforePhotoUrl=null;
   target.afterRenderB64=null;
   target.afterRenderUrl=null;
+  target.shareView=false;
+  delete target.sharedName;
   delete target._beforeUrl;
   Object.keys(target).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete target[k]; });
   return target;
@@ -60,6 +63,9 @@ const DRAFT_KEY='tidymap_draft_v2';
 
 export function persistGuestDraft(){
   try{
+    // Never overwrite a visitor's own draft while they're just looking at
+    // someone else's shared plan — the share view is read-only everywhere.
+    if(state.shareView) return;
     // nothing worth keeping -> drop any stale draft instead of writing an empty one
     if(!state.space && !state.ai && !(state.stepDone||[]).length){
       localStorage.removeItem(DRAFT_KEY);
@@ -102,4 +108,34 @@ export function restoreGuestDraft(){
 
 export function clearGuestDraft(){
   try{ localStorage.removeItem(DRAFT_KEY); }catch(_){}
+}
+
+/* ---------- Anonymous photo promise ----------
+   The landing page promises that without an account, photos aren't kept
+   after the analysis. Server-side that's already true (analyze-space stores
+   nothing, and the guest draft above never serializes media). This drops the
+   in-memory copies too, once the plan is finished, so a shared or long-lived
+   browser tab isn't quietly holding someone's home photos. */
+export function clearGuestMedia(target=state){
+  target.uploadedFiles=[];
+  target.uploadedVideo=null;
+  target.frames=[];
+  target.afterRenderB64=null;
+  if(target._beforeUrl){ try{ URL.revokeObjectURL(target._beforeUrl); }catch(_){} }
+  delete target._beforeUrl;
+  target.beforePhotoUrl=null;
+}
+
+/* Apply a sanitized shared-space payload (see get-shared-space) for
+   read-only viewing. Wipes any in-progress local state first so the shared
+   plan can't mix with the visitor's own answers — and shareView blocks the
+   draft writer above, so their own saved draft survives untouched. */
+export function applySharedSpace(payload){
+  prepareDemoPlanState(state);           // deterministic, media-free reset
+  state.shareView=true;
+  state.space=null; state.goal=payload.goal||null; state.capture=null;
+  state.upgrades=false;                  // sanitized plans carry no product needs
+  state.dims=payload.dims||null;
+  state.sharedName=payload.name||'A TidyMap plan';
+  return payload;
 }
