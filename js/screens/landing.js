@@ -7,6 +7,7 @@ import { getDemoScenario } from '../demo-scenarios.js';
 import { normalizeAi } from '../plan.js';
 import { submitInviteRequest } from '../db.js';
 import { affiliatesConfigured } from '../affiliates.js';
+import { hydrateImages } from '../images.js';
 
 /* ---------- Sample plan shortcut ---------- */
 export function runDemo(){
@@ -72,6 +73,11 @@ export function initLanding(){
 
   const affNote=document.getElementById('affil-note');
   if(affNote && affiliatesConfigured()) affNote.classList.remove('hide');
+
+  // Drive keyed imagery from the manifest: fill ready photos, collapse the
+  // slots whose art is still pending so no request 404s. Fire-and-forget;
+  // the declarative <img>/onerror fallback covers a manifest load failure.
+  hydrateImages().catch(()=>{});
 
   initAppbarScroll();
 }
