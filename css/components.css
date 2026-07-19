@@ -470,14 +470,16 @@ textarea{resize:vertical;min-height:84px}
 }
 
 /* ---------- Room photo cards ---------- */
-.room-cards{display:grid;gap:16px;grid-template-columns:1fr}
-@media(min-width:560px){.room-cards{grid-template-columns:repeat(3,1fr)}}
+.room-cards{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:560px){.room-cards{gap:16px}}
+@media(min-width:780px){.room-cards{grid-template-columns:repeat(4,1fr)}}
 .room-card{
   position:relative;border-radius:16px;overflow:hidden;cursor:pointer;
   border:2px solid var(--line);background:var(--surface-2);
   aspect-ratio:4/3;display:flex;flex-direction:column;justify-content:flex-end;
   transition:border-color .18s, box-shadow .18s;
 }
+@media(min-width:560px){.room-card{aspect-ratio:3/4}}
 .room-card:hover{border-color:var(--primary-line);box-shadow:var(--shadow-lg)}
 .room-card.sel{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary)}
 .room-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}

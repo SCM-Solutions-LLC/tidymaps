@@ -19,10 +19,9 @@ export const SPACES = [
 /* Space picker groups: keeps 14 options scannable, especially on phones */
 export const SPACE_GROUPS = [
   {id:'kitchen', label:'Kitchen',            spaces:['pantry','cabinet','drawers','junk','fridge']},
-  {id:'closets', label:'Closets & clothes',  spaces:['closet','walkin','linen']},
-  {id:'bath',    label:'Bathroom & laundry', spaces:['bathroom','laundry']},
-  {id:'storage', label:'Garage & storage',   spaces:['garage','attic']},
-  {id:'more',    label:'Kids & more',        spaces:['kids','other']}
+  {id:'bedroom', label:'Bedroom closets',    spaces:['closet','walkin']},
+  {id:'bath',    label:'Bathroom & laundry', spaces:['bathroom','linen','laundry']},
+  {id:'storage', label:'Storage & other',    spaces:['garage','attic','kids','other']}
 ];
 
 export const GOALS = [
