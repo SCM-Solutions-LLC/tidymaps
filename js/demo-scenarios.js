@@ -1255,11 +1255,38 @@ function applyGoal(plan, goal) {
 
 /* ---------- Household-based adaptations ---------- */
 
+// The wizard stores presence as 'yes'/'no' strings; the API context uses
+// booleans. Normalize both — a string 'no' must never read as "present".
+function isPresent(v) {
+  return v === true || v === 'yes';
+}
+
+const KID_WORDS = /kid|child|little hands|small hands/i;
+
 function applyHousehold(plan, household) {
+  const kidsPresent = isPresent(household && household.kids && household.kids.present);
+
+  // Safety content fires ONLY when relevant: the base scenarios are written
+  // for a family household, so when no kids are in the picture the
+  // kid-specific notes, flags, and placement reasons must come out — a
+  // no-kid household seeing "so small hands can reach them" is a bug.
+  // Exception: the Kids' storage space is about kids by definition.
+  if (!kidsPresent && !/kids/i.test(plan.spaceType || '')) {
+    plan.safetyNotes = (plan.safetyNotes || []).filter(n => !KID_WORDS.test(n));
+    (plan.map || []).forEach(m => {
+      if (!m.safety) return;
+      if (m.safety.flag === 'kid-safe' || KID_WORDS.test(m.safety.why || '')) {
+        m.safety = { flag: null, why: null };
+      }
+    });
+    plan.productNeeds = (plan.productNeeds || []).filter(p =>
+      p.type !== 'safety-latch' || !KID_WORDS.test(p.purpose || ''));
+  }
+
   if (!household) return;
 
   // Kids present
-  if (household.kids && household.kids.present) {
+  if (kidsPresent) {
     if (!plan.safetyNotes.some(n => /kid|child/i.test(n))) {
       plan.safetyNotes.push('With children in the household, heavy and hazardous items are kept on upper shelves.');
     }
@@ -1277,7 +1304,7 @@ function applyHousehold(plan, household) {
   }
 
   // Pets present
-  if (household.pets && household.pets.present) {
+  if (isPresent(household.pets && household.pets.present)) {
     plan.safetyNotes.push('With pets in the household, keep pet food and treats in sealed containers to prevent access.');
     // Add pet note to applicable spaces
     const petSpaces = new Set(['pantry', 'garage', 'laundry', 'other']);
