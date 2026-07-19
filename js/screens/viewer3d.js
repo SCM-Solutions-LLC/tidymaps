@@ -44,8 +44,10 @@ export async function openViewer3d(){
     resizeHandler=()=>view && view.setSize();
     addEventListener('resize', resizeHandler);
     openViewer3d._retried=false;
-    // if the GPU drops the context (tab backgrounded, driver reset), rebuild next open
     canvas.addEventListener('webglcontextlost', ()=>{ disposeViewer3d(); }, { once:true });
+    populateZones(map);
+    initLayoutChips();
+    initDimSliders(geometry);
     let note=geometry.estimated
       ? 'Dimensions are estimated from your photos. Add measurements in the wizard for exact scale.'
       : `Built from your measurements: ${geometry.width}″w × ${geometry.height}″h × ${geometry.depth}″d.`;
@@ -101,4 +103,55 @@ export function disposeViewer3d(){
   if(resizeHandler){ removeEventListener('resize', resizeHandler); resizeHandler=null; }
   if(view){ view.dispose(); view=null; }
   dirty=false;
+}
+
+const ZONE_COLORS=['var(--honey)','var(--primary-bg)','var(--sage-bg)','var(--surface-3)','var(--primary-line)'];
+function populateZones(map){
+  const list=document.getElementById('v3d-zone-list');
+  if(!list || !map) return;
+  list.innerHTML='';
+  (map.rows||map||[]).forEach((row,i)=>{
+    const zone=row.zone||row.lv||'Zone '+(i+1);
+    const desc=row.why||'';
+    const color=ZONE_COLORS[i%ZONE_COLORS.length];
+    const el=document.createElement('div');
+    el.className='v3d-zone-item';
+    el.innerHTML=`<span class="vz-dot" style="background:${color}"></span><div><h4>${escapeHtml(zone)}</h4>${desc?'<p>'+escapeHtml(desc.slice(0,80))+'</p>':''}</div>`;
+    list.appendChild(el);
+  });
+}
+
+function initLayoutChips(){
+  const wrap=document.getElementById('v3d-layouts');
+  if(!wrap) return;
+  wrap.querySelectorAll('.v3d-chip').forEach(btn=>{
+    btn.onclick=()=>{
+      wrap.querySelectorAll('.v3d-chip').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+    };
+  });
+}
+
+function initDimSliders(geometry){
+  const fmt=v=>{
+    const ft=Math.floor(v/12);
+    const inches=v%12;
+    return ft+"′"+(inches?inches+"″":"");
+  };
+  [['v3d-w','v3d-w-val'],['v3d-d','v3d-d-val'],['v3d-h','v3d-h-val']].forEach(([id,valId])=>{
+    const input=document.getElementById(id);
+    const label=document.getElementById(valId);
+    if(!input||!label) return;
+    input.oninput=()=>{ label.textContent=fmt(parseInt(input.value,10)); };
+  });
+  if(geometry){
+    const setSlider=(id,valId,val)=>{
+      const input=document.getElementById(id);
+      const label=document.getElementById(valId);
+      if(input&&label&&val){ input.value=val; label.textContent=fmt(val); }
+    };
+    setSlider('v3d-w','v3d-w-val',geometry.width);
+    setSlider('v3d-d','v3d-d-val',geometry.depth);
+    setSlider('v3d-h','v3d-h-val',geometry.height);
+  }
 }

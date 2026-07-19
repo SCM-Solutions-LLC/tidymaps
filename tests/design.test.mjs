@@ -14,8 +14,8 @@ const landing = html.slice(html.indexOf('id="screen-landing"'), html.indexOf('id
 
 test('hero leads with the practical promise', () => {
   for (const phrase of [
-    'Make one hard&#8209;working space easier to live with',
-    'what you already own',
+    'Bring order to the room that runs your day',
+    'already own',
     'Plan my space',
     'View a sample plan',
   ]) {
@@ -67,8 +67,8 @@ test('photo slots degrade gracefully until real photography exists', () => {
   assert.ok(landingCss.includes('.no-photo'), 'no-photo layout styles missing');
 });
 
-test('single red accent, flat canvas, no ambient gradients', () => {
-  assert.ok(tokens.includes('--primary:      oklch(0.545 0.185 31)'), 'brand accent drifted');
+test('single terracotta accent, flat canvas, no ambient gradients', () => {
+  assert.ok(tokens.includes('--primary:      oklch(0.585 0.145 55)'), 'brand accent drifted');
   for (const css of [landingCss, baseCss, tokens]) {
     assert.ok(!css.includes('radial-gradient'), 'ambient gradient present');
     assert.ok(!css.includes('backdrop-filter'), 'glass surface present');

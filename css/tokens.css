@@ -24,8 +24,7 @@
 
 :root{
   --sans:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  /* one family everywhere — the old display-face variable resolves to it */
-  --serif:var(--sans);
+  --serif:Georgia,"Times New Roman",Times,serif;
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
   /* materials: flat warm white, soft warm-gray washes */
@@ -39,15 +38,15 @@
   --line:      oklch(0.900 0.008 95);
   --line-2:    oklch(0.840 0.010 95);
 
-  /* tomato red — the single brand accent */
-  --primary:      oklch(0.545 0.185 31);
-  --primary-2:    oklch(0.475 0.170 31);
-  --primary-bg:   oklch(0.958 0.018 33);
-  --primary-line: oklch(0.870 0.055 33);
+  /* warm terracotta — the single brand accent */
+  --primary:      oklch(0.585 0.145 55);
+  --primary-2:    oklch(0.515 0.135 55);
+  --primary-bg:   oklch(0.960 0.020 60);
+  --primary-line: oklch(0.870 0.060 58);
 
-  /* sage green — reserved for safety, reuse, and "good" states */
-  --sage:      oklch(0.58 0.072 150);
-  --sage-2:    oklch(0.48 0.078 150);
+  /* olive/sage green — reserved for safety, reuse, and "good" states */
+  --sage:      oklch(0.55 0.065 145);
+  --sage-2:    oklch(0.45 0.072 145);
   --sage-bg:   oklch(0.948 0.024 148);
   --sage-line: oklch(0.850 0.042 148);
   --sage-ink:  oklch(0.40 0.068 150);

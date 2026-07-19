@@ -45,6 +45,17 @@ export function go(id){
   document.body.dataset.screen=id;
   track('screen_viewed', { screen:id });   // wizard funnel / drop-off
   setRail();
+  // step counter in appbar for wizard screens
+  const stepEl=document.getElementById('appbar-step');
+  const stepScreen=document.querySelector('#screen-'+id+' .step-num');
+  if(stepEl){
+    if(stepScreen){
+      stepEl.textContent=stepScreen.textContent;
+      stepEl.style.display='inline';
+    } else {
+      stepEl.style.display='none';
+    }
+  }
   // footer
   const foot=document.getElementById('flow-foot');
   if(FLOW_SCREENS[id]){

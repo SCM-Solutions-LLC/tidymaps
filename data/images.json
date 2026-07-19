@@ -54,6 +54,16 @@
       "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own wizard household step with example selections." },
       "status": "ready"
     },
+    "hero-pantry-after": {
+      "file": "assets/photos/pantry-after.png",
+      "alt": "A family pantry organized with labeled bins, clear containers, and everything in its place",
+      "license": {
+        "type": "first-party",
+        "owner": "SCM Solutions LLC",
+        "note": "Photography from design handoff showing organized pantry result."
+      },
+      "status": "ready"
+    },
     "og": {
       "file": "assets/og.png",
       "alt": "TidyMap: a practical plan for one hard-working storage space",
