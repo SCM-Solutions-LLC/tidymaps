@@ -10,6 +10,7 @@ import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.j
 import { fileToScaledB64 } from '../media.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
+import { classifyAction, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
@@ -342,26 +343,10 @@ function tipFor(s){
 
 /* ---------- Animated step illustrations ----------
    Each step gets a small looping motion graphic matched to what the
-   step asks for, so the checklist reads at a glance. */
-const ART_RULES=[
-  [/expired|duplicate|donate|toss|purge|trash|declutter|retire/i,'purge'],
-  [/empty|pull everything|dump|unload|take everything|one wall at a time|one zone at a time/i,'unload'],
-  [/wipe|clean|dust/i,'wipe'],
-  [/label/i,'label'],
-  [/hang|rod/i,'hang'],
-  [/fold/i,'fold'],
-  [/photo/i,'photo'],
-  [/basket|bin|caddy|tray|corral|file .*upright|containers? with|stand tools/i,'contain'],
-  [/group|sort|similar|together|categor|match|split|separate/i,'group'],
-  [/top shelf|up high|overhead|bulk|backup|rarely|lift/i,'moveUp'],
-  [/heavy|lowest shelf|lower shelf|bottom|floor|raw meat/i,'moveDown'],
-  [/zone|assign|home|section|crisper|door/i,'zones'],
-];
-function stepArtType(s){
-  const hay=s.t+' '+(s.w||'');
-  for(const [re,type] of ART_RULES){ if(re.test(hay)) return type; }
-  return 'done';
-}
+   step asks for, so the checklist reads at a glance. Classification lives in
+   stepMedia.js so the produced-clip pipeline and these fallback scenes can
+   never disagree; these inline SVGs are the spec the real clips must match,
+   and the runtime fallback whenever a clip isn't produced yet. */
 const A_WRAP=(cls,inner)=>`<svg class="sa sa-${cls}" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 const STEP_ART={
   purge:A_WRAP('purge',`<rect x="4" y="31" width="11" height="11" rx="2"/><rect x="18.5" y="31" width="11" height="11" rx="2"/><rect x="33" y="31" width="11" height="11" rx="2"/>
@@ -386,11 +371,11 @@ export function renderSteps(list){
   state.stepDone=new Array(list.length).fill(false);
   list.forEach((s,i)=>{
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;
-    const art=STEP_ART[stepArtType(s)]||STEP_ART.done;
+    const art=STEP_ART[classifyAction(s)]||STEP_ART.done;
     t.innerHTML=`
       <button class="check" onclick="toggleStep(${i})">${ICON.check}</button>
       <div>
-        <span class="step-art">${art}</span>
+        <span class="step-art" data-step-media="${mediaKeyFor(s, state.space)}">${art}</span>
         <div class="num">Step ${i+1}</div>
         <div class="tname">${escapeHtml(s.t)}</div>
         <div class="meta"><span class="time">${SVG.clock} ${escapeHtml(s.m)}</span></div>
@@ -407,6 +392,9 @@ export function renderSteps(list){
   state.stepCount=list.length;
   updateProgress();
   setStepsView(state.stepsView||'all');
+  // Upgrade scenes to produced clips where they exist (lazy, in-view only);
+  // fire-and-forget — the inline SVGs above are already the full experience.
+  hydrateStepMedia(wrap).catch(()=>{});
 }
 export function toggleStepTip(i){
   const el=document.getElementById('step-tip-'+i);

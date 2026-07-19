@@ -344,8 +344,10 @@ textarea{resize:vertical;min-height:84px}
 
 /* ---------- Animated step illustrations ---------- */
 .task{position:relative}
-.step-art{position:absolute;top:12px;right:12px;width:58px;height:58px;border-radius:12px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;pointer-events:none}
+.step-art{position:absolute;top:12px;right:12px;width:58px;height:58px;border-radius:12px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;pointer-events:none;overflow:hidden}
 .step-art .sa{width:42px;height:42px;overflow:visible}
+/* a produced clip is playing: the inline SVG scene underneath steps aside */
+.step-art.has-clip .sa{visibility:hidden}
 .task .tname,.task .why2{padding-right:64px}
 @media(max-width:419px){.step-art{width:46px;height:46px}.step-art .sa{width:34px;height:34px}.task .tname,.task .why2{padding-right:52px}}
 

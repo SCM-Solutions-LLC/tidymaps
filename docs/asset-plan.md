@@ -43,6 +43,34 @@ Guidelines for both:
   section's plan excerpt and notes to match that household, and re-check the
   time/cost line against what actually happened.
 
+## Step-animation clips (motion pipeline)
+
+The plan checklist's step illustrations are inline animated SVG scenes in
+`js/screens/results.js` (`STEP_ART`). Those scenes are the spec for produced
+motion clips — same staging, same story (unload = items OUT into a box, wipe
+= cloth along the surface, and so on).
+
+Produced clips are declared in `data/step-media.json` under the key contract
+`{action}-{motif}-{glyph}`:
+
+- **action** — one of the 13 `STEP_ART` scene types
+  (`purge|unload|wipe|label|hang|fold|photo|contain|group|moveUp|moveDown|zones|done`)
+- **motif** — the furniture the scene is staged on (`shelves|drawers|rail|bench`),
+  derived from the chosen space (`js/stepMedia.js: motifForSpace`)
+- **glyph** — the item being moved
+  (`shoe|hanger|foldedclothes|towel|jar|can|bottle|utensil|tool|tote|plate|bag`)
+
+Files live at `media/steps/{key}.(mp4|webm|json)`. mp4/webm play natively;
+`.json` is Lottie and is used only once a player is vendored. Clips lazy-load
+when the step scrolls into view, and only when marked `ready` — a slot whose
+clip is missing, pending, or fails playback keeps its SVG scene, so nothing
+ever renders blank and nothing 404s. `tests/step-media.test.mjs` fails CI on
+an out-of-vocabulary key, a ready file missing from disk, or a pending entry
+whose file already landed.
+
+Workflow to ship a clip: produce it to match the SVG scene, drop the file at
+its key path, declare `{ file, status: "ready", license }` in the manifest.
+
 ## Product screenshots
 
 `assets/product/plan-map.png`, `plan-steps.png`, and `plan-shopping.png` are
