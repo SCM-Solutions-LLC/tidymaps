@@ -11,6 +11,11 @@ export const ITEM_SIZES = ['s', 'm', 'l'];
 
 // From the analyze-space prompt: "steps": 6-9 by default, scaled by effort.
 export const EFFORT_STEP_RANGES = {
+  // design-contract effort labels (the wizard's three options)
+  'Quick refresh': [3, 6],
+  'Weekend reset': [7, 10],
+  'Full overhaul': [9, 14],
+  // legacy labels kept for saved profiles and older clients
   'Quick 30-minute reset': [3, 6],
   '1-hour cleanup': [5, 8],
   'Weekend project': [7, 10],

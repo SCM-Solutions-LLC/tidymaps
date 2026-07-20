@@ -68,6 +68,108 @@
       "alt": "TidyMap: a practical plan for one hard-working storage space",
       "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the live hero, 1200x630." },
       "status": "ready"
+    },
+    "wiz-room-kitchen": {
+      "file": "assets/photos/room-kitchen.jpg",
+      "alt": "A lived-in family kitchen with cabinets, counters, and a pantry door",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed room photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-room-bedroom": {
+      "file": "assets/photos/room-bedroom.jpg",
+      "alt": "A bedroom with a closet and dresser in ordinary daylight",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed room photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-room-bath": {
+      "file": "assets/photos/room-bath.jpg",
+      "alt": "A family bathroom with a vanity and a hall linen closet nearby",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed room photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-room-garage": {
+      "file": "assets/photos/room-garage.jpg",
+      "alt": "A working garage with shelving along one wall and a workbench",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed room photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-pantry-cabinet": {
+      "file": "assets/photos/ba-after.png",
+      "alt": "A tall cabinet pantry with doors open, shelves organized with bins and jars",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Photography from the design handoff (wizard pantry area / cabinet setup card)." },
+      "status": "ready"
+    },
+    "wiz-pantry-walkin": {
+      "file": "assets/photos/ex-pantry-after.png",
+      "alt": "A small walk-in pantry with organized shelves wrapping the walls",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Photography from the design handoff (wizard walk-in pantry setup card)." },
+      "status": "ready"
+    },
+    "wiz-cabinets": {
+      "file": "assets/photos/ex-cab-after.png",
+      "alt": "A full-height kitchen cabinet with dishes and cookware neatly arranged",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Photography from the design handoff (wizard cabinets area / tall cabinet setup card)." },
+      "status": "ready"
+    },
+    "wiz-drawer-tower": {
+      "file": "assets/photos/ex-drawertower.png",
+      "alt": "A tall, narrow tower of drawers",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Photography from the design handoff (wizard drawer tower / tall chest setup card)." },
+      "status": "ready"
+    },
+    "wiz-closet-builtin": {
+      "file": "assets/photos/ex-storage-after.png",
+      "alt": "Built-in storage with shelves up top and drawers below",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Photography from the design handoff (wizard built-in closet / walk-in linen setup card)." },
+      "status": "ready"
+    },
+    "wiz-garage-shelving": {
+      "file": "assets/photos/ex-garage-shelving.png",
+      "alt": "Freestanding utility shelving in a garage holding labeled bins and gear",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Photography from the design handoff (wizard garage shelving area / utility setup card)." },
+      "status": "ready"
+    },
+    "wiz-overhead-rack": {
+      "file": "assets/photos/ex-overhead-rack.png",
+      "alt": "An overhead storage rack hung from a garage ceiling with totes on top",
+      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Photography from the design handoff (wizard overhead rack setup card)." },
+      "status": "ready"
+    },
+    "wiz-area-drawers": {
+      "file": "assets/photos/area-drawers.jpg",
+      "alt": "Kitchen drawers open to show cutlery and utensils",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed area photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-area-closet": {
+      "file": "assets/photos/area-closet.jpg",
+      "alt": "A bedroom closet with hanging clothes, shelves, and shoes",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed area photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-area-dresser": {
+      "file": "assets/photos/area-dresser.jpg",
+      "alt": "A wide dresser with folded clothes in open drawers",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed area photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-area-vanity": {
+      "file": "assets/photos/area-vanity.jpg",
+      "alt": "A bathroom vanity and under-sink cabinet with toiletries",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed area photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-area-linen": {
+      "file": "assets/photos/area-linen.jpg",
+      "alt": "A hall linen closet with folded sheets, towels, and blankets",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed area photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
+    },
+    "wiz-area-workbench": {
+      "file": "assets/photos/area-workbench.jpg",
+      "alt": "A garage workbench with a pegboard of tools above it",
+      "license": { "type": "pending", "owner": "SCM Solutions LLC", "note": "Licensed area photo per the redesign imagery brief; card shows the design's line art until it lands." },
+      "status": "pending"
     }
   }
 }

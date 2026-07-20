@@ -141,7 +141,14 @@ export function buildAnalysisContext(){
   } : null;
   return {
     spaceType: state.space || 'pantry',
+    room: state.room || null,
+    setup: state.setup ? { id: state.setup, label: state.setupLabel || state.setup } : null,
     goal: state.goal || null,
+    goals: (state.goals||[]).slice(),      // the user's own words — cite verbatim
+    styles: (state.styles||[]).slice(),
+    shopping: state.shoppingPref || null,
+    detected: (state.detected||[]).slice(),
+    categories: (state.cats||[]).slice(),  // authoritative when the user edited them
     prefs: [...(state.prefs||[])],
     budget: state.budget || null,
     effort: state.effort || null,

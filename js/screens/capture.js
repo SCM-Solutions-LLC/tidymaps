@@ -1,175 +1,133 @@
-import { CAPTURE } from '../data.js';
-import { SVG, ICON } from '../icons.js';
+/* ============================================================
+   Photos step — "Add a few honest photos".
+
+   A grid of square photo tiles plus an add tile, exactly per the design
+   prototype. The existing client-side quality pre-check stays: dark or
+   blurry photos get an advisory badge, never a block.
+
+   Detection: with no backend configured, adding photos runs the design's
+   client-side "Here's what we spotted" affordance and pre-fills the
+   contents step from the space's detection list. With a real backend the
+   photos are analyzed for real when the plan is built — inventing
+   detections here would be a lie.
+   ============================================================ */
+import { SPACE_CFG } from '../wizard-data.js';
 import { state } from '../state.js';
-import { toast } from '../ui.js';
-import { updateGate } from '../router.js';
+import { toast, escapeHtml } from '../ui.js';
+import { backendConfigured } from '../config.js';
 import { assessImageFile, qualityLabel } from '../imageQuality.js';
+
+const MAX_PHOTOS = 6;
 
 /* Per-file quality verdicts, keyed by the File object so they survive reorder
    and removal. Advisory only: a flagged photo still uploads if the user keeps it. */
 const photoQuality = new WeakMap();
+/* Object URLs per File, revoked on removal. */
+const previewUrls = new WeakMap();
 
 export function buildCapture(){
-  const wrap=document.getElementById('capture-opts'); wrap.innerHTML='';
-  CAPTURE.forEach(c=>{
-    const b=document.createElement('button');
-    b.className='opt';
-    b.innerHTML=`<span class="ico">${c.ico}</span><span><span class="ttl">${c.ttl}</span><span class="sub">${c.sub}</span></span><span class="tick">${ICON.check}</span>`;
-    b.onclick=()=>{
-      wrap.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
-      b.classList.add('sel'); state.capture=c.id;
-      renderCaptureDetail(c.id); updateGate();
-    };
-    wrap.appendChild(b);
-  });
-}
-export function renderCaptureDetail(id){
-  const d=document.getElementById('capture-detail');
-  d.classList.remove('hide');
-  if(id==='photos'){
-    d.innerHTML=`
-    <div class="card pad">
-      <div id="photo-drop" style="border:2px dashed var(--line-2);border-radius:12px;padding:26px;text-align:center;background:var(--surface-2);transition:.2s;cursor:pointer" onclick="document.getElementById('photo-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='var(--primary-bg)'" ondragleave="this.style.borderColor='var(--line-2)';this.style.background='var(--surface-2)'" ondrop="handleDrop(event)">
-        <div style="color:var(--primary)">${SVG.cameraBig}</div>
-        <div style="font-weight:600;margin-top:6px">Drop 3&ndash;5 photos here</div>
-        <div class="small muted">or tap to choose from your library</div>
-        <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
-        <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="event.stopPropagation();document.getElementById('photo-input').click()">Choose photos</button>
-      </div>
-      <div id="photo-previews" style="display:none;margin-top:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span class="small" style="font-weight:600"><span id="photo-count">0</span> photos selected</span>
-          <button class="btn btn-ghost btn-sm" style="padding:6px 12px;font-size:12px" onclick="document.getElementById('photo-input').click()">Add more</button>
-        </div>
-        <div id="photo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px"></div>
-      </div>
-      <div class="small" style="margin-top:16px;font-weight:600">For best results</div>
-      <ul class="problems" style="margin-top:8px">
-        <li>Take one straight-on photo</li>
-        <li>Take one photo from the left side</li>
-        <li>Take one photo from the right side</li>
-        <li>Capture the full shelf, cabinet, or storage area</li>
-        <li>Open doors or drawers if relevant</li>
-      </ul>
-    </div>`;
-  }else if(id==='video'){
-    d.innerHTML=`
-    <div class="card pad">
-      <div style="border:2px dashed var(--line-2);border-radius:12px;padding:26px;text-align:center;background:var(--surface-2);cursor:pointer" onclick="document.getElementById('video-input').click()">
-        <div style="color:var(--primary)">${SVG.videoBig}</div>
-        <div style="font-weight:600;margin-top:6px">Record or upload a short video</div>
-        <div class="small muted">We&rsquo;ll extract key frames to understand the space</div>
-        <input type="file" id="video-input" accept="video/*" style="display:none" onchange="handleVideoFile(this.files)">
-        <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="event.stopPropagation();document.getElementById('video-input').click()">Choose video</button>
-      </div>
-      <div id="video-preview" style="display:none;margin-top:14px"></div>
-      <div class="helper" style="margin-top:16px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        <span>Slowly scan the space left to right, then top to bottom. Show shelves, corners, doors, hooks, bins, baskets, drawers, and hard-to-reach areas. Open cabinets or drawers if relevant.</span>
-      </div>
-    </div>`;
-  }else{
-    d.innerHTML=`
-    <div class="card pad" style="background:var(--primary-bg);border-color:var(--primary-line)">
-      <div style="font-weight:600">Using the demo pantry</div>
-      <p class="small" style="margin:6px 0 0;color:var(--ink-2)">We&rsquo;ll load a sample messy pantry with realistic detected items and features so you can see the full plan. Tap Continue.</p>
-    </div>`;
-  }
+  renderPhotoTiles();
+  const input = document.getElementById('photo-input');
+  if(input) input.onchange = () => { handleFiles(input.files); input.value = ''; };
 }
 
-export function handleDrop(e){
-  e.preventDefault();
-  const drop=document.getElementById('photo-drop');
-  drop.style.borderColor='var(--line-2)';drop.style.background='var(--surface-2)';
-  const files=e.dataTransfer.files;
-  if(files.length) handleFiles(files);
+export function renderPhotoTiles(){
+  const grid = document.getElementById('photo-tiles');
+  if(!grid) return;
+  grid.innerHTML = '';
+  let flagged = 0;
+  state.uploadedFiles.forEach((file, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'wz-photo';
+    let url = previewUrls.get(file);
+    if(!url){ url = URL.createObjectURL(file); previewUrls.set(file, url); }
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Uploaded space photo';
+    tile.appendChild(img);
+    const warn = qualityLabel(photoQuality.get(file));
+    if(warn){
+      flagged++;
+      const flag = document.createElement('span');
+      flag.className = 'wp-flag';
+      flag.textContent = warn;
+      tile.appendChild(flag);
+    }
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'wp-x';
+    rm.setAttribute('aria-label', 'Remove photo');
+    rm.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    rm.onclick = () => {
+      const u = previewUrls.get(file);
+      if(u){ try{ URL.revokeObjectURL(u); }catch(_){} previewUrls.delete(file); }
+      state.uploadedFiles.splice(i, 1);
+      renderPhotoTiles();
+    };
+    tile.appendChild(rm);
+    grid.appendChild(tile);
+  });
+  if(state.uploadedFiles.length < MAX_PHOTOS){
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'wz-photo-add';
+    add.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>Add photos</span>`;
+    add.onclick = () => document.getElementById('photo-input').click();
+    grid.appendChild(add);
+  }
+  // Advisory line: a retake usually gives a better plan, but nothing is blocked.
+  const note = document.getElementById('photo-quality-note');
+  if(note){
+    note.classList.toggle('hide', !flagged);
+    if(flagged) note.textContent = flagged === 1
+      ? 'One photo looks dark or blurry. Retaking it in better light usually gives a sharper plan, but you can continue.'
+      : flagged + ' photos look dark or blurry. Retaking them in better light usually gives a sharper plan, but you can continue.';
+  }
 }
 
 export function handleFiles(fileList){
-  const newFiles=[...fileList].filter(f=>f.type.startsWith('image/'));
+  const newFiles = [...fileList].filter(f => f.type.startsWith('image/'));
   if(!newFiles.length) return;
-  const room=5-state.uploadedFiles.length;
-  if(room<=0){ toast('5 photos is plenty. Remove one to add another.'); return; }
-  if(newFiles.length>room) toast('Using the first '+room+'. 5 photos is plenty.');
-  const added=newFiles.slice(0,room);
-  state.uploadedFiles=state.uploadedFiles.concat(added);
-  renderPhotoPreviews();
+  const room = MAX_PHOTOS - state.uploadedFiles.length;
+  if(room <= 0){ toast(MAX_PHOTOS + ' photos is plenty. Remove one to add another.'); return; }
+  if(newFiles.length > room) toast('Using the first ' + room + '. ' + MAX_PHOTOS + ' photos is plenty.');
+  const added = newFiles.slice(0, room);
+  state.uploadedFiles = state.uploadedFiles.concat(added);
+  state.capture = 'photos';
+  renderPhotoTiles();
   // Assess each new photo off the main thread; re-render as verdicts land so a
   // "Too dark"/"Blurry" badge appears without holding up the preview.
-  added.forEach(file=>{
-    assessImageFile(file).then(a=>{
-      if(a){ photoQuality.set(file, a); if(state.uploadedFiles.includes(file)) renderPhotoPreviews(); }
+  added.forEach(file => {
+    assessImageFile(file).then(a => {
+      if(a){ photoQuality.set(file, a); if(state.uploadedFiles.includes(file)) renderPhotoTiles(); }
     });
   });
+  if(!backendConfigured()) runLocalDetection();
 }
 
-export function renderPhotoPreviews(){
-  const wrap=document.getElementById('photo-previews');
-  const grid=document.getElementById('photo-grid');
-  const count=document.getElementById('photo-count');
-  if(!state.uploadedFiles.length){wrap.style.display='none';return;}
-  wrap.style.display='block';
-  count.textContent=state.uploadedFiles.length;
-  grid.innerHTML='';
-  let flagged=0;
-  state.uploadedFiles.forEach((file,i)=>{
-    const div=document.createElement('div');
-    div.style.cssText='position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--surface-2)';
-    const img=document.createElement('img');
-    img.style.cssText='width:100%;height:100%;object-fit:cover';
-    img.src=URL.createObjectURL(file);
-    img.onload=()=>URL.revokeObjectURL(img.src);
-    const rm=document.createElement('button');
-    rm.style.cssText='position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:14px;cursor:pointer;display:grid;place-items:center;line-height:1';
-    rm.innerHTML='&times;';
-    rm.onclick=(e)=>{e.stopPropagation();state.uploadedFiles.splice(i,1);renderPhotoPreviews();};
-    div.appendChild(img);div.appendChild(rm);
-    const warn=qualityLabel(photoQuality.get(file));
-    if(warn){
-      flagged++;
-      div.style.borderColor='var(--clay)';
-      const flag=document.createElement('div');
-      flag.style.cssText='position:absolute;top:4px;left:4px;padding:2px 7px;border-radius:999px;background:var(--clay);color:#fff;font-size:10px;font-weight:600;line-height:1.4';
-      flag.textContent=warn;
-      div.appendChild(flag);
+/* Design-spec detection affordance for the no-backend path: a short look,
+   then "Here's what we spotted" chips that pre-fill the contents step.
+   User edits stay authoritative — a touched category list is never refilled. */
+let detectTimer = null;
+function runLocalDetection(){
+  const spin = document.getElementById('photo-analyzing');
+  const found = document.getElementById('photo-detected');
+  if(spin) spin.classList.remove('hide');
+  if(found) found.classList.add('hide');
+  clearTimeout(detectTimer);
+  detectTimer = setTimeout(() => {
+    const cfg = SPACE_CFG[state.space] || SPACE_CFG.pantry;
+    state.detected = cfg.detect.slice();
+    if(!state.catsTouched){
+      cfg.detectCats.forEach(c => { if(!state.cats.includes(c)) state.cats.push(c); });
     }
-    const name=document.createElement('div');
-    name.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:3px 6px;background:linear-gradient(transparent,rgba(0,0,0,.5));color:#fff;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-    name.textContent=file.name;
-    div.appendChild(name);
-    grid.appendChild(div);
-  });
-  // Advisory line: a retake usually gives a better plan, but nothing is blocked.
-  let note=document.getElementById('photo-quality-note');
-  if(flagged){
-    if(!note){
-      note=document.createElement('p');
-      note.id='photo-quality-note'; note.className='small';
-      note.style.cssText='margin:10px 0 0;color:var(--clay)';
-      grid.after(note);
+    if(spin) spin.classList.add('hide');
+    if(found){
+      found.classList.remove('hide');
+      document.getElementById('photo-detected-chips').innerHTML =
+        state.detected.map(d => `<span class="wz-detected-chip">${escapeHtml(d)}</span>`).join('');
     }
-    note.textContent=flagged===1
-      ? 'One photo looks dark or blurry. Retaking it in better light usually gives a sharper plan, but you can continue.'
-      : flagged+' photos look dark or blurry. Retaking them in better light usually gives a sharper plan, but you can continue.';
-  }else if(note){
-    note.remove();
-  }
-}
-
-export function handleVideoFile(fileList){
-  const file=[...fileList].find(f=>f.type.startsWith('video/'));
-  if(!file)return;
-  state.uploadedVideo=file;
-  const wrap=document.getElementById('video-preview');
-  wrap.style.display='block';
-  wrap.innerHTML='';
-  const vid=document.createElement('video');
-  vid.src=URL.createObjectURL(file);
-  vid.controls=true;
-  vid.style.cssText='width:100%;border-radius:10px;border:1px solid var(--line);max-height:300px;background:#000';
-  const info=document.createElement('div');
-  info.className='small';
-  info.style.cssText='margin-top:8px;display:flex;justify-content:space-between;align-items:center';
-  info.innerHTML=`<span style="font-weight:600;color:var(--ink)">${file.name}</span><button class="btn btn-ghost btn-sm" style="padding:6px 12px;font-size:12px" onclick="document.getElementById('video-input').click()">Replace</button>`;
-  wrap.appendChild(vid);wrap.appendChild(info);
+  }, 1600);
 }

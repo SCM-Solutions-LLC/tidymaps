@@ -1159,6 +1159,169 @@ function walkinScenario() {
   };
 }
 
+function dresserScenario() {
+  return {
+    spaceType: 'Dresser',
+    summary: 'A four-drawer dresser where folding never survives the week. Everyday tops share a drawer with workout clothes, jeans are stacked so high the drawer jams, and the sock drawer is a single jumble. The top surface collects whatever was in someone’s hands at bedtime. Off-season overflow is wedged into every gap.',
+    categories: ['Everyday tops', 'Pants & jeans', 'Underwear & socks', 'Pajamas', 'Workout clothes', 'Sweaters', 'Accessories', 'Off-season overflow'],
+    features: [
+      {icon: 'drawer', title: '4 drawers', sub: 'Two shallow on top, two deep below'},
+      {icon: 'horizontal', title: 'Top surface', sub: 'Currently a catch-all'},
+      {icon: 'vertical', title: 'Deep drawer height', sub: 'Enough for upright file-folding'},
+      {icon: 'empty', title: 'No dividers', sub: 'Folded stacks slump and mix'}
+    ],
+    problems: [
+      'Stacked folding hides every shirt below the top one',
+      'Jeans pile so high the second drawer jams on opening',
+      'Socks and underwear share one undivided jumble',
+      'Off-season clothes crowd the clothes worn every day',
+      'The top surface buries accessories under daily clutter'
+    ],
+    opportunities: [
+      'File-folding stands clothes upright so every item is visible at a glance',
+      'Simple dividers keep folded stacks standing all week',
+      'Moving off-season overflow out frees a full drawer',
+      'A small tray on top gives pocket-contents one landing spot'
+    ],
+    map: [
+      {level: 'Top surface', icon: 'up', zone: 'Accessories · Daily landing tray',
+        why: 'A single tray catches watches, jewelry, and pocket contents so the surface stays clear.',
+        eye: true, shelfIndex: 0,
+        safety: {flag: null, why: null},
+        items: [{name: 'Accessories', size: 's', flags: []}, {name: 'Daily tray', size: 's', flags: []}]},
+      {level: 'Top drawer', icon: 'drawer', zone: 'Underwear & socks · Pajamas',
+        why: 'Small everyday items belong in the shallow drawer where nothing can bury them.',
+        eye: false, shelfIndex: 1,
+        safety: {flag: null, why: null},
+        items: [{name: 'Underwear & socks', size: 's', flags: []}, {name: 'Pajamas', size: 's', flags: []}]},
+      {level: 'Middle drawer', icon: 'drawer', zone: 'Everyday tops · Workout clothes',
+        why: 'The clothes you reach for daily get the easiest drawer, file-folded so every shirt shows.',
+        eye: false, shelfIndex: 2,
+        safety: {flag: null, why: null},
+        items: [{name: 'Everyday tops', size: 'm', flags: []}, {name: 'Workout clothes', size: 'm', flags: []}]},
+      {level: 'Bottom drawer', icon: 'down', zone: 'Pants & jeans · Sweaters',
+        why: 'Heavy denim and bulky knits sit low, where weight is stable and the deep drawer fits them.',
+        eye: false, shelfIndex: 3,
+        safety: {flag: null, why: null},
+        items: [{name: 'Pants & jeans', size: 'l', flags: ['heavy']}, {name: 'Sweaters', size: 'l', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 48, height: 36, depth: 18, shelfCount: 4, shelfYFracs: [0.08, 0.35, 0.62, 0.88], estimated: true},
+    safetyNotes: [],
+    productNeeds: [
+      {type: 'drawer-organizer', qty: 2, purpose: 'Divide socks and underwear into sections that stay sorted', targetZone: 'Top drawer', maxDims: {w_in: 14, h_in: 4, d_in: 16}, priority: 'high'},
+      {type: 'clear-bin', qty: 2, purpose: 'Box off-season overflow so it stops crowding daily drawers', targetZone: 'Bottom drawer', maxDims: {w_in: 16, h_in: 8, d_in: 16}, priority: 'nice'},
+      {type: 'label-set', qty: 1, purpose: 'Label each drawer so clothes go back to the right one', targetZone: 'Every drawer', maxDims: null, priority: 'nice'}
+    ],
+    existingLede: 'The dresser already has the right drawer sizes for this system — the change is how clothes stand inside them.',
+    existing: [
+      {icon: 'drawer', title: 'Deep lower drawers', detail: 'Perfect height for file-folded jeans and sweaters.'},
+      {icon: 'horizontal', title: 'Top surface', detail: 'Becomes a single-tray landing zone.'},
+      {icon: 'vertical', title: 'Drawer depth', detail: 'Enough for upright folding — no product required.'}
+    ],
+    dontBuy: 'Skip drawer perfume sachets and specialty folding boards. A basic fold and a divider do the work.',
+    steps: [
+      {task: 'Empty one drawer at a time onto the bed', time: '10 min', why: 'Working drawer by drawer keeps the job finishable in one sitting.'},
+      {task: 'Pull a donate pile as you fold', time: '10 min', why: 'Every shirt you release is drawer space you get back.'},
+      {task: 'File-fold tops so they stand upright', time: '15 min', why: 'Upright folding shows every item and survives daily grabs.'},
+      {task: 'Give socks and underwear divided sections', time: '10 min', why: 'Small items stay sorted only when a divider holds the line.'},
+      {task: 'Move jeans and sweaters to the bottom drawer', time: '5 min', why: 'Heavy and bulky items belong low, where the deep drawer fits them.'},
+      {task: 'Box off-season overflow and move it out', time: '10 min', why: 'Daily drawers should hold only the current season.'},
+      {task: 'Set one tray on top for pocket contents', time: '2 min', why: 'A defined landing spot keeps the surface from becoming a pile.'},
+      {task: 'Label each drawer by category', time: '5 min', why: 'Labels keep the whole household refilling drawers the same way.'},
+      {task: 'Take a final photo', time: '2 min', why: 'This helps track progress and compare before / after.'}
+    ],
+    time: '45–70 min',
+    cost: '$0 / $25–50'
+  };
+}
+
+function workbenchScenario() {
+  return {
+    spaceType: 'Workbench',
+    summary: 'A garage workbench with a pegboard wall, one upper shelf, two drawers, and open space below. The bench surface is buried under half-finished projects, hand tools, and loose hardware. Power tools sit wherever they last landed, paint and adhesives mix with safety gear, and small fasteners live in unlabeled jars and pockets.',
+    categories: ['Hand tools', 'Power tools', 'Screws & fasteners', 'Paint & supplies', 'Tape & adhesives', 'Safety gear', 'Batteries & cords'],
+    features: [
+      {icon: 'hook', title: 'Pegboard wall', sub: 'Mostly empty hooks'},
+      {icon: 'up', title: '1 upper shelf', sub: 'Runs the bench length'},
+      {icon: 'drawer', title: '2 bench drawers', sub: 'Currently mixed hardware'},
+      {icon: 'down', title: 'Open space below', sub: 'Fits bins or a small cabinet'},
+      {icon: 'horizontal', title: 'Full bench surface', sub: 'Buried under projects'}
+    ],
+    problems: [
+      'The bench surface is storage, so there is nowhere to actually work',
+      'Small fasteners are scattered across jars, pockets, and the bench top',
+      'Paint and chemicals share space with safety gear',
+      'Power-tool cords tangle into one knot',
+      'Finding the right screwdriver means digging, not reaching'
+    ],
+    opportunities: [
+      'The empty pegboard can give every hand tool a visible outlined home',
+      'Sorting fasteners by size into labeled compartments ends the digging',
+      'The upper shelf keeps chemicals up and away in one latched zone',
+      'Clearing the surface returns the bench to an actual work area'
+    ],
+    map: [
+      {level: 'Pegboard wall', icon: 'hook', zone: 'Hand tools · Most-used power tools',
+        why: 'Tools you reach for constantly hang in sight at arm’s reach, one outlined spot each.',
+        eye: true, shelfIndex: 0,
+        safety: {flag: null, why: null},
+        items: [{name: 'Hand tools', size: 'm', flags: ['sharp']}, {name: 'Go-to power tools', size: 'm', flags: []}]},
+      {level: 'Upper shelf', icon: 'up', zone: 'Paint & supplies · Tape & adhesives',
+        why: 'Chemicals and adhesives stay high, together, and off the work surface.',
+        eye: false, shelfIndex: 1,
+        safety: {flag: 'keep-high', why: 'Paint and chemicals stay up and contained, away from the work zone.'},
+        items: [{name: 'Paint & supplies', size: 'm', flags: ['chemical']}, {name: 'Tape & adhesives', size: 's', flags: []}]},
+      {level: 'Bench surface', icon: 'horizontal', zone: 'Active project only',
+        why: 'The bench is a work area, not storage — only the current project lives here.',
+        eye: false, shelfIndex: 2,
+        safety: {flag: null, why: null},
+        items: [{name: 'Active project', size: 'l', flags: []}]},
+      {level: 'Bench drawers', icon: 'drawer', zone: 'Screws & fasteners · Batteries & cords',
+        why: 'Small parts sort into labeled compartments; cords coil one-per-slot so they never tangle.',
+        eye: false, shelfIndex: 3,
+        safety: {flag: null, why: null},
+        items: [{name: 'Screws & fasteners', size: 's', flags: ['sharp']}, {name: 'Batteries & cords', size: 's', flags: []}]},
+      {level: 'Below the bench', icon: 'down', zone: 'Heavy power tools · Safety gear',
+        why: 'Heavy tools store low where lifting is safe; safety gear stays visible at the point of use.',
+        eye: false, shelfIndex: 4,
+        safety: {flag: 'kid-safe', why: 'Nothing sharp or chemical lives in the low zone kids can reach.'},
+        items: [{name: 'Heavy power tools', size: 'l', flags: ['heavy']}, {name: 'Safety gear', size: 'm', flags: []}]}
+    ],
+    geometry: {unit: 'in', width: 72, height: 72, depth: 24, shelfCount: 5, shelfYFracs: [0.10, 0.30, 0.52, 0.70, 0.90], estimated: true},
+    safetyNotes: [
+      'Paint, solvents, and adhesives live on the upper shelf, above kid reach.',
+      'Sharp tools hang on the pegboard or sit in drawers — never loose on the bench where small hands explore.'
+    ],
+    productNeeds: [
+      {type: 'hook-rack', qty: 1, purpose: 'Outline a visible pegboard home for every hand tool', targetZone: 'Pegboard wall', maxDims: null, priority: 'high'},
+      {type: 'drawer-organizer', qty: 2, purpose: 'Sort screws and fasteners by size into labeled compartments', targetZone: 'Bench drawers', maxDims: {w_in: 14, h_in: 3, d_in: 20}, priority: 'high'},
+      {type: 'clear-bin', qty: 2, purpose: 'Corral safety gear and cords below the bench', targetZone: 'Below the bench', maxDims: {w_in: 20, h_in: 12, d_in: 22}, priority: 'nice'},
+      {type: 'label-set', qty: 1, purpose: 'Label drawers, jars, and bins so parts return to the right spot', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
+    ],
+    existingLede: 'The pegboard, shelf, and drawers already cover every zone this plan needs — they are just underused.',
+    existing: [
+      {icon: 'hook', title: 'Empty pegboard', detail: 'Hang the tools you reach for weekly, one spot each.'},
+      {icon: 'up', title: 'Upper shelf', detail: 'Becomes the single chemicals-and-adhesives zone.'},
+      {icon: 'drawer', title: 'Bench drawers', detail: 'Take the small parts once they are compartmentalized.'},
+      {icon: 'down', title: 'Space below the bench', detail: 'Stores the heavy tools at a safe lifting height.'}
+    ],
+    dontBuy: 'Skip the rolling tool chest for now. Empty the bench and use the drawers you have first — buy storage only for what remains.',
+    steps: [
+      {task: 'Clear the bench surface completely', time: '15 min', why: 'The bench must end the day as a work area, so it starts the plan empty.'},
+      {task: 'Sort tools into keep, fix, and donate piles', time: '15 min', why: 'Duplicates and broken tools take space the working set needs.'},
+      {task: 'Hang hand tools on the pegboard, one spot each', time: '15 min', why: 'A visible outlined home means the right tool is a reach, not a search.'},
+      {task: 'Group paint, solvents, and adhesives on the upper shelf', time: '10 min', why: 'Chemicals stay high, together, and away from the work surface.'},
+      {task: 'Sort screws and fasteners into compartments by size', time: '20 min', why: 'Small parts are only findable when size does the sorting.'},
+      {task: 'Coil cords and pair batteries with their chargers', time: '10 min', why: 'One slot per cord ends the tangle for good.'},
+      {task: 'Store heavy power tools below the bench', time: '10 min', why: 'Low storage is safe lifting and leaves the surface clear.'},
+      {task: 'Label every drawer, jar, and bin', time: '10 min', why: 'Labels keep parts returning to the same home after every project.'},
+      {task: 'Take a final photo', time: '2 min', why: 'This helps track progress and compare before / after.'}
+    ],
+    time: '90–120 min',
+    cost: '$0 / $35–70'
+  };
+}
+
 const SCENARIO_FNS = {
   pantry:  pantryScenario,
   cabinet: cabinetScenario,
@@ -1173,6 +1336,8 @@ const SCENARIO_FNS = {
   bathroom: bathroomScenario,
   linen:   linenScenario,
   fridge:  fridgeScenario,
+  dresser: dresserScenario,
+  workbench: workbenchScenario,
   other:   otherScenario
 };
 

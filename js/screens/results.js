@@ -1,8 +1,9 @@
-import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE } from '../data.js';
+import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_CATS } from '../data.js';
 import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
-import { activeSafetyNotes, activeProductNeeds, buildGeminiBrief } from '../plan.js';
+import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief } from '../plan.js';
+import { fmtFt } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -13,12 +14,16 @@ import { updateSpacePatch } from '../db.js';
 import { classifyAction, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { track } from '../telemetry.js';
 import { applyCategoryEdits } from '../personalize.js';
-import { buildReview } from './review.js';
 
 /* ---------- Results ---------- */
 export function buildResults(){
-  buildReview();
   const A=state.ai;
+  state.features=((A&&A.features.length)?A.features:DEMO_FEATURES).slice();
+  // The contents step is authoritative when the user engaged with it;
+  // otherwise the plan's own detected categories stand.
+  if(!state.catsTouched || !state.cats.length){
+    state.cats=((A&&A.cats.length)?A.cats:DEMO_CATS).slice();
+  }
   const isRealAi = A && state.planMeta && state.planMeta.source==='ai';
   // AI badge on results title
   const badge=document.getElementById('res-ai-badge');
@@ -34,6 +39,28 @@ export function buildResults(){
   if(byline) byline.textContent = isRealAi
     ? 'Analyzed by Claude'+(model?' · '+model.replace('claude-','').replace(/-/g,' '):'')
     : 'Personalized plan · based on your selections';
+
+  // masthead answer chips: setup + measurements, household, effort — the
+  // wizard's answers round-tripped onto the plan (design contract)
+  const g=activeGeometry();
+  const chipDims=document.getElementById('chip-dims');
+  if(chipDims) chipDims.textContent=[state.setupLabel, fmtFt(g.width/12)+' × '+fmtFt(g.height/12)]
+    .filter(Boolean).join(' · ');
+  const chipHh=document.getElementById('chip-household');
+  if(chipHh){
+    const h=state.household;
+    const parts=[];
+    if(h.adults) parts.push(h.adults+(h.adults===1?' adult':' adults'));
+    if(h.kidCount) parts.push(h.kidCount+(h.kidCount===1?' kid':' kids'));
+    if(h.petCount) parts.push(h.petCount+(h.petCount===1?' pet':' pets'));
+    chipHh.textContent=parts.join(' · ');
+    chipHh.style.display=parts.length?'':'none';
+  }
+  const chipEffort=document.getElementById('chip-effort');
+  if(chipEffort){
+    chipEffort.textContent=[state.effort, A?A.time:''].filter(Boolean).join(' · ');
+    chipEffort.style.display=state.effort?'':'none';
+  }
 
   // product-click intent, delegated so it survives re-renders of the list
   // (property assignment keeps this idempotent across buildResults calls)
@@ -538,18 +565,13 @@ export function setUpgrades(on){
   if(tocShop) tocShop.classList.toggle('hide',!on);
 }
 
-/* Called from goNext() when leaving the review screen */
+/* Called after analysis (see loading.js). The contents step's category list
+   is authoritative when the user engaged with it: unticked categories leave
+   every zone, added ones get a home in exactly one zone — then the whole
+   report renders from the edited plan. Works for both AI and demo plans. */
 export function syncCategoriesToResults(){
-  // The user's review-screen category list is authoritative: unticked
-  // categories leave every zone, added ones get a home in exactly one zone —
-  // then the whole report re-renders from the edited plan. Works for both
-  // AI and demo plans, since these edits happen after analysis.
-  if(state.ai && state.cats){
+  if(state.ai && state.catsTouched && state.cats.length){
     applyCategoryEdits(state.ai, state.cats);
-    buildResults();
-    return; // buildResults re-renders the tags and KPI below
   }
-  document.getElementById('res-cat-tags').innerHTML=state.cats.map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('');
-  const catKpi=document.querySelector('#res-kpis .kpi:nth-child(2) .v');
-  if(catKpi) catKpi.textContent=state.cats.length+' found';
+  buildResults();
 }
