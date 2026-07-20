@@ -1,12 +1,25 @@
 export const state = {
-  space:null, goal:null, capture:null,
-  prefs:new Set(), budget:null, effort:null,
+  // Three-step space selection (design contract): room → area → setup type.
+  // The wizard preselects the design defaults so Continue is always valid.
+  room:'kitchen',
+  space:'pantry', goal:null, capture:null,
+  setup:'cabinet', setupLabel:'Cabinet',
+  goals:[],        // per-space goal texts ("What bugs you most?")
+  styles:[],       // per-space organizing styles ("How do you like things kept?")
+  shoppingPref:'Use what I have',   // 'Use what I have' | 'Open to a few ideas'
+  detected:[],     // item labels surfaced on the photos step
+  catsTouched:false, // user edited the contents step → their list is authoritative
+  prefs:new Set(), budget:null, effort:'Weekend reset',
   upgrades:false,
   cats:[], features:[],
   afterMode:'Use existing containers',
   uploadedFiles:[], uploadedVideo:null, frames:[],
-  dims:null,   // {w_in,h_in,d_in,shelves} parsed from the details step
-  household:{ kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' },
+  dims:null,   // {w_in,h_in,d_in,shelves} from the measurements step (stored in inches)
+  // Counts come from the "Who uses this space?" steppers; kids.present /
+  // pets.present stay the canonical 'yes'/'no' strings derived from them
+  // (never truthiness-check present — see docs/HANDOFF.md).
+  household:{ adults:2, kidCount:1, petCount:0,
+    kids:{present:'yes', ages:['Toddler']}, pets:{present:'no', types:[]}, mobility:[], notes:'' },
   ai:null, planMeta:null,
   activeSpaceId:null,   // set when a saved space is open (signed-in)
   shopping:null,        // chosen purchase items
@@ -17,9 +30,17 @@ export const state = {
 // Demo plans must never inherit a real user's media or saved-plan state.
 // Keeping this reset DOM-free makes the transition deterministic and testable.
 export function prepareDemoPlanState(target=state){
+  target.room='kitchen';
   target.space='pantry';
   target.goal='find';
   target.capture='demo';
+  target.setup='cabinet';
+  target.setupLabel='Cabinet';
+  target.goals=[];
+  target.styles=[];
+  target.shoppingPref='Use what I have';
+  target.detected=[];
+  target.catsTouched=false;
   target.upgrades=true;
   target.prefs=new Set();
   target.budget=null;
@@ -31,7 +52,7 @@ export function prepareDemoPlanState(target=state){
   target.uploadedVideo=null;
   target.frames=[];
   target.dims=null;
-  target.household={ kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
+  target.household={ adults:2, kidCount:0, petCount:0, kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
   target.ai=null;
   target.aiError=null;
   target.planMeta=null;
@@ -77,6 +98,9 @@ export function persistGuestDraft(){
       v:2, savedAt:Date.now(),
       planReady: !!state.ai || !!(state.stepDone && state.stepDone.length),
       space:state.space, goal:state.goal, capture:state.capture,
+      room:state.room, setup:state.setup, setupLabel:state.setupLabel,
+      goals:state.goals, styles:state.styles, shoppingPref:state.shoppingPref,
+      catsTouched:state.catsTouched,
       prefs:[...state.prefs], budget:state.budget, effort:state.effort,
       upgrades:state.upgrades, cats:state.cats, afterMode:state.afterMode,
       dims:state.dims, household:state.household, toggles,
@@ -94,6 +118,11 @@ export function restoreGuestDraft(){
     const d=JSON.parse(raw);
     if(!d || d.v!==2) return false;
     state.space=d.space; state.goal=d.goal; state.capture=d.capture;
+    if(d.room) state.room=d.room;
+    if(d.setup){ state.setup=d.setup; state.setupLabel=d.setupLabel||state.setupLabel; }
+    state.goals=d.goals||[]; state.styles=d.styles||[];
+    if(d.shoppingPref) state.shoppingPref=d.shoppingPref;
+    state.catsTouched=!!d.catsTouched;
     state.prefs=new Set(d.prefs||[]); state.budget=d.budget; state.effort=d.effort;
     state.upgrades=!!d.upgrades; state.cats=d.cats||[]; state.afterMode=d.afterMode||state.afterMode;
     state.dims=d.dims||null;

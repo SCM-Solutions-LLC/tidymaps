@@ -1,37 +1,37 @@
 import { test, expect } from 'playwright/test';
 
-/* E2E matrix: drive the real wizard to a finished plan for EVERY space and
-   assert the plan actually belongs to the chosen space — the "pantry content
-   leaking into garage" regression class. Each run also checks that typed
-   measurements round-trip to the 3D view, that the checklist and shelf map
-   rendered, and that no console errors or failed local requests occurred.
+/* E2E matrix: drive the real 12-step wizard (room → area → setup → measure →
+   photos → household → contents → goals → style → effort → shopping → review)
+   to a finished plan for EVERY area and assert the plan actually belongs to
+   the chosen area — the "pantry content leaking into garage" regression
+   class. Each run also checks that typed measurements round-trip to the 3D
+   view, that the checklist and shelf map rendered, and that no console
+   errors or failed local requests occurred.
 
-   The matrix runs in demo mode (capture = "Use demo example") so it exercises
-   the full wizard, plan rendering, and 3D pipeline without a backend. Two
-   extra kid-household variants assert the safety-notes path. Product links
-   are checked for shape (https + known retailer) — live non-404 resolution
-   against retailer sites is deliberately NOT done in CI because bot-blocking
-   makes it flaky; scripts/check-product-links.mjs covers that on demand. */
+   The matrix runs with no photos (capture resolves to the demo scenario) so
+   it exercises the full wizard, plan rendering, and 3D pipeline without a
+   backend. Kid-household variants assert the safety-notes path. Product
+   links are checked for shape (https + known retailer) — live non-404
+   resolution against retailer sites is deliberately NOT done in CI because
+   bot-blocking makes it flaky; scripts/check-product-links.mjs covers that
+   on demand. */
 
-// space id → the demo scenario's spaceType label shown on the results masthead
-const SPACE_LABEL = {
-  pantry: 'Pantry',
-  cabinet: 'Kitchen cabinet',
-  drawers: 'Kitchen drawers',
-  junk: 'Junk drawer',
-  closet: 'Closet',
-  walkin: 'Walk-in closet',
-  linen: 'Linen closet',
-  bathroom: 'Bathroom vanity',
-  fridge: 'Fridge & freezer',
-  garage: 'Garage shelf',
-  attic: 'Attic / storage area',
-  laundry: 'Laundry room',
-  kids: 'Kids’ storage',
-  other: 'Other',
+// area id → [room card text, area card text, results masthead label]
+const MATRIX = {
+  pantry: ['Kitchen', 'Pantry', 'Pantry'],
+  cabinet: ['Kitchen', 'Cabinets', 'Kitchen cabinet'],
+  drawers: ['Kitchen', 'Drawers', 'Kitchen drawers'],
+  closet: ['Bedroom', 'Closet', 'Closet'],
+  dresser: ['Bedroom', 'Dresser', 'Dresser'],
+  bathroom: ['Bathroom & hall', 'Vanity & under-sink', 'Bathroom vanity'],
+  linen: ['Bathroom & hall', 'Linen closet', 'Linen closet'],
+  garage: ['Garage', 'Shelving & storage', 'Garage shelf'],
+  workbench: ['Garage', 'Workbench', 'Workbench'],
 };
 
-const DIMS = { w: '36', h: '72', d: '16', shelves: '5' };
+// feet typed into the measurements step → inches shown in the 3D status line
+const DIMS_FT = { w: '3', h: '6', d: '1.33' };
+const DIMS_IN = { w: '36', h: '72', d: '16' };
 
 // Landing photos that are declared "pending" in data/images.json 404 by
 // design (the onerror handler collapses their slots). Everything else that
@@ -52,55 +52,61 @@ function watchRequests(page) {
   return { failed, consoleErrors };
 }
 
-async function driveWizard(page, spaceId, { kids = 'no' } = {}) {
+async function next(page) {
+  await page.locator('#flow-next').click();
+}
+
+/* Drive the wizard through all 12 steps. kids: the household step defaults
+   to 1 kid (design default); 'no' clicks it down to 0. */
+async function driveWizard(page, areaId, { kids = 'no', onContents = null } = {}) {
+  const [roomText, areaText] = MATRIX[areaId];
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
 
-  // Space: click the room card that contains this space, then pick it.
-  const ROOM_FOR = {
-    pantry:'Kitchen', cabinet:'Kitchen', drawers:'Kitchen', junk:'Kitchen', fridge:'Kitchen',
-    closet:'Bedroom', walkin:'Bedroom',
-    bathroom:'Bathroom', linen:'Bathroom', laundry:'Bathroom',
-    garage:'Storage', attic:'Storage', kids:'Storage', other:'Storage',
-  };
-  await page.locator('#room-cards .room-card', { hasText: ROOM_FOR[spaceId] }).click();
-  await expect(page.locator('#space-opts .opt').first()).toBeVisible();
-  await page.locator('#space-opts .opt', { hasText: SPACE_LABEL[spaceId].replace(' / storage area', '') })
-    .first().click();
-  await page.locator('#goal-opts .opt', { hasText: 'easier to find' }).click();
-  await page.locator('#flow-next').click();
+  // 1 room → 2 area → 3 setup (each preselects a valid default)
+  await page.locator('#room-cards .room-card', { hasText: roomText }).first().click();
+  await next(page);
+  await page.locator('#area-cards .room-card', { hasText: areaText }).first().click();
+  await next(page);
+  await expect(page.locator('#setup-cards .wz-setup.sel')).toHaveCount(1);
+  await next(page);
 
-  // Household: kids yes/no (yes also picks an age so safety copy can cite it).
-  await page.locator(`#hh-kids-seg button[data-v="${kids}"]`).click();
-  if (kids === 'yes') await page.locator('#hh-age-chips .chip').first().click();
-  await page.locator('#flow-next').click();
+  // 4 measurements: type feet; they must win everywhere downstream.
+  await page.fill('#m-num-w', DIMS_FT.w);
+  await page.fill('#m-num-h', DIMS_FT.h);
+  await page.fill('#m-num-d', DIMS_FT.d);
+  await next(page);
 
-  // Capture: demo example (third option).
-  await page.locator('#capture-opts .opt', { hasText: 'Use demo example' }).click();
-  await page.locator('#flow-next').click();
+  // 5 photos: none — the plan builds from the demo scenario.
+  await next(page);
 
-  // Details: type real measurements; they must win everywhere downstream.
-  await page.fill('#d-w', DIMS.w);
-  await page.fill('#d-h', DIMS.h);
-  await page.fill('#d-d', DIMS.d);
-  await page.fill('#d-shelves', DIMS.shelves);
-  await page.locator('#flow-next').click();
+  // 6 household: steppers (defaults 2 adults · 1 kid · 0 pets).
+  if (kids === 'no') {
+    await page.locator('.wz-count', { hasText: 'Kids' }).locator('.wc-btn[data-d="-1"]').click();
+  }
+  await next(page);
 
-  // Prefs: the gate doesn't require a selection; continue into analysis.
-  await page.locator('#flow-next').click();
+  // 7 contents · 8 goals · 9 style · 10 effort · 11 shopping
+  if (onContents) await onContents(page);
+  await next(page);
+  await page.locator('#goal-list .wz-goal').first().click();
+  await next(page);
+  await next(page);
+  await next(page);
+  await next(page);
 
-  // Loading (demo ticker) → review → results.
-  await page.locator('#flow-next', { hasText: 'Build my plan' }).waitFor({ timeout: 20_000 });
-  await page.locator('#flow-next').click();
-  await expect(page.locator('#screen-results')).toHaveClass(/active/);
+  // 12 review → build
+  await expect(page.locator('#flow-next')).toContainText('Build my plan');
+  await next(page);
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 25_000 });
 }
 
-for (const [spaceId, label] of Object.entries(SPACE_LABEL)) {
-  test(`wizard → plan for ${spaceId}: plan belongs to "${label}"`, async ({ page }) => {
+for (const [areaId, [, , label]] of Object.entries(MATRIX)) {
+  test(`wizard → plan for ${areaId}: plan belongs to "${label}"`, async ({ page }) => {
     const { failed, consoleErrors } = watchRequests(page);
-    await driveWizard(page, spaceId);
+    await driveWizard(page, areaId);
 
-    // (a) The plan is for the chosen space — masthead, and no stray demo-pantry
+    // (a) The plan is for the chosen area — masthead, and no stray demo-pantry
     // leakage in the shelf map for non-kitchen spaces.
     await expect(page.locator('#mast-space')).toHaveText(label);
 
@@ -113,10 +119,10 @@ for (const [spaceId, label] of Object.entries(SPACE_LABEL)) {
     const keys = await page.$$eval('#res-steps .step-art', (els) => els.map((e) => e.dataset.stepMedia));
     for (const k of keys) expect(k).toMatch(/^[a-zA-Z]+-[a-z]+-[a-z]+$/);
 
-    // (b) Measurements round-trip into the 3D view's status line.
+    // (b) Measurements typed in feet round-trip into the 3D status line in inches.
     await page.getByRole('button', { name: 'Open the 3D view' }).first().click();
     await expect(page.locator('#v3d-status')).toContainText(
-      `Built from your measurements: ${DIMS.w}″w × ${DIMS.h}″h × ${DIMS.d}″d`,
+      `Built from your measurements: ${DIMS_IN.w}″w × ${DIMS_IN.h}″h × ${DIMS_IN.d}″d`,
       { timeout: 15_000 },
     );
 
@@ -126,10 +132,43 @@ for (const [spaceId, label] of Object.entries(SPACE_LABEL)) {
   });
 }
 
-for (const spaceId of ['pantry', 'garage']) {
-  test(`kid household in ${spaceId}: safety notes render`, async ({ page }) => {
+test('per-space question branching matches the design contract', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+
+  // Bedroom → Closet asks about hangers and capsule wardrobes…
+  await page.locator('#room-cards .room-card', { hasText: 'Bedroom' }).click();
+  await next(page);
+  await page.locator('#area-cards .room-card', { hasText: 'Closet' }).first().click();
+  await page.locator('#flow-next').click(); // → setup
+  await expect(page.locator('#setup-cards .wz-setup', { hasText: 'Walk-in' })).toBeVisible();
+  await page.locator('body').evaluate(() => window.go('style'));
+  await expect(page.locator('#style-cards')).toContainText('Matching hangers');
+  await expect(page.locator('#style-cards')).toContainText('Capsule & minimal');
+
+  // …the garage about latching totes…
+  await page.locator('body').evaluate(() => window.go('space'));
+  await page.locator('#room-cards .room-card', { hasText: 'Garage' }).click();
+  await next(page);
+  await page.locator('#area-cards .room-card', { hasText: 'Shelving & storage' }).first().click();
+  await page.locator('body').evaluate(() => window.go('style'));
+  await expect(page.locator('#style-cards')).toContainText('Clear latching totes');
+
+  // …and the workbench about shadow boards. Never one generic style list.
+  await page.locator('body').evaluate(() => window.go('area'));
+  await page.locator('#area-cards .room-card', { hasText: 'Workbench' }).first().click();
+  await page.locator('body').evaluate(() => window.go('style'));
+  await expect(page.locator('#style-cards')).toContainText('Shadow-board pegboard');
+
+  // Per-space goals too: workbench asks about tools, not pantry clutter.
+  await page.locator('body').evaluate(() => window.go('goals'));
+  await expect(page.locator('#goal-list')).toContainText("Can't find the right tool");
+});
+
+for (const areaId of ['pantry', 'garage']) {
+  test(`kid household in ${areaId}: safety notes render`, async ({ page }) => {
     const { consoleErrors } = watchRequests(page);
-    await driveWizard(page, spaceId, { kids: 'yes' });
+    await driveWizard(page, areaId, { kids: 'yes' });
     await expect(page.locator('#res-safety-notes .safety-note').first()).toBeVisible();
     expect(consoleErrors, consoleErrors.join('\n')).toHaveLength(0);
   });
@@ -145,50 +184,44 @@ test('no-kid household shows no KID safety content (safety rules fire only when 
   for (const b of badges) expect(b, `kid-safe zone badge leaked: ${b}`).not.toMatch(/kid/i);
 });
 
-test('wizard answers personalize the plan: prefs cited, effort sized, $0 = no purchases, review edits authoritative', async ({ page }) => {
-  await page.goto('/index.html');
-  await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).click();
-  await expect(page.locator('#space-opts .opt').first()).toBeVisible();
-  await page.locator('#space-opts .opt', { hasText: 'Pantry' }).first().click();
-  await page.locator('#goal-opts .opt', { hasText: 'easier to find' }).click();
-  await page.locator('#flow-next').click();
-  await page.locator('#hh-kids-seg button[data-v="no"]').click();
-  await page.locator('#flow-next').click();
-  await page.locator('#capture-opts .opt', { hasText: 'Use demo example' }).click();
-  await page.locator('#flow-next').click();
-  // details: rental household, no drilling possible
-  await page.locator('.seg[data-id="rental"] button', { hasText: 'Yes' }).click();
-  await page.locator('#flow-next').click();
-  // prefs: distinctive choices + $0 budget + quick effort
-  await page.locator('#pref-chips .chip', { hasText: 'Labels and categories' }).click();
-  await page.locator('#pref-chips .chip', { hasText: 'Use only what I already own' }).click();
-  await page.locator('#budget-chips .chip', { hasText: '$0' }).click();
-  await page.locator('#effort-opts .opt', { hasText: 'Quick 30-minute reset' }).click();
-  await page.locator('#flow-next').click();
-  await page.locator('#flow-next', { hasText: 'Build my plan' }).waitFor({ timeout: 20_000 });
-
-  // Review-screen category edit: remove a lexically distinct category (other
-  // kept categories like "Kids’ snacks" legitimately share words with
-  // "Snacks", so the assertion needs a word that appears nowhere else).
-  const firstCat = 'Paper goods';
-  await page.locator('#rev-cats .chip', { hasText: firstCat }).click();
-  await page.locator('#flow-next').click();
+test('wizard answers personalize the plan: style cited, effort sized, use-what-I-have = no purchases, contents authoritative', async ({ page }) => {
+  await driveWizard(page, 'pantry', {
+    kids: 'no',
+    onContents: async (p) => {
+      // The user says only these live in the pantry — the contents list is
+      // authoritative, so scenario-only categories (e.g. "Paper goods") must
+      // leave the shelf map entirely.
+      await p.locator('#contents-chips .chip', { hasText: 'Snacks' }).first().click();
+      await p.locator('#contents-chips .chip', { hasText: 'Canned goods' }).first().click();
+      await p.locator('#contents-chips .chip', { hasText: 'Breakfast' }).first().click();
+    },
+  }).catch(async (e) => { throw e; });
   await expect(page.locator('#screen-results')).toHaveClass(/active/);
+
+  // Rebuild with distinctive answers: run again through the wizard screens
+  // via direct edits (Edit flow), setting style + effort before rebuilding.
+  await page.locator('body').evaluate(() => window.go('style'));
+  await page.locator('#style-cards .wz-style', { hasText: 'Labeled everything' }).click();
+  await page.locator('body').evaluate(() => window.go('effort'));
+  await page.locator('#effort-cards .wz-effort', { hasText: 'Quick refresh' }).click();
+  await page.locator('body').evaluate(() => window.go('review'));
+  await expect(page.locator('#flow-next')).toContainText('Build my plan');
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 25_000 });
 
   // Effort sizes the checklist (Quick ≈ 6, never the full template list).
   const stepCount = await page.locator('#res-steps .task').count();
   expect(stepCount).toBeLessThanOrEqual(6);
 
-  // The user's answers are cited verbatim in the plan they see.
+  // The user's answers are cited in the plan they see.
   const stepsText = await page.locator('#res-steps').textContent();
   expect(stepsText).toMatch(/labels and categories/i);
   expect(stepsText).toMatch(/already own/i);
 
-  // $0 budget → the shopping upsell stays off.
+  // "Use what I have" (the default) → the shopping upsell stays off.
   await expect(page.locator('#res-upgrades-wrap')).toHaveClass(/hide/);
 
-  // The removed category is gone from the shelf map, not just the tag list.
+  // Unticked scenario categories are gone from the shelf map, not just the tags.
   const mapText = await page.locator('#res-map').textContent();
   expect(mapText.toLowerCase()).not.toContain('paper');
   const tagsText = await page.locator('#res-cat-tags').textContent();

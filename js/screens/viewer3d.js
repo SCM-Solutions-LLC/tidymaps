@@ -1,4 +1,5 @@
 import { state, persistGuestDraft } from '../state.js';
+import { SETUP_GEOM, GEOM_TO_V3D_LAYOUT } from '../wizard-data.js';
 import { toast, escapeHtml } from '../ui.js';
 import { go } from '../router.js';
 import { activeGeometry, activeMapV2 } from '../plan.js';
@@ -130,6 +131,9 @@ function initLayoutChips(){
       btn.classList.add('sel');
     };
   });
+  // reflect the setup type chosen in the wizard
+  const want=GEOM_TO_V3D_LAYOUT[SETUP_GEOM[state.setup]]||'cabinet';
+  wrap.querySelectorAll('.v3d-chip').forEach(b=>b.classList.toggle('sel', b.dataset.layout===want));
 }
 
 function initDimSliders(geometry){

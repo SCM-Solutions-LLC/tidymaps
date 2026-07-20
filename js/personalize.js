@@ -21,6 +21,11 @@
      rental=yes and "No drilling"), it's added once, citing the first. */
 
 export const EFFORT_STEPS = {
+  // design-contract effort labels (the wizard's three options)
+  'Quick refresh': 6,
+  'Weekend reset': 10,
+  'Full overhaul': 13,
+  // legacy labels kept so saved drafts and older plans stay personalized
   'Quick 30-minute reset': 6,
   '1-hour cleanup': 8,
   'Weekend project': 10,
@@ -262,7 +267,10 @@ function applyEffort(plan, answers) {
     }
   }
 
-  const times = { 'Quick 30-minute reset': '~30 min', '1-hour cleanup': '~1 hour', 'Weekend project': '2–4 hours', 'Full reorganization': '4–8 hours' };
+  const times = {
+    'Quick refresh': '~30 min', 'Weekend reset': '2–3 hours', 'Full overhaul': '4–8 hours',
+    'Quick 30-minute reset': '~30 min', '1-hour cleanup': '~1 hour', 'Weekend project': '2–4 hours', 'Full reorganization': '4–8 hours',
+  };
   if (times[answers.effort]) plan.time = times[answers.effort];
 }
 

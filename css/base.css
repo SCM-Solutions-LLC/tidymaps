@@ -75,7 +75,8 @@ body[data-screen="results"] .results-only{display:inline-flex !important}
 body[data-screen="results"] .appbar .restart{display:none}
 .step-counter{display:none;font-size:14px;font-weight:700;font-style:italic;color:var(--ink);font-family:var(--serif);flex:none}
 .step-counter:not(:empty) ~ .restart{display:none}
-#screen-space .step-head,#screen-household .step-head,#screen-capture .step-head,#screen-details .step-head,#screen-prefs .step-head,#screen-review .step-head{display:none}
+/* wizard screens surface their step number in the appbar; the in-page
+   .step-head stays in the DOM as the router's source for it (see go()) */
 .viewer3d-only{display:none !important}
 body[data-screen="viewer3d"] .viewer3d-only{display:inline-flex !important}
 body[data-screen="viewer3d"] .appbar .restart{display:none}

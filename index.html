@@ -263,143 +263,144 @@
   </div>
 </section>
 
-<!-- ============================================================ 2. SPACE SELECTION -->
-<section class="screen has-rail" id="screen-space">
-  <div class="step-head"><span class="step-num">Step 1 of 12</span><span class="step-kicker">Your space</span></div>
-  <div class="wiz">
-    <div class="wiz-main">
-      <span class="wiz-badge">Let's begin</span>
-      <h2>Which room needs sorting out?</h2>
-      <p class="muted small" style="margin-top:6px">Pick a room to start &mdash; you can always come back for another.</p>
-      <div class="room-cards" id="room-cards" style="margin-top:22px"></div>
-      <div class="grid hide" id="space-opts" style="margin-top:18px;gap:10px"></div>
+<!-- ============================================================ 2. WIZARD · STEP 1 — ROOM -->
+<section class="screen wizard" id="screen-space">
+  <div class="step-head"><span class="step-num">Step 1 of 12</span></div>
+  <span class="wiz-badge">Let's begin</span>
+  <h2>Which room needs sorting out?</h2>
+  <p class="wz-sub">Pick a room to start &mdash; you can always come back for another.</p>
+  <div class="room-cards" id="room-cards"></div>
+</section>
 
-      <div id="goal-block" class="hide" style="margin-top:30px">
-        <h3>What is your main goal?</h3>
-        <div class="grid" id="goal-opts" style="margin-top:14px"></div>
-      </div>
-    </div>
-    <aside class="wiz-rail">
-      <div class="rail-note"><strong>Why we ask.</strong> Different spaces get different plans. A pantry is zoned by how often you reach for things. A closet is zoned by season and size.</div>
-      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
-    </aside>
+<!-- ============================================================ STEP 2 — AREA -->
+<section class="screen wizard" id="screen-area">
+  <div class="step-head"><span class="step-num">Step 2 of 12</span></div>
+  <span class="wiz-badge sage">Narrow it in</span>
+  <h2>Where in the kitchen?</h2>
+  <p class="wz-sub">Pick the one spot we'll plan first. Small wins stack up.</p>
+  <div class="room-cards" id="area-cards"></div>
+</section>
+
+<!-- ============================================================ STEP 3 — SETUP -->
+<section class="screen wizard" id="screen-setup">
+  <div class="step-head"><span class="step-num">Step 3 of 12</span></div>
+  <span class="wiz-badge sage">Its shape</span>
+  <h2>Which one looks like your pantry?</h2>
+  <p class="wz-sub">Go by the picture &mdash; this shapes your 3D layout and where each zone lands.</p>
+  <div class="wz-setups" id="setup-cards"></div>
+</section>
+
+<!-- ============================================================ STEP 4 — MEASUREMENTS -->
+<section class="screen wizard" id="screen-measure">
+  <div class="step-head"><span class="step-num">Step 4 of 12</span></div>
+  <span class="wiz-badge">Rough measurements</span>
+  <h2>How big is your pantry?</h2>
+  <p class="wz-sub">Close is plenty &mdash; drag the slider or type it in. This sizes your plan and the 3D preview.</p>
+  <div class="wz-measures" id="measure-fields"></div>
+  <p class="wz-measure-sum" id="measure-summary"></p>
+</section>
+
+<!-- ============================================================ STEP 5 — PHOTOS -->
+<section class="screen wizard" id="screen-capture">
+  <div class="step-head"><span class="step-num">Step 5 of 12</span></div>
+  <span class="wiz-badge">Show us the space</span>
+  <h2>Add a few honest photos</h2>
+  <p class="wz-sub">Mid-week mess and all &mdash; that's exactly what helps. A wide shot plus a couple of close-ups is perfect.</p>
+  <div class="wz-photos" id="photo-tiles"></div>
+  <input type="file" id="photo-input" accept="image/*" multiple class="hide">
+  <p class="small hide" id="photo-quality-note" style="margin:12px 0 0;color:var(--clay)"></p>
+  <div class="wz-analyzing hide" id="photo-analyzing">
+    <span class="wz-spin"></span>
+    <span>Looking at your photos&mdash;</span>
+  </div>
+  <div class="wz-detected hide" id="photo-detected">
+    <p class="wd-h">Here's what we spotted</p>
+    <p class="wd-sub">We'll pre-fill your answers with these &mdash; you can fix anything on the next steps.</p>
+    <div class="wd-chips" id="photo-detected-chips"></div>
+  </div>
+  <p class="wz-privacy">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Photos are used only to build your plan. Without an account, they aren't stored afterward.
+  </p>
+</section>
+
+<!-- ============================================================ STEP 6 — HOUSEHOLD -->
+<section class="screen wizard" id="screen-household">
+  <div class="step-head"><span class="step-num">Step 6 of 12</span></div>
+  <span class="wiz-badge">Who lives here</span>
+  <h2>Who uses this space?</h2>
+  <p class="wz-sub">This decides what goes within easy reach and what gets tucked up high or behind a latch.</p>
+  <div class="wz-people" id="people-rows"></div>
+  <div class="wz-kid-ages hide" id="kid-ages-block">
+    <p class="wk-h">How old are the kids? <span class="muted">(pick any)</span></p>
+    <div class="chips" id="kid-age-chips"></div>
   </div>
 </section>
 
-<!-- ============================================================ 3. HOUSEHOLD -->
-<section class="screen has-rail" id="screen-household">
-  <div class="step-head"><span class="step-num">Step 2 of 12</span><span class="step-kicker">Your household</span></div>
-  <div class="wiz">
-    <div class="wiz-main">
-      <h2>Who uses this space?</h2>
-      <p class="muted small" style="margin-top:6px">This shapes where things go. Kid items stay low and reachable. Hazards go high or behind a latch.</p>
-      <div class="card pad" style="margin-top:18px">
-        <div class="qa"><span class="q">Do kids use or reach this space?</span>
-          <span class="seg" id="hh-kids-seg"><button data-v="yes">Yes</button><button data-v="no">No</button></span></div>
-        <div id="hh-kid-ages" class="hide" style="padding:12px 2px 16px;border-bottom:1px solid var(--line)">
-          <div class="small" style="font-weight:600;margin-bottom:8px">Their ages <span class="muted" style="font-weight:400">(pick all that apply)</span></div>
-          <div class="chips" id="hh-age-chips"></div>
-        </div>
-        <div class="qa"><span class="q">Any pets?</span>
-          <span class="seg" id="hh-pets-seg"><button data-v="yes">Yes</button><button data-v="no">No</button></span></div>
-        <div id="hh-pet-types" class="hide" style="padding:12px 2px 16px;border-bottom:1px solid var(--line)">
-          <div class="small" style="font-weight:600;margin-bottom:8px">What kind?</div>
-          <div class="chips" id="hh-pet-chips"></div>
-        </div>
-        <div style="padding:14px 2px 6px">
-          <div class="small" style="font-weight:600;margin-bottom:8px">Reaching &amp; mobility</div>
-          <div class="chips" id="hh-mobility-chips"></div>
-        </div>
-        <label class="field" style="margin-top:16px;margin-bottom:4px"><span>Anything else we should know? <span class="muted" style="font-weight:400">(optional)</span></span>
-          <textarea id="hh-notes" placeholder="e.g. my toddler opens everything, or grandma uses this pantry daily&hellip;"></textarea></label>
-      </div>
-    </div>
-    <aside class="wiz-rail">
-      <div class="rail-note"><strong>Safety first.</strong> With kids in the house, heavy or hazardous items go up high or behind a latch. Their snacks go where they can reach without climbing.</div>
-      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
-    </aside>
-  </div>
+<!-- ============================================================ STEP 7 — CONTENTS -->
+<section class="screen wizard" id="screen-contents">
+  <div class="step-head"><span class="step-num">Step 7 of 12</span></div>
+  <span class="wiz-badge sage">What's inside</span>
+  <h2>What's kept in here?</h2>
+  <p class="wz-sub">Tap everything that lives in this space. We'll group them into zones that make sense together.</p>
+  <p class="wz-prefilled hide" id="contents-detected">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>
+    Pre-filled from your photos &mdash; tap to fix anything
+  </p>
+  <div class="chips wz-chips" id="contents-chips"></div>
 </section>
 
-<!-- ============================================================ 4. CAPTURE -->
-<section class="screen has-rail" id="screen-capture">
-  <div class="step-head"><span class="step-num">Step 3 of 12</span><span class="step-kicker">Show us the space</span></div>
-  <div class="wiz">
-    <div class="wiz-main">
-      <h2>How do you want to show us the space?</h2>
-      <div class="grid" id="capture-opts" style="margin-top:18px"></div>
-
-      <div id="capture-detail" class="hide" style="margin-top:22px"></div>
-    </div>
-    <aside class="wiz-rail">
-      <div class="rail-note"><strong>Photos beat memory.</strong> We work from what is actually visible. Three to five photos or a slow video is all it takes.</div>
-      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
-    </aside>
-  </div>
+<!-- ============================================================ STEP 8 — GOALS -->
+<section class="screen wizard" id="screen-goals">
+  <div class="step-head"><span class="step-num">Step 8 of 12</span></div>
+  <span class="wiz-badge">The real goal</span>
+  <h2>What bugs you most about it?</h2>
+  <p class="wz-sub">Be honest &mdash; the plan leans hardest on whatever you pick here.</p>
+  <div class="wz-goals" id="goal-list"></div>
 </section>
 
-<!-- ============================================================ 4. SPACE DETAILS -->
-<section class="screen has-rail" id="screen-details">
-  <div class="step-head"><span class="step-num">Step 4 of 12</span><span class="step-kicker">Space details &middot; optional</span></div>
-  <div class="wiz">
-    <div class="wiz-main">
-      <h2>A few optional details</h2>
-      <div class="helper" style="margin:14px 0 22px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        <span>You can skip this. The plan will still work, but dimensions help us make better product recommendations.</span>
-      </div>
-      <div class="card pad">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px">
-          <span class="small" style="font-weight:600">Measurements</span>
-          <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px">Units
-            <select id="d-unit" style="width:auto;padding:6px 9px;font-size:13px"><option value="in">inches</option><option value="cm">cm</option></select>
-          </label>
-        </div>
-        <div class="grid grid-2">
-          <label class="field"><span>Width</span><input type="number" id="d-w" placeholder="e.g. 30" min="1" step="0.5" inputmode="decimal"></label>
-          <label class="field"><span>Height</span><input type="number" id="d-h" placeholder="e.g. 60" min="1" step="0.5" inputmode="decimal"></label>
-          <label class="field"><span>Depth (front to back)</span><input type="number" id="d-d" placeholder="e.g. 14" min="1" step="0.5" inputmode="decimal"></label>
-          <label class="field"><span>Number of shelves</span><input type="number" id="d-shelves" placeholder="e.g. 5" min="0"></label>
-        </div>
-        <div class="divider" style="margin:8px 0 18px"></div>
-        <div id="detail-toggles"></div>
-      </div>
-    </div>
-    <aside class="wiz-rail">
-      <div class="rail-note"><strong>Measure once.</strong> Shelf depth decides whether a bin actually fits. Grab a tape measure if you can.</div>
-      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
-    </aside>
-  </div>
+<!-- ============================================================ STEP 9 — STYLE -->
+<section class="screen wizard" id="screen-style">
+  <div class="step-head"><span class="step-num">Step 9 of 12</span></div>
+  <span class="wiz-badge sage">Your taste</span>
+  <h2>How do you like things kept?</h2>
+  <p class="wz-sub">Pick as many as feel like you &mdash; together they set the tone of your plan.</p>
+  <div class="wz-styles" id="style-cards"></div>
 </section>
 
-<!-- ============================================================ 5. PREFERENCES -->
-<section class="screen has-rail" id="screen-prefs">
-  <div class="step-head"><span class="step-num">Step 5 of 12</span><span class="step-kicker">Preferences</span></div>
-  <div class="wiz">
-    <div class="wiz-main">
-      <h2>What should your plan prioritize?</h2>
-      <p class="muted small" style="margin-top:6px">Pick any that matter to you.</p>
-      <div class="chips" id="pref-chips" style="margin-top:18px"></div>
-
-      <h3 style="margin-top:28px">Budget</h3>
-      <div class="chips" id="budget-chips" style="margin-top:12px"></div>
-
-      <h3 style="margin-top:28px">How much effort do you want to put in?</h3>
-      <div class="grid" id="effort-opts" style="margin-top:12px"></div>
-    </div>
-    <aside class="wiz-rail">
-      <div class="rail-note"><strong>The $0 default.</strong> Product suggestions stay off unless you opt in. Every plan starts with what you already own.</div>
-      <div class="rail-sum"><div class="rs-h">Your answers so far</div><dl data-rail-sum></dl></div>
-    </aside>
-  </div>
+<!-- ============================================================ STEP 10 — EFFORT -->
+<section class="screen wizard" id="screen-effort">
+  <div class="step-head"><span class="step-num">Step 10 of 12</span></div>
+  <span class="wiz-badge">Time you've got</span>
+  <h2>How big a project is this?</h2>
+  <p class="wz-sub">We'll size the steps to the time you actually have.</p>
+  <div class="wz-efforts" id="effort-cards"></div>
 </section>
 
-<!-- ============================================================ 6. LOADING -->
+<!-- ============================================================ STEP 11 — SHOPPING -->
+<section class="screen wizard" id="screen-shopping">
+  <div class="step-head"><span class="step-num">Step 11 of 12</span></div>
+  <span class="wiz-badge sage">Products</span>
+  <h2>New containers, or work with what you have?</h2>
+  <p class="wz-sub">Either way the plan works. Product ideas are always optional and clearly marked.</p>
+  <div class="wz-shops" id="shopping-cards"></div>
+</section>
+
+<!-- ============================================================ STEP 12 — REVIEW -->
+<section class="screen wizard" id="screen-review">
+  <div class="step-head"><span class="step-num">Step 12 of 12</span></div>
+  <span class="wiz-badge">Almost there</span>
+  <h2>Here's what we heard</h2>
+  <p class="wz-sub">Change anything that's off, then build your plan.</p>
+  <div class="wz-review" id="review-rows"></div>
+</section>
+
+<!-- ============================================================ LOADING -->
 <section class="screen" id="screen-loading">
   <div style="text-align:center;padding:18px 0">
     <span class="eyebrow">Building your plan</span>
-    <h2 style="margin-top:12px">Putting your plan together</h2>
-    <p class="muted small" id="load-sub">Give us a moment while we study your space.</p>
+    <h2 style="margin-top:12px" id="load-title">Putting your plan together</h2>
+    <p class="muted small" id="load-sub">Placing zones, sorting by reach, and keeping the little ones in mind.</p>
   </div>
   <div class="card pad">
     <div class="load-steps" id="load-steps"></div>
@@ -407,29 +408,6 @@
       <p class="small muted" style="margin:18px 0 0;font-weight:600;color:var(--ink-2)">Key frames extracted</p>
       <div class="frames" id="frames"></div>
     </div>
-  </div>
-</section>
-
-<!-- ============================================================ 7. DETECTION REVIEW -->
-<section class="screen" id="screen-review" style="max-width:780px">
-  <div class="step-head"><span class="step-num">Step 6 of 12</span><span class="step-kicker">Confirm what we found</span></div>
-  <h2 style="font-size:clamp(24px,4vw,32px)">Did we get this right?</h2>
-  <div class="helper" style="margin:12px 0 20px;font-size:14px">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-    <span>Confirming this helps us create a more realistic organization plan. Nothing here has to be perfect.</span>
-  </div>
-
-  <div class="rev-geo" id="rev-geo"></div>
-
-  <span class="eyebrow" style="display:block;margin-top:24px;font-size:13px">Detected existing features</span>
-  <div class="grid" id="rev-features" style="margin-top:10px"></div>
-
-  <span class="eyebrow" style="display:block;margin-top:24px;font-size:13px">Detected item categories</span>
-  <p class="small muted" style="margin:6px 0 0;font-size:13.5px">Tap to remove anything that isn&rsquo;t in your space, or add what we missed.</p>
-  <div class="chips" id="rev-cats" style="margin-top:12px"></div>
-  <div style="display:flex;gap:9px;margin-top:12px">
-    <input type="text" id="add-cat" placeholder="Add a missing category&hellip;">
-    <button class="btn btn-ghost btn-sm" onclick="addCategory()" style="white-space:nowrap">+ Add</button>
   </div>
 </section>
 
@@ -762,7 +740,7 @@
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
       Back
     </button>
-    <span class="spacer"></span>
+    <span class="flow-ctx" id="flow-ctx"></span>
     <button class="btn btn-primary" id="flow-next" onclick="goNext()">Continue</button>
   </div>
 </div>

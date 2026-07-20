@@ -11,10 +11,12 @@ Static ES-module site (no build step) served from GitHub Pages, with a
 Supabase backend (project `jwubrtaacveavbkosgtf`): Postgres + RLS, magic-code
 auth, private `space-media` storage, and Deno edge functions that hold the AI
 keys (BYOK was removed; any `tidymap_key` in localStorage is scrubbed at
-startup). The wizard flow is `landing → space → household → capture →
-details → prefs → loading → review → results → customize → save → feedback →
-done` (`js/router.js FLOW`), plus a dashboard, a 3D viewer, and a read-only
-shared-plan view.
+startup). The wizard follows the Claude Design 12-step contract: `landing →
+space (room) → area → setup → measure → capture (photos) → household →
+contents → goals → style → effort → shopping → review → loading → results →
+customize → save → feedback → done` (`js/router.js FLOW`; step data lives in
+`js/wizard-data.js`, step rendering in `js/screens/wizard.js`), plus a
+dashboard, a 3D viewer, and a read-only shared-plan view.
 
 ## Scorecard: the original 8 handoff items
 

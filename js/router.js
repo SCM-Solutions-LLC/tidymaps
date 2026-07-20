@@ -4,21 +4,29 @@ import { setFootHeightVar } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll } from './screens/index.js';
 import { runLoading } from './screens/loading.js';
-import { syncCategoriesToResults } from './screens/results.js';
 import { buildDashboard } from './screens/dashboard.js';
+import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
 
 /* ============================================================
-   Flow / routing
+   Flow / routing — the design-contract 12-step wizard:
+   room → area → setup → measurements → photos → household →
+   contents → goals → style → effort → shopping → review → plan
    ============================================================ */
-export const FLOW = ['landing','space','household','capture','details','prefs','loading','review','results','customize','save','feedback','done'];
+export const FLOW = ['landing','space','area','setup','measure','capture','household','contents','goals','style','effort','shopping','review','loading','results','customize','save','feedback','done'];
 // screens that show the sticky Back/Continue footer
 export const FLOW_SCREENS = {
-  space:{next:'household',back:'landing',label:'Continue'},
-  household:{next:'capture',back:'space',label:'Continue'},
-  capture:{next:'details',back:'household',label:'Continue'},
-  details:{next:'prefs',back:'capture',label:'Continue · or skip'},
-  prefs:{next:'loading',back:'details',label:'Analyze my space'},
-  review:{next:'results',back:null,label:'Build my plan'}
+  space:{next:'area',back:null,label:'Continue'},
+  area:{next:'setup',back:'space',label:'Continue'},
+  setup:{next:'measure',back:'area',label:'Continue'},
+  measure:{next:'capture',back:'setup',label:'Continue'},
+  capture:{next:'household',back:'measure',label:'Continue'},
+  household:{next:'contents',back:'capture',label:'Continue'},
+  contents:{next:'goals',back:'household',label:'Continue'},
+  goals:{next:'style',back:'contents',label:'Continue'},
+  style:{next:'effort',back:'goals',label:'Continue'},
+  effort:{next:'shopping',back:'style',label:'Continue'},
+  shopping:{next:'review',back:'effort',label:'Continue'},
+  review:{next:'loading',back:'shopping',label:'Build my plan'}
 };
 let current='landing';
 
@@ -27,15 +35,24 @@ export function getCurrentScreen(){
 }
 
 export function setRail(){
+  const rail=document.getElementById('rail');
+  if(!rail) return;
+  const stepNum=stepNumFor(current);
+  if(stepNum>0){
+    rail.style.width=Math.round(stepNum/WIZARD_STEPS.length*100)+'%';
+    return;
+  }
   const idx=Math.max(0,FLOW.indexOf(current));
   const pct=Math.round(idx/(FLOW.length-2)*100);
-  document.getElementById('rail').style.width=Math.min(100,pct)+'%';
+  rail.style.width=Math.min(100,pct)+'%';
 }
 export function go(id){
   if(current==='viewer3d' && id!=='viewer3d'){
     // free WebGL resources when leaving the 3D screen
     import('./screens/viewer3d.js').then(m=>m.disposeViewer3d());
   }
+  // per-space screens re-render on entry so they always reflect the answers
+  renderWizardScreen(id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('screen-'+id);
   el.classList.add('active');
@@ -62,13 +79,15 @@ export function go(id){
     foot.classList.remove('hide');
     const cfg=FLOW_SCREENS[id];
     document.getElementById('flow-back').style.visibility=cfg.back?'visible':'hidden';
-    document.getElementById('flow-next').textContent=cfg.label;
+    document.getElementById('flow-next').innerHTML=cfg.label
+      +' <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+    const ctx=document.getElementById('flow-ctx');
+    if(ctx) ctx.textContent=wizardContextString(id);
     updateGate();
   }else{
     foot.classList.add('hide');
   }
   setFootHeightVar();
-  fillRailSummaries();
   if(id==='dashboard') buildDashboard();
   // The plan is finished at 'done'. For signed-out visitors this is where the
   // landing page's photo promise is enforced: photos were only ever held in
@@ -80,8 +99,12 @@ export function go(id){
 export function goNext(){
   const cfg=FLOW_SCREENS[current];
   if(!cfg)return;
-  if(current==='prefs'){ go('loading'); runLoading(); return; }
-  if(current==='review'){ syncCategoriesToResults(); }
+  if(current==='capture'){
+    // capture mode follows what the user actually provided
+    state.capture = state.uploadedFiles.length ? 'photos'
+      : (state.uploadedVideo ? 'video' : 'demo');
+  }
+  if(current==='review'){ go('loading'); runLoading(); return; }
   go(cfg.next);
 }
 export function goBack(){
@@ -89,58 +112,36 @@ export function goBack(){
   if(cfg&&cfg.back) go(cfg.back);
 }
 export function updateGate(){
-  // gate Continue on minimal required selection
+  // The wizard preselects a valid default at every step (design contract),
+  // so Continue is enabled whenever the minimal selection exists.
   const btn=document.getElementById('flow-next');
   let ok=true;
-  if(current==='space') ok=!!state.space && !!state.goal;
-  if(current==='capture') ok=!!state.capture;
+  if(current==='space'||current==='area') ok=!!state.space;
+  if(current==='setup') ok=!!state.setup;
   btn.disabled=!ok;
-  fillRailSummaries();
-}
-// "Your answers so far" panel in the wizard context rail
-const SPACE_NAMES={pantry:'Pantry',cabinet:'Kitchen cabinet',drawers:'Kitchen drawers',junk:'Junk drawer',closet:'Closet',walkin:'Walk-in closet',linen:'Linen closet',bathroom:'Bathroom vanity',fridge:'Fridge & freezer',garage:'Garage shelf',attic:'Attic / storage',laundry:'Laundry room',kids:'Kids’ storage',other:'Other'};
-const GOAL_NAMES={find:'Easier to find',clutter:'Less clutter',own:'Use what I own',capacity:'More capacity',kid:'Kid-friendly',minimal:'Minimal look',shop:'Product recs',unsure:'Best plan'};
-const CAPTURE_NAMES={photos:'Photos',video:'Video',demo:'Demo example'};
-export function fillRailSummaries(){
-  const rows=[];
-  if(state.space) rows.push(['Space', SPACE_NAMES[state.space]||state.space]);
-  if(state.goal) rows.push(['Goal', GOAL_NAMES[state.goal]||state.goal]);
-  const h=state.household;
-  if(h.kids.present==='yes') rows.push(['Kids', h.kids.ages.length?h.kids.ages.join(', '):'yes']);
-  else if(h.kids.present==='no') rows.push(['Kids', 'no']);
-  if(h.pets.present==='yes') rows.push(['Pets', h.pets.types.length?h.pets.types.join(', '):'yes']);
-  if(h.mobility.length && !(h.mobility.length===1 && h.mobility[0]==='None')) rows.push(['Mobility', h.mobility.join(', ')]);
-  if(state.capture) rows.push(['Capture', CAPTURE_NAMES[state.capture]||state.capture]);
-  if(state.uploadedFiles && state.uploadedFiles.length) rows.push(['Photos', state.uploadedFiles.length+' selected']);
-  if(state.dims && (state.dims.w_in||state.dims.d_in)) rows.push(['Size', [state.dims.w_in&&state.dims.w_in+'w', state.dims.h_in&&state.dims.h_in+'h', state.dims.d_in&&state.dims.d_in+'d'].filter(Boolean).join(' × ')+' in']);
-  if(state.prefs && state.prefs.size) rows.push(['Priorities', state.prefs.size+' picked']);
-  if(state.budget) rows.push(['Budget', state.budget]);
-  if(state.effort) rows.push(['Effort', state.effort]);
-  const html=rows.length
-    ? rows.map(([k,v])=>`<div class="rs-row"><dt>${k}</dt><dd>${String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}</dd></div>`).join('')
-    : '<span class="rs-empty">Nothing yet — your choices will collect here.</span>';
-  document.querySelectorAll('[data-rail-sum]').forEach(dl=>{ dl.innerHTML=html; });
 }
 
 export function restart(){
-  state.space=state.goal=state.capture=state.budget=state.effort=null;
+  state.goal=state.capture=state.budget=null;
   state.prefs=new Set(); state.upgrades=false;
   state.shareView=false; delete state.sharedName;
   state.cats=[]; state.features=[];
+  state.goals=[]; state.styles=[]; state.detected=[]; state.catsTouched=false;
+  state.shoppingPref='Use what I have';
+  state.effort='Weekend reset';
   state.uploadedFiles=[]; state.uploadedVideo=null; state.frames=[];
-  state.dims=null;
-  state.household={ kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
+  state.dims=null; state.dimsFt=null;
+  state.household={ adults:2, kidCount:1, petCount:0, kids:{present:'yes', ages:['Toddler']}, pets:{present:'no', types:[]}, mobility:[], notes:'' };
   state.ai=null; state.aiError=null; state.planMeta=null; state.afterMode='Use existing containers';
   state.activeSpaceId=null; state.shopping=null; state.arrangement=null;
   state.stepDone=[]; state.upgradeChecked=null;
   state.afterRenderB64=null; state.afterRenderUrl=null; state.beforePhotoUrl=null;
+  // back to the design defaults: Kitchen → Pantry → Cabinet
+  state.room='kitchen';
+  setArea('kitchen','pantry');
   clearGuestDraft();
-  document.querySelectorAll('.sel').forEach(e=>e.classList.remove('sel'));
-  document.getElementById('goal-block').classList.add('hide');
-  document.getElementById('capture-detail').classList.add('hide');
-  document.getElementById('customize-result').classList.add('hide');
-  document.getElementById('hh-kid-ages').classList.add('hide');
-  document.getElementById('hh-pet-types').classList.add('hide');
+  const custom=document.getElementById('customize-result');
+  if(custom) custom.classList.add('hide');
   buildAll();
   go('landing');
 }

@@ -7,9 +7,10 @@ import { analyzeSpace } from '../api.js';
 import { fileToScaledB64, extractVideoFrames, formatTime } from '../media.js';
 import { normalizeAi, buildAnalysisContext } from '../plan.js';
 import { go } from '../router.js';
-import { buildResults } from './results.js';
+import { syncCategoriesToResults } from './results.js';
 import { track } from '../telemetry.js';
 import { getDemoScenario } from '../demo-scenarios.js';
+import { scenarioKeyFor, areaFor } from '../wizard-data.js';
 
 function showFrames(frames){
   const fw=document.getElementById('frames-wrap');
@@ -34,6 +35,8 @@ export function runLoading(){
   const wrap=document.getElementById('load-steps'); wrap.innerHTML='';
   const fw=document.getElementById('frames-wrap');
   fw.classList.add('hide');
+  const title=document.getElementById('load-title');
+  if(title) title.textContent=`Building your ${areaFor(state.space).short} plan…`;
   LOAD_LABELS.forEach((l,i)=>{
     const row=document.createElement('div'); row.className='load-step'; row.id='ls-'+i;
     row.innerHTML=`<span class="dot">${ICON.check}</span><span>${l}</span>`;
@@ -84,8 +87,10 @@ export function runLoading(){
     })().catch(e=>{ state.aiError = e.message || 'Analysis failed'; state.ai=null; state.planMeta=null; });
   }else{
     // Space-specific demo data, personalized by the full wizard answer set
-    // (prefs, budget, effort, toggles, dims) — never a bare template.
-    const scenario = getDemoScenario(state.space||'pantry', state.goal, state.household, buildAnalysisContext());
+    // (prefs, budget, effort, toggles, dims) — never a bare template. The
+    // chosen setup can refine the scenario (a walk-in closet gets the
+    // walk-in plan, not the reach-in one).
+    const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext());
     state.ai = normalizeAi(scenario);
     state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
     document.getElementById('load-sub').textContent =
@@ -117,14 +122,14 @@ export function finishLoading(aiPromise){
         '<span style="color:var(--clay)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';
       if(fin){ fin.classList.remove('doing'); fin.classList.add('err'); }
       // Fallback to demo scenario on AI failure too — same personalization
-      const scenario = getDemoScenario(state.space||'pantry', state.goal, state.household, buildAnalysisContext());
+      const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext());
       state.ai = normalizeAi(scenario);
       state.planMeta = { model: 'demo', source: 'demo-fallback', analyzedAt: Date.now() };
-      setTimeout(()=>{ buildResults(); go('review'); }, 1400);
+      setTimeout(()=>{ syncCategoriesToResults(); go('results'); }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');
-      buildResults();
-      setTimeout(()=>go('review'), 550);
+      syncCategoriesToResults();
+      setTimeout(()=>go('results'), 550);
     }
   };
   if(aiPromise){ aiPromise.then(proceed); }
