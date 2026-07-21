@@ -176,7 +176,7 @@ export const STYLESETS = {
 /* ---------- Setup types per area (photo cards) ---------- */
 export const SETUP_TYPES = {
   pantry: [
-    { id: 'cabinet', label: 'Cabinet', desc: 'A tall cupboard with doors', imgKey: 'wiz-pantry-cabinet', artKey: 'artTallCab' },
+    { id: 'cabinet', label: 'Cabinet', desc: 'A tall cupboard with doors', imgKey: 'wiz-cabinets', artKey: 'artTallCab' },
     { id: 'reachin', label: 'Reach-in', desc: 'Open the door, shelves face you', artKey: 'artReachIn' },
     { id: 'walkin', label: 'Walk-in', desc: 'A small room you step into', imgKey: 'wiz-pantry-walkin', artKey: 'artWalkIn' },
     { id: 'lshape', label: 'L-shaped', desc: 'Shelves wrap around a corner', artKey: 'artLShape' },
