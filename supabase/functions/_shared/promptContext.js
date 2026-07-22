@@ -39,6 +39,9 @@ export function buildContext(ctx = {}) {
     const t = Object.entries(ctx.toggles).map(([k, v]) => `${k}=${v}`).join(', ');
     if (t) parts.push(`Details: ${t}.`);
   }
+  if (ctx.setup && typeof ctx.setup === 'object' && ctx.setup.label) {
+    parts.push(`Setup type the user selected: ${ctx.setup.label}. Prefer a layout.type consistent with this unless the photos clearly show a different configuration.`);
+  }
   if (ctx.dims && typeof ctx.dims === 'object') {
     parts.push(`User-measured dimensions (inches): ${JSON.stringify(ctx.dims)}. Use these for geometry (estimated:false) and product maxDims.`);
   }

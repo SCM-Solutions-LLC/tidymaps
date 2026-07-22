@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { iconFor } from './icons.js';
 import { MAP, DEMO_GEOMETRY, DEMO_SAFETY_NOTES, DEMO_PRODUCT_NEEDS } from './data.js';
+import { normalizeLayout, surfaceFromIcon, SURFACES } from './layout.js';
 
 /* ============================================================
    Plan contract v2: raw model JSON -> the exact shapes the UI renders.
@@ -53,6 +54,12 @@ function normalizeItems(arr){
   }));
 }
 
+// Derive surface kind from raw icon keyword (must happen before iconFor converts to SVG)
+function deriveSurface(raw, iconKeyword) {
+  if (raw && SURFACES.includes(raw)) return raw;
+  return surfaceFromIcon(iconKeyword) || null;
+}
+
 // Convert raw AI JSON into the exact shapes the UI render code expects
 export function normalizeAi(j){
   const rawMap = Array.isArray(j.map)?j.map:[];
@@ -72,8 +79,10 @@ export function normalizeAi(j){
         why: s(m.safety && m.safety.why) || null,
       },
       items: normalizeItems(m.items),
+      surface: deriveSurface(m.surface, m.icon),
     })),
     geometry,
+    layout: normalizeLayout(j.layout, geometry.shelfCount),
     safetyNotes: (j.safetyNotes||[]).map(s).filter(Boolean).slice(0,6),
     productNeeds: (Array.isArray(j.productNeeds)?j.productNeeds:[])
       .filter(p=>p && PRODUCT_TYPE_SET.has(p.type))

@@ -28,8 +28,13 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
     "eye": boolean,                            // true for the eye-level row
     "shelfIndex": number,                      // 0 = top shelf, counting down; must be < geometry.shelfCount
     "safety": {"flag": "kid-safe"|"keep-high"|"lock-or-latch"|null, "why": string|null},
-    "items": [{"name": string, "size": "s"|"m"|"l", "flags": [string]}]  // flags from: heavy|chemical|sharp|fragile|kid-frequent (empty array if none)
+    "items": [{"name": string, "size": "s"|"m"|"l", "flags": [string]}],  // flags from: heavy|chemical|sharp|fragile|kid-frequent (empty array if none)
+    "surface": "shelf"|"rod"|"drawer"|"floor"|"door"|"pegboard"|"worktop"|null  // what kind of surface this row sits on. rod for hanging rods, drawer for drawers, floor for floor zones, door for door-mounted storage, pegboard for pegboard walls, worktop for counter or bench surfaces, shelf for all other shelves. null if unsure.
   }],
+  "layout": {                                  // optional: classify the overall physical layout
+    "type": "shelves"|"cabinet"|"l-run"|"walkin-u"|"closet-rod"|"drawer-bank"|"under-sink"|"counter"|"garage-rack"|"overhead-rack"|"workbench"|"fridge",
+    "sections": [{"id": string, "label": string, "place": "left"|"back"|"right"|"upper"|"lower"|"run-a"|"run-b"|"floor"|"bench"|"wall", "rows": [number]}]  // optional: for multi-wall or multi-section spaces, group map rows by physical section. Each shelfIndex appears in at most one section.
+  } | null,                                    // null if the layout type is unclear from the photos
   "geometry": {                                // estimate from the photos if the user gave no dimensions
     "unit": "in", "width": number, "height": number, "depth": number,
     "shelfCount": number,
@@ -52,6 +57,13 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "time": string,                              // total estimate, e.g. "45-90 min"
   "cost": string                               // e.g. "$0 / $40-80"
 }
+
+Layout classification rules:
+- Classify layout.type to the closest archetype: shelves (open shelving unit), cabinet (enclosed cabinet with doors), l-run (L-shaped two perpendicular runs), walkin-u (walk-in closet or pantry with 2-3 walls), closet-rod (closet with hanging rod), drawer-bank (stacked drawers), under-sink (under-sink cabinet with plumbing), counter (counter with upper cabinets, butler's pantry), garage-rack (open garage or utility rack), overhead-rack (ceiling-mounted storage), workbench (workbench with pegboard), fridge (refrigerator or freezer).
+- For multi-wall or multi-section spaces, add sections grouping map rows by physical location. Each shelfIndex must appear in at most one section. Use place values that match the physical position.
+- Set surface on every map row: hanging rods are "rod", drawers are "drawer", crisper or freezer compartments are "drawer", counter or bench tops are "worktop", floor zones are "floor", door-mounted storage is "door", pegboard walls are "pegboard". Regular shelves are "shelf". If the surface type is not clear, set null.
+- If the layout type is genuinely unclear from the photos, set layout to null. Never invent walls or sections you cannot see.
+- If the user selected a setup type, prefer a layout.type consistent with that choice unless the photos clearly show a different configuration.
 
 Layout & geometry rules — handle ANY space configuration:
 - ALWAYS estimate geometry from the photos when the user gave no dimensions: judge width, height, and depth in inches from visible reference objects (cans ~4.5in tall, cereal boxes ~12in, standard shelving ~11-16in deep) and count the visible storage levels. Set estimated:true. Never omit geometry or return zeros.

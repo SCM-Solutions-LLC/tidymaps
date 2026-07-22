@@ -8,6 +8,9 @@ import { z } from 'zod';
 export const PRODUCT_TYPES = ['clear-bin', 'basket', 'turntable', 'can-riser', 'shelf-riser', 'door-rack', 'airtight-container', 'drawer-organizer', 'hook-rack', 'label-set', 'safety-latch'];
 export const SAFETY_FLAGS = ['kid-safe', 'keep-high', 'lock-or-latch'];
 export const ITEM_SIZES = ['s', 'm', 'l'];
+export const ARCHETYPES = ['shelves','cabinet','l-run','walkin-u','closet-rod','drawer-bank','under-sink','counter','garage-rack','overhead-rack','workbench','fridge'];
+export const SURFACES = ['shelf','rod','drawer','floor','door','pegboard','worktop'];
+export const PLACES = ['left','back','right','upper','lower','run-a','run-b','floor','bench','wall'];
 
 // From the analyze-space prompt: "steps": 6-9 by default, scaled by effort.
 export const EFFORT_STEP_RANGES = {
@@ -41,6 +44,7 @@ const mapRowSchema = z.object({
     size: z.enum(ITEM_SIZES).optional(),
     flags: z.array(z.string()).optional(),
   })).optional(),
+  surface: z.enum(SURFACES).nullable().optional(),
 });
 
 const geometrySchema = z.object({
@@ -66,6 +70,18 @@ const productNeedSchema = z.object({
   priority: z.enum(['high', 'nice']),
 });
 
+const layoutSectionSchema = z.object({
+  id: z.string(),
+  label: z.string().optional(),
+  place: z.enum(PLACES).optional(),
+  rows: z.array(z.number().int().min(0)).max(12),
+});
+
+const layoutSchema = z.object({
+  type: z.enum(ARCHETYPES),
+  sections: z.array(layoutSectionSchema).max(8).optional(),
+}).nullable().optional();
+
 export const planSchema = z.object({
   spaceType: z.string(),
   summary: z.string(),
@@ -75,6 +91,7 @@ export const planSchema = z.object({
   opportunities: z.array(z.string()).optional(),
   map: z.array(mapRowSchema).min(1),
   geometry: geometrySchema,
+  layout: layoutSchema,
   safetyNotes: z.array(z.string()).optional(),
   productNeeds: z.array(productNeedSchema).optional(),
   existingLede: z.string().optional(),
@@ -117,6 +134,21 @@ function checkInvariants(plan, context) {
       seenShelves.set(row.shelfIndex, i);
     }
   });
+
+  if (plan.layout && plan.layout.sections) {
+    const sectionSeen = new Set();
+    for (const sec of plan.layout.sections) {
+      for (const r of sec.rows) {
+        if (r >= plan.geometry.shelfCount) {
+          errors.push(`layout.section "${sec.id}": row ${r} >= shelfCount ${plan.geometry.shelfCount}`);
+        }
+        if (sectionSeen.has(r)) {
+          errors.push(`layout.section "${sec.id}": row ${r} appears in multiple sections`);
+        }
+        sectionSeen.add(r);
+      }
+    }
+  }
 
   const [minSteps, maxSteps] = EFFORT_STEP_RANGES[context && context.effort] || DEFAULT_STEP_RANGE;
   if (plan.steps.length < minSteps || plan.steps.length > maxSteps) {

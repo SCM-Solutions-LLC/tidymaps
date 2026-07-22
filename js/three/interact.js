@@ -6,10 +6,11 @@ import * as THREE from 'three';
 
 export function attachDrag(view, { onDrop }={}){
   const { renderer, camera, controls, items, shelves, reflow }=view;
+  const surfaces=view.surfaces||shelves;
   const canvas=renderer.domElement;
   const ray=new THREE.Raycaster();
   const pointer=new THREE.Vector2();
-  let dragging=null, dragShelf=null;
+  let dragging=null, dragSurface=null;
 
   function cast(e, targets){
     const r=canvas.getBoundingClientRect();
@@ -19,11 +20,16 @@ export function attachDrag(view, { onDrop }={}){
     return ray.intersectObjects(targets, false);
   }
 
+  function uProject(pos, surface){
+    const u=surface.uDir||new THREE.Vector3(1,0,0);
+    return pos.dot(u);
+  }
+
   function onDown(e){
     const hit=cast(e, items)[0];
     if(!hit) return;
     dragging=hit.object;
-    dragShelf=shelves.find(s=>s.index===dragging.userData.shelfIndex)||null;
+    dragSurface=surfaces.find(s=>s.index===dragging.userData.shelfIndex)||null;
     controls.enabled=false;
     dragging.position.y+=1.2;
     dragging.material.emissive=new THREE.Color(0x1c2b20);
@@ -32,13 +38,13 @@ export function attachDrag(view, { onDrop }={}){
 
   function onMove(e){
     if(!dragging) return;
-    const shelfHit=cast(e, shelves.map(s=>s.hitbox))[0];
+    const shelfHit=cast(e, surfaces.map(s=>s.hitbox))[0];
     if(shelfHit){
-      dragShelf=shelves.find(s=>s.hitbox===shelfHit.object);
+      dragSurface=surfaces.find(s=>s.hitbox===shelfHit.object);
       const p=shelfHit.point;
       const halfW=(shelfHit.object.geometry.parameters.width)/2-dragging.scale.x/2;
       dragging.position.x=Math.max(-halfW, Math.min(halfW, p.x));
-      dragging.position.y=dragShelf.y+dragging.scale.y/2+1.2;
+      dragging.position.y=dragSurface.y+dragging.scale.y/2+1.2;
       dragging.userData.label.position.x=dragging.position.x;
       dragging.userData.label.position.y=dragging.position.y+dragging.scale.y/2+0.6;
     }
@@ -50,16 +56,16 @@ export function attachDrag(view, { onDrop }={}){
     dragging=null;
     controls.enabled=true;
     item.material.emissive=new THREE.Color(0x000000);
-    if(dragShelf){
-      item.userData.shelfIndex=dragShelf.index;
-      // slot from x position among items on the target shelf
-      const here=items.filter(m=>m!==item && m.userData.shelfIndex===dragShelf.index)
-        .sort((a,b)=>a.position.x-b.position.x);
-      let slot=here.findIndex(m=>item.position.x<m.position.x);
+    if(dragSurface){
+      item.userData.shelfIndex=dragSurface.index;
+      const here=items.filter(m=>m!==item && m.userData.shelfIndex===dragSurface.index)
+        .sort((a,b)=>uProject(a.position, dragSurface)-uProject(b.position, dragSurface));
+      const itemU=uProject(item.position, dragSurface);
+      let slot=here.findIndex(m=>itemU<uProject(m.position, dragSurface));
       if(slot<0) slot=here.length;
       here.forEach((m,i)=>{ m.userData.slot=i>=slot?i+1:i; });
       item.userData.slot=slot;
-      if(onDrop) onDrop(item, dragShelf);
+      if(onDrop) onDrop(item, dragSurface);
     }
     reflow();
     try{ canvas.releasePointerCapture(e.pointerId); }catch(_){}
