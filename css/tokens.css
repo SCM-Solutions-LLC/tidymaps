@@ -23,6 +23,7 @@
 }
 
 :root{
+  color-scheme:light;
   --sans:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   --serif:Georgia,"Times New Roman",Times,serif;
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
@@ -34,7 +35,7 @@
   --surface-3: oklch(0.910 0.008 90);   /* deepest wash */
   --ink:       oklch(0.235 0.010 110);  /* charcoal with a green cast */
   --ink-2:     oklch(0.38 0.010 110);
-  --ink-3:     oklch(0.51 0.010 108);
+  --ink-3:     oklch(0.46 0.010 108);
   --line:      oklch(0.900 0.008 95);
   --line-2:    oklch(0.840 0.010 95);
 

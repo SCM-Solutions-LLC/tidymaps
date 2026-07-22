@@ -129,16 +129,24 @@ export async function loadSpace(id){
 }
 
 // Debounced incremental writes for progress / shopping / arrangement
-let patchTimer=null, pendingPatch={};
+let patchTimer=null, pendingPatch={}, patchTargetId=null;
 export function updateSpacePatch(patch){
   const c=supa(); const u=getUser();
   if(!c || !u || !state.activeSpaceId) return;   // guests persist via localStorage instead
+  const targetId=state.activeSpaceId;
+  if(patchTargetId && patchTargetId!==targetId){ flushPatch(); }
+  patchTargetId=targetId;
   Object.assign(pendingPatch, patch);
   clearTimeout(patchTimer);
-  patchTimer=setTimeout(async ()=>{
-    const body=pendingPatch; pendingPatch={};
-    await c.from('spaces').update(body).eq('id', state.activeSpaceId);
-  }, 800);
+  patchTimer=setTimeout(flushPatch, 800);
+}
+async function flushPatch(){
+  clearTimeout(patchTimer);
+  const c=supa();
+  const body=pendingPatch; const id=patchTargetId;
+  pendingPatch={}; patchTargetId=null;
+  if(!c || !id || !Object.keys(body).length) return;
+  await c.from('spaces').update(body).eq('id', id);
 }
 
 export async function deleteSpace(id){

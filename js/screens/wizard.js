@@ -39,8 +39,8 @@ export function setArea(roomId, spaceId){
   state.room = roomId;
   state.space = spaceId;
   const st = (SETUP_TYPES[spaceId] || [])[0];
-  state.setup = st.id;
-  state.setupLabel = st.label;
+  state.setup = st ? st.id : 'cabinet';
+  state.setupLabel = st ? st.label : 'Cabinet';
   applySetupDims(st.id);
   state.cats = [];
   state.catsTouched = false;
@@ -313,11 +313,13 @@ function renderKidAges(){
     const c = document.createElement('button');
     c.type = 'button';
     c.className = 'chip' + (h.kids.ages.includes(a) ? ' sel' : '');
+    c.setAttribute('aria-pressed', h.kids.ages.includes(a));
     c.textContent = a;
     c.onclick = () => {
       const i = h.kids.ages.indexOf(a);
       i < 0 ? h.kids.ages.push(a) : h.kids.ages.splice(i, 1);
       c.classList.toggle('sel');
+      c.setAttribute('aria-pressed', c.classList.contains('sel'));
     };
     wrap.appendChild(c);
   });
@@ -336,12 +338,14 @@ function renderContents(){
     const c = document.createElement('button');
     c.type = 'button';
     c.className = 'chip wz-cat' + (state.cats.includes(cat) ? ' sel' : '');
+    c.setAttribute('aria-pressed', state.cats.includes(cat));
     c.textContent = cat;
     c.onclick = () => {
       state.catsTouched = true;
       const i = state.cats.indexOf(cat);
       i < 0 ? state.cats.push(cat) : state.cats.splice(i, 1);
       c.classList.toggle('sel');
+      c.setAttribute('aria-pressed', c.classList.contains('sel'));
     };
     wrap.appendChild(c);
   });
@@ -358,11 +362,13 @@ function renderGoals(){
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'wz-goal' + (state.goals.includes(goal) ? ' sel' : '');
+    b.setAttribute('aria-pressed', state.goals.includes(goal));
     b.innerHTML = `<span class="wg-box"><span class="wg-check">${CHECK}</span></span><span class="wg-txt">${escapeHtml(goal)}</span>`;
     b.onclick = () => {
       const i = state.goals.indexOf(goal);
       i < 0 ? state.goals.push(goal) : state.goals.splice(i, 1);
       b.classList.toggle('sel');
+      b.setAttribute('aria-pressed', b.classList.contains('sel'));
       state.goal = goalIdFor(state.goals[0]);
     };
     wrap.appendChild(b);
@@ -382,6 +388,7 @@ function renderStyle(){
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'wz-style' + (state.styles.includes(o.label) ? ' sel' : '');
+    b.setAttribute('aria-pressed', state.styles.includes(o.label));
     b.innerHTML = `
       <span class="wz-check">${CHECK}</span>
       <span class="ws-ico">${STYLE_ICON}</span>
@@ -391,6 +398,7 @@ function renderStyle(){
       const i = state.styles.indexOf(o.label);
       i < 0 ? state.styles.push(o.label) : state.styles.splice(i, 1);
       b.classList.toggle('sel');
+      b.setAttribute('aria-pressed', b.classList.contains('sel'));
       recomputePrefs();
     };
     wrap.appendChild(b);

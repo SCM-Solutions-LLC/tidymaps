@@ -95,7 +95,7 @@ export function runLoading(){
     state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
     document.getElementById('load-sub').textContent =
       backendConfigured() ? 'Building your personalized plan.'
-                          : 'Building your personalized plan.';
+                          : 'Generating a sample plan from your selections.';
   }
 
   let i=0;

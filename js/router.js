@@ -122,6 +122,8 @@ export function updateGate(){
 }
 
 export function restart(){
+  const hasProgress = current!=='landing' && (state.ai || state.uploadedFiles.length || WIZARD_STEPS.indexOf(current)>0);
+  if(hasProgress && !confirm('Start over? Your current answers will be cleared.')) return;
   state.goal=state.capture=state.budget=null;
   state.prefs=new Set(); state.upgrades=false;
   state.shareView=false; delete state.sharedName;
@@ -136,6 +138,8 @@ export function restart(){
   state.activeSpaceId=null; state.shopping=null; state.arrangement=null;
   state.stepDone=[]; state.upgradeChecked=null;
   state.afterRenderB64=null; state.afterRenderUrl=null; state.beforePhotoUrl=null;
+  delete state._beforeUrl;
+  Object.keys(state).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete state[k]; });
   // back to the design defaults: Kitchen → Pantry → Cabinet
   state.room='kitchen';
   setArea('kitchen','pantry');

@@ -23,6 +23,11 @@ const FULL_ROW = {
     steps: [{ t: 'Empty the shelves', m: '10 min', w: 'Fresh start.' }],
     safetyNotes: ['Heavy items low.'],
     cats: ['Clothes'],
+    existingLede: 'You already own a few useful pieces.',
+    existing: ['shelf dividers', 'small bins'],
+    dontBuy: ['extra hangers'],
+    cost: { low: 25, high: 60, currency: 'USD' },
+    time: { hours: 3, label: 'One afternoon' },
     productNeeds: [{ type: 'bin', purpose: 'corral' }],
     somePrivateFutureField: 'must not leak',
   },
@@ -56,6 +61,11 @@ test('plan sanitizer is an allowlist: unknown/product fields are dropped', () =>
   assert.equal(plan.map.length, 1);
   assert.equal(plan.steps.length, 1);
   assert.deepEqual(plan.safetyNotes, ['Heavy items low.']);
+  assert.equal(plan.existingLede, 'You already own a few useful pieces.');
+  assert.deepEqual(plan.existing, ['shelf dividers', 'small bins']);
+  assert.deepEqual(plan.dontBuy, ['extra hangers']);
+  assert.deepEqual(plan.cost, { low: 25, high: 60, currency: 'USD' });
+  assert.deepEqual(plan.time, { hours: 3, label: 'One afternoon' });
 });
 
 test('malformed rows and plans degrade to null instead of throwing', () => {

@@ -12,7 +12,7 @@ import { fetchSpace, applyLoadedSpace } from './db.js';
 import { buildAll } from './screens/index.js';
 import { runDemo, requestInvite, initLanding } from './screens/landing.js';
 import { handleFiles } from './screens/capture.js';
-import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, buildResults, applySavedProgress, pickProduct, generateAfter } from './screens/results.js';
+import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, buildResults, applySavedProgress, pickProduct, generateAfter, retryAnalysis } from './screens/results.js';
 import { submitFeedback } from './screens/feedback.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
 import { dashSignOut } from './screens/dashboard.js';
@@ -26,7 +26,7 @@ Object.assign(window, {
   toast, uncheckAllUpgrades, setUpgrades,
   runDemo, requestInvite, submitFeedback,
   handleFiles,
-  toggleUpgrade, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, pickProduct, generateAfter,
+  toggleUpgrade, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, pickProduct, generateAfter, retryAnalysis,
   openAuth, closeAuth, sendAuthCode, verifyAuthCode, dashSignOut,
   openViewer3d, saveArrangement, resetArrangement,
 });

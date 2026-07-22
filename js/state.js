@@ -73,7 +73,7 @@ export function prepareDemoPlanState(target=state){
 
 export function householdAnswered(){
   const h=state.household;
-  return h.kids.present!==null || h.pets.present!==null || h.mobility.length>0 || !!h.notes.trim();
+  return h.kids.present!==null || h.pets.present!==null || h.mobility.length>0 || !!(h.notes||'').trim();
 }
 
 /* ---------- Guest persistence ----------
