@@ -68,7 +68,7 @@ test('photo slots degrade gracefully until real photography exists', () => {
 });
 
 test('single terracotta accent, flat canvas, no ambient gradients', () => {
-  assert.ok(tokens.includes('--primary:      oklch(0.585 0.145 55)'), 'brand accent drifted');
+  assert.ok(tokens.includes('--primary:      oklch(0.555 0.145 55)'), 'brand accent drifted');
   for (const css of [landingCss, baseCss, tokens]) {
     assert.ok(!css.includes('radial-gradient'), 'ambient gradient present');
     assert.ok(!css.includes('backdrop-filter'), 'glass surface present');

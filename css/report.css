@@ -56,22 +56,40 @@
 
 /* ---------- Body grid: sticky TOC + chapters ---------- */
 .report-body{display:grid;gap:0;margin-top:8px}
-.report-toc{display:none}
+/* Mobile: horizontal scroll bar; desktop: sticky sidebar */
+.report-toc{
+  display:block;position:sticky;top:var(--appbar-h,57px);z-index:10;
+  background:var(--bg);border-bottom:1px solid var(--line);
+  margin:0 calc(-1 * var(--pad,18px));padding:0 var(--pad,18px);
+}
+.report-toc .toc-h{display:none}
+.report-toc ol{
+  list-style:none;margin:0;padding:0;display:flex;gap:0;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.report-toc ol::-webkit-scrollbar{display:none}
+.report-toc a{
+  display:block;padding:11px 14px;font-size:13px;font-weight:600;color:var(--ink-2);
+  white-space:nowrap;transition:color .15s;border-bottom:2px solid transparent;
+}
+.report-toc a:hover{color:var(--ink)}
+.report-toc a.here{color:var(--primary-2);border-bottom-color:var(--primary)}
+
 @media(min-width:960px){
   .report-body{grid-template-columns:190px 1fr;gap:56px}
   .report-toc{
-    display:block;position:sticky;top:calc(var(--appbar-h,57px) + 26px);
+    position:sticky;top:calc(var(--appbar-h,57px) + 26px);z-index:auto;
     align-self:start;padding-top:34px;
+    background:none;border-bottom:none;margin:0;padding-left:0;padding-right:0;
+  }
+  .report-toc .toc-h{display:block;font-size:12.5px;font-weight:700;color:var(--ink-3);margin-bottom:12px}
+  .report-toc ol{display:grid;gap:2px;overflow:visible}
+  .report-toc a{
+    display:flex;gap:10px;align-items:baseline;padding:7px 2px;font-size:13.5px;font-weight:500;
+    border-top:1px solid var(--line);border-bottom:none;
   }
 }
-.report-toc .toc-h{font-size:12.5px;font-weight:700;color:var(--ink-3);margin-bottom:12px}
-.report-toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-.report-toc a{
-  display:flex;gap:10px;align-items:baseline;padding:7px 2px;font-size:13.5px;color:var(--ink-2);
-  border-top:1px solid var(--line);transition:.15s;
-}
-.report-toc a:hover{color:var(--ink)}
-.report-toc a.here{color:var(--primary-2)}
 
 /* ---------- Chapters ---------- */
 .chapter{padding-top:40px}

@@ -32,8 +32,11 @@ export function buildResults(){
   if(badge) badge.style.display = isRealAi ? 'inline-flex' : 'none';
 
   // report masthead + byline
+  const spaceLabel = A ? A.spaceType : 'Pantry';
   const mastSpace=document.getElementById('mast-space');
-  if(mastSpace) mastSpace.textContent = A ? A.spaceType : 'Pantry';
+  if(mastSpace) mastSpace.textContent = spaceLabel;
+  const resTitle=document.getElementById('res-title');
+  if(resTitle) resTitle.textContent = `The ${spaceLabel.toLowerCase()}, with a place for everything`;
   const mastDate=document.getElementById('mast-date');
   if(mastDate) mastDate.textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
   const byline=document.getElementById('res-byline');
