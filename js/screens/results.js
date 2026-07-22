@@ -435,7 +435,7 @@ export function renderSteps(list){
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;
     const art=STEP_ART[classifyAction(s)]||STEP_ART.done;
     t.innerHTML=`
-      <button class="check" onclick="toggleStep(${i})">${ICON.check}</button>
+      <button type="button" class="check" onclick="toggleStep(${i})" aria-label="Mark step ${i+1} complete" aria-pressed="false">${ICON.check}</button>
       <div>
         <span class="step-art" data-step-media="${mediaKeyFor(s, state.space)}">${art}</span>
         <div class="num">Step ${i+1}</div>
@@ -499,6 +499,9 @@ export function focusDone(){
 export function toggleStep(i){
   state.stepDone[i]=!state.stepDone[i];
   document.getElementById('task-'+i).classList.toggle('done',state.stepDone[i]);
+  const check=document.querySelector('#task-'+i+' .check');
+  check.setAttribute('aria-pressed', String(state.stepDone[i]));
+  check.setAttribute('aria-label', state.stepDone[i]?`Mark step ${i+1} incomplete`:`Mark step ${i+1} complete`);
   document.querySelector('#task-'+i+' .mark').textContent=state.stepDone[i]?'Completed':'Mark complete';
   updateProgress();
   if(state.stepDone[i]){

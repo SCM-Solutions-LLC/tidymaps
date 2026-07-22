@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
     .from('spaces')
     .select('name,space_type,goal,dims,plan,plan_meta,updated_at')
     .eq('share_id', shareId)
+    .is('deleting_at', null)
     .maybeSingle();
   if (error) {
     console.error('shared-space lookup failed', error);

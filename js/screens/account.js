@@ -6,6 +6,7 @@ import { toast } from '../ui.js';
 
 let pendingIntent=null;           // e.g. 'save' — replayed after a successful sign-in
 let intentHandlers={};
+let authTrigger=null;
 
 export function registerAuthIntent(name, fn){ intentHandlers[name]=fn; }
 
@@ -36,6 +37,7 @@ function handleModalKey(e){
 
 export function openAuth(intent){
   pendingIntent=intent||null;
+  authTrigger=document.activeElement;
   document.getElementById('auth-step-email').classList.remove('hide');
   document.getElementById('auth-step-code').classList.add('hide');
   document.getElementById('auth-msg').textContent='';
@@ -44,11 +46,31 @@ export function openAuth(intent){
   document.addEventListener('keydown', handleModalKey);
   setTimeout(()=>document.getElementById('auth-email').focus(),50);
 }
-export function closeAuth(){
-  pendingIntent=null;
+
+function hideAuthModal(){
   document.getElementById('auth-modal').classList.add('hide');
   document.body.style.overflow='';
   document.removeEventListener('keydown', handleModalKey);
+  const triggerVisible=authTrigger && authTrigger.isConnected &&
+    !authTrigger.classList?.contains('hide') && authTrigger.getClientRects().length;
+  if(triggerVisible && typeof authTrigger.focus==='function'){
+    authTrigger.focus();
+    authTrigger=null;
+    return;
+  }
+  authTrigger=null;
+  const accountButton=document.getElementById('acct-btn');
+  if(accountButton && !accountButton.classList.contains('hide')){
+    accountButton.focus();
+    return;
+  }
+  const heading=document.querySelector('.screen.active h1, .screen.active h2');
+  if(heading){ heading.tabIndex=-1; heading.focus(); }
+}
+
+export function closeAuth(){
+  pendingIntent=null;
+  hideAuthModal();
 }
 
 export async function sendAuthCode(){
@@ -79,7 +101,7 @@ export async function verifyAuthCode(){
   btn.disabled=true; msg.textContent='Checking…';
   try{
     await verifyCode(email, code);
-    document.getElementById('auth-modal').classList.add('hide');
+    hideAuthModal();
     toast('Signed in as '+(getUser()?getUser().email:email));
   }catch(e){
     msg.textContent=e.message;

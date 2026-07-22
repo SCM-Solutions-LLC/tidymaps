@@ -18,8 +18,8 @@ export const state = {
   // Counts come from the "Who uses this space?" steppers; kids.present /
   // pets.present stay the canonical 'yes'/'no' strings derived from them
   // (never truthiness-check present — see docs/HANDOFF.md).
-  household:{ adults:2, kidCount:1, petCount:0,
-    kids:{present:'yes', ages:['Toddler']}, pets:{present:'no', types:[]}, mobility:[], notes:'' },
+  household:{ adults:2, kidCount:0, petCount:0,
+    kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' },
   ai:null, planMeta:null,
   activeSpaceId:null,   // set when a saved space is open (signed-in)
   shopping:null,        // chosen purchase items

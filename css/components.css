@@ -150,7 +150,7 @@ textarea{resize:vertical;min-height:84px}
 .steps{display:grid;gap:10px}
 .task{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 15px;transition:.2s;display:grid;grid-template-columns:auto 1fr;gap:13px}
 .task.done{background:var(--primary-bg);border-color:var(--primary-line)}
-.task .check{width:26px;height:26px;border-radius:50%;border:2px solid var(--line-2);background:var(--surface);display:grid;place-items:center;flex:none;transition:.18s}
+.task .check{width:44px;height:44px;border-radius:50%;border:2px solid var(--line-2);background:var(--surface);display:grid;place-items:center;flex:none;transition:.18s}
 .task .check svg{width:14px;height:14px;color:#fff;opacity:0;transition:.18s}
 .task.done .check{background:var(--primary);border-color:var(--primary)}
 .task.done .check svg{opacity:1}
@@ -162,7 +162,7 @@ textarea{resize:vertical;min-height:84px}
 .task .time svg{width:12px;height:12px}
 .task .why2{font-size:13px;color:var(--ink-3);margin-top:8px;line-height:1.45}
 .task .acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.task .acts button{font-size:12px;font-weight:500;border-radius:7px;padding:6px 11px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);transition:.14s}
+.task .acts button{min-width:44px;min-height:44px;font-size:12px;font-weight:500;border-radius:7px;padding:9px 12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);transition:.14s}
 .task .acts button:hover{border-color:var(--ink-3);color:var(--ink)}
 .task .acts .mark{border-color:var(--primary);color:var(--primary);background:var(--primary-bg)}
 .task.done .acts .mark{background:var(--primary);color:#fff;border-color:var(--primary)}
@@ -460,6 +460,13 @@ textarea{resize:vertical;min-height:84px}
 .prod .pmore summary{font-size:12.5px;font-weight:600;color:var(--ink-3);cursor:pointer;list-style-position:inside}
 .prod .pmore summary:hover{color:var(--ink)}
 .prod .pmore .pmeta{margin-top:10px}
+@media(max-width:560px){
+  .prod{grid-template-columns:auto auto minmax(0,1fr)}
+  .prod > input[type=checkbox]{grid-column:1;grid-row:1}
+  .prod .pic{grid-column:2;grid-row:1}
+  .prod > div{grid-column:2/4;grid-row:2}
+  .prod .cost{grid-column:3;grid-row:1;justify-self:end}
+}
 
 /* ---------- Wizard badge ---------- */
 .wiz-badge{

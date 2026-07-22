@@ -37,7 +37,7 @@ const mapRowSchema = z.object({
   zone: z.string(),
   why: z.string(),
   eye: z.boolean().optional(),
-  shelfIndex: z.number(),
+  shelfIndex: z.number().int(),
   safety: safetySchema,
   items: z.array(z.object({
     name: z.string(),
@@ -134,6 +134,17 @@ function checkInvariants(plan, context) {
       seenShelves.set(row.shelfIndex, i);
     }
   });
+
+  const shelfYFracs = plan.geometry.shelfYFracs;
+  if (shelfYFracs.length !== plan.geometry.shelfCount) {
+    errors.push(`geometry.shelfYFracs: expected ${plan.geometry.shelfCount} positions for shelfCount ${plan.geometry.shelfCount}, got ${shelfYFracs.length}`);
+  }
+  for (let i = 1; i < shelfYFracs.length; i++) {
+    if (shelfYFracs[i] <= shelfYFracs[i - 1]) {
+      errors.push('geometry.shelfYFracs: positions must be strictly increasing');
+      break;
+    }
+  }
 
   if (plan.layout && plan.layout.sections) {
     const sectionSeen = new Set();

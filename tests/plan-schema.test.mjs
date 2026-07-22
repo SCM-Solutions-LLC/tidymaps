@@ -115,6 +115,28 @@ test('shelfIndex out of range for the reported shelfCount is rejected', () => {
   assert.match(result.errors.join('\n'), /out of range for shelfCount 2/);
 });
 
+test('fractional shelfIndex is rejected structurally', () => {
+  const plan = basePlan();
+  plan.map[0].shelfIndex = 0.5;
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /shelfIndex/);
+});
+
+test('shelfYFracs must contain exactly one ordered position per shelf', () => {
+  const tooShort = basePlan();
+  tooShort.geometry.shelfYFracs = [0.1];
+  let result = validatePlan(tooShort, noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /shelfYFracs.*shelfCount/);
+
+  const unordered = basePlan();
+  unordered.geometry.shelfYFracs = [0.8, 0.2];
+  result = validatePlan(unordered, noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /strictly increasing/);
+});
+
 test('productNeeds.maxDims must fit the measured shelf depth minus 0.5in clearance', () => {
   const plan = basePlan({
     productNeeds: [

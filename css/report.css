@@ -55,7 +55,8 @@
 .plan-3d-badge svg{color:var(--primary)}
 
 /* ---------- Body grid: sticky TOC + chapters ---------- */
-.report-body{display:grid;gap:0;margin-top:8px}
+.report-body{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin-top:8px}
+.report-main{min-width:0}
 /* Mobile: horizontal scroll bar; desktop: sticky sidebar */
 .report-toc{
   display:block;position:sticky;top:var(--appbar-h,57px);z-index:10;

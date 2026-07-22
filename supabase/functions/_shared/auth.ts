@@ -30,7 +30,8 @@ export async function getCaller(req: Request): Promise<Caller> {
 
   const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
   const day = new Date().toISOString().slice(0, 10);
-  const salt = Deno.env.get('IP_HASH_SALT') ?? 'tidymap';
+  const salt = Deno.env.get('IP_HASH_SALT');
+  if (!salt) throw new Error('IP_HASH_SALT is not configured');
   const bytes = new TextEncoder().encode(`${ip}|${day}|${salt}`);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   const ipHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');

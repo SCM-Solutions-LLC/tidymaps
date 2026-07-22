@@ -56,8 +56,8 @@ async function next(page) {
   await page.locator('#flow-next').click();
 }
 
-/* Drive the wizard through all 12 steps. kids: the household step defaults
-   to 1 kid (design default); 'no' clicks it down to 0. */
+/* Drive the wizard through all 12 steps. The household step makes no child
+   assumption; kid variants explicitly add one child. */
 async function driveWizard(page, areaId, { kids = 'no', onContents = null } = {}) {
   const [roomText, areaText] = MATRIX[areaId];
   await page.goto('/index.html');
@@ -80,9 +80,9 @@ async function driveWizard(page, areaId, { kids = 'no', onContents = null } = {}
   // 5 photos: none — the plan builds from the demo scenario.
   await next(page);
 
-  // 6 household: steppers (defaults 2 adults · 1 kid · 0 pets).
-  if (kids === 'no') {
-    await page.locator('.wz-count', { hasText: 'Kids' }).locator('.wc-btn[data-d="-1"]').click();
+  // 6 household: steppers (defaults 2 adults · 0 kids · 0 pets).
+  if (kids === 'yes') {
+    await page.locator('.wz-count', { hasText: 'Kids' }).locator('.wc-btn[data-d="1"]').click();
   }
   await next(page);
 

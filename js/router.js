@@ -94,6 +94,10 @@ export function go(id){
   // memory for the analysis, and they're dropped here.
   if(id==='done' && !getSession()) clearGuestMedia();
   if(!getSession()) persistGuestDraft();
+  if(id!=='landing'){
+    const heading=el.querySelector('h1,h2');
+    if(heading){ heading.tabIndex=-1; heading.focus({preventScroll:true}); }
+  }
   window.scrollTo({top:0,behavior:'smooth'});
 }
 export function goNext(){
@@ -133,7 +137,7 @@ export function restart(){
   state.effort='Weekend reset';
   state.uploadedFiles=[]; state.uploadedVideo=null; state.frames=[];
   state.dims=null; state.dimsFt=null;
-  state.household={ adults:2, kidCount:1, petCount:0, kids:{present:'yes', ages:['Toddler']}, pets:{present:'no', types:[]}, mobility:[], notes:'' };
+  state.household={ adults:2, kidCount:0, petCount:0, kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' };
   state.ai=null; state.aiError=null; state.planMeta=null; state.afterMode='Use existing containers';
   state.activeSpaceId=null; state.shopping=null; state.arrangement=null;
   state.stepDone=[]; state.upgradeChecked=null;

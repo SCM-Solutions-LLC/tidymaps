@@ -72,11 +72,26 @@ async function uploadPendingMedia(spaceId){
 
 export async function listSpaces(){
   const { c } = requireClient();
+  // Resume interrupted cross-service cleanup, and never show a tombstone as
+  // a usable saved space while it is being recovered.
+  await resumeDeletionTombstones(c);
   const { data, error } = await c.from('spaces')
     .select('id,name,space_type,plan_meta,progress,updated_at')
+    .is('deleting_at',null)
     .order('updated_at',{ascending:false});
   if(error) throw new Error('Could not load your spaces.');
   return data||[];
+}
+
+export async function resumeDeletionTombstones(c, now=new Date()){
+  const cutoff=new Date(now.getTime()-5*60*1000).toISOString();
+  const { data, error } = await c.from('spaces').select('id')
+    .not('deleting_at','is',null).lt('deleting_at',cutoff);
+  if(error) return;
+  for(const row of data||[]){
+    try{ await deleteSpaceData(c, row.id); }
+    catch{ /* Leave the tombstone hidden; a later dashboard load retries it. */ }
+  }
 }
 
 export async function coverUrl(spaceId){
@@ -90,7 +105,8 @@ export async function coverUrl(spaceId){
 
 export async function fetchSpace(id){
   const { c } = requireClient();
-  const { data, error } = await c.from('spaces').select('*').eq('id',id).single();
+  const { data, error } = await c.from('spaces')
+    .select('*').eq('id',id).is('deleting_at',null).single();
   if(error || !data) throw new Error('Could not open that space.');
   const beforePhotoUrl = await coverUrl(data.id).catch(()=>null);
   let afterRenderUrl = null;
@@ -149,9 +165,45 @@ async function flushPatch(){
   await c.from('spaces').update(body).eq('id', id);
 }
 
+export async function deleteSpaceData(c, id){
+  const { error:markError } = await c.from('spaces')
+    .update({ deleting_at:new Date().toISOString(), deletion_files_removed:false }).eq('id', id);
+  if(markError) throw new Error('Could not start deleting this space — please try again.');
+
+  try{
+    const { data:space, error:spaceError } = await c.from('spaces')
+      .select('after_render_path').eq('id', id).maybeSingle();
+    if(spaceError) throw new Error('Could not inspect this space’s saved render.');
+
+    const { data:media, error:mediaError } = await c.from('space_media')
+      .select('storage_path').eq('space_id', id);
+    if(mediaError) throw new Error('Could not inspect this space’s uploaded files.');
+
+    const paths=[...new Set([
+      ...(media||[]).map(row=>row.storage_path),
+      space&&space.after_render_path,
+    ].filter(Boolean))];
+    if(paths.length){
+      const { error:storageError } = await c.storage.from('space-media').remove(paths);
+      if(storageError) throw new Error('Could not delete uploaded files — please try again.');
+    }
+  }catch(error){
+    // Storage is still intact, so make the space visible and usable again.
+    await c.from('spaces').update({ deleting_at:null, deletion_files_removed:false }).eq('id', id);
+    throw error;
+  }
+
+  await c.from('spaces')
+    .update({ deletion_files_removed:true }).eq('id', id);
+  const { error:deleteError } = await c.from('spaces').delete().eq('id', id);
+  if(deleteError){
+    throw new Error('Your files were deleted. We’ll finish removing this space automatically.');
+  }
+}
+
 export async function deleteSpace(id){
   const { c } = requireClient();
-  await c.from('spaces').delete().eq('id', id);
+  await deleteSpaceData(c, id);
 }
 
 /* ---------- Read-only share links ----------

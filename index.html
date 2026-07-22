@@ -66,14 +66,14 @@
 
 <!-- Sign-in modal: email -> verification code, no passwords, no redirects -->
 <div class="modal-backdrop hide" id="auth-modal" onclick="if(event.target===this)closeAuth()">
-  <div class="modal auth-modal">
+  <div class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <button class="modal-x" onclick="closeAuth()" aria-label="Close sign-in">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     <span class="auth-mark" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>
     </span>
-    <h3 class="auth-title">Save your spaces</h3>
+    <h3 class="auth-title" id="auth-title">Save your spaces</h3>
     <p class="small muted auth-sub">Enter your email and we&rsquo;ll send an 8-digit code. Nothing to remember.</p>
     <div id="auth-step-email">
       <label class="field"><span>Email</span>
@@ -89,7 +89,7 @@
       <p class="small auth-alt"><button class="home-link" onclick="sendAuthCode()">Resend code</button></p>
     </div>
     <p class="small auth-micro">No passwords, ever.</p>
-    <p class="small" id="auth-msg" style="margin:6px 0 0;min-height:1.2em"></p>
+    <p class="small" id="auth-msg" role="status" aria-live="polite" style="margin:6px 0 0;min-height:1.2em"></p>
   </div>
 </div>
 

@@ -1,4 +1,12 @@
 import * as THREE from 'three';
+import {
+  ITEM_NORMAL_OFFSET,
+  clampSurfaceOffset,
+  itemYForSurface,
+  pointOnSurface,
+  surfaceOffsetForPoint,
+  surfaceRotationY,
+} from './surfaceMath.js';
 
 /* Pointer-drag for items: raycast pick, lift, retarget across shelf
    hitboxes, snap into a slot on drop. onDrop(item, targetShelf) may veto
@@ -21,8 +29,7 @@ export function attachDrag(view, { onDrop }={}){
   }
 
   function uProject(pos, surface){
-    const u=surface.uDir||new THREE.Vector3(1,0,0);
-    return pos.dot(u);
+    return surfaceOffsetForPoint(pos, surface);
   }
 
   function onDown(e){
@@ -42,11 +49,28 @@ export function attachDrag(view, { onDrop }={}){
     if(shelfHit){
       dragSurface=surfaces.find(s=>s.hitbox===shelfHit.object);
       const p=shelfHit.point;
-      const halfW=(shelfHit.object.geometry.parameters.width)/2-dragging.scale.x/2;
-      dragging.position.x=Math.max(-halfW, Math.min(halfW, p.x));
-      dragging.position.y=dragSurface.y+dragging.scale.y/2+1.2;
-      dragging.userData.label.position.x=dragging.position.x;
-      dragging.userData.label.position.y=dragging.position.y+dragging.scale.y/2+0.6;
+      const offset=clampSurfaceOffset(
+        surfaceOffsetForPoint(p, dragSurface),
+        dragSurface.length,
+        dragging.scale.x,
+      );
+      const position=pointOnSurface(dragSurface, offset, ITEM_NORMAL_OFFSET);
+      dragging.position.set(
+        position.x,
+        itemYForSurface(dragSurface, dragging.scale.y, 1.2),
+        position.z,
+      );
+      dragging.rotation.y=surfaceRotationY(dragSurface);
+      const labelPosition=pointOnSurface(
+        dragSurface,
+        offset,
+        ITEM_NORMAL_OFFSET+dragging.scale.z/2+0.5,
+      );
+      dragging.userData.label.position.set(
+        labelPosition.x,
+        dragging.position.y+dragging.scale.y/2+0.6,
+        labelPosition.z,
+      );
     }
   }
 

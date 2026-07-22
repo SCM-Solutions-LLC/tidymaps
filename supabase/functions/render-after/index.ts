@@ -57,15 +57,18 @@ Deno.serve(async (req) => {
 
   // Ownership check up front so we fail before spending on the render
   let spaceOwned = false;
+  let previousRenderPath: string | null = null;
   if (body.spaceId && caller.userId) {
     const { data, error } = await admin.from('spaces')
-      .select('id').eq('id', body.spaceId).eq('user_id', caller.userId).maybeSingle();
+      .select('id,after_render_path').eq('id', body.spaceId)
+      .eq('user_id', caller.userId).is('deleting_at', null).maybeSingle();
     if (error) {
       console.error('ownership check failed', error);
       return json(req, 500, { error: 'internal' });
     }
     if (!data) return json(req, 403, { error: 'not_your_space' });
     spaceOwned = true;
+    previousRenderPath = data.after_render_path ?? null;
   }
 
   try {
@@ -131,11 +134,43 @@ Deno.serve(async (req) => {
         console.error('render upload failed', upErr);
         storagePath = null; // render still returned to the client
       } else {
-        await admin.from('spaces').update({ after_render_path: storagePath }).eq('id', body.spaceId);
-        await admin.from('space_media').insert({
-          space_id: body.spaceId, user_id: caller.userId,
-          kind: 'after_render', storage_path: storagePath, sort: 999,
+        const { error:metadataError } = await admin.from('space_media').insert({
+          space_id: body.spaceId,
+          user_id: caller.userId,
+          kind: 'after_render',
+          storage_path: storagePath,
+          sort: 999,
         });
+        if (metadataError) {
+          console.error('render metadata insert failed', metadataError);
+          await admin.storage.from('space-media').remove([storagePath]);
+          storagePath = null;
+        } else {
+          let pointerUpdate = admin.from('spaces')
+            .update({ after_render_path: storagePath })
+            .eq('id', body.spaceId)
+            .eq('user_id', caller.userId)
+            .is('deleting_at', null);
+          pointerUpdate = previousRenderPath === null
+            ? pointerUpdate.is('after_render_path', null)
+            : pointerUpdate.eq('after_render_path', previousRenderPath);
+          const { data:pointerRow, error:updateError } = await pointerUpdate
+            .select('id').maybeSingle();
+          if (updateError || !pointerRow) {
+            console.error('render pointer update failed or was superseded', updateError);
+            await admin.from('space_media').delete().eq('storage_path', storagePath);
+            await admin.storage.from('space-media').remove([storagePath]);
+            storagePath = null;
+          } else if (previousRenderPath && previousRenderPath !== storagePath) {
+            const { error:removeError } = await admin.storage.from('space-media')
+              .remove([previousRenderPath]);
+            if (removeError) {
+              console.error('previous render cleanup failed', removeError);
+            } else {
+              await admin.from('space_media').delete().eq('storage_path', previousRenderPath);
+            }
+          }
+        }
       }
     }
     return json(req, 200, { image: { media_type: outMime, data: outB64 }, storagePath });

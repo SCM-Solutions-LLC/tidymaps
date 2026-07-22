@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { makeLabelSprite } from './labels.js';
 import { LAYOUT_BUILDERS } from './layouts/index.js';
 import { COLORS, ITEM_PALETTE, SIZE_H, slug, createMaterials } from './layouts/helpers.js';
+import { ITEM_NORMAL_OFFSET, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
 /* Schematic 3D of the organized space: carcass + shelves from the plan's
    geometry, one zone per map row, items as draggable blocks. World units
@@ -113,10 +114,18 @@ export function buildScene({ geometry, map, placements, canvas, layout }){
         const w=Math.min(cell*0.78, 10);
         m.scale.x=w;
         m.scale.y=Math.min(m.userData.baseH||m.scale.y, maxH);
-        const x=-usable/2+cell*(i+0.5);
-        m.position.set(x, sh.y+m.scale.y/2, T/2);
+        m.scale.z=Math.min(sh.itemDepth||D*0.55, 8);
+        const offset=-usable/2+cell*(i+0.5);
+        const position=pointOnSurface(sh, offset, ITEM_NORMAL_OFFSET);
+        m.position.set(position.x, itemYForSurface(sh, m.scale.y), position.z);
+        m.rotation.y=surfaceRotationY(sh);
         const lift=n>3?(i%2)*2.2:0;
-        m.userData.label.position.set(x, sh.y+m.scale.y+0.5+lift, D/2+0.5);
+        const labelPosition=pointOnSurface(sh, offset, ITEM_NORMAL_OFFSET+m.scale.z/2+0.5);
+        m.userData.label.position.set(
+          labelPosition.x,
+          m.position.y+m.scale.y/2+0.5+lift,
+          labelPosition.z,
+        );
       });
     });
   }
