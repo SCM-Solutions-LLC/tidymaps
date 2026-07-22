@@ -486,13 +486,15 @@ textarea{resize:vertical;min-height:84px}
   display:flex;flex-direction:column;text-align:left;
   box-shadow:0 10px 26px -22px rgba(60,50,40,.5);
   transition:transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s ease, border-color .2s ease;
+  animation:card-arrive .42s cubic-bezier(.2,.8,.2,1) backwards;
 }
 .room-card:hover{transform:translateY(-4px);border-color:var(--primary-line);box-shadow:0 16px 34px -22px rgba(60,50,40,.55)}
+.room-card:active{transform:translateY(-1px) scale(.985)}
+.room-card:focus-visible{outline:3px solid var(--primary-line);outline-offset:4px}
 .room-card.sel{border-color:var(--primary);box-shadow:0 0 0 3px #ffe1d0, 0 16px 34px -22px rgba(60,50,40,.55)}
 .room-card .rc-img{
-  aspect-ratio:4/3;background:#f6efe4;overflow:hidden;border-bottom:1px solid #f2ece3;
+  aspect-ratio:4/3;overflow:hidden;border-bottom:1px solid rgba(154,91,46,.1);
 }
-.room-card .rc-img img{width:100%;height:100%;object-fit:cover;display:block}
 .room-card .rc-label{padding:13px 18px 15px}
 .room-card .rc-label h3{font-size:19px;font-weight:700;color:var(--ink);margin:0;font-family:var(--serif);letter-spacing:-.01em}
 .room-card .rc-label p{font-size:13.5px;color:#6b655b;margin:2px 0 0}
@@ -503,6 +505,137 @@ textarea{resize:vertical;min-height:84px}
 }
 .room-card .rc-check svg{width:17px;height:17px}
 .room-card.sel .rc-check{display:grid}
+
+/* Shared wizard illustration stage. A warm four-tone family adds variety
+   while every room, area, and setup keeps the same line-art language. */
+.card-visual{
+  --art-canvas:#f8eee2;
+  --art-glow:#f2c8aa;
+  --art-orb:#dfe9cf;
+  --art-ring:#c98558;
+  position:relative;isolation:isolate;background:
+    radial-gradient(circle at 18% 18%,rgba(255,255,255,.9) 0 3px,transparent 3.5px),
+    linear-gradient(145deg,var(--art-canvas),#fffaf4 72%);
+}
+.card-visual.tone-1{--art-canvas:#edf3e4;--art-glow:#f4d2b6;--art-orb:#cfdcb8;--art-ring:#8fa16e}
+.card-visual.tone-2{--art-canvas:#fbf1d9;--art-glow:#e9d29b;--art-orb:#f1c6a8;--art-ring:#c99852}
+.card-visual.tone-3{--art-canvas:#f5e7df;--art-glow:#e4b9a7;--art-orb:#d9e7cd;--art-ring:#b97962}
+.card-visual::before,
+.card-visual::after{content:"";position:absolute;pointer-events:none;z-index:-1}
+.card-visual::before{
+  width:48%;aspect-ratio:1;top:8%;right:7%;border-radius:58% 42% 48% 52%;
+  background:var(--art-glow);opacity:.7;transform:rotate(-10deg);
+  animation:art-drift 5.6s ease-in-out infinite alternate;
+}
+.card-visual::after{
+  width:44%;aspect-ratio:1;left:-12%;bottom:-39%;border:2px solid var(--art-ring);
+  border-radius:44% 56% 49% 51%;opacity:.38;
+  animation:art-ring-drift 7.2s ease-in-out infinite alternate;
+}
+.card-art-svg{
+  position:absolute;z-index:1;left:50%;top:50%;width:82%;height:82%;overflow:visible;
+  transform:translate(-50%,-48%);filter:saturate(1.18) drop-shadow(0 9px 8px rgba(112,69,38,.09));
+  transition:transform .32s cubic-bezier(.2,.75,.25,1),filter .32s ease;
+}
+.room-card:hover .card-art-svg,
+.wz-setup:hover .card-art-svg{transform:translate(-50%,-54%) rotate(-1deg) scale(1.025);filter:saturate(1.3) drop-shadow(0 12px 10px rgba(112,69,38,.13))}
+.room-card.sel .card-visual,
+.wz-setup.sel .card-visual{box-shadow:inset 0 0 0 1px rgba(193,95,0,.16)}
+
+/* Purposeful illustration motion: one recognizable storage action per card.
+   The base drawing stays anchored while a drawer, door, bin, shirt, towel,
+   jar, water stream, tote, tool, or steam detail demonstrates the option. */
+.card-art-svg .art-motion{
+  transform-box:fill-box;will-change:transform,opacity;
+  filter:drop-shadow(0 3px 2px rgba(112,69,38,.13));
+}
+.motion-drawer{transform-origin:left center;animation:drawer-pull 3.8s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-cabinet-door{transform-origin:left center;animation:cabinet-door-open 4.2s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-shirt{transform-origin:top center;animation:shirt-sway 3.4s ease-in-out infinite alternate}
+.motion-bin-pull{transform-origin:center top;animation:bin-pull 3.9s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-tool{transform-origin:top center;animation:tool-sway 3.2s ease-in-out infinite alternate}
+.motion-towel-pull{transform-origin:left center;animation:towel-pull 4s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-overhead-tote{transform-origin:center bottom;animation:overhead-tote-place 4.2s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-shelf-jar{transform-origin:center bottom;animation:shelf-jar-lift 4s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-water{transform-origin:center top;animation:water-flow 3.2s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-steam path{stroke-dasharray:10 6;opacity:0;animation:steam-rise 1.85s ease-out infinite}
+.motion-steam path:nth-child(2){animation-delay:.3s}
+.motion-steam path:nth-child(3){animation-delay:.6s}
+.room-card:nth-child(2) .art-motion,.wz-setup:nth-child(2) .art-motion{animation-delay:-1.1s}
+.room-card:nth-child(3) .art-motion,.wz-setup:nth-child(3) .art-motion{animation-delay:-2.2s}
+.room-card:nth-child(4) .art-motion,.wz-setup:nth-child(4) .art-motion{animation-delay:-.65s}
+.room-card:nth-child(5) .art-motion,.wz-setup:nth-child(5) .art-motion{animation-delay:-1.7s}
+
+@keyframes card-arrive{
+  from{opacity:0;transform:translateY(10px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes art-drift{
+  from{transform:translate3d(0,0,0) rotate(-10deg) scale(1)}
+  to{transform:translate3d(-7px,5px,0) rotate(-3deg) scale(1.05)}
+}
+@keyframes art-ring-drift{
+  from{transform:translate3d(0,0,0) rotate(0deg)}
+  to{transform:translate3d(9px,-5px,0) rotate(13deg)}
+}
+@keyframes drawer-pull{
+  0%,22%,100%{transform:translate3d(0,0,0)}
+  31%{transform:translate3d(-1px,0,0)}
+  48%,76%{transform:translate3d(10px,3px,0)}
+  86%{transform:translate3d(2px,1px,0)}
+}
+@keyframes cabinet-door-open{
+  0%,22%,100%{transform:scaleX(1) skewY(0)}
+  31%{transform:scaleX(1.03) skewY(1deg)}
+  48%,76%{transform:scaleX(.28) skewY(-5deg)}
+  88%{transform:scaleX(.9) skewY(-1deg)}
+}
+@keyframes shirt-sway{
+  from{transform:rotate(-3.5deg)}
+  to{transform:rotate(4deg)}
+}
+@keyframes bin-pull{
+  0%,22%,100%{transform:translate3d(0,0,0) scale(1)}
+  31%{transform:translate3d(0,-1px,0) scale(.99)}
+  48%,76%{transform:translate3d(0,6px,0) scale(1.09)}
+  88%{transform:translate3d(0,1px,0) scale(1.01)}
+}
+@keyframes tool-sway{
+  from{transform:rotate(-5deg)}
+  to{transform:rotate(6deg)}
+}
+@keyframes towel-pull{
+  0%,22%,100%{transform:translate3d(0,0,0)}
+  31%{transform:translate3d(-1px,0,0)}
+  48%,76%{transform:translate3d(7px,0,0)}
+  88%{transform:translate3d(1px,0,0)}
+}
+@keyframes overhead-tote-place{
+  0%,22%,100%{transform:translate3d(0,0,0)}
+  34%{transform:translate3d(0,-7px,0)}
+  52%,76%{transform:translate3d(0,0,0)}
+  58%{transform:translate3d(0,-2px,0)}
+}
+@keyframes shelf-jar-lift{
+  0%,22%,100%{transform:translate3d(0,0,0)}
+  34%{transform:translate3d(0,1px,0)}
+  50%,76%{transform:translate3d(0,-5px,0)}
+  88%{transform:translate3d(0,-1px,0)}
+}
+@keyframes water-flow{
+  0%,24%,100%{opacity:0;transform:translate3d(0,-3px,0) scaleY(.72)}
+  40%,74%{opacity:1;transform:translate3d(0,3px,0) scaleY(1)}
+  86%{opacity:.25;transform:translate3d(0,5px,0) scaleY(.88)}
+}
+@keyframes steam-rise{
+  0%{opacity:0;transform:translate3d(0,6px,0) scale(.88);stroke-dashoffset:12}
+  24%,68%{opacity:1}
+  100%{opacity:0;transform:translate3d(0,-15px,0) scale(1.08);stroke-dashoffset:0}
+}
+.room-card:nth-child(2),.wz-setup:nth-child(2){animation-delay:55ms}
+.room-card:nth-child(3),.wz-setup:nth-child(3){animation-delay:110ms}
+.room-card:nth-child(4),.wz-setup:nth-child(4){animation-delay:165ms}
+.room-card:nth-child(5),.wz-setup:nth-child(5){animation-delay:220ms}
 
 /* ============================================================
    Design-contract wizard steps (TidyMap Wizard.dc.html)
@@ -515,22 +648,24 @@ textarea{resize:vertical;min-height:84px}
 .wizard .chip{border-radius:999px;padding:11px 20px;font-size:15px;font-weight:600;color:var(--ink-2)}
 .wizard .chip.sel{color:#fff}
 
-/* room/area photo cards use .room-card (shared with step 1);
+/* Room and area illustration cards use .room-card (shared with step 1);
    3 areas fit better than 4 rooms on desktop */
 #area-cards{grid-template-columns:repeat(2,1fr)}
 @media(min-width:780px){#area-cards{grid-template-columns:repeat(3,1fr)}}
 
-/* setup-type photo cards */
+/* setup-type illustration cards */
 .wz-setups{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
 .wz-setup{
   position:relative;display:block;width:100%;padding:18px 16px;text-align:left;
   border:2px solid #eee7db;border-radius:18px;background:#fff;color:var(--ink);
   transition:border-color .2s,box-shadow .2s,transform .2s;
+  animation:card-arrive .42s cubic-bezier(.2,.8,.2,1) backwards;
 }
 .wz-setup:hover{border-color:var(--primary);transform:translateY(-2px)}
+.wz-setup:active{transform:translateY(0) scale(.985)}
+.wz-setup:focus-visible{outline:3px solid var(--primary-line);outline-offset:4px}
 .wz-setup.sel{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-bg)}
-.wz-setup .ws-img{display:block;height:110px;border-radius:12px;overflow:hidden;background:#f6efe4;margin-bottom:13px}
-.wz-setup .ws-img img{width:100%;height:100%;object-fit:cover}
+.wz-setup .ws-img{display:block;height:118px;border-radius:12px;overflow:hidden;margin-bottom:13px}
 .ws-ttl{display:block;font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:3px;letter-spacing:-.01em}
 .ws-sub{display:block;font-size:13.5px;color:var(--ink-3);line-height:1.45}
 
@@ -538,10 +673,18 @@ textarea{resize:vertical;min-height:84px}
 .wz-check{
   position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;
   background:var(--primary);color:#fff;display:grid;place-items:center;
-  opacity:0;transform:scale(.5);transition:opacity .2s,transform .2s cubic-bezier(.2,.7,.3,1);
+  z-index:2;opacity:0;transform:scale(.5);transition:opacity .2s,transform .2s cubic-bezier(.2,.7,.3,1);
 }
 .wz-check svg{width:14px;height:14px}
 .sel > .wz-check{opacity:1;transform:scale(1)}
+
+@media(prefers-reduced-motion:reduce){
+  .room-card,.wz-setup,.card-visual::before,.card-visual::after,
+  .card-art-svg .art-motion,.card-art-svg .art-motion *{animation:none}
+  .room-card,.wz-setup,.card-art-svg,.wz-check{transition:none}
+  .room-card:hover,.room-card:active,.wz-setup:hover,.wz-setup:active{transform:none}
+  .room-card:hover .card-art-svg,.wz-setup:hover .card-art-svg{transform:translate(-50%,-48%)}
+}
 
 /* measurements */
 .wz-measures{display:flex;flex-direction:column;gap:28px;max-width:560px}

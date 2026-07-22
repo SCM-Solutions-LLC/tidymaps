@@ -17,7 +17,6 @@ import {
 } from '../wizard-data.js';
 import { state } from '../state.js';
 import { escapeHtml } from '../ui.js';
-import { hydrateImages } from '../images.js';
 import { updateGate } from '../router.js';
 
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
@@ -119,29 +118,36 @@ function plural(n, w){ return n + ' ' + w + (n === 1 ? '' : 's'); }
 
 /* ---------- card / chip renderers ---------- */
 
-function cardImg(entry, cls){
-  // instant line art; hydrateImages() swaps in the real photo when its
-  // manifest key is "ready" — no hotlinks, no 404s
-  const key = entry.imgKey ? ` data-img="${escapeHtml(entry.imgKey)}"` : '';
-  return `<img${key} src="${art(entry.artKey)}" alt="${escapeHtml(entry.label)}" class="${cls}" draggable="false">`;
+function cardArt(entry){
+  // The label beneath each illustration already names it, so the art is
+  // decorative for assistive technology and never duplicates button copy.
+  return art(entry.artKey);
+}
+
+function markSelected(wrap, active){
+  [...wrap.children].forEach(card => {
+    const selected = card === active;
+    card.classList.toggle('sel', selected);
+    card.setAttribute('aria-pressed', String(selected));
+  });
 }
 
 function renderRoom(){
   const wrap = document.getElementById('room-cards');
   if(!wrap) return;
   wrap.innerHTML = '';
-  ROOMS.forEach(room => {
+  ROOMS.forEach((room, index) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'room-card' + (state.room === room.id ? ' sel' : '');
+    b.setAttribute('aria-pressed', String(state.room === room.id));
     b.innerHTML = `
-      <div class="rc-img">${cardImg(room, '')}</div>
+      <div class="rc-img card-visual tone-${index % 4}">${cardArt(room)}</div>
       <span class="rc-check">${CHECK}</span>
       <div class="rc-label"><h3>${room.label}</h3><p>${room.desc}</p></div>`;
-    b.onclick = () => { setRoom(room.id); renderRoom(); updateGate(); };
+    b.onclick = () => { setRoom(room.id); markSelected(wrap, b); updateGate(); };
     wrap.appendChild(b);
   });
-  hydrateImages(wrap);
 }
 
 function renderArea(){
@@ -150,21 +156,21 @@ function renderArea(){
   const h = document.querySelector('#screen-area h2');
   if(h) h.textContent = `Where in the ${roomLower(state.room)}?`;
   wrap.innerHTML = '';
-  (AREAS[state.room] || []).forEach(a => {
+  (AREAS[state.room] || []).forEach((a, index) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'room-card' + (state.space === a.id ? ' sel' : '');
+    b.setAttribute('aria-pressed', String(state.space === a.id));
     b.innerHTML = `
-      <div class="rc-img">${cardImg(a, '')}</div>
+      <div class="rc-img card-visual tone-${index % 4}">${cardArt(a)}</div>
       <span class="rc-check">${CHECK}</span>
       <div class="rc-label"><h3>${a.label}</h3><p>${a.desc}</p></div>`;
     b.onclick = () => {
       if(state.space !== a.id) setArea(state.room, a.id);
-      renderArea(); updateGate();
+      markSelected(wrap, b); updateGate();
     };
     wrap.appendChild(b);
   });
-  hydrateImages(wrap);
 }
 
 function renderSetup(){
@@ -174,19 +180,19 @@ function renderSetup(){
   const h = document.querySelector('#screen-setup h2');
   if(h) h.textContent = `Which one looks like your ${area.short}?`;
   wrap.innerHTML = '';
-  (SETUP_TYPES[state.space] || []).forEach(t => {
+  (SETUP_TYPES[state.space] || []).forEach((t, index) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'wz-setup' + (state.setup === t.id ? ' sel' : '');
+    b.setAttribute('aria-pressed', String(state.setup === t.id));
     b.innerHTML = `
       <span class="wz-check">${CHECK}</span>
-      <span class="ws-img">${cardImg(t, '')}</span>
+      <span class="ws-img card-visual tone-${index % 4}">${cardArt(t)}</span>
       <span class="ws-ttl">${t.label}</span>
       <span class="ws-sub">${t.desc}</span>`;
-    b.onclick = () => { setSetup(t.id); renderSetup(); };
+    b.onclick = () => { setSetup(t.id); markSelected(wrap, b); };
     wrap.appendChild(b);
   });
-  hydrateImages(wrap);
 }
 
 /* ---------- measurements ---------- */

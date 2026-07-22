@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   SETUP_GEOM, GEOM_TO_V3D_LAYOUT, SETUP_SCENARIO, scenarioKeyFor,
-  roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, measureSummary,
+  roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, measureSummary, art,
 } from '../js/wizard-data.js';
 import { PREFS } from '../js/data.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
@@ -15,6 +15,41 @@ import { EFFORT_STEP_RANGES } from '../supabase/functions/_shared/planSchema.js'
 // step at runtime, so it fails the build instead.
 
 const allAreas = Object.values(AREAS).flat();
+
+test('every wizard card uses the shared illustration system, never a photo swap', () => {
+  const cards = [...ROOMS, ...allAreas, ...Object.values(SETUP_TYPES).flat()];
+  for (const card of cards) {
+    assert.ok(card.artKey, `${card.id}: missing artKey`);
+    assert.equal('imgKey' in card, false, `${card.id}: still declares a photo imgKey`);
+    assert.match(art(card.artKey), /class="card-art-svg/);
+    assert.match(art(card.artKey), /class="art-motion/);
+  }
+});
+
+test('illustration motion explains the storage type instead of reusing ambiguous symbols', () => {
+  const setupArt = (space, id) => art(SETUP_TYPES[space].find(option => option.id === id).artKey);
+
+  for (const id of ['reachin', 'walkin', 'lshape']) {
+    assert.match(setupArt('pantry', id), /motion-bin-pull/, `${id} pantry should move a pantry bin`);
+    assert.doesNotMatch(setupArt('pantry', id), /motion-shirt/, `${id} pantry must not contain clothing motion`);
+  }
+
+  for (const id of ['reachinC', 'walkinC', 'lshapeC']) {
+    assert.match(setupArt('closet', id), /motion-shirt/, `${id} closet should move a recognizable shirt`);
+  }
+
+  assert.match(art('roomBath'), /motion-water/, 'bathroom room card should show a water stream');
+  assert.doesNotMatch(art('roomBath'), /motion-bubbles/, 'bathroom room card must not emit abstract bubbles');
+  assert.match(art('artVanity'), /motion-under-sink-interior/);
+  assert.match(art('artVanity'), /motion-cabinet-door/);
+  assert.match(art('artTallCab'), /motion-cabinet-interior/);
+  assert.doesNotMatch(art('artTallCab'), /motion-drawer/, 'cabinet door must reveal shelves, not a drawer');
+  assert.match(setupArt('linen', 'reachinL'), /motion-towel-pull/);
+
+  for (const card of [...ROOMS, ...allAreas, ...Object.values(SETUP_TYPES).flat()]) {
+    assert.doesNotMatch(art(card.artKey), /motion-(bubbles|pillow)/, `${card.artKey}: ambiguous legacy motion remains`);
+  }
+});
 
 test('every room has areas and every area id is unique', () => {
   assert.equal(ROOMS.length, 4);

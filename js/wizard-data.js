@@ -10,30 +10,30 @@
 
 /* ---------- Rooms ---------- */
 export const ROOMS = [
-  { id: 'kitchen', label: 'Kitchen', desc: 'Pantry, cabinets & drawers', imgKey: 'wiz-room-kitchen', artKey: 'roomKitchen' },
-  { id: 'bedroom', label: 'Bedroom', desc: 'Closet & dresser', imgKey: 'wiz-room-bedroom', artKey: 'roomBedroom' },
-  { id: 'bath', label: 'Bathroom & hall', desc: 'Vanity & linen closet', imgKey: 'wiz-room-bath', artKey: 'roomBath' },
-  { id: 'garage', label: 'Garage', desc: 'Shelving & workbench', imgKey: 'wiz-room-garage', artKey: 'roomGarage' },
+  { id: 'kitchen', label: 'Kitchen', desc: 'Pantry, cabinets & drawers', artKey: 'roomKitchen' },
+  { id: 'bedroom', label: 'Bedroom', desc: 'Closet & dresser', artKey: 'roomBedroom' },
+  { id: 'bath', label: 'Bathroom & hall', desc: 'Vanity & linen closet', artKey: 'roomBath' },
+  { id: 'garage', label: 'Garage', desc: 'Shelving & workbench', artKey: 'roomGarage' },
 ];
 
 /* ---------- Areas within each room (id = production space id) ---------- */
 export const AREAS = {
   kitchen: [
-    { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage — cabinet to walk-in', imgKey: 'wiz-pantry-cabinet', artKey: 'artPantry' },
-    { id: 'cabinet', label: 'Cabinets', short: 'cabinets', desc: 'Dishes, pots & counter clutter', imgKey: 'wiz-cabinets', artKey: 'artTallCab' },
-    { id: 'drawers', label: 'Drawers', short: 'drawers', desc: 'Cutlery, utensils & the junk drawer', imgKey: 'wiz-area-drawers', artKey: 'artInCounter' },
+    { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage — cabinet to walk-in', artKey: 'artPantry' },
+    { id: 'cabinet', label: 'Cabinets', short: 'cabinets', desc: 'Dishes, pots & counter clutter', artKey: 'artTallCab' },
+    { id: 'drawers', label: 'Drawers', short: 'drawers', desc: 'Cutlery, utensils & the junk drawer', artKey: 'artInCounter' },
   ],
   bedroom: [
-    { id: 'closet', label: 'Closet', short: 'closet', desc: 'Clothes, shoes & accessories', imgKey: 'wiz-area-closet', artKey: 'artWardrobe' },
-    { id: 'dresser', label: 'Dresser', short: 'dresser', desc: 'Folded clothes in drawers', imgKey: 'wiz-area-dresser', artKey: 'artDresser' },
+    { id: 'closet', label: 'Closet', short: 'closet', desc: 'Clothes, shoes & accessories', artKey: 'artWardrobe' },
+    { id: 'dresser', label: 'Dresser', short: 'dresser', desc: 'Folded clothes in drawers', artKey: 'artDresser' },
   ],
   bath: [
-    { id: 'bathroom', label: 'Vanity & under-sink', short: 'vanity', desc: 'Toiletries, makeup & meds', imgKey: 'wiz-area-vanity', artKey: 'artVanity' },
-    { id: 'linen', label: 'Linen closet', short: 'linen closet', desc: 'Sheets, towels & spare bedding — usually in the hall', imgKey: 'wiz-area-linen', artKey: 'artLinen' },
+    { id: 'bathroom', label: 'Vanity & under-sink', short: 'vanity', desc: 'Toiletries, makeup & meds', artKey: 'artVanity' },
+    { id: 'linen', label: 'Linen closet', short: 'linen closet', desc: 'Sheets, towels & spare bedding — usually in the hall', artKey: 'artLinen' },
   ],
   garage: [
-    { id: 'garage', label: 'Shelving & storage', short: 'garage shelving', desc: 'Bins, tools & seasonal gear', imgKey: 'wiz-garage-shelving', artKey: 'artGarageShelf' },
-    { id: 'workbench', label: 'Workbench', short: 'workbench', desc: 'Tools, hardware & projects', imgKey: 'wiz-area-workbench', artKey: 'artWorkbench' },
+    { id: 'garage', label: 'Shelving & storage', short: 'garage shelving', desc: 'Bins, tools & seasonal gear', artKey: 'artGarageShelf' },
+    { id: 'workbench', label: 'Workbench', short: 'workbench', desc: 'Tools, hardware & projects', artKey: 'artWorkbench' },
   ],
 };
 
@@ -173,36 +173,36 @@ export const STYLESETS = {
   ],
 };
 
-/* ---------- Setup types per area (photo cards) ---------- */
+/* ---------- Setup types per area (illustrated cards) ---------- */
 export const SETUP_TYPES = {
   pantry: [
-    { id: 'cabinet', label: 'Cabinet', desc: 'A tall cupboard with doors', imgKey: 'wiz-cabinets', artKey: 'artTallCab' },
-    { id: 'reachin', label: 'Reach-in', desc: 'Open the door, shelves face you', artKey: 'artReachIn' },
-    { id: 'walkin', label: 'Walk-in', desc: 'A small room you step into', imgKey: 'wiz-pantry-walkin', artKey: 'artWalkIn' },
-    { id: 'lshape', label: 'L-shaped', desc: 'Shelves wrap around a corner', artKey: 'artLShape' },
+    { id: 'cabinet', label: 'Cabinet', desc: 'A tall cupboard with doors', artKey: 'artTallCab' },
+    { id: 'reachin', label: 'Reach-in', desc: 'Open the door, shelves face you', artKey: 'artPantryReachIn' },
+    { id: 'walkin', label: 'Walk-in', desc: 'A small room you step into', artKey: 'artPantryWalkIn' },
+    { id: 'lshape', label: 'L-shaped', desc: 'Shelves wrap around a corner', artKey: 'artPantryLShape' },
     { id: 'butler', label: 'Butler’s', desc: 'Counter with cabinets above & below', artKey: 'artCounter' },
   ],
   cabinet: [
     { id: 'counterup', label: 'Counter + uppers', desc: 'Cabinets above and below a counter', artKey: 'artCounter' },
-    { id: 'lshapeK', label: 'L-shaped run', desc: 'Cabinets wrap around a corner', artKey: 'artLShape' },
-    { id: 'tallcabK', label: 'Tall cabinet', desc: 'A full-height cupboard', imgKey: 'wiz-cabinets', artKey: 'artTallCab' },
+    { id: 'lshapeK', label: 'L-shaped run', desc: 'Cabinets wrap around a corner', artKey: 'artCabinetLShape' },
+    { id: 'tallcabK', label: 'Tall cabinet', desc: 'A full-height cupboard', artKey: 'artTallCab' },
     { id: 'openshelf', label: 'Open shelving', desc: 'Shelves on the wall, no doors', artKey: 'artOpenShelf' },
   ],
   drawers: [
     { id: 'incounter', label: 'In-counter drawers', desc: 'Built into the kitchen counter', artKey: 'artInCounter' },
-    { id: 'tower', label: 'Drawer tower', desc: 'A tall, narrow stack of drawers', imgKey: 'wiz-drawer-tower', artKey: 'artTower' },
+    { id: 'tower', label: 'Drawer tower', desc: 'A tall, narrow stack of drawers', artKey: 'artTower' },
     { id: 'sideboard', label: 'Sideboard', desc: 'A wide, low piece — like a buffet or credenza', artKey: 'artSideboard' },
   ],
   closet: [
     { id: 'wardrobe', label: 'Wardrobe', desc: 'A freestanding closet with doors', artKey: 'artWardrobe' },
-    { id: 'reachinC', label: 'Reach-in', desc: 'Standard closet behind sliding or hinged doors', artKey: 'artReachIn' },
-    { id: 'walkinC', label: 'Walk-in', desc: 'A small room you step into', artKey: 'artWalkIn' },
-    { id: 'lshapeC', label: 'L-shaped', desc: 'Shelving wraps around a corner', artKey: 'artLShape' },
-    { id: 'builtin', label: 'Built-in + drawers', desc: 'Shelves up top, drawers below', imgKey: 'wiz-closet-builtin', artKey: 'artWardrobe' },
+    { id: 'reachinC', label: 'Reach-in', desc: 'Standard closet behind sliding or hinged doors', artKey: 'artClosetReachIn' },
+    { id: 'walkinC', label: 'Walk-in', desc: 'A small room you step into', artKey: 'artClosetWalkIn' },
+    { id: 'lshapeC', label: 'L-shaped', desc: 'Shelving wraps around a corner', artKey: 'artClosetLShape' },
+    { id: 'builtin', label: 'Built-in + drawers', desc: 'Shelves up top, drawers below', artKey: 'artWardrobe' },
   ],
   dresser: [
     { id: 'dresser', label: 'Wide dresser', desc: 'A low, wide chest of drawers', artKey: 'artDresser' },
-    { id: 'chest', label: 'Tall chest', desc: 'Narrow and tall, five-ish drawers', imgKey: 'wiz-drawer-tower', artKey: 'artTower' },
+    { id: 'chest', label: 'Tall chest', desc: 'Narrow and tall, five-ish drawers', artKey: 'artTower' },
     { id: 'underbed', label: 'Under-bed drawers', desc: 'Rolling bins or drawers under the bed', artKey: 'artUnderbed' },
   ],
   bathroom: [
@@ -211,15 +211,15 @@ export const SETUP_TYPES = {
     { id: 'wallshelf', label: 'Wall shelves', desc: 'Open shelves above the toilet or counter', artKey: 'artOpenShelf' },
   ],
   linen: [
-    { id: 'cabinetL', label: 'Cabinet', desc: 'A tall cupboard with doors', artKey: 'artTallCab' },
-    { id: 'reachinL', label: 'Reach-in', desc: 'Open the door, shelves face you', artKey: 'artLinen' },
-    { id: 'walkinL', label: 'Walk-in', desc: 'A deep closet you step into', imgKey: 'wiz-closet-builtin', artKey: 'artWalkIn' },
-    { id: 'lshapeL', label: 'L-shaped', desc: 'Shelving wraps around a corner', artKey: 'artLShape' },
+    { id: 'cabinetL', label: 'Cabinet', desc: 'A tall cupboard with doors', artKey: 'artLinenCabinet' },
+    { id: 'reachinL', label: 'Reach-in', desc: 'Open the door, shelves face you', artKey: 'artLinenReachIn' },
+    { id: 'walkinL', label: 'Walk-in', desc: 'A deep closet you step into', artKey: 'artLinenWalkIn' },
+    { id: 'lshapeL', label: 'L-shaped', desc: 'Shelving wraps around a corner', artKey: 'artLinenLShape' },
   ],
   garage: [
-    { id: 'utility', label: 'Utility shelving', desc: 'Freestanding metal or wire rack', imgKey: 'wiz-garage-shelving', artKey: 'artGarageShelf' },
+    { id: 'utility', label: 'Utility shelving', desc: 'Freestanding metal or wire rack', artKey: 'artGarageShelf' },
     { id: 'wallcab', label: 'Wall cabinets', desc: 'Closed cabinets mounted on the wall', artKey: 'artWallCab' },
-    { id: 'overhead', label: 'Overhead rack', desc: 'A platform hung from the ceiling', imgKey: 'wiz-overhead-rack', artKey: 'artOverhead' },
+    { id: 'overhead', label: 'Overhead rack', desc: 'A platform hung from the ceiling', artKey: 'artOverhead' },
   ],
   workbench: [
     { id: 'bench', label: 'Workbench & pegboard', desc: 'Work surface with tools on the wall', artKey: 'artWorkbench' },
@@ -316,8 +316,7 @@ export function measureSummary(setupId, dims) {
 }
 
 /* ---------- Line-art card illustrations (design-owned SVG set) ----------
-   Every card renders instantly from these; hydrateImages() swaps in the real
-   photo when the manifest marks its key "ready". No hotlinks, no 404s. */
+   Every room, area, and setup card uses this single visual language. */
 const ART = {
   roomKitchen: '<rect x="8" y="8" width="22" height="16" rx="2" fill="#f0fae1"/><path d="M19 8v16M8 16h22"/><rect x="60" y="6" width="28" height="18" rx="2" fill="#fff"/><path d="M74 6v18"/><circle cx="71" cy="15" r="1.2" fill="#9a5b2e"/><circle cx="77" cy="15" r="1.2" fill="#9a5b2e"/><rect x="40" y="26" width="16" height="8" rx="2" fill="#ffe1d0"/><circle cx="48" cy="24" r="1.6"/><path d="M38 29h2M56 29h2"/><rect x="6" y="36" width="84" height="5" rx="2" fill="#f6efe4"/><rect x="10" y="41" width="76" height="24" rx="2" fill="#fff"/><path d="M35 41v24M61 41v24"/><circle cx="31" cy="53" r="1.2" fill="#9a5b2e"/><circle cx="39" cy="53" r="1.2" fill="#9a5b2e"/><circle cx="57" cy="53" r="1.2" fill="#9a5b2e"/><circle cx="65" cy="53" r="1.2" fill="#9a5b2e"/>',
   roomBedroom: '<rect x="8" y="20" width="8" height="32" rx="3" fill="#fff"/><rect x="12" y="34" width="50" height="16" rx="4" fill="#fff"/><rect x="36" y="34" width="26" height="16" rx="4" fill="#ffe1d0"/><rect x="17" y="27" width="14" height="9" rx="3" fill="#f0fae1"/><path d="M15 50v6M58 50v6M20 64h34"/><rect x="68" y="12" width="22" height="44" rx="2" fill="#fff"/><path d="M79 12v44"/><circle cx="76" cy="34" r="1.2" fill="#9a5b2e"/><circle cx="82" cy="34" r="1.2" fill="#9a5b2e"/><path d="M71 56v4M87 56v4"/>',
@@ -344,13 +343,113 @@ const ART = {
   artOverhead: '<path d="M8 6h80"/><path d="M22 6v18M74 6v18"/><rect x="16" y="24" width="64" height="4" fill="#f6efe4"/><rect x="26" y="12" width="14" height="12" rx="1" fill="#ffe1d0"/><rect x="44" y="14" width="12" height="10" rx="1" fill="#f0fae1"/><rect x="60" y="12" width="12" height="12" rx="1" fill="#fff"/><path d="M66 12v12"/><rect x="30" y="52" width="36" height="10" rx="5" fill="#f0fae1"/><circle cx="39" cy="63" r="3.5" fill="#fff"/><circle cx="57" cy="63" r="3.5" fill="#fff"/>',
   artWorkbench: '<rect x="16" y="5" width="64" height="21" rx="2" fill="#fff"/><path d="M28 9v9"/><rect x="24" y="7" width="8" height="4" rx="1" fill="#ffe1d0"/><path d="M46 9v10"/><circle cx="46" cy="9" r="3" fill="#f0fae1"/><path d="M64 8v8"/><rect x="62" y="16" width="4" height="7" rx="1.5" fill="#f0fae1"/><rect x="12" y="32" width="72" height="5" rx="2" fill="#f6efe4"/><path d="M18 37v29M78 37v29"/><path d="M18 52h60"/><rect x="30" y="44" width="15" height="8" rx="1" fill="#ffe1d0"/><path d="M34 48h7"/><rect x="52" y="45" width="12" height="7" rx="1" fill="#fff"/>',
   artToolChest: '<path d="M36 10v-3h24v3"/><rect x="28" y="10" width="40" height="46" rx="3" fill="#ffe1d0"/><rect x="33" y="15" width="30" height="9" rx="1"/><path d="M43 19.5h10"/><rect x="33" y="27" width="30" height="9" rx="1"/><path d="M43 31.5h10"/><rect x="33" y="39" width="30" height="9" rx="1"/><path d="M43 43.5h10"/><circle cx="35" cy="60" r="4" fill="#fff"/><circle cx="61" cy="60" r="4" fill="#fff"/>',
+  artPantryReachIn: '<rect x="18" y="5" width="60" height="61" rx="2" fill="#fff"/><path d="M18 22h60M18 42h60M18 59h60"/><rect x="24" y="10" width="9" height="12" rx="2" fill="#f0fae1"/><path d="M24 14h9"/><rect x="38" y="12" width="8" height="10" rx="1.5" fill="#ffe1d0"/><rect x="51" y="9" width="7" height="13" rx="2" fill="#fff"/><rect x="63" y="12" width="9" height="10" rx="1.5" fill="#f0fae1"/><rect x="24" y="29" width="12" height="13" rx="1.5" fill="#ffe1d0"/><path d="M24 33h12"/><rect x="41" y="31" width="11" height="11" rx="1.5" fill="#f0fae1"/><rect x="57" y="28" width="15" height="14" rx="2" fill="#fff"/><path d="M57 33h15"/><path d="M24 48h22l-2 11H26z" fill="#ffe1d0"/><path d="M29 52h12"/><rect x="54" y="49" width="17" height="10" rx="2" fill="#f0fae1"/>',
+  artPantryWalkIn: '<path d="M26 6h48v59H26z" fill="#fff"/><path d="M26 6 10 14v49l16-4z" fill="#f8e4d6"/><path d="M12 29l14-3M12 46l14-2M31 23h38M31 41h38M31 57h38"/><rect x="34" y="11" width="9" height="12" rx="2" fill="#f0fae1"/><path d="M34 15h9"/><rect x="49" y="13" width="8" height="10" rx="1.5" fill="#ffe1d0"/><rect x="61" y="10" width="7" height="13" rx="2" fill="#fff"/><rect x="34" y="30" width="13" height="11" rx="1.5" fill="#ffe1d0"/><rect x="52" y="29" width="16" height="12" rx="2" fill="#f0fae1"/><path d="M16 19h7v9h-8z" fill="#f0fae1"/><path d="M15 36h8v9h-9z" fill="#fff"/><path d="M35 47h22l-2 10H37z" fill="#ffe1d0"/><path d="M40 51h12"/>',
+  artPantryLShape: '<rect x="10" y="14" width="30" height="50" fill="#fff"/><path d="M10 30h30M10 47h30"/><path d="M40 14l42 8v42l-42-6z" fill="#f6efe4"/><path d="M40 30l42 7M40 47l42 6"/><rect x="15" y="19" width="8" height="11" rx="2" fill="#f0fae1"/><path d="M15 23h8"/><rect x="27" y="21" width="8" height="9" rx="1.5" fill="#ffe1d0"/><rect x="15" y="36" width="9" height="11" rx="1.5" fill="#fff"/><path d="M15 40h9"/><rect x="28" y="38" width="7" height="9" rx="1.5" fill="#f0fae1"/><path d="M48 25l11 2v9l-11-2z" fill="#f0fae1"/><path d="M64 37l10 2v9l-10-2z" fill="#ffe1d0"/><path d="M15 54h18l-2 8H17z" fill="#ffe1d0"/><path d="M20 57h8"/>',
+  artCabinetLShape: '<path d="M10 18h34v44H10z" fill="#fff"/><path d="M44 18l40 8v36l-40-5z" fill="#fff"/><path d="M10 34h34M44 34l40 7M27 34v28M62 37v23"/><rect x="8" y="14" width="38" height="5" rx="2" fill="#f6efe4"/><path d="M46 14l40 8v5l-40-8z" fill="#f6efe4"/><circle cx="23" cy="48" r="1.2" fill="#9a5b2e"/><circle cx="31" cy="48" r="1.2" fill="#9a5b2e"/><circle cx="58" cy="48" r="1.2" fill="#9a5b2e"/><circle cx="67" cy="49" r="1.2" fill="#9a5b2e"/><path d="M16 26h11M29 25h8"/><path d="M51 26l10 2M65 29l10 2"/>',
+  artClosetReachIn: '<rect x="18" y="5" width="60" height="61" fill="#fff"/><path d="M18 17h60M23 25h50"/><rect x="24" y="9" width="13" height="8" rx="1.5" fill="#f0fae1"/><rect x="42" y="10" width="12" height="7" rx="1.5" fill="#ffe1d0"/><path d="M33 25v5M48 25v5M63 25v5"/><path d="M33 30l-5 4-5-3-4 5 7 5v10h14V41l7-5-4-5-5 3z" fill="#ffe1d0"/><path d="M63 30l-5 4-5-3-4 5 7 5v9h14v-9l7-5-4-5-5 3z" fill="#f0fae1"/><path d="M23 57h19M54 57h19"/><path d="M25 57v7M40 57v7M56 57v7M71 57v7"/>',
+  artClosetWalkIn: '<path d="M26 6h48v59H26z" fill="#fff"/><path d="M26 6 10 14v49l16-4z" fill="#f8e4d6"/><path d="M31 20h38M14 25l12-2M34 20v5M50 20v5M65 20v5"/><path d="M34 25l-4 4-4-3-3 4 6 4v12h10V34l6-4-3-4-4 3z" fill="#ffe1d0"/><path d="M65 25l-4 4-4-3-3 4 6 4v12h10V34l6-4-3-4-4 3z" fill="#f0fae1"/><path d="M15 25v4M15 29l-4 4 4 6 5-5z" fill="#fff"/><path d="M31 54h15M54 54h15"/><path d="M31 54v8M46 54v8M54 54v8M69 54v8"/>',
+  artClosetLShape: '<rect x="10" y="12" width="31" height="52" fill="#fff"/><path d="M41 12l42 9v43l-42-6z" fill="#f6efe4"/><path d="M14 25h23M48 25l28 6M21 25v5M32 25v5M55 27v5M69 30v5"/><path d="M21 30l-4 4-4-3-3 4 6 4v11h10V39l6-4-3-4-4 3z" fill="#ffe1d0"/><path d="M55 32l-4 3-4-3-3 4 6 4v10l10 2V41l6-3-3-4-4 2z" fill="#f0fae1"/><path d="M14 57h22M49 55l27 4"/>',
+  artLinenCabinet: '<rect x="27" y="5" width="42" height="61" rx="3" fill="#fff"/><path d="M27 22h42M27 40h42M27 56h42"/><rect x="33" y="10" width="26" height="4" rx="2" fill="#ffe1d0"/><rect x="35" y="15" width="24" height="4" rx="2" fill="#f0fae1"/><rect x="34" y="27" width="25" height="4" rx="2" fill="#fff"/><rect x="36" y="32" width="23" height="4" rx="2" fill="#ffe1d0"/><rect x="33" y="45" width="27" height="4" rx="2" fill="#f0fae1"/><rect x="36" y="50" width="24" height="4" rx="2" fill="#fff"/>',
+  artLinenReachIn: '<rect x="19" y="5" width="58" height="61" fill="#fff"/><path d="M19 22h58M19 40h58M19 57h58"/><rect x="25" y="10" width="24" height="4" rx="2" fill="#ffe1d0"/><rect x="27" y="15" width="22" height="4" rx="2" fill="#f0fae1"/><rect x="54" y="11" width="17" height="8" rx="3" fill="#fff"/><rect x="25" y="27" width="28" height="4" rx="2" fill="#f0fae1"/><rect x="27" y="32" width="26" height="4" rx="2" fill="#ffe1d0"/><rect x="58" y="27" width="13" height="9" rx="3" fill="#fff"/><rect x="25" y="45" width="25" height="4" rx="2" fill="#fff"/><rect x="27" y="50" width="23" height="4" rx="2" fill="#f0fae1"/><rect x="56" y="46" width="15" height="8" rx="2" fill="#ffe1d0"/>',
+  artLinenWalkIn: '<path d="M26 6h48v59H26z" fill="#fff"/><path d="M26 6 10 14v49l16-4z" fill="#f8e4d6"/><path d="M31 23h38M31 42h38M31 58h38M12 30l14-3M12 47l14-2"/><rect x="34" y="11" width="25" height="4" rx="2" fill="#ffe1d0"/><rect x="36" y="16" width="23" height="4" rx="2" fill="#f0fae1"/><rect x="35" y="28" width="26" height="4" rx="2" fill="#fff"/><rect x="37" y="33" width="24" height="4" rx="2" fill="#ffe1d0"/><rect x="36" y="47" width="24" height="4" rx="2" fill="#f0fae1"/><path d="M15 20l9-2v5l-9 2z" fill="#fff"/><path d="M14 36l10-2v6l-10 2z" fill="#ffe1d0"/>',
+  artLinenLShape: '<rect x="10" y="12" width="31" height="52" fill="#fff"/><path d="M41 12l42 9v43l-42-6z" fill="#f6efe4"/><path d="M10 28h31M10 46h31M41 29l42 8M41 47l42 7"/><rect x="15" y="18" width="20" height="4" rx="2" fill="#ffe1d0"/><rect x="17" y="23" width="18" height="4" rx="2" fill="#f0fae1"/><rect x="15" y="35" width="21" height="4" rx="2" fill="#fff"/><rect x="17" y="40" width="19" height="4" rx="2" fill="#ffe1d0"/><path d="M49 20l22 5v4l-22-5z" fill="#f0fae1"/><path d="M50 37l23 5v4l-23-5z" fill="#ffe1d0"/>',
+};
+
+/* Motion is composed for the object it explains. The earlier generic motif
+   layer made unrelated cards share the same moving symbol; these helpers keep
+   the vocabulary reusable while positioning a recognizable object precisely
+   within each illustration. */
+const steamMotion = '<g class="art-motion motion-steam" stroke="#c15f00" stroke-width="2.7"><path d="M39 30c-8-7 8-10 0-20"/><path d="M48 29c-8-7 8-11 0-22"/><path d="M57 30c-8-7 8-10 0-20"/></g>';
+
+const waterMotion = '<g class="art-motion motion-water" fill="#c9dfdb" stroke="#658e89" stroke-width="1.6"><path d="M26 31c0 5 2 8 3 8s3-3 3-8"/><path d="M36 34c0 4 2 6 3 6s3-2 3-6"/><path d="M29 43c0 4 2 6 3 6s3-2 3-6"/></g>';
+
+function drawerMotion(x, y, width, height) {
+  const handle = Math.max(5, Math.round(width * .34));
+  const hx = x + (width - handle) / 2;
+  return `<g class="art-motion motion-drawer"><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="2" fill="#fff8ef"/><path d="M${hx} ${y + height / 2}h${handle}"/><path d="M${x + 2} ${y + height + 2}h${width - 4}" stroke="#c15f00" stroke-width="1.6"/></g>`;
+}
+
+function binMotion(x, y, width, height) {
+  return `<g class="art-motion motion-bin-pull"><path d="M${x} ${y}h${width}l-2 ${height}H${x + 2}z" fill="#f3b789"/><path d="M${x + 4} ${y + 4}h${width - 8}"/><rect x="${x + width * .34}" y="${y + height * .58}" width="${width * .32}" height="2.4" rx="1.2" fill="#fff8ef" stroke="none"/></g>`;
+}
+
+function cabinetDoorMotion(x, y, width, height) {
+  const shelf1 = y + height * .35;
+  const shelf2 = y + height * .68;
+  return `<g class="motion-cabinet-interior"><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="1.5" fill="#f3eadf"/><path d="M${x + 2} ${shelf1}h${width - 4}M${x + 2} ${shelf2}h${width - 4}"/><path d="M${x + 4} ${shelf1 - 5}h${Math.max(4, width - 8)}" stroke="#7f9862"/><circle cx="${x + width * .35}" cy="${shelf2 - 4}" r="1.8" fill="#f1ad7d"/><circle cx="${x + width * .62}" cy="${shelf2 - 4}" r="1.8" fill="#d8e8bd"/></g><g class="art-motion motion-cabinet-door"><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="1.5" fill="#fff8ef"/><path d="M${x + 3} ${y + 3}v${height - 6}h${width - 6}V${y + 3}z"/><circle cx="${x + width - 3.5}" cy="${y + height / 2}" r="1.4" fill="#c15f00"/></g>`;
+}
+
+function simpleDoorMotion(x, y, width, height) {
+  return `<g class="art-motion motion-cabinet-door"><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="1.5" fill="#fff8ef"/><path d="M${x + 3} ${y + 3}v${height - 6}h${width - 6}V${y + 3}z"/><circle cx="${x + width - 3.5}" cy="${y + height / 2}" r="1.4" fill="#c15f00"/></g>`;
+}
+
+function shirtMotion(x, y) {
+  return `<g transform="translate(${x} ${y})"><g class="art-motion motion-shirt"><path d="M10 0v-3c0-3 4-3 4 0"/><path d="M5 3 10 0h4l5 3 6 4-3 6-5-3v16H7V10l-5 3-3-6z" fill="#d8e8bd"/><path d="M8 17h8" stroke="#7f9862"/></g></g>`;
+}
+
+function towelMotion(x, y, width = 27) {
+  return `<g transform="translate(${x} ${y})"><g class="art-motion motion-towel-pull"><rect x="0" y="0" width="${width}" height="5" rx="2.5" fill="#f1ad7d"/><path d="M4 2.5h${width - 8}"/></g><rect x="2" y="6" width="${width - 2}" height="5" rx="2.5" fill="#fff8ef"/><rect x="4" y="12" width="${width - 4}" height="5" rx="2.5" fill="#d8e8bd"/></g>`;
+}
+
+function toolMotion(x, y) {
+  return `<g transform="translate(${x} ${y})"><g class="art-motion motion-tool"><rect x="-7" y="0" width="14" height="6" rx="2" fill="#f1ad7d"/><path d="M0 6v28" stroke="#c15f00" stroke-width="3"/><path d="M-3 34h6"/></g></g>`;
+}
+
+function shelfJarMotion(x, y) {
+  return `<g transform="translate(${x} ${y})"><g class="art-motion motion-shelf-jar"><path d="M2 0h10M3 3h8"/><rect x="1" y="4" width="12" height="15" rx="3" fill="#d8e8bd"/><path d="M4 11h6" stroke="#7f9862"/></g></g>`;
+}
+
+function underSinkMotion() {
+  return '<g class="motion-under-sink-interior"><rect x="26" y="34" width="22" height="26" rx="1.5" fill="#f3eadf"/><path d="M31 56V44h5v12M39 56V40h5v16"/><path d="M30 56h15" stroke="#7f9862"/></g><g class="art-motion motion-cabinet-door"><rect x="26" y="34" width="22" height="26" rx="1.5" fill="#fff8ef"/><path d="M29 37v20h16V37z"/><circle cx="44" cy="47" r="1.4" fill="#c15f00"/></g>';
+}
+
+const overheadMotion = '<g class="art-motion motion-overhead-tote"><rect x="38" y="8" width="22" height="15" rx="3" fill="#d8e8bd"/><path d="M42 8v-3h14v3M43 14h12"/><rect x="46" y="17" width="6" height="2.5" rx="1.2" fill="#fff8ef" stroke="none"/></g>';
+
+const ART_MOTION = {
+  roomKitchen: steamMotion,
+  roomBedroom: cabinetDoorMotion(79, 12, 11, 44),
+  roomBath: waterMotion,
+  roomGarage: toolMotion(69, 22),
+  artTallCab: cabinetDoorMotion(28, 6, 20, 58),
+  artPantry: binMotion(31, 50, 15, 12),
+  artReachIn: shirtMotion(38, 21),
+  artWalkIn: binMotion(40, 53, 14, 10),
+  artLShape: binMotion(15, 54, 18, 8),
+  artCounter: cabinetDoorMotion(14, 38, 23, 26),
+  artOpenShelf: shelfJarMotion(42, 25),
+  artInCounter: drawerMotion(30, 33, 36, 11),
+  artTower: drawerMotion(36, 22, 24, 10),
+  artSideboard: drawerMotion(17, 28, 30, 7),
+  artWardrobe: shirtMotion(29, 20),
+  artDresser: drawerMotion(21, 33, 54, 9),
+  artUnderbed: drawerMotion(16, 35, 30, 13),
+  artVanity: underSinkMotion(),
+  artVanityDr: drawerMotion(57, 44, 14, 6),
+  artLinen: towelMotion(31, 43, 27),
+  artGarageShelf: binMotion(57, 47, 15, 8),
+  artWallCab: cabinetDoorMotion(12, 8, 17, 21),
+  artOverhead: overheadMotion,
+  artWorkbench: toolMotion(64, 7),
+  artToolChest: drawerMotion(33, 27, 30, 9),
+  artPantryReachIn: binMotion(24, 48, 22, 11),
+  artPantryWalkIn: binMotion(35, 47, 22, 10),
+  artPantryLShape: binMotion(15, 54, 18, 8),
+  artCabinetLShape: cabinetDoorMotion(10, 34, 17, 28),
+  artClosetReachIn: shirtMotion(23, 29),
+  artClosetWalkIn: shirtMotion(25, 25),
+  artClosetLShape: shirtMotion(11, 29),
+  artLinenCabinet: simpleDoorMotion(27, 5, 21, 61),
+  artLinenReachIn: towelMotion(25, 27, 28),
+  artLinenWalkIn: towelMotion(35, 28, 27),
+  artLinenLShape: towelMotion(15, 35, 22),
 };
 
 const artCache = {};
 export function art(key) {
   if (!artCache[key]) {
-    artCache[key] = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 72" fill="none" stroke="#9a5b2e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + (ART[key] || '') + '</svg>');
+    const motif = ART_MOTION[key] || shelfJarMotion(42, 25);
+    artCache[key] = '<svg class="card-art-svg art-' + key + '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 72" fill="none" stroke="#9a5b2e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="art-scene">' + (ART[key] || '') + '</g>' + motif + '</svg>';
   }
   return artCache[key];
 }
