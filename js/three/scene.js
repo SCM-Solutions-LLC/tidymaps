@@ -1,28 +1,16 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { makeLabelSprite } from './labels.js';
+import { LAYOUT_BUILDERS } from './layouts/index.js';
+import { COLORS, ITEM_PALETTE, SIZE_H, slug, createMaterials } from './layouts/helpers.js';
 
 /* Schematic 3D of the organized space: carcass + shelves from the plan's
    geometry, one zone per map row, items as draggable blocks. World units
    are inches. */
 
-const COLORS = {
-  bg: 0xf5f7f1,
-  carcass: 0xebeee3,
-  shelf: 0xdfe4d4,
-  eye: 0x3a7350,       // leaf green — prime real estate
-  kidSafe: 0x7db894,   // lighter mint — kid-safe zones
-  keepHigh: 0xc9973d,  // honey amber — keep-high / caution
-};
-const ITEM_PALETTE = [0xb0885a, 0xd9a05b, 0x7ea37a, 0x6b93b8, 0xa084b8, 0x9aa65c];
-const SIZE_H = { s: 3.4, m: 5.4, l: 8.2 };
-
-function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,32); }
-
 export function itemIdFor(shelfIndex, idx, name){ return `${shelfIndex}-${idx}-${slug(name)}`; }
 
-export function buildScene({ geometry, map, placements, canvas }){
-  // Defensive: whatever the analysis produced, render *something* sensible.
+export function buildScene({ geometry, map, placements, canvas, layout }){
   const W=Math.max(8, Number(geometry.width)||30);
   const H=Math.max(10, Number(geometry.height)||60);
   const D=Math.max(4, Number(geometry.depth)||14);
@@ -39,8 +27,6 @@ export function buildScene({ geometry, map, placements, canvas }){
   const scene=new THREE.Scene();
   scene.background=new THREE.Color(COLORS.bg);
 
-  // frame by the unit's largest span so short-wide spaces (drawers) and
-  // tall-narrow ones (closets) both fit the view
   const S=Math.max(H, W*0.95, D*1.3);
   const camera=new THREE.PerspectiveCamera(42, 1, 1, S*20);
   const target=new THREE.Vector3(0, H*0.46, 0);
@@ -61,68 +47,30 @@ export function buildScene({ geometry, map, placements, canvas }){
   dir.position.set(W, H*1.4, D*2.2);
   scene.add(dir);
 
-  const carcassMat=new THREE.MeshStandardMaterial({ color:COLORS.carcass, roughness:0.9 });
-  const shelfMat=new THREE.MeshStandardMaterial({ color:COLORS.shelf, roughness:0.85 });
-  const addBox=(w,h,d,x,y,z,mat)=>{
-    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat||carcassMat);
-    m.position.set(x,y,z);
-    scene.add(m);
-    return m;
-  };
-  // open-front carcass
-  addBox(W, H, T, 0, H/2, -D/2+T/2);            // back
-  addBox(T, H, D, -W/2+T/2, H/2, 0);            // left
-  addBox(T, H, D,  W/2-T/2, H/2, 0);            // right
-  addBox(W, T, D, 0, H-T/2, 0);                 // top
-  addBox(W, T, D, 0, T/2, 0);                   // bottom
-
-  // shelves + invisible drop targets
-  const shelves=[];   // {index, y, hitbox, rowMeta}
-  const rowsByShelf=new Map();
-  map.forEach(row=>{ rowsByShelf.set(row.shelfIndex, row); });
-  // Shelf Y positions: clamp below the top panel, and snap near-floor levels
-  // onto the cabinet floor so "floor" zones sit where the eye expects them.
   const shelfYs=shelfFracs.map(frac=>{
     let y=Math.max(T, Math.min(H*(1-frac), H-T-3.2));
     if(frac>=0.86) y=T;
     return y;
   });
-  // headroom above each shelf (to the next shelf up, or the top panel)
   const gapAbove=shelfYs.map(y=>{
     const above=shelfYs.filter(o=>o>y+0.5);
     const ceil=above.length?Math.min(...above):H-T;
     return Math.max(2.2, ceil-y);
   });
 
-  shelfYs.forEach((y,i)=>{
-    if(y<H-T*2 && y>T*1.6) addBox(W-2*T, T, D-T, 0, y-T/2, T/4, shelfMat);
-    const row=rowsByShelf.get(i)||null;
-    // accent strip along the shelf front for eye-level / safety rows
-    if(row){
-      let accent=null;
-      if(row.safety && row.safety.flag==='kid-safe') accent=COLORS.kidSafe;
-      else if(row.safety && row.safety.flag) accent=COLORS.keepHigh;
-      else if(row.eye) accent=COLORS.eye;
-      if(accent){
-        addBox(W-2*T, 0.4, 0.4, 0, y+0.2-T/2, D/2-0.3,
-          new THREE.MeshBasicMaterial({ color:accent }));
-      }
-      const label=makeLabelSprite(row.lv + (row.safety&&row.safety.flag?`  ·  ${row.safety.flag.replace(/-/g,' ')}`:''),
-        { color:'#3b4237' });
-      label.position.set(-W/2+label.scale.x/2+1.5, y+3.4, D/2+0.6);
-      scene.add(label);
-    }
-    // generous invisible hitbox for drag targeting
-    const hit=new THREE.Mesh(
-      new THREE.BoxGeometry(W-2*T, Math.max(6, H/NSH*0.85), D),
-      new THREE.MeshBasicMaterial({ visible:false }));
-    hit.position.set(0, y+Math.max(3, H/NSH*0.42), 0);
-    hit.userData={ shelfIndex:i, shelfY:y, row };
-    scene.add(hit);
-    shelves.push({ index:i, y, hitbox:hit, row });
+  const rowsByShelf=new Map();
+  map.forEach(row=>{ rowsByShelf.set(row.shelfIndex, row); });
+
+  const mats=createMaterials();
+  const layoutType=(layout&&layout.type)||'shelves';
+  const builder=LAYOUT_BUILDERS[layoutType]||LAYOUT_BUILDERS.shelves;
+  const { surfaces }=builder({
+    scene,
+    geo:{ W, H, D, T, NSH, shelfYs, gapAbove, fracs:shelfFracs },
+    map, rowsByShelf, mats,
+    layout: layout||{ type:'shelves' },
   });
 
-  // items
   const items=[];
   let colorI=0;
   map.forEach(row=>{
@@ -149,17 +97,17 @@ export function buildScene({ geometry, map, placements, canvas }){
     });
   });
 
-  // lay items out in slot order per shelf; heights squeeze to the shelf gap
-  // so nothing pokes through the shelf above or the top of the unit
+  const shelves=surfaces;
+
   function reflow(){
-    shelves.forEach(sh=>{
+    surfaces.forEach(sh=>{
       const here=items.filter(m=>m.userData.shelfIndex===sh.index)
         .sort((a,b)=>a.userData.slot-b.userData.slot);
       here.forEach((m,i)=>{ m.userData.slot=i; });
       const n=here.length;
       if(!n) return;
-      const maxH=Math.max(1.6,(gapAbove[sh.index]||8)-1.4);
-      const usable=W-2*T-2;
+      const maxH=Math.max(1.6,(sh.gap||gapAbove[sh.index]||8)-1.4);
+      const usable=sh.length||(W-2*T-2);
       const cell=usable/n;
       here.forEach((m,i)=>{
         const w=Math.min(cell*0.78, 10);
@@ -167,7 +115,6 @@ export function buildScene({ geometry, map, placements, canvas }){
         m.scale.y=Math.min(m.userData.baseH||m.scale.y, maxH);
         const x=-usable/2+cell*(i+0.5);
         m.position.set(x, sh.y+m.scale.y/2, T/2);
-        // stagger label heights on crowded shelves so they stop overlapping
         const lift=n>3?(i%2)*2.2:0;
         m.userData.label.position.set(x, sh.y+m.scale.y+0.5+lift, D/2+0.5);
       });
@@ -209,6 +156,6 @@ export function buildScene({ geometry, map, placements, canvas }){
     renderer.dispose();
   }
 
-  return { scene, renderer, camera, controls, items, shelves, reflow, setSize, dispose,
+  return { scene, renderer, camera, controls, items, shelves, surfaces, reflow, setSize, dispose,
     placements(){ return items.map(m=>({ itemId:m.userData.itemId, shelfIndex:m.userData.shelfIndex, slot:m.userData.slot })); } };
 }
