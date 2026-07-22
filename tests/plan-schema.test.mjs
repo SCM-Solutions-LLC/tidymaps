@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validatePlan, EFFORT_STEP_RANGES } from '../supabase/functions/_shared/planSchema.js';
+import { validatePlan, EFFORT_STEP_RANGES, ARCHETYPES, SURFACES, PLACES } from '../supabase/functions/_shared/planSchema.js';
+import {
+  ARCHETYPES as CLIENT_ARCHETYPES,
+  SURFACES as CLIENT_SURFACES,
+  PLACES as CLIENT_PLACES,
+} from '../js/layout.js';
 
 /* Minimal, schema-valid plan skeleton. Each test overrides only what it's
    exercising, so a failure always points at the field the test is actually
@@ -156,4 +161,111 @@ test('missing required top-level fields are rejected', () => {
   const result = validatePlan({ spaceType: 'Pantry' }, noKidsContext);
   assert.equal(result.ok, false);
   assert.ok(result.errors.length > 0);
+});
+
+// --- Layout validation ---
+
+test('valid layout with sections is accepted', () => {
+  const plan = basePlan({
+    map: [
+      { level: 'Left wall: top', icon: 'up', zone: 'Bulk', why: 'Rarely used.', shelfIndex: 0, safety: { flag: null, why: null }, surface: 'shelf' },
+      { level: 'Left wall: bottom', icon: 'down', zone: 'Daily', why: 'Easy reach.', shelfIndex: 1, safety: { flag: null, why: null }, surface: 'shelf' },
+      { level: 'Back wall: top', icon: 'up', zone: 'Overflow', why: 'Extra space.', shelfIndex: 2, safety: { flag: null, why: null }, surface: 'rod' },
+    ],
+    shelfCount: 3,
+  });
+  plan.layout = {
+    type: 'walkin-u',
+    sections: [
+      { id: 'left', label: 'Left wall', place: 'left', rows: [0, 1] },
+      { id: 'back', label: 'Back wall', place: 'back', rows: [2] },
+    ],
+  };
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+});
+
+test('null layout is accepted (backward compat)', () => {
+  const plan = basePlan();
+  plan.layout = null;
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+});
+
+test('absent layout is accepted (old plans)', () => {
+  const plan = basePlan();
+  delete plan.layout;
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+});
+
+test('layout section row out of range is rejected', () => {
+  const plan = basePlan();
+  plan.layout = { type: 'shelves', sections: [{ id: 'main', rows: [0, 1, 10] }] };
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /row 10 >= shelfCount/);
+});
+
+test('layout section row in multiple sections is rejected', () => {
+  const plan = basePlan({
+    map: [
+      { level: 'Top', icon: 'up', zone: 'Bulk', why: 'n/a', shelfIndex: 0, safety: { flag: null, why: null } },
+      { level: 'Mid', icon: 'eye', zone: 'Daily', why: 'n/a', shelfIndex: 1, safety: { flag: null, why: null } },
+      { level: 'Low', icon: 'down', zone: 'Kids', why: 'n/a', shelfIndex: 2, safety: { flag: null, why: null } },
+    ],
+    shelfCount: 3,
+  });
+  plan.layout = {
+    type: 'l-run',
+    sections: [
+      { id: 'a', rows: [0, 1] },
+      { id: 'b', rows: [1, 2] },
+    ],
+  };
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /row 1 appears in multiple sections/);
+});
+
+test('invalid layout type is rejected at the structural level', () => {
+  const plan = basePlan();
+  plan.layout = { type: 'igloo' };
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, false);
+});
+
+test('invalid surface value on a map row is rejected', () => {
+  const plan = basePlan({
+    map: [
+      { level: 'Top', icon: 'up', zone: 'Bulk', why: 'n/a', shelfIndex: 0, safety: { flag: null, why: null }, surface: 'conveyor-belt' },
+    ],
+  });
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, false);
+});
+
+test('valid surface values on map rows are accepted', () => {
+  const plan = basePlan({
+    map: [
+      { level: 'Shelf', icon: 'shelf', zone: 'Items', why: 'n/a', shelfIndex: 0, safety: { flag: null, why: null }, surface: 'shelf' },
+      { level: 'Rod', icon: 'rod', zone: 'Clothes', why: 'n/a', shelfIndex: 1, safety: { flag: null, why: null }, surface: 'rod' },
+    ],
+  });
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+});
+
+// --- Client/server enum parity ---
+
+test('client ARCHETYPES match server ARCHETYPES exactly', () => {
+  assert.deepEqual(CLIENT_ARCHETYPES, ARCHETYPES);
+});
+
+test('client SURFACES match server SURFACES exactly', () => {
+  assert.deepEqual(CLIENT_SURFACES, SURFACES);
+});
+
+test('client PLACES match server PLACES exactly', () => {
+  assert.deepEqual(CLIENT_PLACES, PLACES);
 });

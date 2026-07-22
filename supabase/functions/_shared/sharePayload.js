@@ -9,7 +9,7 @@
 // keys over time; an allowlist means new private fields default to EXCLUDED.
 const PLAN_FIELDS = [
   'spaceType', 'summary', 'problems', 'opportunities',
-  'map', 'geometry', 'safetyNotes', 'features', 'steps', 'cats',
+  'map', 'geometry', 'layout', 'safetyNotes', 'features', 'steps', 'cats',
   'existingLede', 'existing', 'dontBuy', 'cost', 'time',
 ];
 
