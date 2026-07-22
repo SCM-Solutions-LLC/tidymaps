@@ -53,8 +53,8 @@
     <button class="navlink hide" id="acct-btn" onclick="go('dashboard')">My spaces</button>
     <span class="step-counter" id="appbar-step"></span>
     <button class="restart" onclick="restart()">Start over</button>
-    <button class="navlink results-only" onclick="go('space')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit answers</button>
-    <button class="btn btn-primary btn-sm results-only" onclick="openViewer3d()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M12 3 2 9l10 6 10-6-10-6Z"/><path d="m2 15 10 6 10-6"/><path d="m2 9 10 6 10-6"/></svg> View in 3D</button>
+    <button class="navlink results-only" onclick="go('space')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit answers</button>
+    <button class="btn btn-primary btn-sm results-only" onclick="openViewer3d()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px" aria-hidden="true"><path d="M12 3 2 9l10 6 10-6-10-6Z"/><path d="m2 15 10 6 10-6"/><path d="m2 9 10 6 10-6"/></svg> View in 3D</button>
     <button class="navlink viewer3d-only" onclick="go('results')">&lsaquo; Back to plan</button>
     <button class="btn btn-primary btn-sm" id="nav-cta" onclick="go('space')">Plan my space</button>
   </div>
@@ -65,7 +65,7 @@
 <div class="modal-backdrop hide" id="auth-modal" onclick="if(event.target===this)closeAuth()">
   <div class="modal auth-modal">
     <button class="modal-x" onclick="closeAuth()" aria-label="Close sign-in">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     <span class="auth-mark" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>
@@ -453,7 +453,7 @@
     <div class="report-main">
       <!-- 01. Summary -->
       <section class="chapter" id="ch-summary">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Summary</h3></div></div>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Summary</h3></div></div>
         <p class="summary-lede" id="res-summary"></p>
         <ul class="summary-points" id="res-summary-points"></ul>
         <div class="kpis" id="res-kpis"></div>
@@ -476,13 +476,13 @@
 
       <!-- 02. Organization map -->
       <section class="chapter" id="ch-map">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Where things go</h3></div></div>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Where things go</h3></div></div>
         <div id="res-map"></div>
       </section>
 
       <!-- 03. Use existing first -->
       <section class="chapter" id="ch-reuse">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Use what you already have first</h3></div></div>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Use what you already have first</h3></div></div>
         <div class="card pad" style="background:var(--primary-bg);border-color:var(--primary-line)">
           <p style="margin:0 0 14px;font-size:15px;color:var(--ink-2)" id="res-existing-lede"></p>
           <div class="feat-grid" id="res-existing"></div>
@@ -495,7 +495,7 @@
 
       <!-- 04. Move-by-move -->
       <section class="chapter" id="ch-steps">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Step-by-step</h3>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Step-by-step</h3>
           <p class="ch-sub">Work top to bottom. Mark steps complete as you go.</p></div></div>
         <div class="progwrap">
           <div class="lab"><span id="prog-text">Step 0 of 9 complete</span><span id="prog-pct" class="muted">0%</span></div>
@@ -517,7 +517,7 @@
 
       <!-- 05. Before/After -->
       <section class="chapter" id="ch-after">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>What it could look like</h3>
+        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>What it could look like</h3>
           <p class="ch-sub">An illustrated layout of the recommended plan. Each shelf is a labeled zone.</p></div></div>
 
         <!-- Photorealistic preview: the user's own photo, reorganized by AI -->
@@ -563,7 +563,7 @@
       <!-- 06. Optional upgrades + shopping -->
       <section class="chapter" id="ch-shop">
         <div id="res-upgrades-wrap" class="hide">
-          <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Optional purchases</h3>
+          <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Optional purchases</h3>
             <p class="ch-sub">Only because you said you&rsquo;re open to buying storage products. The $0 plan above works without any of these.</p></div></div>
           <div id="res-upgrades"></div>
           <div class="callout warn" style="margin-top:8px">

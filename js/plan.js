@@ -133,11 +133,12 @@ export function buildAnalysisContext(){
   const toggles={};
   Object.keys(state).forEach(k=>{ if(k.startsWith('detail_')) toggles[k.slice(7)]=state[k]; });
   const h=state.household;
-  const household = (h.kids.present!==null || h.pets.present!==null || h.mobility.length || h.notes.trim()) ? {
+  const notes=(h.notes||'').trim();
+  const household = (h.kids.present!==null || h.pets.present!==null || h.mobility.length || notes) ? {
     kids:{present:h.kids.present==='yes', ages:h.kids.ages.slice()},
     pets:{present:h.pets.present==='yes', types:h.pets.types.slice()},
     mobility:h.mobility.slice(),
-    notes:h.notes.trim(),
+    notes,
   } : null;
   return {
     spaceType: state.space || 'pantry',

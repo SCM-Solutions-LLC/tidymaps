@@ -22,17 +22,33 @@ export async function setupAccount(){
   });
 }
 
+function handleModalKey(e){
+  if(e.key==='Escape'){ closeAuth(); return; }
+  if(e.key!=='Tab') return;
+  const modal=document.querySelector('#auth-modal .modal');
+  if(!modal) return;
+  const focusable=modal.querySelectorAll('input:not([type=hidden]),button:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  if(!focusable.length) return;
+  const first=focusable[0], last=focusable[focusable.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+
 export function openAuth(intent){
   pendingIntent=intent||null;
   document.getElementById('auth-step-email').classList.remove('hide');
   document.getElementById('auth-step-code').classList.add('hide');
   document.getElementById('auth-msg').textContent='';
   document.getElementById('auth-modal').classList.remove('hide');
+  document.body.style.overflow='hidden';
+  document.addEventListener('keydown', handleModalKey);
   setTimeout(()=>document.getElementById('auth-email').focus(),50);
 }
 export function closeAuth(){
   pendingIntent=null;
   document.getElementById('auth-modal').classList.add('hide');
+  document.body.style.overflow='';
+  document.removeEventListener('keydown', handleModalKey);
 }
 
 export async function sendAuthCode(){

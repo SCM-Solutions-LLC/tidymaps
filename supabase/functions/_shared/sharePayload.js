@@ -10,6 +10,7 @@
 const PLAN_FIELDS = [
   'spaceType', 'summary', 'problems', 'opportunities',
   'map', 'geometry', 'safetyNotes', 'features', 'steps', 'cats',
+  'existingLede', 'existing', 'dontBuy', 'cost', 'time',
 ];
 
 export function sanitizeSharedPlan(plan) {
