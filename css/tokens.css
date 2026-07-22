@@ -40,8 +40,8 @@
   --line-2:    oklch(0.840 0.010 95);
 
   /* warm terracotta — the single brand accent */
-  --primary:      oklch(0.585 0.145 55);
-  --primary-2:    oklch(0.515 0.135 55);
+  --primary:      oklch(0.555 0.145 55);
+  --primary-2:    oklch(0.495 0.135 55);
   --primary-bg:   oklch(0.960 0.020 60);
   --primary-line: oklch(0.870 0.060 58);
 

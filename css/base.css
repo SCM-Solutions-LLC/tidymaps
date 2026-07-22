@@ -48,6 +48,10 @@ p{margin:0 0 1em}
   display:inline-flex;align-items:center;justify-content:center;flex:none;
 }
 .brand-icon svg{width:18px;height:18px}
+/* hamburger toggle — visible only on landing below 720px */
+.nav-toggle{
+  display:none;background:none;border:none;padding:6px;color:var(--ink);flex:none;
+}
 /* landing-only site nav; wizard/report screens show workflow controls instead */
 .site-nav{display:none;align-items:center;gap:26px;margin-left:26px}
 .site-nav a,.site-nav button{
@@ -56,7 +60,21 @@ p{margin:0 0 1em}
 }
 .site-nav a:hover,.site-nav button:hover{color:var(--primary)}
 body[data-screen="landing"] .site-nav{display:flex}
-@media(max-width:719px){body[data-screen="landing"] .site-nav{display:none}}
+@media(max-width:719px){
+  body[data-screen="landing"] .site-nav{
+    display:none;flex-direction:column;align-items:stretch;gap:0;margin:0;
+    position:absolute;top:100%;left:0;right:0;
+    background:var(--bg);border-bottom:1px solid var(--line);
+    box-shadow:0 4px 12px oklch(0.30 0.01 100 / .08);
+    padding:8px 0;
+  }
+  body[data-screen="landing"] .site-nav a{
+    padding:13px var(--pad,18px);font-size:16px;border-bottom:1px solid var(--line);
+  }
+  body[data-screen="landing"] .site-nav a:last-child{border-bottom:none}
+  body[data-screen="landing"] .nav-toggle{display:block}
+  body.nav-open[data-screen="landing"] .site-nav{display:flex}
+}
 .appbar .navlink{
   background:none;border:none;padding:8px 4px;font-size:15px;font-weight:500;color:var(--ink);
   white-space:nowrap;flex:none;transition:color .15s;
