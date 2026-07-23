@@ -9,7 +9,8 @@ import { SETUP_TYPES } from './wizard-data.js';
 /* ---------- Enums (must match supabase/functions/_shared/planSchema.js) ---------- */
 export const ARCHETYPES = [
   'shelves','cabinet','l-run','walkin-u','closet-rod','drawer-bank',
-  'under-sink','counter','garage-rack','overhead-rack','workbench','fridge',
+  'closet-system','under-bed','under-sink','counter','garage-rack',
+  'overhead-rack','workbench','fridge',
 ];
 export const SURFACES = ['shelf','rod','drawer','floor','door','pegboard','worktop'];
 export const PLACES = ['left','back','right','upper','lower','run-a','run-b','floor','bench','wall'];
@@ -24,6 +25,8 @@ export const ARCHETYPE_LABELS = {
   'l-run':         'L-shaped',
   'walkin-u':      'Walk-in',
   'closet-rod':    'Closet with rod',
+  'closet-system': 'Built-in closet',
+  'under-bed':     'Under-bed drawers',
   'drawer-bank':   'Drawers',
   'under-sink':    'Under-sink',
   'counter':       'Counter + uppers',
@@ -51,10 +54,10 @@ export const SETUP_ARCHETYPE = {
   reachinC:   'closet-rod',
   walkinC:    'walkin-u',
   lshapeC:    'l-run',
-  builtin:    'closet-rod',
+  builtin:    'closet-system',
   dresser:    'drawer-bank',
   chest:      'drawer-bank',
-  underbed:   'drawer-bank',
+  underbed:   'under-bed',
   undersink:  'under-sink',
   vanitydr:   'under-sink',
   wallshelf:  'shelves',
@@ -131,6 +134,8 @@ const ARCHETYPE_DEFAULTS = {
   'l-run':         () => 'shelf',
   'walkin-u':      () => 'shelf',
   'closet-rod':    (i, n) => (i === 0 ? 'shelf' : i >= n - 1 ? 'floor' : 'rod'),
+  'closet-system': (i, n) => (i === 0 ? 'shelf' : i < n - 1 ? 'rod' : 'floor'),
+  'under-bed':     () => 'drawer',
   'drawer-bank':   (i, n) => (i === 0 && n > 1 ? 'worktop' : 'drawer'),
   'under-sink':    (i, n) => (i < 2 && n >= 4 ? 'drawer' : i >= n - 1 ? 'floor' : 'shelf'),
   'counter':       () => 'shelf',
@@ -204,12 +209,12 @@ export function resolveLayout({ ai, setup, scenarioKey, override, map }) {
   if (override && ARCHETYPE_SET.has(override)) {
     type = override;
     source = 'override';
-  } else if (ai && ai.layout && ai.layout.type && ARCHETYPE_SET.has(ai.layout.type)) {
-    type = ai.layout.type;
-    source = 'ai';
   } else if (setup && SETUP_ARCHETYPE[setup]) {
     type = SETUP_ARCHETYPE[setup];
     source = 'setup';
+  } else if (ai && ai.layout && ai.layout.type && ARCHETYPE_SET.has(ai.layout.type)) {
+    type = ai.layout.type;
+    source = 'ai';
   } else if (scenarioKey && SCENARIO_ARCHETYPE[scenarioKey]) {
     type = SCENARIO_ARCHETYPE[scenarioKey];
     source = 'scenario';
@@ -218,7 +223,8 @@ export function resolveLayout({ ai, setup, scenarioKey, override, map }) {
     source = 'default';
   }
 
-  const aiSections = (ai && ai.layout && ai.layout.sections) || [];
+  const aiSections = ai && ai.layout && ai.layout.type === type
+    ? (ai.layout.sections || []) : [];
   const assigned = new Set();
   const sections = [];
 
@@ -271,7 +277,7 @@ export function resolveLayout({ ai, setup, scenarioKey, override, map }) {
     return defaultFn(shelfIndex, n);
   }
 
-  return { type, source, sections, surfaceFor };
+  return { type, source, setup: setup || null, sections, surfaceFor };
 }
 
 /* ---------- Chip helpers ---------- */

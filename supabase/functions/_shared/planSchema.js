@@ -8,7 +8,7 @@ import { z } from 'zod';
 export const PRODUCT_TYPES = ['clear-bin', 'basket', 'turntable', 'can-riser', 'shelf-riser', 'door-rack', 'airtight-container', 'drawer-organizer', 'hook-rack', 'label-set', 'safety-latch'];
 export const SAFETY_FLAGS = ['kid-safe', 'keep-high', 'lock-or-latch'];
 export const ITEM_SIZES = ['s', 'm', 'l'];
-export const ARCHETYPES = ['shelves','cabinet','l-run','walkin-u','closet-rod','drawer-bank','under-sink','counter','garage-rack','overhead-rack','workbench','fridge'];
+export const ARCHETYPES = ['shelves','cabinet','l-run','walkin-u','closet-rod','drawer-bank','closet-system','under-bed','under-sink','counter','garage-rack','overhead-rack','workbench','fridge'];
 export const SURFACES = ['shelf','rod','drawer','floor','door','pegboard','worktop'];
 export const PLACES = ['left','back','right','upper','lower','run-a','run-b','floor','bench','wall'];
 

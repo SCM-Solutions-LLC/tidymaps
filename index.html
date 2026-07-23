@@ -432,7 +432,7 @@
       </div>
     </div>
     <figure class="plan-hero-photo">
-      <img id="plan-hero-img" src="assets/photos/pantry-after.png" alt="Your organized space" onerror="this.closest('.plan-hero-photo').classList.add('hide')">
+      <img id="plan-hero-img" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Your illustrated organization plan" onerror="this.closest('.plan-hero-photo').classList.add('hide')">
       <button class="plan-3d-badge" onclick="openViewer3d()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 9l10 6 10-6-10-6Z"/><path d="m2 15 10 6 10-6"/><path d="m2 9 10 6 10-6"/></svg> Walk through it in 3D</button>
     </figure>
     <div id="res-share-note" class="callout hide" style="margin-top:18px;grid-column:1/-1"></div>
@@ -663,6 +663,30 @@
         <label class="v3d-dim"><span>Height <strong id="v3d-h-val">6&rsquo;6&Prime;</strong></span><input type="range" id="v3d-h" min="36" max="96" value="78"></label>
       </div>
     </div>
+    <div class="v3d-structure hide" id="v3d-structure">
+      <span class="v3d-label">Structure</span>
+      <div class="v3d-option-row hide" id="v3d-l-side-control">
+        <span class="v3d-option-name">L extension</span>
+        <div class="v3d-layout-chips" id="v3d-l-side">
+          <button class="v3d-chip" type="button" data-side="auto">Auto</button>
+          <button class="v3d-chip" type="button" data-side="left">Left</button>
+          <button class="v3d-chip" type="button" data-side="right">Right</button>
+        </div>
+      </div>
+      <div class="v3d-shelf-controls hide" id="v3d-shelf-controls">
+        <label class="v3d-dim"><span>Number of shelves <strong id="v3d-shelf-count-val">4</strong></span><input type="range" id="v3d-shelf-count" min="1" max="12" value="4"></label>
+        <div class="v3d-option-row hide" id="v3d-shelf-placement-control">
+          <span class="v3d-option-name">Wall position</span>
+          <div class="v3d-layout-chips" id="v3d-shelf-placement">
+            <button class="v3d-chip" type="button" data-placement="left">Left</button>
+            <button class="v3d-chip" type="button" data-placement="center">Center</button>
+            <button class="v3d-chip" type="button" data-placement="right">Right</button>
+          </div>
+        </div>
+        <div class="v3d-shelf-height-head"><span class="v3d-option-name">Shelf heights</span><button class="btn btn-ghost btn-sm" type="button" id="v3d-even-shelves">Space evenly</button></div>
+        <div class="v3d-shelf-heights" id="v3d-shelf-heights"></div>
+      </div>
+    </div>
   </div>
 
   <div class="v3d-body">
@@ -676,6 +700,12 @@
       <h3 class="v3d-zones-h" id="v3d-zones-h">Zones</h3>
       <p class="small muted" style="margin:4px 0 14px">Hover to spotlight each on the shelf.</p>
       <div class="v3d-zone-list" id="v3d-zone-list"></div>
+      <section class="v3d-organizers hide" id="v3d-organizers">
+        <h3 class="v3d-zones-h">Organizers shown</h3>
+        <p class="small muted" style="margin:4px 0 10px">These match your plan. Quantity and spacing adjust to the measured space.</p>
+        <div class="v3d-organizer-list" id="v3d-organizer-list"></div>
+        <p class="small v3d-fit-note hide" id="v3d-fit-note"></p>
+      </section>
     </aside>
   </div>
 

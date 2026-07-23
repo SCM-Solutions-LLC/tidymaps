@@ -44,6 +44,11 @@
 
 .plan-hero-photo{position:relative;margin:0;min-width:0}
 .plan-hero-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:16px}
+.plan-hero-photo.illustrated img{
+  object-fit:contain;padding:clamp(20px,5vw,54px);
+  background:radial-gradient(circle at 72% 22%,#fff 0 12%,transparent 38%),var(--surface-2);
+  border:1px solid var(--line);
+}
 .plan-3d-badge{
   position:absolute;bottom:16px;right:16px;
   display:inline-flex;align-items:center;gap:7px;

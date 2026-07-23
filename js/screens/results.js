@@ -3,7 +3,7 @@ import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief } from '../plan.js';
-import { fmtFt } from '../wizard-data.js';
+import { areaFor, art, fmtFt } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -32,11 +32,20 @@ export function buildResults(){
   if(badge) badge.style.display = isRealAi ? 'inline-flex' : 'none';
 
   // report masthead + byline
-  const spaceLabel = A ? A.spaceType : 'Pantry';
+  const resultArea=areaFor(state.space);
+  const spaceLabel = A ? A.spaceType : resultArea.label;
   const mastSpace=document.getElementById('mast-space');
   if(mastSpace) mastSpace.textContent = spaceLabel;
   const resTitle=document.getElementById('res-title');
   if(resTitle) resTitle.textContent = `The ${spaceLabel.toLowerCase()}, with a place for everything`;
+  const hero=document.getElementById('plan-hero-img');
+  if(hero){
+    const svg=art(resultArea.artKey).replace('aria-hidden="true"','role="img"');
+    hero.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    hero.alt=`Illustrated ${resultArea.label.toLowerCase()} organization plan`;
+    hero.dataset.space=resultArea.id;
+    hero.closest('.plan-hero-photo').classList.add('illustrated');
+  }
   const mastDate=document.getElementById('mast-date');
   if(mastDate) mastDate.textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
   const byline=document.getElementById('res-byline');
@@ -278,11 +287,20 @@ function initShopping(){
   const needs=activeProductNeeds();
   const valid=state.shopping && state.shopping.length===needs.length &&
     state.shopping.every(s=>s && typeof s.needIdx==='number');
-  if(valid) return;
+  if(valid){
+    state.shopping.forEach((selection,i)=>{
+      const need=needs[selection.needIdx]||needs[i];
+      const match=matchProducts(need).find(entry=>entry.product.id===selection.productId);
+      selection.type=need.type;
+      if(match) selection.dims_in={...match.product.dims_in};
+    });
+    return;
+  }
   state.shopping=needs.map((need,i)=>{
     const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
     return {
       needIdx:i, checked:true, qty:need.qty,
+      type:need.type,
       productId: top?top.product.id:null,
       name: top?top.product.name:TYPE_LABEL[need.type],
       price_usd: top?top.product.price_usd:null,
@@ -290,6 +308,7 @@ function initShopping(){
       retailer: top?top.product.retailer:null,
       img: top?(top.product.img||null):null,
       fit: top?top.fit:'unknown',
+      dims_in:top?{...top.product.dims_in}:null,
     };
   });
 }
@@ -348,8 +367,10 @@ export function pickProduct(i, productId){
   const m=matchProducts(need).find(x=>x.product.id===productId);
   if(!m) return;
   Object.assign(state.shopping[i],{
+    type:need.type,
     productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd,
     url:m.product.url, retailer:m.product.retailer, img:m.product.img||null, fit:m.fit,
+    dims_in:{...m.product.dims_in},
   });
   renderUpgrades();
   persistShopping();

@@ -109,6 +109,8 @@ for (const [areaId, [, , label]] of Object.entries(MATRIX)) {
     // (a) The plan is for the chosen area — masthead, and no stray demo-pantry
     // leakage in the shelf map for non-kitchen spaces.
     await expect(page.locator('#mast-space')).toHaveText(label);
+    await expect(page.locator('#plan-hero-img')).toHaveAttribute('data-space', areaId);
+    await expect(page.locator('#plan-hero-img')).not.toHaveAttribute('src', /pantry-after/);
 
     // Zones and steps rendered with content.
     expect(await page.locator('#res-map > *').count()).toBeGreaterThan(0);

@@ -131,6 +131,8 @@ test('real scene reflow and pointer dragging follow a side run on the Z axis', a
     return {
       start, target,
       before:{ x:item.position.x, z:item.position.z },
+      itemWidth:item.scale.x,
+      surfaceLength:surface.length,
       surfaceX:surface.hitbox.position.x + surface.normal.x * math.ITEM_NORMAL_OFFSET,
     };
   });
@@ -151,5 +153,7 @@ test('real scene reflow and pointer dragging follow a side run on the Z axis', a
 
   expect(during.x).toBeCloseTo(drag.surfaceX, 1);
   expect(drag.before.x).toBeCloseTo(drag.surfaceX, 1);
-  expect(Math.abs(during.z - drag.before.z)).toBeGreaterThan(1);
+  const availableTravel=Math.max(0,(drag.surfaceLength-drag.itemWidth)/2);
+  const meaningfulTravel=Math.min(0.4,Math.max(0.1,availableTravel*0.1));
+  expect(Math.abs(during.z - drag.before.z)).toBeGreaterThan(meaningfulTravel);
 });

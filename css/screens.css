@@ -89,6 +89,15 @@
   width:18px;height:18px;border-radius:50%;border:2px solid #fff;
   background:var(--primary);box-shadow:0 1px 4px oklch(0.3 0.05 55 / .25);cursor:grab;
 }
+.v3d-structure{padding-top:18px;border-top:1px solid var(--line)}
+.v3d-option-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.v3d-option-name{font-size:14px;font-weight:700;color:var(--ink-2)}
+.v3d-shelf-controls{display:grid;gap:18px}
+.v3d-shelf-height-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.v3d-shelf-heights{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}
+.v3d-shelf-height{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.v3d-shelf-height span{font-size:12px;margin-bottom:5px}
+.v3d-fit-note{margin:10px 0 0;padding:9px 10px;border-radius:7px;background:var(--warn-bg);color:var(--warn)}
 
 .v3d-body{display:grid;gap:24px;margin-top:20px}
 @media(min-width:880px){.v3d-body{grid-template-columns:1fr 280px}}
@@ -109,3 +118,11 @@
 .v3d-zone-item .vz-dot{width:12px;height:12px;border-radius:3px;flex:none;margin-top:3px}
 .v3d-zone-item h4{font-size:15px;font-weight:700;margin:0}
 .v3d-zone-item p{font-size:13px;color:var(--ink-3);margin:3px 0 0;line-height:1.45}
+.v3d-organizers{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.v3d-organizer-list{display:flex;flex-wrap:wrap;gap:7px}
+.v3d-organizer-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:12px;font-weight:650;color:var(--ink-2)}
+.v3d-organizer-chip i{width:10px;height:10px;border-radius:2px;background:#c4ddd4;border:1px solid #8fa9a0}
+.v3d-organizer-chip[data-type="basket"] i{background:#b88755;border-color:#966d43}
+.v3d-organizer-chip[data-type="divider"] i{background:#d8d2c6;border-color:#aaa397}
+.v3d-organizer-chip[data-type="turntable"] i{border-radius:50%;background:#d8d2c6;border-color:#aaa397}
+.v3d-organizer-chip[data-type="riser"] i{background:#b8b9b3;border-color:#8b8d86}

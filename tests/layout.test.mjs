@@ -124,7 +124,7 @@ test('normalizeLayout clamps out-of-range rows', () => {
 
 // resolveLayout priority chain
 
-test('resolveLayout priority: override > ai > setup > scenario > default', () => {
+test('resolveLayout priority: override > setup > ai > scenario > default', () => {
   const map = [{lv:'Top', surface:'shelf'}, {lv:'Bottom', surface:'shelf'}];
   const ai = { layout: { type: 'fridge' }, map };
 
@@ -133,12 +133,12 @@ test('resolveLayout priority: override > ai > setup > scenario > default', () =>
   assert.equal(r1.source, 'override');
 
   const r2 = resolveLayout({ ai, setup: 'cabinet', scenarioKey: 'pantry', map });
-  assert.equal(r2.type, 'fridge');
-  assert.equal(r2.source, 'ai');
+  assert.equal(r2.type, 'cabinet');
+  assert.equal(r2.source, 'setup');
 
-  const r3 = resolveLayout({ ai: { map }, setup: 'cabinet', scenarioKey: 'pantry', map });
-  assert.equal(r3.type, 'cabinet');
-  assert.equal(r3.source, 'setup');
+  const r3 = resolveLayout({ ai, scenarioKey: 'pantry', map });
+  assert.equal(r3.type, 'fridge');
+  assert.equal(r3.source, 'ai');
 
   const r4 = resolveLayout({ ai: { map }, scenarioKey: 'bathroom', map });
   assert.equal(r4.type, 'under-sink');
@@ -147,6 +147,19 @@ test('resolveLayout priority: override > ai > setup > scenario > default', () =>
   const r5 = resolveLayout({ ai: { map }, map });
   assert.equal(r5.type, 'shelves');
   assert.equal(r5.source, 'default');
+});
+
+test('explicit setup choices cannot be replaced by a generic area layout', () => {
+  const map=[{lv:'Hanging rod',surface:'rod'}];
+  const ai={layout:{type:'closet-rod',sections:[{id:'main',rows:[0]}]},map};
+  const l=resolveLayout({ai,setup:'lshapeC',scenarioKey:'closet',map});
+  assert.equal(l.type,'l-run');
+  assert.equal(l.source,'setup');
+  assert.deepEqual(l.sections,[{id:'main',label:'',place:null,rows:[0]}]);
+  const builtIn=resolveLayout({ai,setup:'builtin',scenarioKey:'closet',map});
+  assert.equal(builtIn.type,'closet-system');
+  const underBed=resolveLayout({ai:{map},setup:'underbed',scenarioKey:'dresser',map});
+  assert.equal(underBed.type,'under-bed');
 });
 
 test('resolveLayout assigns every row to exactly one section', () => {

@@ -19,6 +19,7 @@ export function attachDrag(view, { onDrop }={}){
   const ray=new THREE.Raycaster();
   const pointer=new THREE.Vector2();
   let dragging=null, dragSurface=null;
+  let hovered=null;
 
   function cast(e, targets){
     const r=canvas.getBoundingClientRect();
@@ -36,6 +37,9 @@ export function attachDrag(view, { onDrop }={}){
     const hit=cast(e, items)[0];
     if(!hit) return;
     dragging=hit.object;
+    hovered=dragging;
+    if(dragging.userData.label) dragging.userData.label.visible=true;
+    (dragging.userData.displayCopies||[]).forEach(copy=>{ copy.visible=false; });
     dragSurface=surfaces.find(s=>s.index===dragging.userData.shelfIndex)||null;
     controls.enabled=false;
     dragging.position.y+=1.2;
@@ -44,7 +48,17 @@ export function attachDrag(view, { onDrop }={}){
   }
 
   function onMove(e){
-    if(!dragging) return;
+    if(!dragging){
+      const hit=cast(e,items)[0];
+      const next=hit&&hit.object;
+      if(next!==hovered){
+        if(hovered&&hovered.userData.label) hovered.userData.label.visible=false;
+        hovered=next||null;
+        if(hovered&&hovered.userData.label) hovered.userData.label.visible=true;
+        canvas.style.cursor=hovered?'grab':'default';
+      }
+      return;
+    }
     const shelfHit=cast(e, surfaces.map(s=>s.hitbox))[0];
     if(shelfHit){
       dragSurface=surfaces.find(s=>s.hitbox===shelfHit.object);
@@ -92,17 +106,26 @@ export function attachDrag(view, { onDrop }={}){
       if(onDrop) onDrop(item, dragSurface);
     }
     reflow();
+    if(item.userData.label) item.userData.label.visible=false;
+    hovered=null;
     try{ canvas.releasePointerCapture(e.pointerId); }catch(_){}
+  }
+
+  function onLeave(){
+    if(!dragging&&hovered&&hovered.userData.label) hovered.userData.label.visible=false;
+    if(!dragging) hovered=null;
   }
 
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
   canvas.addEventListener('pointerup', onUp);
   canvas.addEventListener('pointercancel', onUp);
+  canvas.addEventListener('pointerleave', onLeave);
   return ()=>{
     canvas.removeEventListener('pointerdown', onDown);
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
     canvas.removeEventListener('pointercancel', onUp);
+    canvas.removeEventListener('pointerleave', onLeave);
   };
 }

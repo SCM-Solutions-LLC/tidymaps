@@ -32,7 +32,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
     "surface": "shelf"|"rod"|"drawer"|"floor"|"door"|"pegboard"|"worktop"|null  // what kind of surface this row sits on. rod for hanging rods, drawer for drawers, floor for floor zones, door for door-mounted storage, pegboard for pegboard walls, worktop for counter or bench surfaces, shelf for all other shelves. null if unsure.
   }],
   "layout": {                                  // optional: classify the overall physical layout
-    "type": "shelves"|"cabinet"|"l-run"|"walkin-u"|"closet-rod"|"drawer-bank"|"under-sink"|"counter"|"garage-rack"|"overhead-rack"|"workbench"|"fridge",
+    "type": "shelves"|"cabinet"|"l-run"|"walkin-u"|"closet-rod"|"drawer-bank"|"closet-system"|"under-bed"|"under-sink"|"counter"|"garage-rack"|"overhead-rack"|"workbench"|"fridge",
     "sections": [{"id": string, "label": string, "place": "left"|"back"|"right"|"upper"|"lower"|"run-a"|"run-b"|"floor"|"bench"|"wall", "rows": [number]}]  // optional: for multi-wall or multi-section spaces, group map rows by physical section. Each shelfIndex appears in at most one section.
   } | null,                                    // null if the layout type is unclear from the photos
   "geometry": {                                // estimate from the photos if the user gave no dimensions
@@ -59,7 +59,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
 }
 
 Layout classification rules:
-- Classify layout.type to the closest archetype: shelves (open shelving unit), cabinet (enclosed cabinet with doors), l-run (L-shaped two perpendicular runs), walkin-u (walk-in closet or pantry with 2-3 walls), closet-rod (closet with hanging rod), drawer-bank (stacked drawers), under-sink (under-sink cabinet with plumbing), counter (counter with upper cabinets, butler's pantry), garage-rack (open garage or utility rack), overhead-rack (ceiling-mounted storage), workbench (workbench with pegboard), fridge (refrigerator or freezer).
+- Classify layout.type to the closest archetype: shelves (open shelving unit), cabinet (enclosed cabinet with doors), l-run (L-shaped two perpendicular runs), walkin-u (walk-in closet or pantry with 2-3 walls), closet-rod (closet with hanging rod), closet-system (built-in closet with shelves, rods, and lower drawers), drawer-bank (stacked drawers), under-bed (low drawers or rolling bins below a bed), under-sink (under-sink cabinet with plumbing), counter (counter with upper cabinets, butler's pantry), garage-rack (open garage or utility rack), overhead-rack (ceiling-mounted storage), workbench (workbench with pegboard), fridge (refrigerator or freezer).
 - For multi-wall or multi-section spaces, add sections grouping map rows by physical location. Each shelfIndex must appear in at most one section. Use place values that match the physical position.
 - Set surface on every map row: hanging rods are "rod", drawers are "drawer", crisper or freezer compartments are "drawer", counter or bench tops are "worktop", floor zones are "floor", door-mounted storage is "door", pegboard walls are "pegboard". Regular shelves are "shelf". If the surface type is not clear, set null.
 - If the layout type is genuinely unclear from the photos, set layout to null. Never invent walls or sections you cannot see.

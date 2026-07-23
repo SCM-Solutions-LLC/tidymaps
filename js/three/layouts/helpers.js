@@ -25,6 +25,8 @@ export function createMaterials(){
 export function addBox(scene, w, h, d, x, y, z, mat){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
   m.position.set(x,y,z);
+  m.castShadow=true;
+  m.receiveShadow=true;
   scene.add(m);
   return m;
 }
@@ -42,13 +44,16 @@ export function addShelfLabel(scene, row, leftEdge, y, z){
   const text=row.lv+(row.safety&&row.safety.flag?`  ·  ${row.safety.flag.replace(/-/g,' ')}`:'');
   const label=makeLabelSprite(text, { color:'#3b4237' });
   label.position.set(leftEdge+label.scale.x/2+1.5, y, z);
+  label.visible=false;
+  label.userData.zoneShelfIndex=row.shelfIndex;
   scene.add(label);
+  return label;
 }
 
-export function addAccentStrip(scene, row, w, y, z){
+export function addAccentStrip(scene, row, w, y, z, x=0){
   const accent=accentFor(row);
   if(!accent) return;
-  addBox(scene, w, 0.4, 0.4, 0, y+0.2, z,
+  addBox(scene, w, 0.4, 0.4, x, y+0.2, z,
     new THREE.MeshBasicMaterial({ color:accent }));
 }
 

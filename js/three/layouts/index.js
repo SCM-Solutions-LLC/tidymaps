@@ -3,6 +3,8 @@ import { build as buildCabinet } from './cabinet.js';
 import { build as buildLRun } from './l-run.js';
 import { build as buildWalkinU } from './walkin-u.js';
 import { build as buildClosetRod } from './closet-rod.js';
+import { build as buildClosetSystem } from './closet-system.js';
+import { build as buildUnderBed } from './under-bed.js';
 import { build as buildDrawerBank } from './drawer-bank.js';
 import { build as buildUnderSink } from './under-sink.js';
 import { build as buildCounter } from './counter.js';
@@ -16,6 +18,8 @@ export const LAYOUT_BUILDERS = {
   'l-run':         buildLRun,
   'walkin-u':      buildWalkinU,
   'closet-rod':    buildClosetRod,
+  'closet-system': buildClosetSystem,
+  'under-bed':     buildUnderBed,
   'drawer-bank':   buildDrawerBank,
   'under-sink':    buildUnderSink,
   'counter':       buildCounter,
