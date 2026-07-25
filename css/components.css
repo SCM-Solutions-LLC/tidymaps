@@ -590,9 +590,12 @@ textarea{resize:vertical;min-height:84px}
   48%,76%{transform:scaleX(.28) skewY(-5deg)}
   88%{transform:scaleX(.9) skewY(-1deg)}
 }
+/* A pure rotation about the hanger point barely displaces the garment, so the
+   whole closet step read as static. The swing now carries a lateral offset —
+   the pendulum arc a hanging shirt actually traces. */
 @keyframes shirt-sway{
-  from{transform:rotate(-3.5deg)}
-  to{transform:rotate(4deg)}
+  from{transform:translate3d(-5px,1px,0) rotate(-9deg)}
+  to{transform:translate3d(5px,1px,0) rotate(9deg)}
 }
 @keyframes bin-pull{
   0%,22%,100%{transform:translate3d(0,0,0) scale(1)}
@@ -600,9 +603,10 @@ textarea{resize:vertical;min-height:84px}
   48%,76%{transform:translate3d(0,6px,0) scale(1.09)}
   88%{transform:translate3d(0,1px,0) scale(1.01)}
 }
+/* Same fix as the shirt: the hanging tool needs lateral travel to read. */
 @keyframes tool-sway{
-  from{transform:rotate(-5deg)}
-  to{transform:rotate(6deg)}
+  from{transform:translate3d(-2.5px,0,0) rotate(-10deg)}
+  to{transform:translate3d(2.5px,0,0) rotate(10deg)}
 }
 @keyframes towel-pull{
   0%,22%,100%{transform:translate3d(0,0,0)}
