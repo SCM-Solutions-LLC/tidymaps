@@ -8,6 +8,8 @@ import { normalizeAi } from '../plan.js';
 import { submitInviteRequest } from '../db.js';
 import { affiliatesConfigured } from '../affiliates.js';
 import { hydrateImages } from '../images.js';
+import { ROOMS, AREAS, art } from '../wizard-data.js';
+import { setArea } from './wizard.js';
 
 /* ---------- Sample plan shortcut ---------- */
 export function runDemo(){
@@ -49,6 +51,34 @@ function showSignupConfirmed(email){
   if(slot) slot.textContent=email;
 }
 
+/* ---------- Spaces gallery ----------
+   Built from the wizard's own ROOMS/AREAS so the homepage always advertises
+   exactly what the planner supports. Picking a card sets the answer and drops
+   the visitor at step 3 (the setup shapes), which is the first step that shows
+   them something about their own space. */
+function renderSpaces(){
+  const wrap = document.getElementById('space-groups');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  ROOMS.forEach(room => {
+    const group = document.createElement('div');
+    group.className = 'space-group';
+    const cards = (AREAS[room.id] || []).map((a, i) => `
+      <button type="button" class="room-card" data-room="${room.id}" data-area="${a.id}">
+        <div class="rc-img card-visual tone-${i % 4}">${art(a.artKey)}</div>
+        <div class="rc-label"><h3>${a.label}</h3><p>${a.desc}</p></div>
+      </button>`).join('');
+    group.innerHTML = `<h3 class="space-room">${room.label}</h3><div class="room-cards">${cards}</div>`;
+    wrap.appendChild(group);
+  });
+  wrap.addEventListener('click', e => {
+    const card = e.target.closest('.room-card');
+    if(!card) return;
+    setArea(card.dataset.room, card.dataset.area);
+    go('setup');
+  });
+}
+
 /* ---------- Appbar scroll shadow ---------- */
 function initAppbarScroll(){
   const appbar=document.querySelector('.appbar');
@@ -79,5 +109,6 @@ export function initLanding(){
   // the declarative <img>/onerror fallback covers a manifest load failure.
   hydrateImages().catch(()=>{});
 
+  renderSpaces();
   initAppbarScroll();
 }
