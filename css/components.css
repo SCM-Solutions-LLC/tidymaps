@@ -859,3 +859,64 @@ body[data-flow="1"] .site-footer{display:none}
 
 /* wizard footer: context line between Back and Continue */
 .flow-ctx{flex:1;text-align:center;font-size:12.5px;color:var(--ink-3);padding:0 8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- Product library (#screen-products) ----------
+   A browsable index of the same catalog the planner draws from, grouped by
+   space. Deliberately plainer than the plan's product blocks: no fit badges
+   or checkboxes, because nothing here has been measured against a real space
+   yet — that is what the planner is for. */
+.prod-mast{max-width:60ch}
+.prod-mast h2{font-size:clamp(26px,3.6vw,34px);font-weight:700;letter-spacing:-.02em;margin:0}
+.prod-mast .sec-sub{font-size:16.5px;line-height:1.6;color:var(--ink-2);margin:10px 0 0}
+
+.prod-filters{display:grid;gap:14px;margin:26px 0 18px;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.prod-filter{display:grid;gap:8px}
+.prod-filter-label{font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.prod-filters .chip{font-size:14px;padding:8px 14px}
+
+.parea{padding:8px 0 6px;border-top:1px solid var(--line)}
+.parea:first-of-type{border-top:none}
+.parea-head{
+  display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  padding:20px 0;cursor:pointer;list-style:none;
+}
+.parea-head::-webkit-details-marker{display:none}
+.parea-head:hover h3{color:var(--primary)}
+.parea-titles{display:grid;gap:3px;position:relative;padding-left:26px;flex:1;min-width:0}
+/* disclosure chevron, rotating with the open state */
+.parea-titles::before{
+  content:"";position:absolute;left:2px;top:9px;width:8px;height:8px;
+  border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
+  transform:rotate(-45deg);transition:transform .18s ease;
+}
+.parea[open] .parea-titles::before{transform:rotate(45deg)}
+.parea-head h3{font-size:22px;font-weight:700;font-family:var(--serif);letter-spacing:-.01em;margin:0;color:var(--ink);transition:color .15s}
+.parea-setups{font-size:13.5px;color:var(--ink-3);margin:0}
+.parea-count{font-size:12.5px;color:var(--ink-3);margin:0}
+
+.ptype{margin-top:22px;padding-left:26px}
+.ptype h4{font-size:15px;font-weight:700;margin:0;color:var(--ink);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.ptype-tag{
+  font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--clay);
+  background:var(--primary-bg);border:1px solid var(--primary-line);border-radius:99px;padding:2px 9px;
+}
+.ptype-why{font-size:14px;line-height:1.6;color:var(--ink-2);margin:4px 0 0;max-width:60ch}
+
+.pcards{display:grid;gap:12px;margin-top:14px;grid-template-columns:1fr}
+@media(min-width:640px){.pcards{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.pcards{grid-template-columns:repeat(3,1fr)}}
+.pcard{
+  display:flex;flex-direction:column;gap:7px;padding:15px 16px;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);
+}
+.pc-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pc-brand{font-size:12.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+.pc-price{font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap}
+.pc-name{font-size:14.5px;line-height:1.45;font-weight:600;color:var(--ink);text-decoration:none}
+.pc-name:hover{color:var(--primary);text-decoration:underline;text-underline-offset:3px}
+.pc-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
+.pc-dims,.pc-retailer{font-size:12.5px;color:var(--ink-3)}
+.pc-dims{font-family:var(--mono);letter-spacing:-.02em}
+
+.prod-foot{margin-top:34px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.prod-foot > div{flex:1;min-width:220px}

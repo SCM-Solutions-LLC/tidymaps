@@ -79,6 +79,17 @@ function renderSpaces(){
   });
 }
 
+/* The site nav points at sections of the landing page, which is hidden while
+   another screen is showing. Route back first, then scroll — otherwise the
+   anchor resolves to an invisible element and nothing appears to happen. */
+export function navHome(hash){
+  document.body.classList.remove('nav-open');
+  if(document.body.dataset.screen !== 'landing') go('landing');
+  const el = document.querySelector(hash);
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  return false;
+}
+
 /* ---------- Appbar scroll shadow ---------- */
 function initAppbarScroll(){
   const appbar=document.querySelector('.appbar');

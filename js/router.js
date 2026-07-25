@@ -28,6 +28,8 @@ export const FLOW_SCREENS = {
   shopping:{next:'review',back:'effort',label:'Continue'},
   review:{next:'loading',back:'shopping',label:'Build my plan'}
 };
+// Screens that keep the marketing chrome (site nav, "Plan my space" CTA).
+const SITE_SCREENS=new Set(['landing','products']);
 let current='landing';
 
 export function getCurrentScreen(){
@@ -60,6 +62,11 @@ export function go(id){
   // the appbar shows site navigation on the landing page and
   // workflow controls (Start over, My spaces) everywhere else
   document.body.dataset.screen=id;
+  // Landing and the product library are site pages: they keep the marketing
+  // nav and CTA in the appbar, where flow and report screens show workflow
+  // controls instead.
+  document.body.dataset.site=SITE_SCREENS.has(id)?'1':'';
+  if(!SITE_SCREENS.has(id)) document.body.classList.remove('nav-open');
   track('screen_viewed', { screen:id });   // wizard funnel / drop-off
   setRail();
   // step counter in appbar for wizard screens
