@@ -95,7 +95,7 @@ function areaBlock(room, area, open){
           <p class="parea-setups">${esc(room.label)} &middot; ${esc(setups)}</p>
           <p class="parea-count">${groups.length} ${groups.length === 1 ? 'category' : 'categories'} &middot; ${count} products</p>
         </div>
-        <span class="btn btn-ghost btn-sm" role="button" tabindex="0" data-plan-room="${room.id}" data-plan-area="${area.id}">Plan this space</span>
+        <button type="button" class="btn btn-ghost btn-sm" data-plan-room="${room.id}" data-plan-area="${area.id}">Plan this space</button>
       </summary>
       ${groups.map(g => typeBlock(g.need, g.items)).join('')}
     </details>`;
@@ -151,17 +151,11 @@ export async function buildProducts(){
     const b = e.target.closest('.chip'); if(!b) return;
     filters.type = b.dataset.val; renderFilters(); renderList();
   });
-  const startPlan = b => { setArea(b.dataset.planRoom, b.dataset.planArea); go('setup'); };
   groups.addEventListener('click', e => {
     const b = e.target.closest('[data-plan-area]'); if(!b) return;
-    e.preventDefault();   // the button lives inside <summary>: don't also toggle
-    startPlan(b);
-  });
-  groups.addEventListener('keydown', e => {
-    if(e.key !== 'Enter' && e.key !== ' ') return;
-    const b = e.target.closest('[data-plan-area]'); if(!b) return;
-    e.preventDefault();
-    startPlan(b);
+    e.preventDefault();   // the button sits inside <summary>: don't also toggle
+    setArea(b.dataset.planRoom, b.dataset.planArea);
+    go('setup');
   });
 }
 

@@ -72,6 +72,21 @@ test('landing shows real evidence: sample-plan excerpt and product screenshots',
   }
 });
 
+// A section headed "See a finished plan" showing a chaotic pantry argues
+// against itself. The before shot is the wizard's business, not the homepage's.
+test('the sample-plan section shows the finished space, not the mess', () => {
+  assert.ok(landing.includes('ex-pantry-after.png'), 'sample plan lost its finished-space photo');
+  assert.ok(!landing.includes('pantry-before.png'), 'the before shot is back on the homepage');
+});
+
+// Three full-size plan screenshots stacked is three dense pages of somebody
+// else's plan — a wall of reading before the visitor has decided anything.
+test('product screenshots stay previews, not documents to read', () => {
+  assert.match(landingCss, /\.product-shots\{[^}]*grid-template-columns:1fr/, 'product shots are no longer a grid');
+  assert.match(landingCss, /\.product-shot img\{[^}]*height:\d+px/, 'product screenshots are no longer height-capped');
+  assert.match(landingCss, /\.space-room\{[^}]*font-size:2\dpx/, 'room labels shrank back to caption size');
+});
+
 test('photo slots degrade gracefully until real photography exists', () => {
   assert.ok(landing.includes("classList.add('no-photo')"), 'photo fallback handler missing');
   assert.ok(landingCss.includes('.no-photo'), 'no-photo layout styles missing');
