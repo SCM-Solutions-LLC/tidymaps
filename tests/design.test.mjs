@@ -87,3 +87,23 @@ test('report uses ordinary language, not decorative chapters', () => {
     assert.ok(html.includes(label), `plain report label missing: ${label}`);
   }
 });
+
+// The marketing footer used to render on every screen, including the 12 wizard
+// steps. Because .screen has a fixed 120px bottom padding, the footer's position
+// does not track viewport height — it sat at a constant ~822px, so on any tall
+// window it stranded mid-page above the sticky Back/Continue bar and read as a
+// false end-of-page. Flow screens now suppress it via body[data-flow].
+test('the marketing footer is suppressed inside the wizard flow', () => {
+  const componentsCss = readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
+  const router = readFileSync(new URL('../js/router.js', import.meta.url), 'utf8');
+  assert.match(
+    componentsCss,
+    /body\[data-flow="1"\]\s*\.site-footer\s*\{[^}]*display:\s*none/,
+    'flow screens no longer hide .site-footer',
+  );
+  assert.match(
+    router,
+    /document\.body\.dataset\.flow\s*=\s*FLOW_SCREENS\[id\]/,
+    'router no longer flags flow screens on the body',
+  );
+});

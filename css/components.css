@@ -281,6 +281,8 @@ textarea{resize:vertical;min-height:84px}
 .spin-ring{width:16px;height:16px;border:2px solid var(--primary-line);border-right-color:transparent;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle}
 
 .site-footer{max-width:1100px;margin:0 auto;border-top:1px solid var(--line);padding:32px var(--pad,18px) 48px}
+/* hidden inside the wizard — see the data-flow note in router.js */
+body[data-flow="1"] .site-footer{display:none}
 .footer-inner{display:grid;gap:20px;grid-template-columns:1fr}
 @media(min-width:680px){.footer-inner{grid-template-columns:auto 1fr auto;align-items:start}}
 .footer-brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:var(--ink)}

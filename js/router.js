@@ -75,6 +75,10 @@ export function go(id){
   }
   // footer
   const foot=document.getElementById('flow-foot');
+  // Flow screens own the bottom of the viewport with their sticky nav, so the
+  // marketing footer is suppressed there — otherwise it lands mid-page on short
+  // steps and reads as a false end-of-page above the Back/Continue bar.
+  document.body.dataset.flow=FLOW_SCREENS[id]?'1':'';
   if(FLOW_SCREENS[id]){
     foot.classList.remove('hide');
     const cfg=FLOW_SCREENS[id];
