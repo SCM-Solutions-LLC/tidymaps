@@ -2,6 +2,7 @@ import { ROOMS, AREAS, SETUP_TYPES } from '../wizard-data.js';
 import { loadCatalog, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel } from '../affiliates.js';
 import { getDemoScenario } from '../demo-scenarios.js';
+import { productArt } from '../product-art.js';
 import { go } from '../router.js';
 import { setArea } from './wizard.js';
 
@@ -52,17 +53,32 @@ function esc(s){
 }
 
 /* ---------- Rendering ---------- */
-function productCard(p){
+
+/* A real retailer photo when the catalog has one, the category drawing when it
+   doesn't — and the drawing again if the photo 404s, since a hotlinked
+   retailer URL can rotate at any time. */
+function productVisual(p, tone){
+  const art = productArt(p.type);
+  if(!p.img) return `<span class="pc-art card-visual tone-${tone}">${art}</span>`;
+  return `<span class="pc-art card-visual tone-${tone} has-photo">${art}` +
+    `<img src="${esc(p.img)}" alt="" loading="lazy" decoding="async" ` +
+    `onerror="this.parentElement.classList.remove('has-photo');this.remove()"></span>`;
+}
+
+function productCard(p, index){
   return `
     <article class="pcard">
-      <div class="pc-head">
-        <span class="pc-brand">${esc(p.brand)}</span>
-        <span class="pc-price">${priceStr(p.price_usd)}</span>
-      </div>
-      <a class="pc-name" href="${esc(withAffiliate(p.url, p.retailer))}" target="_blank" rel="${affiliateRel(p.retailer)}">${esc(p.name)}</a>
-      <div class="pc-meta">
-        <span class="pc-dims">${dimStr(p.dims_in)}</span>
-        <span class="pc-retailer">at ${esc(p.retailer)}</span>
+      ${productVisual(p, index % 4)}
+      <div class="pc-body">
+        <div class="pc-head">
+          <span class="pc-brand">${esc(p.brand)}</span>
+          <span class="pc-price">${priceStr(p.price_usd)}</span>
+        </div>
+        <a class="pc-name" href="${esc(withAffiliate(p.url, p.retailer))}" target="_blank" rel="${affiliateRel(p.retailer)}">${esc(p.name)}</a>
+        <div class="pc-meta">
+          <span class="pc-dims">${dimStr(p.dims_in)}</span>
+          <span class="pc-retailer">at ${esc(p.retailer)}</span>
+        </div>
       </div>
     </article>`;
 }
@@ -73,7 +89,7 @@ function typeBlock(need, products){
     <section class="ptype">
       <h4>${esc(TYPE_LABEL[need.type] || need.type)}${need.kidOnly ? '<span class="ptype-tag">with kids or pets</span>' : ''}</h4>
       <p class="ptype-why">${esc(need.purpose)}</p>
-      <div class="pcards">${products.map(productCard).join('')}</div>
+      <div class="pcards">${products.map((p, i) => productCard(p, i)).join('')}</div>
     </section>`;
 }
 

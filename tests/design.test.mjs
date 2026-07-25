@@ -61,14 +61,11 @@ test('landing offers every space the wizard supports', () => {
   assert.match(landingJs, /setArea\(card\.dataset\.room, card\.dataset\.area\)/, 'space cards no longer open the planner');
 });
 
-test('landing shows real evidence: sample-plan excerpt and product screenshots', () => {
+test('landing shows real evidence: sample-plan excerpt and the finished space', () => {
   assert.ok(landing.includes('Plan excerpt'), 'sample plan lost its excerpt');
-  for (const shot of [
-    'assets/product/plan-map.png', 'assets/product/plan-steps.png', 'assets/product/plan-shopping.png',
-    'assets/product/hero-3d.png', 'assets/product/wizard-household.png',
-  ]) {
-    assert.ok(landing.includes(shot), `missing product screenshot slot: ${shot}`);
-    assert.ok(existsSync(new URL(`../${shot}`, import.meta.url)), `screenshot file missing on disk: ${shot}`);
+  for (const shot of ['assets/product/hero-3d.png', 'assets/photos/ex-pantry-after.png']) {
+    assert.ok(landing.includes(shot), `missing image slot: ${shot}`);
+    assert.ok(existsSync(new URL(`../${shot}`, import.meta.url)), `image missing on disk: ${shot}`);
   }
 });
 
@@ -79,12 +76,21 @@ test('the sample-plan section shows the finished space, not the mess', () => {
   assert.ok(!landing.includes('pantry-before.png'), 'the before shot is back on the homepage');
 });
 
-// Three full-size plan screenshots stacked is three dense pages of somebody
-// else's plan — a wall of reading before the visitor has decided anything.
-test('product screenshots stay previews, not documents to read', () => {
-  assert.match(landingCss, /\.product-shots\{[^}]*grid-template-columns:1fr/, 'product shots are no longer a grid');
-  assert.match(landingCss, /\.product-shot img\{[^}]*height:\d+px/, 'product screenshots are no longer height-capped');
-  assert.match(landingCss, /\.space-room\{[^}]*font-size:2\dpx/, 'room labels shrank back to caption size');
+// A picture of text is not an explanation: app screenshots scaled down to fit
+// three-across were unreadable, so "What you get" draws the three pieces of a
+// plan at their own size instead. No screenshot belongs in that section.
+test('what-you-get explains with drawn panels, not shrunken screenshots', () => {
+  const section = landing.slice(landing.indexOf('id="product"'), landing.indexOf('id="sample"'));
+  assert.equal((section.match(/class="wy-vis"/g) || []).length, 3, 'expected three drawn explainer panels');
+  assert.ok(!section.includes('<img'), 'a screenshot is back in the what-you-get section');
+  assert.ok(!landing.includes('assets/product/plan-map.png'), 'plan screenshot re-inlined on the landing page');
+  assert.ok(!landing.includes('assets/product/wizard-household.png'), 'wizard screenshot re-inlined on the landing page');
+});
+
+test('room labels read as headings and their cards are centred', () => {
+  assert.match(landingCss, /\.space-room\{[^}]*font-size:clamp\(22px/, 'room labels shrank back to caption size');
+  assert.match(landingCss, /\.space-room\{[^}]*text-align:center/, 'room labels are no longer centred');
+  assert.match(landingCss, /\.space-group \.room-cards\{[^}]*justify-content:center/, 'space cards are no longer centred');
 });
 
 test('photo slots degrade gracefully until real photography exists', () => {
