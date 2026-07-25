@@ -7,10 +7,10 @@
    ============================================================ */
 
 /* ---------- Shared section rhythm ---------- */
-.home-sec{padding:clamp(56px,9vh,88px) 0 0}
+.home-sec{padding:clamp(56px,9vh,88px) 0 0;scroll-margin-top:calc(var(--appbar-h,57px) + 18px)}
 .home-sec > h2{
   font-size:clamp(26px,3.6vw,34px);font-weight:700;letter-spacing:-.02em;line-height:1.15;
-  margin:0;color:var(--ink);
+  margin:0;color:var(--ink);text-wrap:balance;
 }
 .home-sec > .sec-sub{font-size:16.5px;line-height:1.6;color:var(--ink-2);margin:10px 0 0;max-width:58ch}
 
@@ -28,7 +28,7 @@
 @media(min-width:920px){.home-hero{grid-template-columns:46fr 54fr;gap:clamp(40px,5vw,72px)}}
 .home-hero h1{
   font-size:clamp(38px,5.4vw,56px);font-weight:900;letter-spacing:-.03em;line-height:1.06;
-  margin:0;color:var(--ink);font-family:var(--serif);
+  margin:0;color:var(--ink);font-family:var(--serif);text-wrap:balance;
 }
 .home-hero .hero-lede{
   font-size:clamp(16.5px,2vw,19px);line-height:1.65;color:var(--ink-2);
@@ -68,14 +68,21 @@
 /* ---------- Spaces gallery ----------
    Room-grouped area cards, reusing the wizard's own .room-card styling so the
    homepage preview and step 2 are visibly the same thing. */
-.space-groups{display:grid;gap:34px;margin-top:30px}
+.space-groups{display:grid;gap:30px;margin-top:30px}
+/* The room is the label a visitor scans for, so it reads as a heading rather
+   than a caption: same family and weight as the section titles, one step down
+   in size, on a rule that separates one room from the next. */
 .space-room{
-  font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--ink-3);margin:0 0 12px;
+  font-size:20px;font-weight:700;font-family:var(--serif);letter-spacing:-.01em;
+  color:var(--ink);margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);
 }
 .space-group .room-cards{grid-template-columns:repeat(2,1fr)}
 @media(min-width:780px){.space-group .room-cards{grid-template-columns:repeat(3,1fr)}}
 .space-group .room-card{animation:none}
+/* Shallower art than the wizard's cards: nine of them stack up on one page. */
+.space-group .room-card .rc-img{aspect-ratio:3/2}
+.space-group .rc-label{padding:12px 16px 14px}
+.space-group .rc-label p{font-size:14px;color:var(--ink-2)}
 .space-foot{font-size:14.5px;line-height:1.6;color:var(--ink-3);margin:26px 0 0;max-width:62ch}
 
 /* ---------- One finished plan ---------- */
@@ -83,7 +90,9 @@
 @media(min-width:700px){.story-grid{grid-template-columns:300px minmax(0,1fr);gap:44px}}
 .story-photo{margin:0;min-width:0}
 .story-photo img{
-  width:100%;aspect-ratio:4/5;object-fit:cover;display:block;
+  /* height:auto keeps the intrinsic width/height attributes (there for CLS)
+     from overriding the crop */
+  width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;display:block;
   border-radius:var(--radius);border:1px solid var(--line);
 }
 .story-photo figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
@@ -103,24 +112,27 @@
 .story-table td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
 .story-foot{margin-top:22px;font-size:14px;color:var(--ink-3)}
 
-/* ---------- Real product screenshots ---------- */
-.product-shots{display:grid;gap:36px;margin-top:34px}
-.product-shot{margin:0;display:grid;gap:14px;align-items:start;min-width:0}
-@media(min-width:880px){.product-shot{grid-template-columns:250px minmax(0,1fr);gap:40px}}
+/* ---------- Real product screenshots ----------
+   Three previews side by side, cropped to their top edge. Shown full-size and
+   stacked, these are three dense pages of somebody else's plan — a wall of
+   reading before the visitor has decided anything. Thumbnails say "here is
+   what a plan looks like" without asking anyone to read one. */
+.product-shots{display:grid;gap:26px;margin-top:30px;grid-template-columns:1fr}
+@media(min-width:760px){.product-shots{grid-template-columns:repeat(3,1fr);gap:28px}}
+.product-shot{margin:0;display:grid;gap:12px;align-content:start;min-width:0}
 .product-shot img{
-  width:100%;display:block;border-radius:var(--radius);
-  border:1px solid var(--line-2);box-shadow:var(--shadow);
+  width:100%;height:210px;object-fit:cover;object-position:top;display:block;
+  border-radius:var(--radius);border:1px solid var(--line-2);box-shadow:var(--shadow);
 }
-.product-shot figcaption h3{font-size:17px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
-.product-shot figcaption p{font-size:14.5px;line-height:1.6;color:var(--ink-2);margin:6px 0 0;max-width:38ch}
-@media(min-width:880px){.product-shot figcaption{position:sticky;top:calc(var(--appbar-h,57px) + 20px)}}
+.product-shot figcaption h3{font-size:16px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
+.product-shot figcaption p{font-size:14px;line-height:1.55;color:var(--ink-2);margin:5px 0 0}
 
 /* ---------- Method ---------- */
 .how-grid{display:grid;gap:32px;margin-top:4px;align-items:start}
 @media(min-width:920px){.how-grid{grid-template-columns:minmax(0,1fr) 350px;gap:56px}}
 .how-shot{margin:0;min-width:0}
 .how-shot img{
-  width:100%;display:block;border-radius:var(--radius);
+  width:100%;height:auto;display:block;border-radius:var(--radius);
   border:1px solid var(--line-2);box-shadow:var(--shadow);
 }
 .how-shot figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
