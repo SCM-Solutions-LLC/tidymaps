@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { AREAS, ROOMS, SETUP_TYPES } from '../js/wizard-data.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
+import { hasProductArt, productArt } from '../js/product-art.js';
 
 // The product library page is an index of the same catalog the planner draws
 // from, grouped by space. It has no product data of its own: the catalog
@@ -30,6 +31,21 @@ test('every product in the catalog has a space that asks for it', () => {
   const asked = new Set(AREA_IDS.flatMap(id => [...typesFor(id)]));
   const orphans = [...new Set(catalog.products.map(p => p.type))].filter(t => !asked.has(t));
   assert.deepEqual(orphans, [], `catalog types no space asks for: ${orphans.join(', ')}`);
+});
+
+// Cards need a visual whether or not a retailer photo exists — and none does
+// yet, since displaying retailer photography needs an image API or a hotlink.
+test('every catalog category has an illustration to fall back on', () => {
+  const missing = [...new Set(catalog.products.map(p => p.type))].filter(t => !hasProductArt(t));
+  assert.deepEqual(missing, [], `categories with no drawing: ${missing.join(', ')}`);
+  for (const type of new Set(catalog.products.map(p => p.type))) {
+    assert.match(productArt(type), /^<svg[\s\S]*<\/svg>$/, `${type}: art is not an svg`);
+  }
+});
+
+test('a real product photo takes over when the catalog has one', () => {
+  assert.match(js, /if\(!p\.img\)/, 'product cards no longer prefer a real photo over the drawing');
+  assert.match(js, /onerror=[^>]*has-photo/, 'a broken photo no longer falls back to the drawing');
 });
 
 test('every space that asks for a category has products to show for it', () => {

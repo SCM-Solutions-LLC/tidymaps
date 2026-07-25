@@ -125,31 +125,50 @@
     <p class="space-foot">Each one is fitted to your setup &mdash; cabinet, reach-in, walk-in, L-shaped, drawer tower, vanity, utility shelving, workbench &mdash; and to who has to reach it.</p>
   </div>
 
-  <!-- The real product: actual screenshots, not mockups -->
+  <!-- Three pieces of a plan, drawn at a size you can read. App screenshots
+       shrunk to fit were unreadable; the real thing is one click away. -->
   <div class="home-sec" id="product">
     <h2>What you get</h2>
-    <p class="sec-sub">Real screenshots, from a real plan.</p>
+    <p class="sec-sub">Three parts, in every plan.</p>
     <div class="product-shots">
       <figure class="product-shot">
         <figcaption>
           <h3>Where things go</h3>
-          <p>Every shelf becomes a zone, with the reason it&rsquo;s there.</p>
+          <p>Every shelf becomes a zone &mdash; and each one says why.</p>
         </figcaption>
-        <img data-img="product-plan-map" width="1744" height="1200" src="assets/product/plan-map.png" alt="Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons" loading="lazy">
+        <div class="wy-vis" aria-hidden="true">
+          <div class="wy-zone">
+            <span class="wy-zone-name">Eye level</span>
+            <span class="wy-zone-items">Daily snacks &middot; Breakfast &middot; Coffee</span>
+            <span class="wy-why">Reached every morning, so it sits where hands land first.</span>
+            <span class="wy-flag">kid safe</span>
+          </div>
+          <div class="wy-zone dim"><span class="wy-zone-name">Lower shelf</span><span class="wy-zone-items">Kid snacks &middot; Heavy jars</span></div>
+          <div class="wy-zone dim"><span class="wy-zone-name">Top shelf</span><span class="wy-zone-items">Bulk overflow</span></div>
+        </div>
       </figure>
       <figure class="product-shot">
         <figcaption>
           <h3>Step-by-step</h3>
           <p>Short, timed steps. Do one tonight or the lot on Saturday.</p>
         </figcaption>
-        <img data-img="product-plan-steps" width="1744" height="1722" src="assets/product/plan-steps.png" alt="Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking" loading="lazy">
+        <div class="wy-vis" aria-hidden="true">
+          <div class="wy-prog"><span class="wy-prog-bar"><i style="width:33%"></i></span><span class="wy-prog-txt">3 of 9 done</span></div>
+          <div class="wy-step done"><span class="wy-tick">&#10003;</span><span class="wy-step-txt">Empty one shelf at a time</span><span class="wy-time">10 min</span></div>
+          <div class="wy-step"><span class="wy-tick"></span><span class="wy-step-txt">Group what&rsquo;s used together</span><span class="wy-time">15 min</span></div>
+          <div class="wy-step"><span class="wy-tick"></span><span class="wy-step-txt">Move kid snacks within reach</span><span class="wy-time">5 min</span></div>
+        </div>
       </figure>
       <figure class="product-shot">
         <figcaption>
           <h3>Optional purchases</h3>
-          <p>Real products sized to your shelves, only if you ask. The $0 plan works without them.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through retailer links. Prices stay the same for you.</span> <button class="home-link" onclick="openProducts()">Browse the product library</button></p>
+          <p>Sized to your shelves, only if you ask. The $0 plan works without them.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through retailer links. Prices stay the same for you.</span> <button class="home-link" onclick="openProducts()">Browse the product library</button></p>
         </figcaption>
-        <img data-img="product-plan-shopping" width="1744" height="1882" src="assets/product/plan-shopping.png" alt="Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices" loading="lazy">
+        <div class="wy-vis" aria-hidden="true">
+          <div class="wy-buy"><span class="wy-buy-art" data-art="clear-bin"></span><span class="wy-buy-name">4 &times; Clear bin<em>Fits your 14&Prime; shelf</em></span><span class="wy-buy-price">$52</span></div>
+          <div class="wy-buy"><span class="wy-buy-art" data-art="turntable"></span><span class="wy-buy-name">Turntable<em>Fits your 14&Prime; shelf</em></span><span class="wy-buy-price">$10</span></div>
+          <div class="wy-buy zero"><span class="wy-buy-name">Or keep the $0 plan<em>Nothing to buy</em></span><span class="wy-buy-price">$0</span></div>
+        </div>
       </figure>
     </div>
   </div>
@@ -181,26 +200,21 @@
   <!-- Method -->
   <div class="home-sec" id="how">
     <h2>How it works</h2>
-    <div class="how-grid">
-      <div class="how-list">
-        <div class="how-step">
-          <h3><span class="n">1</span>Show the space as it is</h3>
-          <p>A few photos, mid-week mess and all. No tidying up first.</p>
-        </div>
-        <div class="how-step">
-          <h3><span class="n">2</span>Answer a few questions</h3>
-          <p>Who uses it, what&rsquo;s inside, how much time you&rsquo;ve got. TidyMap pre-fills what it can see.</p>
-        </div>
-        <div class="how-step">
-          <h3><span class="n">3</span>Work through the steps</h3>
-          <p>Each one is short and timed. Pause for school pickup; the plan holds.</p>
-        </div>
+    <div class="how-list">
+      <div class="how-step">
+        <h3><span class="n">1</span>Show the space as it is</h3>
+        <p>A few photos, mid-week mess and all. No tidying up first.</p>
       </div>
-      <figure class="how-shot">
-        <img data-img="product-wizard-household" width="1520" height="1376" src="assets/product/wizard-household.png" alt="Screenshot of the TidyMap planner asking who uses the space: kids and their ages, pets, and reaching or mobility needs" loading="lazy">
-        <figcaption>The planner asks who uses the space before it places anything.</figcaption>
-      </figure>
+      <div class="how-step">
+        <h3><span class="n">2</span>Answer a few questions</h3>
+        <p>Who uses it, what&rsquo;s inside, how much time you&rsquo;ve got. TidyMap pre-fills what it can see from your photos.</p>
+      </div>
+      <div class="how-step">
+        <h3><span class="n">3</span>Work through the steps</h3>
+        <p>Each one is short and timed. Pause for school pickup; the plan holds.</p>
+      </div>
     </div>
+    <p class="how-foot">About ten minutes of questions. The plan comes back the same session.</p>
   </div>
 
   <!-- Practical promises -->

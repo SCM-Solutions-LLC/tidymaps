@@ -73,11 +73,15 @@
    than a caption: same family and weight as the section titles, one step down
    in size, on a rule that separates one room from the next. */
 .space-room{
-  font-size:20px;font-weight:700;font-family:var(--serif);letter-spacing:-.01em;
-  color:var(--ink);margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);
+  font-size:clamp(22px,2.6vw,26px);font-weight:700;font-family:var(--serif);letter-spacing:-.01em;
+  color:var(--ink);margin:0 0 16px;padding-bottom:12px;text-align:center;
+  border-bottom:1px solid var(--line);
 }
-.space-group .room-cards{grid-template-columns:repeat(2,1fr)}
-@media(min-width:780px){.space-group .room-cards{grid-template-columns:repeat(3,1fr)}}
+/* Rows centre themselves: rooms hold two or three spaces, and a short row
+   left-aligned under a centred heading reads as a layout mistake. */
+.space-group .room-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+@media(min-width:560px){.space-group .room-cards{gap:16px}}
+.space-group .room-card{flex:1 1 240px;max-width:340px}
 .space-group .room-card{animation:none}
 /* Shallower art than the wizard's cards: nine of them stack up on one page. */
 .space-group .room-card .rc-img{aspect-ratio:3/2}
@@ -112,30 +116,69 @@
 .story-table td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
 .story-foot{margin-top:22px;font-size:14px;color:var(--ink-3)}
 
-/* ---------- Real product screenshots ----------
-   Three previews side by side, cropped to their top edge. Shown full-size and
-   stacked, these are three dense pages of somebody else's plan — a wall of
-   reading before the visitor has decided anything. Thumbnails say "here is
-   what a plan looks like" without asking anyone to read one. */
+/* ---------- What a plan contains ----------
+   Screenshots of the app, at any size that fits three-across, were unreadable
+   — a picture of text is not an explanation. These are the three pieces of a
+   plan drawn at their own scale, in the app's own visual language, using the
+   sample plan's real content. The actual screens are one click away via the
+   sample plan. */
 .product-shots{display:grid;gap:26px;margin-top:30px;grid-template-columns:1fr}
 @media(min-width:760px){.product-shots{grid-template-columns:repeat(3,1fr);gap:28px}}
 .product-shot{margin:0;display:grid;gap:12px;align-content:start;min-width:0}
-.product-shot img{
-  width:100%;height:210px;object-fit:cover;object-position:top;display:block;
-  border-radius:var(--radius);border:1px solid var(--line-2);box-shadow:var(--shadow);
+.wy-vis{
+  display:grid;gap:8px;padding:14px;background:#fff;
+  border:1px solid var(--line-2);border-radius:var(--radius);box-shadow:var(--shadow);
 }
+
+/* zones */
+.wy-zone{
+  display:grid;gap:3px;padding:11px 13px;border-radius:var(--radius-sm);
+  background:var(--primary-bg);border:1px solid var(--primary-line);
+}
+.wy-zone.dim{background:var(--surface);border-color:var(--line)}
+.wy-zone-name{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary)}
+.wy-zone.dim .wy-zone-name{color:var(--ink-3)}
+.wy-zone-items{font-size:14px;font-weight:600;color:var(--ink)}
+.wy-why{font-size:13px;line-height:1.45;color:var(--ink-2)}
+.wy-flag{
+  justify-self:start;margin-top:3px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;
+  color:var(--sage-ink);background:color-mix(in oklch,var(--sage) 22%,#fff);
+  border:1px solid color-mix(in oklch,var(--sage) 45%,#fff);
+}
+
+/* steps */
+.wy-prog{display:flex;align-items:center;gap:10px;padding:2px 2px 4px}
+.wy-prog-bar{flex:1;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.wy-prog-bar i{display:block;height:100%;background:var(--primary)}
+.wy-prog-txt{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wy-step{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm)}
+.wy-tick{
+  width:18px;height:18px;flex:none;border-radius:50%;border:1.5px solid var(--line-2);
+  display:grid;place-items:center;font-size:11px;color:transparent;
+}
+.wy-step.done .wy-tick{background:var(--primary);border-color:var(--primary);color:#fff}
+.wy-step.done .wy-step-txt{color:var(--ink-3);text-decoration:line-through}
+.wy-step-txt{flex:1;font-size:13.5px;line-height:1.4;color:var(--ink)}
+.wy-time{
+  flex:none;font-size:11.5px;font-weight:600;color:var(--ink-3);white-space:nowrap;
+  background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 9px;
+}
+
+/* purchases */
+.wy-buy{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm)}
+.wy-buy.zero{background:var(--surface)}
+.wy-buy-art{position:relative;width:42px;height:34px;flex:none}
+.wy-buy-art svg{position:absolute;inset:0;width:100%;height:100%}
+.wy-buy-name{flex:1;display:grid;gap:2px;font-size:13.5px;font-weight:600;color:var(--ink)}
+.wy-buy-name em{font-style:normal;font-size:12px;font-weight:500;color:var(--sage-ink)}
+.wy-buy.zero em{color:var(--ink-3)}
+.wy-buy-price{flex:none;font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
 .product-shot figcaption h3{font-size:16px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
 .product-shot figcaption p{font-size:14px;line-height:1.55;color:var(--ink-2);margin:5px 0 0}
 
-/* ---------- Method ---------- */
-.how-grid{display:grid;gap:32px;margin-top:4px;align-items:start}
-@media(min-width:920px){.how-grid{grid-template-columns:minmax(0,1fr) 350px;gap:56px}}
-.how-shot{margin:0;min-width:0}
-.how-shot img{
-  width:100%;height:auto;display:block;border-radius:var(--radius);
-  border:1px solid var(--line-2);box-shadow:var(--shadow);
-}
-.how-shot figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
+/* ---------- Method ----------
+   Three steps, full width. The screenshot that used to sit beside them was a
+   350px picture of a form — too small to read, and the steps say it better. */
 .how-list{margin-top:26px;display:grid;gap:0}
 .how-step{
   display:grid;gap:4px 28px;grid-template-columns:1fr;
@@ -146,6 +189,7 @@
 .how-step h3{font-size:17px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
 .how-step h3 .n{color:var(--primary);margin-right:10px;font-variant-numeric:tabular-nums}
 .how-step p{margin:0;font-size:15px;line-height:1.65;color:var(--ink-2);max-width:56ch}
+.how-foot{margin:20px 0 0;font-size:14.5px;color:var(--ink-3)}
 
 /* ---------- Practical promises ---------- */
 .promise-list{margin-top:26px;display:grid;gap:20px 44px;grid-template-columns:1fr}

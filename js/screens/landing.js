@@ -9,6 +9,7 @@ import { submitInviteRequest } from '../db.js';
 import { affiliatesConfigured } from '../affiliates.js';
 import { hydrateImages } from '../images.js';
 import { ROOMS, AREAS, art } from '../wizard-data.js';
+import { productArt } from '../product-art.js';
 import { setArea } from './wizard.js';
 
 /* ---------- Sample plan shortcut ---------- */
@@ -90,6 +91,14 @@ export function navHome(hash){
   return false;
 }
 
+/* The "Optional purchases" panel borrows the product library's category
+   drawings rather than shipping a second set of its own. */
+function fillProductArt(){
+  document.querySelectorAll('#screen-landing [data-art]').forEach(el => {
+    el.innerHTML = productArt(el.dataset.art);
+  });
+}
+
 /* ---------- Appbar scroll shadow ---------- */
 function initAppbarScroll(){
   const appbar=document.querySelector('.appbar');
@@ -121,5 +130,6 @@ export function initLanding(){
   hydrateImages().catch(()=>{});
 
   renderSpaces();
+  fillProductArt();
   initAppbarScroll();
 }

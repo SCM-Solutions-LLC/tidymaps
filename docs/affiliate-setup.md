@@ -70,3 +70,33 @@ program actually accepts you.
   shows a "checked on" date next to any price.
 - **Email is special.** Amazon prohibits affiliate links in email entirely. If
   the newsletter ever recommends products, link to a page on the site instead.
+
+## Product photos
+
+Product cards show a drawing of the category (`js/product-art.js`), not a photo
+of the SKU. That is a deliberate fallback, not a placeholder nobody got round
+to: showing a retailer's photography means either their image API or a
+hotlink, and both have a cost.
+
+- **Amazon** photos require the Product Advertising API, which requires an
+  approved Associates account with qualifying sales. Until then, displaying
+  their images is outside the licence.
+- **Impact-based programs** (Target, Walmart, The Container Store) generally
+  provide an approved product feed with image URLs once you're accepted.
+- **Hotlinking a URL scraped off a product page** works until the retailer
+  rotates it, which they do without notice.
+
+When you have a licensed image URL, add it to the product's entry in
+`data/catalog.json`:
+
+```json
+{
+  "id": "home-edit-large-bin-10x10",
+  "img": "https://i5.walmartimages.com/...jpeg",
+  ...
+}
+```
+
+Nothing else changes. The product library and the plan's shopping list both
+prefer `img` when it's there, fall back to the category drawing when it isn't,
+and fall back again if the image fails to load.
