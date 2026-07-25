@@ -5,7 +5,7 @@ import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief } from '../plan.js';
 import { areaFor, art, fmtFt } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
-import { withAffiliate, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
+import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
 import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.js';
 import { fileToScaledB64 } from '../media.js';
@@ -325,7 +325,7 @@ export function renderUpgrades(){
     const options=matchProducts(need).filter(m=>m.fit!=='no-fit').slice(0,4);
     const badge=fitBadge(sel.fit);
     const links=searchLinks(need).map(l=>
-      `<a href="${l.url}" target="_blank" rel="noopener" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
+      `<a href="${l.url}" target="_blank" rel="${affiliateRel(l.retailer)}" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
     const img=sel.img
       ?`<img src="${sel.img}" alt="" loading="lazy" onerror="this.parentElement.classList.add('noimg');this.remove()">`
       :'';
@@ -335,7 +335,7 @@ export function renderUpgrades(){
         ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
       </select></label>`:'';
     const main=sel.productId?`
-      <a class="pname" href="${withAffiliate(sel.url, sel.retailer)}" target="_blank" rel="noopener">${escapeHtml(sel.name)}</a>
+      <a class="pname" href="${withAffiliate(sel.url, sel.retailer)}" target="_blank" rel="${affiliateRel(sel.retailer)}">${escapeHtml(sel.name)}</a>
       <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}</div>`:
       `<div class="pretail">No exact match in our catalog. Search: ${links}</div>`;
     return `

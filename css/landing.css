@@ -65,10 +65,22 @@
 .home-hero.no-photo .hero-photo{display:none}
 .home-hero.no-photo h1{max-width:16ch}
 
-/* ---------- One real household story ---------- */
+/* ---------- Spaces gallery ----------
+   Room-grouped area cards, reusing the wizard's own .room-card styling so the
+   homepage preview and step 2 are visibly the same thing. */
+.space-groups{display:grid;gap:34px;margin-top:30px}
+.space-room{
+  font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 12px;
+}
+.space-group .room-cards{grid-template-columns:repeat(2,1fr)}
+@media(min-width:780px){.space-group .room-cards{grid-template-columns:repeat(3,1fr)}}
+.space-group .room-card{animation:none}
+.space-foot{font-size:14.5px;line-height:1.6;color:var(--ink-3);margin:26px 0 0;max-width:62ch}
+
+/* ---------- One finished plan ---------- */
 .story-grid{display:grid;gap:28px;margin-top:30px;align-items:start}
-@media(min-width:960px){.story-grid{grid-template-columns:340px minmax(0,1fr) 250px;gap:44px}}
-@media(min-width:700px) and (max-width:959px){.story-grid{grid-template-columns:300px minmax(0,1fr)}}
+@media(min-width:700px){.story-grid{grid-template-columns:300px minmax(0,1fr);gap:44px}}
 .story-photo{margin:0;min-width:0}
 .story-photo img{
   width:100%;aspect-ratio:4/5;object-fit:cover;display:block;
@@ -76,7 +88,6 @@
 }
 .story-photo figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
 .story-grid.no-photo{grid-template-columns:minmax(0,1fr)}
-@media(min-width:700px){.story-grid.no-photo{grid-template-columns:minmax(0,1fr) 250px}}
 .story-grid.no-photo .story-photo{display:none}
 
 .story-label{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 4px}
@@ -90,7 +101,6 @@
   color:var(--ink-2);line-height:1.5;vertical-align:top;
 }
 .story-table td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
-.story-notes p{font-size:14px;line-height:1.6;color:var(--ink-2);margin:0 0 14px}
 .story-foot{margin-top:22px;font-size:14px;color:var(--ink-3)}
 
 /* ---------- Real product screenshots ---------- */

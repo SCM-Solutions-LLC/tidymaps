@@ -47,9 +47,9 @@
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
     <nav class="site-nav" aria-label="Site">
-      <a href="#how" onclick="document.body.classList.remove('nav-open')">How it works</a>
       <a href="#spaces" onclick="document.body.classList.remove('nav-open')">Spaces</a>
       <a href="#product" onclick="document.body.classList.remove('nav-open')">What you get</a>
+      <a href="#how" onclick="document.body.classList.remove('nav-open')">How it works</a>
     </nav>
     <span class="spacer"></span>
     <button class="navlink" id="acct-signin" onclick="openAuth()">Sign in</button>
@@ -102,7 +102,7 @@
     <div class="hero-copy">
       <span class="hero-badge"><span class="badge-dot"></span>No account needed to try it</span>
       <h1>Bring order to the room that runs your day.</h1>
-      <p class="hero-lede">Snap a few honest photos of one space. Get a clear, doable plan built around your shelves, your routines, and everything you already own.</p>
+      <p class="hero-lede">Photograph one space. Get a step-by-step plan built around your shelves, your household, and everything you already own.</p>
       <div class="hero-actions">
         <button class="btn btn-primary" onclick="go('space')">Plan my space</button>
         <button class="home-link" onclick="runDemo()">View a sample plan</button>
@@ -115,10 +115,48 @@
     </figure>
   </div>
 
-  <!-- One household example, grounded in the product's own sample plan -->
-  <div class="home-sec" id="story">
-    <h2>A pantry that works before school</h2>
-    <p class="sec-sub">See the real space, the plan, and what changed.</p>
+  <!-- Every space TidyMap plans, rendered from the wizard's own data so the
+       homepage can never drift from what the planner actually supports. -->
+  <div class="home-sec" id="spaces">
+    <h2>Pick a space to start</h2>
+    <p class="sec-sub">Nine spaces across four rooms. Tap one and the planner opens there.</p>
+    <div class="space-groups" id="space-groups"></div>
+    <p class="space-foot">Each one is fitted to your setup &mdash; cabinet, reach-in, walk-in, L-shaped, drawer tower, vanity, utility shelving, workbench &mdash; and to who has to reach it.</p>
+  </div>
+
+  <!-- The real product: actual screenshots, not mockups -->
+  <div class="home-sec" id="product">
+    <h2>What you get</h2>
+    <p class="sec-sub">Real screenshots, from a real plan.</p>
+    <div class="product-shots">
+      <figure class="product-shot">
+        <figcaption>
+          <h3>Where things go</h3>
+          <p>Every shelf becomes a zone, with the reason it&rsquo;s there.</p>
+        </figcaption>
+        <img data-img="product-plan-map" src="assets/product/plan-map.png" alt="Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons" loading="lazy">
+      </figure>
+      <figure class="product-shot">
+        <figcaption>
+          <h3>Step-by-step</h3>
+          <p>Short, timed steps. Do one tonight or the lot on Saturday.</p>
+        </figcaption>
+        <img data-img="product-plan-steps" src="assets/product/plan-steps.png" alt="Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking" loading="lazy">
+      </figure>
+      <figure class="product-shot">
+        <figcaption>
+          <h3>Optional purchases</h3>
+          <p>Real products sized to your shelves, only if you ask. The $0 plan works without them.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through retailer links. Prices stay the same for you.</span></p>
+        </figcaption>
+        <img data-img="product-plan-shopping" src="assets/product/plan-shopping.png" alt="Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices" loading="lazy">
+      </figure>
+    </div>
+  </div>
+
+  <!-- One finished plan, compressed to the part that proves the point -->
+  <div class="home-sec" id="sample">
+    <h2>See a finished plan</h2>
+    <p class="sec-sub">One example, a family pantry. Every space gets the same treatment.</p>
     <div class="story-grid">
       <figure class="story-photo">
         <img data-img="story-before" src="assets/photos/pantry-before.png" alt="The pantry before the plan: full shelves holding a mix of snacks, cans, cereal, and bulk bags" onerror="this.closest('.story-grid').classList.add('no-photo')">
@@ -129,50 +167,13 @@
         <table class="story-table">
           <thead><tr><th scope="col">Zone</th><th scope="col">What goes here</th></tr></thead>
           <tbody>
-            <tr><td>Top shelf</td><td>Bulk overflow, backup paper goods, rarely used items</td></tr>
-            <tr><td>Eye level</td><td>Daily snacks, breakfast items, coffee &amp; tea</td></tr>
-            <tr><td>Middle shelf</td><td>Canned goods, pasta, grains, dinner ingredients</td></tr>
-            <tr><td>Lower shelf</td><td>Kid snacks, heavy items, large containers</td></tr>
-            <tr><td>Door / side</td><td>Spices, sauces, small packets</td></tr>
+            <tr><td>Eye level</td><td>Daily snacks, breakfast, coffee &amp; tea</td></tr>
+            <tr><td>Lower shelf</td><td>Kid snacks and heavy items, so nobody climbs</td></tr>
+            <tr><td>Top shelf</td><td>Bulk overflow and rarely used things</td></tr>
           </tbody>
         </table>
-        <p class="story-foot">Nine steps, 45&ndash;90 minutes, $0 to start. This excerpt comes from TidyMap&rsquo;s sample pantry plan &middot; <button class="home-link" onclick="runDemo()">open the full plan</button></p>
+        <p class="story-foot">Nine steps, 45&ndash;90 minutes, $0 to start. <button class="home-link" onclick="runDemo()">Open the full sample plan</button></p>
       </div>
-      <div class="story-notes">
-        <p class="story-label">Notes</p>
-        <p>Kid snacks sit on the lower shelf, so nobody climbs for them.</p>
-        <p>Heavy jars and cans stay at waist height or below.</p>
-        <p>The two baskets already in the pantry corral the loose packets. Nothing new to buy.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- The real product: actual screenshots, not mockups -->
-  <div class="home-sec" id="product">
-    <h2>What you actually get</h2>
-    <p class="sec-sub">Real screenshots of a TidyMap plan, taken from the sample pantry above.</p>
-    <div class="product-shots">
-      <figure class="product-shot">
-        <figcaption>
-          <h3>Where things go</h3>
-          <p>Every shelf becomes a zone, with the reason for each placement and the safety notes that apply to your household.</p>
-        </figcaption>
-        <img data-img="product-plan-map" src="assets/product/plan-map.png" alt="Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons" loading="lazy">
-      </figure>
-      <figure class="product-shot">
-        <figcaption>
-          <h3>Step-by-step</h3>
-          <p>Short, timed steps you can work through around a normal day. Check them off, or take them one at a time.</p>
-        </figcaption>
-        <img data-img="product-plan-steps" src="assets/product/plan-steps.png" alt="Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking" loading="lazy">
-      </figure>
-      <figure class="product-shot">
-        <figcaption>
-          <h3>Optional purchases</h3>
-          <p>If you opt in, suggestions are real products from ordinary retailers, sized to your shelves. The $0 plan works without them.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through retailer links. Prices stay the same for you.</span></p>
-        </figcaption>
-        <img data-img="product-plan-shopping" src="assets/product/plan-shopping.png" alt="Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices" loading="lazy">
-      </figure>
     </div>
   </div>
 
@@ -182,16 +183,16 @@
     <div class="how-grid">
       <div class="how-list">
         <div class="how-step">
-          <h3><span class="n">1</span>Share the space as it is</h3>
-          <p>Take a few photos, exactly as it looks today. No tidying up first, and nothing to measure unless you want sharper product suggestions.</p>
+          <h3><span class="n">1</span>Show the space as it is</h3>
+          <p>A few photos, mid-week mess and all. No tidying up first.</p>
         </div>
         <div class="how-step">
-          <h3><span class="n">2</span>Review a plan made for your household</h3>
-          <p>TidyMap reads what&rsquo;s on your shelves, then drafts where everything should live around your routines, your kids and pets, and your budget. You confirm what it found before the plan is built.</p>
+          <h3><span class="n">2</span>Answer a few questions</h3>
+          <p>Who uses it, what&rsquo;s inside, how much time you&rsquo;ve got. TidyMap pre-fills what it can see.</p>
         </div>
         <div class="how-step">
-          <h3><span class="n">3</span>Work through it one manageable step at a time</h3>
-          <p>Each step is short and timed. Pause for school pickup, come back after bedtime, and the plan holds together.</p>
+          <h3><span class="n">3</span>Work through the steps</h3>
+          <p>Each one is short and timed. Pause for school pickup; the plan holds.</p>
         </div>
       </div>
       <figure class="how-shot">
@@ -207,19 +208,19 @@
     <div class="promise-list">
       <div>
         <h3>We start with what you own.</h3>
-        <p>Every plan begins at $0, built on your existing shelves, bins, and baskets.</p>
+        <p>Every plan begins at $0, on your existing shelves and bins.</p>
       </div>
       <div>
         <h3>Safety is planned in.</h3>
-        <p>With kids or pets in the house, hazards go up high or behind a latch, and their own things stay reachable.</p>
+        <p>Hazards go high or behind a latch; kids&rsquo; things stay reachable.</p>
       </div>
       <div>
-        <h3>Purchases are always optional.</h3>
-        <p>Product suggestions stay off unless you ask for them, and the plan works without them.</p>
+        <h3>Purchases stay optional.</h3>
+        <p>Product ideas are off unless you ask, and clearly marked.</p>
       </div>
       <div>
-        <h3>Your plan can be adjusted.</h3>
-        <p>Change a zone, lower the effort, or swap a step. It&rsquo;s your space; the plan follows.</p>
+        <h3>The plan bends to you.</h3>
+        <p>Change a zone, lower the effort, swap a step.</p>
       </div>
     </div>
   </div>
@@ -229,25 +230,17 @@
     <h2>Who&rsquo;s behind this</h2>
     <div class="about-grid">
       <div class="about-lede">
-        <p>TidyMap is built by SCM Solutions, a small team, and is currently in early access. We started it after watching capable, busy households lose the same twenty minutes every day to spaces that had quietly stopped working.</p>
-        <p>The organizing rules behind every plan are ordinary professional practice: things you use daily live at eye level, heavy items stay low, kid items stay reachable, and hazards don&rsquo;t. The AI&rsquo;s job is narrower than you might expect.</p>
+        <p>TidyMap is built by SCM Solutions, a small team, and is free while it&rsquo;s in early access.</p>
+        <p>The rules behind every plan are ordinary professional practice: daily things at eye level, heavy things low, kids&rsquo; things reachable, hazards not. The AI reads your photos and applies them &mdash; its job is narrower than you&rsquo;d think.</p>
       </div>
       <div class="about-facts">
         <div>
-          <h3>What the AI does</h3>
-          <p>It reads your photos to catalog what&rsquo;s actually on your shelves and how much room you have, then applies the placement rules above.</p>
-        </div>
-        <div>
-          <h3>What it doesn&rsquo;t do</h3>
-          <p>It doesn&rsquo;t judge, doesn&rsquo;t sell your data, and doesn&rsquo;t invent products. Suggestions come from a hand-checked list of real retailer items.</p>
-        </div>
-        <div>
           <h3>How photos are handled</h3>
-          <p>Photos are used to build your plan. If you don&rsquo;t sign in, they aren&rsquo;t stored after the analysis. Details in the <a href="privacy.html">privacy policy</a>.</p>
+          <p>They build your plan. Without an account they aren&rsquo;t stored afterward. Details in the <a href="privacy.html">privacy policy</a>.</p>
         </div>
         <div>
-          <h3>Early access</h3>
-          <p>TidyMap is free while we finish building it. Some rough edges remain; the feedback form at the end of every plan goes straight to us.</p>
+          <h3>Product links</h3>
+          <p>Suggestions come from a hand-checked list of real retailer items, never invented ones. Where a retailer runs an affiliate program, TidyMap may earn a commission if you buy through a link &mdash; your price is the same, and it never changes what gets recommended.</p>
         </div>
       </div>
     </div>

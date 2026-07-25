@@ -43,5 +43,14 @@ export function affiliatesConfigured(){
   return Object.values(AFFILIATES).some(c => (c.param && c.value) || c.wrap);
 }
 
+/* rel for an outbound retailer link. Once any program is live the links are
+   paid placements, which search engines require be marked sponsored — and
+   several programs' terms ask for the same. Plain links until then. */
+export function affiliateRel(retailer){
+  const cfg = AFFILIATES[retailer];
+  const paid = cfg && ((cfg.param && cfg.value) || cfg.wrap);
+  return paid ? 'noopener sponsored nofollow' : 'noopener';
+}
+
 export const AFFILIATE_DISCLOSURE =
   'TidyMap may earn a commission on qualifying purchases made through these links. Prices stay the same for you.';

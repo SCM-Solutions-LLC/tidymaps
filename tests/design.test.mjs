@@ -51,8 +51,18 @@ test('signup asks plainly, with no exclusivity framing', () => {
   assert.ok(landing.includes('id="signup-email"'));
 });
 
+// The homepage sells the whole product, not the pantry it was first built
+// around: every area the wizard supports is offered up front, sourced from
+// the wizard's own data so the two can't drift apart.
+test('landing offers every space the wizard supports', () => {
+  const landingJs = readFileSync(new URL('../js/screens/landing.js', import.meta.url), 'utf8');
+  assert.ok(landing.includes('id="space-groups"'), 'spaces gallery slot missing');
+  assert.match(landingJs, /ROOMS, AREAS/, 'spaces gallery no longer reads the wizard data');
+  assert.match(landingJs, /setArea\(card\.dataset\.room, card\.dataset\.area\)/, 'space cards no longer open the planner');
+});
+
 test('landing shows real evidence: sample-plan excerpt and product screenshots', () => {
-  assert.ok(landing.includes('Plan excerpt'), 'household story lost its plan excerpt');
+  assert.ok(landing.includes('Plan excerpt'), 'sample plan lost its excerpt');
   for (const shot of [
     'assets/product/plan-map.png', 'assets/product/plan-steps.png', 'assets/product/plan-shopping.png',
     'assets/product/hero-3d.png', 'assets/product/wizard-household.png',
