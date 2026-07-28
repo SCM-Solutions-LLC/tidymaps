@@ -24,7 +24,7 @@ export const EFFORT_STEP_RANGES = {
   'Weekend project': [7, 10],
   'Full reorganization': [9, 14],
 };
-const DEFAULT_STEP_RANGE = [4, 10];
+export const DEFAULT_STEP_RANGE = [4, 10];
 
 const safetySchema = z.object({
   flag: z.enum(SAFETY_FLAGS).nullable(),
@@ -135,16 +135,8 @@ function checkInvariants(plan, context) {
     }
   });
 
-  const shelfYFracs = plan.geometry.shelfYFracs;
-  if (shelfYFracs.length !== plan.geometry.shelfCount) {
-    errors.push(`geometry.shelfYFracs: expected ${plan.geometry.shelfCount} positions for shelfCount ${plan.geometry.shelfCount}, got ${shelfYFracs.length}`);
-  }
-  for (let i = 1; i < shelfYFracs.length; i++) {
-    if (shelfYFracs[i] <= shelfYFracs[i - 1]) {
-      errors.push('geometry.shelfYFracs: positions must be strictly increasing');
-      break;
-    }
-  }
+  // shelfYFracs is not checked here: it is repaired in validatePlan instead.
+  // See normalizeShelfYFracs for why rejecting a plan over it was wrong.
 
   if (plan.layout && plan.layout.sections) {
     const sectionSeen = new Set();
@@ -178,6 +170,32 @@ function checkInvariants(plan, context) {
   return errors;
 }
 
+/* Mirrors evenShelfFracs in js/three/viewerOptions.js. Duplicated rather than
+   imported because this module is shared by the Deno edge function and the Node
+   test suite, neither of which can reach the browser bundle. */
+function evenShelfFracs(count) {
+  const n = Math.max(1, Math.min(12, Math.round(Number(count) || 1)));
+  return Array.from({ length: n }, (_, i) => 0.08 + 0.82 * (n === 1 ? 0.5 : i / (n - 1)));
+}
+
+/**
+ * shelfYFracs positions shelves in the 3D view and nothing else reads it.
+ * normalizeViewerGeometry already applies this exact test on the client and
+ * silently substitutes even spacing when it fails, so rejecting the plan here
+ * discarded a complete 80-second analysis over a value the renderer was going
+ * to overwrite anyway. Multi-wall spaces make that routine rather than rare:
+ * the prompt has the model walk a walk-in wall by wall, so heights legitimately
+ * reset at every wall boundary and the list can never be globally increasing.
+ * Repair it the way the client does and keep the plan.
+ */
+function normalizeShelfYFracs(geometry) {
+  const fracs = geometry.shelfYFracs;
+  const usable = Array.isArray(fracs) &&
+    fracs.length === geometry.shelfCount &&
+    fracs.every((v, i, all) => Number.isFinite(v) && v >= 0 && v <= 1 && (i === 0 || v > all[i - 1]));
+  if (!usable) geometry.shelfYFracs = evenShelfFracs(geometry.shelfCount);
+}
+
 /**
  * @param {unknown} raw - parsed JSON from the model's response
  * @param {object} [context] - the same context object sent to the model (household, effort, dims, ...)
@@ -188,6 +206,7 @@ export function validatePlan(raw, context = {}) {
   if (!structural.success) {
     return { ok: false, value: null, errors: issuesToStrings(structural.error) };
   }
+  normalizeShelfYFracs(structural.data.geometry);
   const errors = checkInvariants(structural.data, context);
   if (errors.length) {
     return { ok: false, value: null, errors };

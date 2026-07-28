@@ -124,18 +124,34 @@ test('fractional shelfIndex is rejected structurally', () => {
   assert.match(result.errors.join('\n'), /shelfIndex/);
 });
 
-test('shelfYFracs must contain exactly one ordered position per shelf', () => {
+test('shelfYFracs is repaired rather than fatal, so a good plan survives it', () => {
+  /* A walk-in pantry analysis was thrown away for "positions must be strictly
+     increasing". The prompt has the model walk multi-wall spaces wall by wall,
+     so heights reset at every wall boundary and the list can never be globally
+     increasing. normalizeViewerGeometry on the client already discards a bad
+     array and substitutes even spacing, so rejecting the plan server-side cost
+     the user 80 seconds of analysis over a value the renderer overwrites. */
+  const wallByWall = basePlan();
+  wallByWall.geometry.shelfYFracs = [0.8, 0.2];   // second wall restarts at the top
+  let result = validatePlan(wallByWall, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+  assert.ok(
+    result.value.geometry.shelfYFracs.every((v, i, all) => i === 0 || v > all[i - 1]),
+    'the repaired array must be strictly increasing for the renderer',
+  );
+
   const tooShort = basePlan();
   tooShort.geometry.shelfYFracs = [0.1];
-  let result = validatePlan(tooShort, noKidsContext);
-  assert.equal(result.ok, false);
-  assert.match(result.errors.join('\n'), /shelfYFracs.*shelfCount/);
+  result = validatePlan(tooShort, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+  assert.equal(result.value.geometry.shelfYFracs.length, result.value.geometry.shelfCount);
 
-  const unordered = basePlan();
-  unordered.geometry.shelfYFracs = [0.8, 0.2];
-  result = validatePlan(unordered, noKidsContext);
-  assert.equal(result.ok, false);
-  assert.match(result.errors.join('\n'), /strictly increasing/);
+  // A well-formed array is passed through untouched.
+  const good = basePlan();
+  good.geometry.shelfYFracs = [0.2, 0.7];
+  result = validatePlan(good, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+  assert.deepEqual(result.value.geometry.shelfYFracs, [0.2, 0.7]);
 });
 
 test('productNeeds.maxDims must fit the measured shelf depth minus 0.5in clearance', () => {
@@ -323,4 +339,32 @@ test('the analyze-space prompt states the shelfCount cap the schema enforces', (
     'the shelfCount comment must state the cap');
   assert.match(prompt, new RegExp(`never exceed ${cap} rows`),
     'the layout rules must state the cap as a hard limit');
+});
+
+/* Three consecutive production failures came from the same defect: the prompt
+   described a rule approximately while checkInvariants enforced it exactly.
+   "6-9 ordered steps" against effort ranges of 7-10 and 9-14; safety rules that
+   "apply when kids are present" against a validator that rejects any flag when
+   they are not. Each mismatch cost a user an 80-second analysis and returned a
+   demo plan. The enforced-limits block closes that gap by restating the
+   context-dependent rules to the model, derived from the same constants the
+   validator reads so the two cannot drift. */
+test('the enforced-limits block is derived from the validator constants', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+
+  // The step range is read from the validator's own table, not retyped.
+  assert.match(fn, /EFFORT_STEP_RANGES\[ctx\.effort as string\] \?\? DEFAULT_STEP_RANGE/);
+  assert.match(fn, /between \$\{minSteps\} and \$\{maxSteps\} steps/);
+  assert.doesNotMatch(fn, /6-9 ordered steps/,
+    'the old hardcoded range contradicted EFFORT_STEP_RANGES');
+
+  // checkInvariants rejects any non-null flag with no kids, so the model has to
+  // be told that outright rather than left to infer it from the safety section.
+  assert.match(fn, /safety\.flag MUST be null on every single map row/);
+
+  // Every effort label the wizard can send must resolve to a real range.
+  for (const [label, range] of Object.entries(EFFORT_STEP_RANGES)) {
+    assert.ok(Array.isArray(range) && range.length === 2 && range[0] <= range[1],
+      `${label} must map to a [min, max] pair`);
+  }
 });
