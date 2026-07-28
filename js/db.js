@@ -1,5 +1,7 @@
 import { supa, getUser } from './auth.js';
 import { state } from './state.js';
+import { toast } from './ui.js';
+import { areaFor } from './wizard-data.js';
 
 /* Saved spaces: one row per organized area, media in the private
    space-media bucket under {user_id}/{space_id}/. */
@@ -27,12 +29,19 @@ function rowFromState(name){
   };
 }
 
+/* The report masthead already names this space in the user's own terms, so a
+   saved space carries the same name. The area label is the fallback for a
+   plan that never named itself — hardcoding a list here went stale the moment
+   the wizard grew from 8 spaces to a room → area tree. */
 export function defaultSpaceName(){
-  const names={pantry:'Pantry',cabinet:'Kitchen cabinet',closet:'Closet',garage:'Garage shelf',attic:'Attic storage',laundry:'Laundry room',kids:'Kids’ storage',other:'My space'};
-  return names[state.space]||'My space';
+  // spaceType can come from the model, where nothing bounds its length; a
+  // dashboard card is not the place to find that out.
+  const planName=String((state.ai && state.ai.spaceType) || '').trim().slice(0,60);
+  if(planName && planName!=='Space') return planName;
+  return state.space ? areaFor(state.space).label : 'My space';
 }
 
-export async function saveSpace(name){
+export async function saveSpace(name, { media=true }={}){
   const { c, u } = requireClient();
   const row = rowFromState(name);
   let spaceId = state.activeSpaceId;
@@ -45,8 +54,31 @@ export async function saveSpace(name){
     spaceId = data.id;
     state.activeSpaceId = spaceId;
   }
-  await uploadPendingMedia(spaceId);
+  if(media) await uploadPendingMedia(spaceId);
   return spaceId;
+}
+
+/* A signed-out visitor's plan survives a reload in localStorage; a signed-in
+   one used to survive nothing at all unless they found the Save button two
+   screens past the plan, because updateSpacePatch needs an activeSpaceId
+   before it will write anything. So the row is created the moment the plan
+   is, which also turns on incremental writes for progress, shopping, and the
+   3D arrangement. Photos are deliberately NOT uploaded here: the privacy page
+   ties photo storage to an explicit save or share, and that stays true.
+   Failure is silent — a plan on screen must never depend on the network. */
+export async function autoSaveSpace(){
+  if(!supa() || !getUser()) return null;
+  if(state.shareView || !state.ai) return null;
+  const isNew = !state.activeSpaceId;
+  try{
+    const id = await saveSpace(defaultSpaceName(), { media:false });
+    // Say it once, when the space starts existing. Re-planning an open space
+    // updates it quietly.
+    if(isNew) toast('Saved to “My spaces”.');
+    return id;
+  }catch(_){
+    return null;
+  }
 }
 
 async function uploadPendingMedia(spaceId){

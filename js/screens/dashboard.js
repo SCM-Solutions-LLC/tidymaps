@@ -2,9 +2,14 @@ import { getUser, signOut } from '../auth.js';
 import { listSpaces, coverUrl, loadSpace, deleteSpace } from '../db.js';
 import { escapeHtml, toast } from '../ui.js';
 import { go, restart } from '../router.js';
+import { areaFor } from '../wizard-data.js';
 import { buildResults, applySavedProgress } from './results.js';
 
-const TYPE_NAMES={pantry:'Pantry',cabinet:'Cabinet',closet:'Closet',garage:'Garage',attic:'Attic',laundry:'Laundry',kids:'Kids',other:'Space'};
+// The card chip names the area the same way the wizard did. areaFor() is the
+// single source of truth, so adding an area never leaves a card reading "Space".
+function typeName(spaceType){
+  return spaceType ? areaFor(spaceType).label : 'Space';
+}
 
 export async function buildDashboard(){
   const user=getUser();
@@ -25,7 +30,7 @@ export async function buildDashboard(){
     const when=new Date(sp.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});
     const card=document.createElement('div'); card.className='dash-card';
     card.innerHTML=`
-      <div class="dash-cover"><span class="dc-type">${escapeHtml(TYPE_NAMES[sp.space_type]||'Space')}</span></div>
+      <div class="dash-cover"><span class="dc-type">${escapeHtml(typeName(sp.space_type))}</span></div>
       <div class="dash-body">
         <h4>${escapeHtml(sp.name)}</h4>
         <div class="dash-meta"><span>Updated ${escapeHtml(when)}</span>${total?`<span>${done}/${total} steps</span>`:''}</div>
@@ -63,7 +68,7 @@ export async function buildDashboard(){
 
   if(!spaces.length){
     const empty=document.createElement('div'); empty.className='dash-empty';
-    empty.textContent='No saved spaces yet. Organize one and tap Save.';
+    empty.textContent='No spaces yet. Plan one and it lands here automatically.';
     grid.prepend(empty);
   }
 }
