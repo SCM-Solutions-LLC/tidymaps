@@ -47,6 +47,10 @@ export function assessQuality(metrics) {
 /* Short label for the worst issue, or null if the photo is fine. */
 export function qualityLabel(assessment) {
   if (!assessment || assessment.ok) return null;
+  // An undecodable file is the one verdict worth surfacing before the plan is
+  // built: it can't be analyzed, and finding that out at the results screen is
+  // five steps too late.
+  if (assessment.unreadable) return "Can't read this file";
   if (assessment.tooDark) return 'Too dark';
   if (assessment.tooBlurry) return 'Blurry';
   return null;
@@ -75,7 +79,13 @@ export function assessImageFile(file, maxEdge = 160) {
         URL.revokeObjectURL(img.src);
       }
     };
-    img.onerror = () => { URL.revokeObjectURL(img.src); resolve(null); };
+    // A decode failure still doesn't block anything, but it does get a badge:
+    // this photo cannot be analyzed, and the user should know while they can
+    // still swap it out.
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      resolve({ ok: false, unreadable: true, tooDark: false, tooBlurry: false });
+    };
     img.src = URL.createObjectURL(file);
   });
 }

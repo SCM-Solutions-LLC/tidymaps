@@ -13,12 +13,24 @@ export class ApiError extends Error {
 let getAuthToken = () => null;
 export function setAuthTokenGetter(fn){ getAuthToken = fn; }
 
+/* Every call gets a deadline. A request that never returns leaves the loading
+   screen spinning with no way out, which is worse than a plan we can fall back
+   to. Each budget sits just above what the function allows itself, so the
+   server's own timeout is what the user normally sees. */
+const TIMEOUT_MS = {
+  'analyze-space': 125000,     // the function budgets itself to 100s
+  'render-after': 90000,
+  'get-shared-space': 20000,
+};
+const DEFAULT_TIMEOUT_MS = 30000;
+
 async function callFn(name, body){
   if(!backendConfigured()) throw new ApiError('The analysis backend is not connected yet.', { code:'unconfigured' });
   let res;
   try{
     res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
       method:'POST',
+      signal: AbortSignal.timeout(TIMEOUT_MS[name] || DEFAULT_TIMEOUT_MS),
       headers:{
         'content-type':'application/json',
         'apikey':SUPABASE_ANON_KEY,
@@ -26,7 +38,10 @@ async function callFn(name, body){
       },
       body: JSON.stringify(body),
     });
-  }catch(_){
+  }catch(e){
+    if(e && (e.name==='TimeoutError' || e.name==='AbortError')){
+      throw new ApiError('That took longer than expected — showing the demo plan instead.', { code:'timeout' });
+    }
     throw new ApiError('Could not reach the analysis service — check your connection.', { code:'network' });
   }
   let data = null;
@@ -38,6 +53,11 @@ async function callFn(name, body){
       });
     }
     if(res.status === 413) throw new ApiError('Those photos are too large — try fewer or smaller photos.', { code:'too_large' });
+    if(res.status === 504){
+      throw new ApiError('The AI took longer than expected — showing the demo plan instead.', {
+        code:(data && data.error) || 'timeout',
+      });
+    }
     throw new ApiError('Analysis failed on our side — showing the demo plan instead.', { code:(data && data.error) || 'http_'+res.status });
   }
   return data;

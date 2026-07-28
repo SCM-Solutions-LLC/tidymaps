@@ -65,7 +65,13 @@ export function fileToScaledB64(file){
       const data=c.toDataURL('image/jpeg',0.82).split(',')[1];
       URL.revokeObjectURL(img.src); resolve(data);
     };
-    img.onerror=reject;
+    // onerror hands back an Event, not an Error, so a caller reading
+    // `e.message` got undefined and reported "Analysis failed" for what is
+    // really "this browser cannot decode this file" (HEIC is the usual one).
+    img.onerror=()=>{
+      URL.revokeObjectURL(img.src);
+      reject(new Error(`Could not read ${file.name || 'that photo'}. It may be in a format this browser cannot open, like HEIC.`));
+    };
     img.src=URL.createObjectURL(file);
   });
 }

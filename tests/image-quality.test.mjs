@@ -65,3 +65,13 @@ test('qualityLabel names the worst issue, or null when fine', () => {
   assert.equal(qualityLabel({ ok: true, tooDark: false, tooBlurry: false }), null);
   assert.equal(qualityLabel(null), null);
 });
+
+test('an undecodable file gets its own badge, not silence', () => {
+  // assessImageFile resolves this shape when the browser cannot decode the
+  // file at all. It used to resolve null, which reads as "no problem" — so a
+  // HEIC photo looked fine right up until the analysis quietly gave up.
+  assert.equal(
+    qualityLabel({ ok: false, unreadable: true, tooDark: false, tooBlurry: false }),
+    "Can't read this file",
+  );
+});

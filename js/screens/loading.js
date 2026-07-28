@@ -79,8 +79,20 @@ export function runLoading(){
         if(!frames.length) throw new Error('We could not read frames from that video. Try photos instead.');
         images = frames.map(fr=>({ media_type:'image/jpeg', data:fr.data }));
       }else{
+        // Encode each photo on its own. Promise.all used to mean one file the
+        // browser couldn't decode rejected the whole batch — before a single
+        // request left the browser — so the user got the deterministic plan
+        // and a bare "Analysis failed" with five perfectly good photos in hand.
         const files=(state.uploadedFiles||[]).slice(0,5);
-        images = await Promise.all(files.map(async f=>({ media_type:'image/jpeg', data: await fileToScaledB64(f) })));
+        const encoded = await Promise.all(files.map(f=>
+          fileToScaledB64(f)
+            .then(data=>({ media_type:'image/jpeg', data }))
+            .catch(e=>{ console.warn('skipping a photo we could not read:', e.message); return null; })
+        ));
+        images = encoded.filter(Boolean);
+        if(!images.length){
+          throw new Error('We could not read those photos. JPG or PNG versions usually work.');
+        }
       }
       const { plan, model } = await analyzeSpace(images.slice(0,6), buildAnalysisContext());
       state.ai = normalizeAi(plan);
