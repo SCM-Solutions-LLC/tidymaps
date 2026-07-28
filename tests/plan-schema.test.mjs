@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { validatePlan, EFFORT_STEP_RANGES, ARCHETYPES, SURFACES, PLACES } from '../supabase/functions/_shared/planSchema.js';
 import {
   ARCHETYPES as CLIENT_ARCHETYPES,
@@ -290,4 +291,36 @@ test('client SURFACES match server SURFACES exactly', () => {
 
 test('client PLACES match server PLACES exactly', () => {
   assert.deepEqual(CLIENT_PLACES, PLACES);
+});
+
+/* A walk-in pantry analysis came back with shelfCount 13 and the entire plan
+   was discarded over that one field: 81 seconds of work, one validation error,
+   nothing shown to the user. The cap has always been in the schema, but the
+   prompt never mentioned it and instead told the model to count multi-wall
+   spaces wall by wall, which is precisely how a 6x8 walk-in produces more than
+   12 levels. These two have to move together. */
+test('the analyze-space prompt states the shelfCount cap the schema enforces', () => {
+  const schemaSrc = readFileSync(new URL('../supabase/functions/_shared/planSchema.js', import.meta.url), 'utf8');
+  const capMatch = schemaSrc.match(/shelfCount: z\.number\(\)\.int\(\)\.min\(1\)\.max\((\d+)\)/);
+  assert.ok(capMatch, 'planSchema must declare a shelfCount maximum');
+  const cap = Number(capMatch[1]);
+
+  // The schema really does reject one row past the cap.
+  const overCap = basePlan({
+    map: Array.from({ length: cap + 1 }, (_, i) => ({
+      level: `Level ${i}`, icon: 'shelf', zone: 'Things', why: 'Because.',
+      shelfIndex: i, safety: { flag: null, why: null },
+    })),
+  });
+  assert.equal(validatePlan(overCap, {}).ok, false, `${cap + 1} rows must be rejected`);
+
+  // ...and the prompt names that same number as a hard limit, so the model is
+  // told the rule rather than discovering it by having its plan thrown away.
+  const prompt = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(prompt, new RegExp(`NEVER more than ${cap}`),
+    'the map schema comment must state the row cap');
+  assert.match(prompt, new RegExp(`MUST be ${cap} or fewer`),
+    'the shelfCount comment must state the cap');
+  assert.match(prompt, new RegExp(`never exceed ${cap} rows`),
+    'the layout rules must state the cap as a hard limit');
 });

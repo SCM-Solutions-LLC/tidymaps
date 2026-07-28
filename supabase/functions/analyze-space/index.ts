@@ -46,7 +46,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "features": [{"icon": string, "title": string, "sub": string}],  // existing storage features you can see. icon keyword: shelf|basket|bin|drawer|door|vertical|horizontal|down|up|hook|rod|empty|missing
   "problems": [string],                        // 3-6 concrete organization problems
   "opportunities": [string],                   // 3-5 quick wins / underused assets
-  "map": [{
+  "map": [{                                    // 1-12 rows, one per storage level. NEVER more than 12.
     "level": string,                           // e.g. "Top shelf"
     "icon": string,                            // up|eye|middle|down|door|hook|rod|drawer
     "zone": string,                            // e.g. "Daily snacks · Breakfast items"
@@ -63,7 +63,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   } | null,                                    // null if the layout type is unclear from the photos
   "geometry": {                                // estimate from the photos if the user gave no dimensions
     "unit": "in", "width": number, "height": number, "depth": number,
-    "shelfCount": number,
+    "shelfCount": number,                      // MUST equal the number of map rows, and MUST be 12 or fewer
     "shelfYFracs": [number],                   // vertical position of each shelf top, 0=top of unit, 1=floor, ascending
     "estimated": boolean                       // false only when user-provided dimensions were used
   },
@@ -101,7 +101,7 @@ Layout & geometry rules — handle ANY space configuration:
 - Closets with rods: a hanging rod is its own level (e.g. "Hanging rod: long items"); shelves above or below it get their own rows.
 - Mixed spaces (shelves + drawers + floor + hooks + door racks): include every distinct storage surface as its own level, ordered top to bottom.
 - Multiple freestanding units side by side: treat them as one combined run, left to right, and prefix levels with the unit ("Unit 2: middle shelf").
-- If a space has more than 10 distinct levels, group the least-used surfaces into a single "Bulk storage" row so the plan stays actionable.
+- HARD LIMIT: the map must never exceed 12 rows, and geometry.shelfCount must equal the number of map rows, so it must never exceed 12 either. This is a schema limit, not a preference: a plan with more than 12 rows is rejected outright and the user sees nothing. Walk-in pantries and closets counted wall by wall are the usual way to blow past it, so count your rows before answering. If the space has more than 12 distinct levels, consolidate the least-used surfaces into shared rows (one "Bulk storage" row, or one row per wall instead of one per shelf) until the map is 12 rows or fewer. Aim for 10 or fewer so the plan stays actionable.
 
 Hard safety rules (apply whenever the household context says kids are present):
 - Heavy, chemical, sharp, or fragile items must NEVER be placed below 48 inches when kids ages 0-9 are present, unless that zone is flagged "lock-or-latch".
