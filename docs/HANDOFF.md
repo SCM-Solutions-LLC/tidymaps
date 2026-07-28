@@ -177,20 +177,30 @@ Also delivered: `supabase/queries/telemetry.sql` + `docs/telemetry.md` (item
 
 ## Production health as of 2026-07-28
 
-Three things found while diagnosing the above. Only the first is fixed.
+Three things found while diagnosing the above. Two are fixed.
 
 1. ~~Zero saved spaces~~ — fixed above.
-2. **`analyze-space` is timing out in production.** The most recent call
-   (2026-07-28 19:08) returned **546 after 150.2 seconds** — Supabase's
-   wall-clock limit. The function makes a non-streaming Anthropic call with
-   `max_tokens: 8192` and retries once on validation failure; two attempts
-   don't fit in the budget. The user still gets a plan because the
-   deterministic engine covers for it, so this fails *silently* — visible only
-   as `source: 'demo-fallback'` in telemetry and a 2.5-minute wait on the
-   loading screen. Fix candidates, cheapest first: stream the completion, cut
-   `max_tokens`, put a hard `AbortSignal.timeout` on attempt one so the retry
-   has room, or move the retry client-side. `MODEL` is also pinned to
-   `claude-sonnet-4-6` and should be re-checked against current model ids.
+2. ~~**`analyze-space` timing out in production**~~ — fixed and deployed
+   (function v10). The symptom was a **546 after 150.2 seconds**: Supabase's
+   wall-clock limit, hit by two unbounded model calls, returning no body at
+   all. The deterministic engine covered for it, so the only visible symptom
+   was a two-and-a-half-minute wait and a plan that was never the AI's — every
+   recorded plan is `source: 'demo'`. Two causes: Sonnet 4.6 runs at `high`
+   effort unless told otherwise and this function never told it otherwise, and
+   the post-validation retry re-sends every photo. Now `EFFORT` is explicit
+   (`medium`), thinking is pinned off, and the whole handler is measured
+   against `TOTAL_BUDGET_MS` (100s) — each attempt gets what's left via
+   `AbortSignal.timeout`, a retry runs only above `MIN_RETRY_MS`, and running
+   out returns a 504 the client explains. `MODEL` stays `claude-sonnet-4-6`,
+   which is current and active; it was not the problem.
+   - **Still unverified:** nothing in CI can call the real model, so the
+     `output_config.effort` / `thinking` parameters shipped untested against
+     the live API. If it rejects them the function drops the tuning, logs
+     `model rejected effort/thinking tuning`, and carries on slow rather than
+     broken. Grep the edge logs for that string before assuming it's fine.
+   - Not done, and worth doing if retries stay common: `cache_control` on the
+     first user turn would make the retry re-read the photos from cache instead
+     of re-processing them, which is most of what a retry costs.
 3. **Telemetry is suppressed for the owner's own testing.** `usage_events`
    shows edge-function calls on 2026-07-28; `telemetry_events` has nothing
    after 2026-07-23. The client was verified working in a browser harness the
@@ -268,9 +278,11 @@ Three things found while diagnosing the above. Only the first is fixed.
 
 ## Open items / next actions
 
-1. **`analyze-space` timeout** (see Production health #2). The AI path is the
-   product's whole premise and it is currently never completing; everything
-   users see is the fallback engine. Highest-value fix on this list.
+1. **Confirm the AI path actually completes now** (Production health #2). One
+   real analysis with photos, then read the edge logs: a 200 with a plausible
+   elapsed time means the fix landed, `source: 'ai'` in telemetry confirms it
+   end to end. Until someone runs that, "fixed" is a claim about the code, not
+   about production.
 2. **Live share-link round trip** (user to-do, still unverified): mint a link
    on a saved plan → open `?share=` signed out; expect banner + plan, no
    household or photos. Now unblocked — spaces finally exist to share.
