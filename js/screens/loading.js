@@ -7,6 +7,7 @@ import { analyzeSpace } from '../api.js';
 import { fileToScaledB64, extractVideoFrames, formatTime } from '../media.js';
 import { normalizeAi, buildAnalysisContext } from '../plan.js';
 import { go } from '../router.js';
+import { autoSaveSpace } from '../db.js';
 import { syncCategoriesToResults } from './results.js';
 import { track } from '../telemetry.js';
 import { getDemoScenario } from '../demo-scenarios.js';
@@ -125,10 +126,11 @@ export function finishLoading(aiPromise){
       const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext());
       state.ai = normalizeAi(scenario);
       state.planMeta = { model: 'demo', source: 'demo-fallback', analyzedAt: Date.now() };
-      setTimeout(()=>{ syncCategoriesToResults(); go('results'); }, 1400);
+      setTimeout(()=>{ syncCategoriesToResults(); autoSaveSpace(); go('results'); }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');
       syncCategoriesToResults();
+      autoSaveSpace();
       setTimeout(()=>go('results'), 550);
     }
   };

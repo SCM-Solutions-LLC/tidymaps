@@ -145,11 +145,13 @@
   border-radius:5px;padding:4px 8px;pointer-events:none;
 }
 
-/* Before/after slider: after image clipped to --pos, dragged via a
-   full-bleed invisible range input */
+/* Before/after slider: the before photo is the base layer and the after
+   render is clipped to the right of the divider, so each half sits under
+   its own label — "Before" left, "After" right. Dragged via a full-bleed
+   invisible range input. */
 .ba-slider{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--surface-2)}
 .ba-slider img{width:100%;display:block;max-height:480px;object-fit:cover}
-.ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 calc(100% - var(--pos,50%)) 0 0)}
+.ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 0 0 var(--pos,50%))}
 .ba-slider .ba-divider{
   position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;
   background:#fff;box-shadow:0 0 10px rgba(0,0,0,.45);pointer-events:none;
