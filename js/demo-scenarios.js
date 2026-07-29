@@ -1504,8 +1504,11 @@ function applyHousehold(plan, household) {
 
   // Limited mobility
   if (household.mobility && household.mobility.length) {
+    // Matches every label the wizard offers (MOBILITY_NEEDS in wizard-data.js)
+    // as well as the older free-text "limited reach" phrasing kept in saved
+    // spaces and guest drafts from before the question shipped.
     const hasLimitedReach = household.mobility.some(m =>
-      typeof m === 'string' && /limited.?reach/i.test(m)
+      typeof m === 'string' && /limited.?reach|avoid.?bending|wheelchair/i.test(m)
     );
     if (hasLimitedReach) {
       plan.safetyNotes.push('Daily-use items are kept at mid-height to accommodate limited reach.');

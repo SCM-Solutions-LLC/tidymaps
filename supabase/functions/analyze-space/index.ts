@@ -106,7 +106,7 @@ Layout & geometry rules — handle ANY space configuration:
 Hard safety rules (apply whenever the household context says kids are present):
 - Heavy, chemical, sharp, or fragile items must NEVER be placed below 48 inches when kids ages 0-9 are present, unless that zone is flagged "lock-or-latch".
 - Kid-frequent items (snacks, cups, their own things) go on the lowest safe shelf so children can reach them without climbing.
-- With "avoid-bending" or "wheelchair" mobility needs, daily-use items belong between 30 and 60 inches.
+- With "Limited reach", "Avoid bending" or "Wheelchair user" mobility needs, daily-use items belong between 30 and 60 inches.
 - Every safety-driven placement must carry a plain-language safety.why (e.g. "Cleaning sprays stay out of reach of your 3-year-old").
 Product rules:
 - productNeeds.maxDims must fit the available space: depth at most the shelf depth minus 0.5 in clearance. If dimensions are unknown, set maxDims to null.

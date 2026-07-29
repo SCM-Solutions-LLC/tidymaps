@@ -11,7 +11,7 @@
    ============================================================ */
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
-  KID_AGES, EFFORT_OPTS, SHOPPING_OPTS,
+  KID_AGES, MOBILITY_NEEDS, EFFORT_OPTS, SHOPPING_OPTS,
   roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
@@ -307,6 +307,31 @@ function renderHousehold(){
     };
   });
   renderKidAges();
+  renderMobility();
+}
+
+/* The reach question the model was already being told the answer to. */
+function renderMobility(){
+  const wrap = document.getElementById('mobility-chips');
+  if(!wrap) return;
+  const h = state.household;
+  if(!Array.isArray(h.mobility)) h.mobility = [];
+  wrap.innerHTML = '';
+  MOBILITY_NEEDS.forEach(need => {
+    const c = document.createElement('button');
+    c.type = 'button';
+    const on = () => h.mobility.includes(need);
+    c.className = 'chip' + (on() ? ' sel' : '');
+    c.setAttribute('aria-pressed', String(on()));
+    c.textContent = need;
+    c.onclick = () => {
+      const i = h.mobility.indexOf(need);
+      i < 0 ? h.mobility.push(need) : h.mobility.splice(i, 1);
+      c.classList.toggle('sel');
+      c.setAttribute('aria-pressed', String(on()));
+    };
+    wrap.appendChild(c);
+  });
 }
 
 /* Presence stays the canonical 'yes'/'no' strings the rest of the app expects. */

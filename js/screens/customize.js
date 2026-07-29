@@ -1,4 +1,5 @@
 import { CUSTOMIZE, STEPS } from '../data.js';
+import { optionsForHousehold } from '../wizard-data.js';
 import { ICON } from '../icons.js';
 import { state } from '../state.js';
 import { toast } from '../ui.js';
@@ -8,7 +9,11 @@ import { renderSteps, setUpgrades, applySavedProgress } from './results.js';
 /* ---------- Customize ---------- */
 export function buildCustomize(){
   const wrap=document.getElementById('customize-opts'); wrap.innerHTML='';
-  CUSTOMIZE.forEach(([id,t,d])=>{
+  /* "Make it more kid-friendly" was still on offer after the household step
+     answered no kids — the same contradiction already fixed for the contents
+     chips, the goals, and the after-preview tabs. The option text is what
+     identifies it, so the shared filter works here unchanged. */
+  optionsForHousehold(CUSTOMIZE, state.household).forEach(([id,t,d])=>{
     const b=document.createElement('button'); b.className='opt';
     b.innerHTML=`<span><span class="ttl">${t}</span><span class="sub">${d}</span></span><span class="tick">${ICON.check}</span>`;
     b.onclick=()=>applyCustomize(id,t,d,b,wrap);

@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   SETUP_GEOM, GEOM_TO_V3D_LAYOUT, SETUP_SCENARIO, scenarioKeyFor,
   roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, measureSummary, art,
-  isKidOption, householdHasKids, optionsForHousehold,
+  isKidOption, householdHasKids, optionsForHousehold, MOBILITY_NEEDS,
 } from '../js/wizard-data.js';
-import { PREFS, AFTER_MODES } from '../js/data.js';
+import { PREFS, AFTER_MODES, CUSTOMIZE } from '../js/data.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 import { EFFORT_STEPS } from '../js/personalize.js';
 import { EFFORT_STEP_RANGES } from '../supabase/functions/_shared/planSchema.js';
@@ -145,6 +146,36 @@ test('feet formatting matches the design (3′6″ style)', () => {
 
 // The two areas new to production need full scenarios of their own.
 
+/* household.mobility was declared in state, reset on restart, forwarded to the
+   model by buildAnalysisContext, honoured by a hard prompt safety rule, and
+   acted on by the demo scenarios — but no control ever wrote it, so the whole
+   path was dead. The wizard now asks; these are the labels the other two ends
+   match on, so they have to stay in step. */
+test('every mobility answer the wizard offers reaches the plan and the prompt', () => {
+  assert.ok(MOBILITY_NEEDS.length >= 2, 'the reach question needs real options');
+
+  const promptRules = readFileSync(
+    new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  for (const need of MOBILITY_NEEDS) {
+    assert.ok(promptRules.includes(`"${need}"`),
+      `the analysis prompt never names the "${need}" answer, so the model cannot act on it`);
+
+    const plan = getDemoScenario('pantry', 'find', {
+      kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] },
+      mobility: [need], notes: '',
+    });
+    assert.ok(plan.safetyNotes.some(n => /mid-height|easier reach/i.test(n)),
+      `"${need}" produced no reach guidance in the offline plan`);
+  }
+
+  // No mobility answer must not invent a reach note.
+  const none = getDemoScenario('pantry', 'find', {
+    kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] },
+    mobility: [], notes: '',
+  });
+  assert.ok(!none.safetyNotes.some(n => /mid-height/i.test(n)));
+});
+
 test('dresser scenario: complete, drawer-shaped, and kid-note free by default', () => {
   const plan = getDemoScenario('dresser', 'find', { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' });
   assert.equal(plan.spaceType, 'Dresser');
@@ -195,6 +226,16 @@ test('kid-only options disappear once the household says there are no kids', () 
   // household step, and were the most visible instance of this.
   assert.ok(AFTER_MODES.some(isKidOption), 'fixture check: a kid tab exists to filter');
   assert.ok(optionsForHousehold(AFTER_MODES, noKids).every((m) => !isKidOption(m)));
+
+  /* The Adjust screen was the last list still offering a kid option to a
+     household with none — and its options are [id, title, desc] tuples, a
+     third shape isKidOption had to learn before the shared filter did
+     anything here at all. */
+  assert.ok(CUSTOMIZE.some(isKidOption), 'fixture check: a kid option exists to filter');
+  assert.ok(optionsForHousehold(CUSTOMIZE, noKids).every((o) => !isKidOption(o)));
+  assert.deepEqual(optionsForHousehold(CUSTOMIZE, withKids), CUSTOMIZE);
+  assert.equal(isKidOption(['kid', 'Make it more kid-friendly', 'Moves snacks lower.']), true);
+  assert.equal(isKidOption(['capacity', 'Maximize storage capacity', 'Adds risers.']), false);
 
   // Detection is on the option text, so it holds for labelled objects too.
   assert.equal(isKidOption("Kids' snacks"), true);

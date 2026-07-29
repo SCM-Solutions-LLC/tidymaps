@@ -257,6 +257,14 @@ export function scenarioKeyFor(spaceId, setupId) {
 /* ---------- People, effort, shopping ---------- */
 export const KID_AGES = ['Baby', 'Toddler', 'Big kid', 'Teen'];
 
+/* Reach needs. state.household.mobility has always been declared, reset,
+   forwarded to the model by buildAnalysisContext(), and acted on by both the
+   analysis prompt and the demo scenarios — but nothing in the wizard ever
+   wrote it, so the whole path was dead and the safety rule never fired. These
+   are the labels the prompt and demo-scenarios.js match on; keep the three in
+   step if this list changes. */
+export const MOBILITY_NEEDS = ['Limited reach', 'Avoid bending', 'Wheelchair user'];
+
 /* The household step (step 6 of 12) asks how many kids live here, and every
    list after it was still offering kid-only options: "Kids' snacks" in the
    contents chips, "Kids can't reach their things" in the goals, "Kid-friendly
@@ -266,6 +274,10 @@ export const KID_AGES = ['Baby', 'Toddler', 'Big kid', 'Teen'];
 const KID_OPTION_RE = /\bkids?\b|\bchildren\b/i;
 
 export function isKidOption(option) {
+  // Option lists come in three shapes: plain strings (contents chips, goals,
+  // after-preview tabs), {label} objects, and CUSTOMIZE's [id, title, desc]
+  // tuples. A tuple counts as a kid option if any part names kids.
+  if (Array.isArray(option)) return option.some(isKidOption);
   const label = typeof option === 'string' ? option : (option && option.label) || '';
   return KID_OPTION_RE.test(label);
 }

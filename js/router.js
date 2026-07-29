@@ -2,7 +2,7 @@ import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRe
 import { track } from './telemetry.js';
 import { setFootHeightVar } from './ui.js';
 import { getSession } from './auth.js';
-import { buildAll } from './screens/index.js';
+import { buildAll, buildCustomize } from './screens/index.js';
 import { runLoading } from './screens/loading.js';
 import { buildDashboard } from './screens/dashboard.js';
 import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
@@ -55,6 +55,9 @@ export function go(id){
   }
   // per-space screens re-render on entry so they always reflect the answers
   renderWizardScreen(id);
+  // the Adjust options depend on the household answer, which comes long after
+  // buildAll() ran at startup
+  if(id==='customize') buildCustomize();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('screen-'+id);
   el.classList.add('active');
