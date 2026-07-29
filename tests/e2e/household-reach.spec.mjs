@@ -82,3 +82,28 @@ test('the Adjust screen keeps the kid option when there are kids', async ({ page
   await expect(page.locator('#screen-customize')).toHaveClass(/active/);
   await expect(page.locator('#customize-opts .opt', { hasText: 'kid-friendly' })).toHaveCount(1);
 });
+
+/* Six of the eleven Adjust options did something; the other five re-rendered
+   the identical checklist under a "Plan revised" banner and a success toast. */
+test('an Adjust option that claims to revise the plan visibly changes it', async ({ page }) => {
+  await driveToHousehold(page);
+  await finishFromHousehold(page);
+
+  const planText = () => page.locator('#screen-results').innerText();
+  const before = await planText();
+
+  await page.getByRole('button', { name: 'Adjust this plan' }).click();
+  await expect(page.locator('#screen-customize')).toHaveClass(/active/);
+  await page.locator('#customize-opts .opt', { hasText: 'Add more labels' }).click();
+  await expect(page.locator('#customize-result')).toContainText('Plan revised');
+  await page.locator('#customize-result .btn').click();
+
+  await expect(page.locator('#screen-results')).toHaveClass(/active/);
+  expect(await planText(), 'the plan is identical after "Plan revised"').not.toBe(before);
+
+  // Asking for the same revision again is honest about it instead of
+  // re-announcing a change that cannot happen twice.
+  await page.getByRole('button', { name: 'Adjust this plan' }).click();
+  await page.locator('#customize-opts .opt', { hasText: 'Add more labels' }).click();
+  await expect(page.locator('#customize-result')).toContainText('Already applied');
+});

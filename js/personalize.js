@@ -171,6 +171,36 @@ const PREF_HANDLERS = {
   'Use only what I already own': () => {},
 };
 
+/* The "Adjust this plan" options on the results screen. Five of them —
+   minimal, kid, capacity, hide, labels — used to fall through applyCustomize
+   to a re-render of the identical step list while still announcing "Plan
+   revised" and a specific change, so the checklist came back byte-for-byte
+   the same. Each one already had a preference handler above doing exactly
+   what its copy promises, so they route there instead of describing work
+   nobody did.
+
+   Applying twice is recorded and refused: ensureCitedStep is idempotent, but
+   'Minimal look' appends to the summary, so a second pass would just repeat
+   itself. */
+export const REVISIONS = {
+  minimal:  'Minimal look',
+  kid:      'Kid-friendly access',
+  capacity: 'Maximize vertical space',
+  hide:     'Hide visual clutter',
+  labels:   'Labels and categories',
+};
+
+export function applyRevision(plan, id) {
+  const pref = REVISIONS[id];
+  const handler = pref && PREF_HANDLERS[pref];
+  if (!plan || !handler) return false;
+  plan.revisions = Array.isArray(plan.revisions) ? plan.revisions : [];
+  if (plan.revisions.includes(id)) return false;
+  handler(plan);
+  plan.revisions.push(id);
+  return true;
+}
+
 function applyPrefs(plan, answers) {
   for (const pref of answers.prefs || []) {
     const h = PREF_HANDLERS[pref];

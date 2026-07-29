@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyAnswers, applyCategoryEdits, EFFORT_STEPS } from '../js/personalize.js';
+import { applyAnswers, applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision } from '../js/personalize.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 
 // Every wizard answer must leave a visible, attributable trace in the plan —
@@ -200,4 +200,36 @@ test('an added category with no keyword fit falls back to the eye-level zone', (
   const plan = applyCategoryEdits(normalizedFixture(), ['Cereal', 'Snacks', 'Cans', 'Pet food']);
   const zone = plan.map.find(m => m.items.some(i => i.name === 'Pet food'));
   assert.ok(zone.eye, 'fallback placement should be the eye-level zone');
+});
+
+/* The "Adjust this plan" screen offers eleven options. Six of them did
+   something; the other five — minimal, kid, capacity, hide, labels — fell
+   through to a re-render of the identical step list while still announcing
+   "Plan revised: Maximize storage capacity" and a success toast. The
+   checklist came back byte-for-byte the same. Each already had a preference
+   handler doing exactly what its copy promises, so they route there now. */
+test('every Adjust option that claims to revise the plan actually changes it', () => {
+  const household = { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' };
+
+  for (const id of Object.keys(REVISIONS)) {
+    const plan = getDemoScenario('pantry', 'find', household);
+    const before = JSON.stringify({ map: plan.map, steps: plan.steps, summary: plan.summary, productNeeds: plan.productNeeds });
+
+    assert.equal(applyRevision(plan, id), true, `${id}: revision refused on a fresh plan`);
+    const after = JSON.stringify({ map: plan.map, steps: plan.steps, summary: plan.summary, productNeeds: plan.productNeeds });
+    assert.notEqual(after, before, `${id}: claimed to revise the plan but changed nothing`);
+
+    // Applying the same revision twice is refused rather than compounding —
+    // 'Minimal look' appends to the summary, so a second pass would repeat it.
+    const repeated = JSON.parse(JSON.stringify(plan));
+    assert.equal(applyRevision(plan, id), false, `${id}: applied twice`);
+    assert.deepEqual(plan.map, repeated.map, `${id}: a refused revision still mutated the plan`);
+    assert.equal(plan.summary, repeated.summary);
+  }
+});
+
+test('an unknown Adjust option revises nothing and says so', () => {
+  const plan = getDemoScenario('pantry', 'find', { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' });
+  assert.equal(applyRevision(plan, 'fewer'), false, 'step-count options are handled separately, not as revisions');
+  assert.equal(applyRevision(null, 'minimal'), false, 'a missing plan must not throw');
 });
