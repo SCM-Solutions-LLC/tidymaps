@@ -12,11 +12,24 @@
 // billed for 70-90 seconds of work per call. The last entry is the one the
 // trusted hop appended and the caller cannot forge.
 
+// Single-value headers the edge sets itself. These carry one address rather
+// than a chain, so there is nothing for a caller to prepend, and they are
+// preferred where present. A caller CAN send these names too, which is why
+// they are only trusted when they hold exactly one well-formed address —
+// a forged chain smuggled through one of them is ignored.
+const SINGLE_VALUE_HEADERS = ['cf-connecting-ip', 'x-real-ip'];
+const ADDRESS_RE = /^[0-9a-fA-F:.]+$/;
+
 export function callerIp(headers) {
-  const raw = (headers && typeof headers.get === 'function'
-    ? headers.get('x-forwarded-for')
-    : null) ?? '';
-  const hops = String(raw).split(',').map((s) => s.trim()).filter(Boolean);
-  // Last hop = added by our own edge. Anything earlier is caller-supplied.
+  const get = (name) => (headers && typeof headers.get === 'function' ? headers.get(name) : null) ?? '';
+
+  for (const name of SINGLE_VALUE_HEADERS) {
+    const value = String(get(name)).trim();
+    if (value && !value.includes(',') && ADDRESS_RE.test(value)) return value;
+  }
+
+  const hops = String(get('x-forwarded-for')).split(',').map((s) => s.trim()).filter(Boolean);
+  // Last hop = appended by our own edge, naming the peer it received from.
+  // Anything to the left of it is whatever the caller chose to send.
   return hops.length ? hops[hops.length - 1] : '';
 }

@@ -78,6 +78,16 @@ test('a forged X-Forwarded-For cannot change the rate-limit identity', () => {
   assert.equal(callerIp(headers('')), '');
   assert.equal(callerIp(new Headers()), '');
 
+  // A single-value header set by the edge wins, since it carries one address
+  // with nothing for a caller to prepend.
+  assert.equal(callerIp(new Headers({ 'x-real-ip': REAL, 'x-forwarded-for': `1.2.3.4, 9.9.9.9` })), REAL);
+  assert.equal(callerIp(new Headers({ 'cf-connecting-ip': REAL, 'x-forwarded-for': '1.2.3.4' })), REAL);
+
+  // But only when it really holds one well-formed address: a caller that
+  // smuggles a chain through that header name is ignored, not trusted.
+  assert.equal(callerIp(new Headers({ 'x-real-ip': `1.2.3.4, 5.6.7.8`, 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+  assert.equal(callerIp(new Headers({ 'x-real-ip': 'not-an-address', 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+
   // And the function actually uses it, rather than re-parsing the header.
   assert.match(auth, /callerIp\(req\.headers\)/);
   assert.doesNotMatch(auth, /x-forwarded-for['"]\s*\)\s*\?\?\s*['"]['"]\)\.split\(','\)\[0\]/);

@@ -22,3 +22,10 @@ drop policy if exists "anyone can request an invite" on public.invite_requests;
 -- Both tables keep RLS enabled with no policies at all, matching usage_events
 -- and telemetry_events: service-role writes only, and unreadable from the
 -- client. View them in the dashboard.
+--
+-- APPLY THIS LAST. It closes the path the currently-deployed site still uses,
+-- so the order is: deploy submit-form, ship the client that calls it, and only
+-- then run this. Applied any earlier, feedback and invite requests fail
+-- silently for anyone on the old bundle — submitFeedbackRow and
+-- submitInviteRequest both swallow their errors by design, so nobody would
+-- see a thing.
