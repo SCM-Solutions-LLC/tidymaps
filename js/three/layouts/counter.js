@@ -79,7 +79,7 @@ export function build(ctx){
     surfaces.push({
       index:idx, kind:'shelf', row, y, hitbox:hit,
       uDir: new THREE.Vector3(1,0,0), normal: new THREE.Vector3(0,0,1),
-      length:usable, gap:gapAbove[idx], itemDepth:Math.min(upperD*0.55, 8),
+      length:usable, gap:gapAbove[idx], depth:upperD, itemDepth:Math.min(upperD*0.55, 8),
     });
   }
 

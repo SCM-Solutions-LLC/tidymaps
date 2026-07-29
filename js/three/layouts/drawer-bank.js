@@ -83,7 +83,7 @@ export function build(ctx){
       index:i, kind:'drawer', row, y, hitbox:hit,
       uDir: new THREE.Vector3(1,0,0),
       normal: new THREE.Vector3(0,0,1),
-      length:usable, gap:drawerH-1, itemDepth:Math.min(pullOut*0.8, 8),
+      length:usable, gap:drawerH-1, depth:pullOut, itemDepth:Math.min(pullOut*0.8, 8),
     });
   });
 

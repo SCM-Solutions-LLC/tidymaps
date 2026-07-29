@@ -79,7 +79,7 @@ export function build(ctx){
     if(floor){
       const hit=makeHitbox(scene,W-2*T,6,D-2*T,0,T+3,0,{shelfIndex:idx,shelfY:T,row});
       if(row) addShelfLabel(scene,row,-W/2,T+3.5,D/2+0.7);
-      surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:W-2*T-2,gap:10,itemDepth:Math.min(D*0.3,9)});
+      surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:W-2*T-2,gap:10,depth:D,itemDepth:Math.min(D*0.3,9)});
       return;
     }
 
@@ -102,7 +102,7 @@ export function build(ctx){
       index:idx,kind,row,y,hitbox:hit,
       uDir:back?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,1),
       normal:back?new THREE.Vector3(0,0,1):new THREE.Vector3(left?1:-1,0,0),
-      length,gap:rod?Math.max(10,gapAbove[idx]*0.75):gapAbove[idx],itemDepth:rod?1.5:Math.min(shelfDepth*0.58,8),
+      length,gap:rod?Math.max(10,gapAbove[idx]*0.75):gapAbove[idx],depth:shelfDepth,itemDepth:rod?1.5:Math.min(shelfDepth*0.58,8),
     });
   }
 

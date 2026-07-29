@@ -1,7 +1,7 @@
 import { preflight, json } from '../_shared/cors.ts';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
-import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE } from '../_shared/planSchema.js';
+import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -169,10 +169,22 @@ Deno.serve(async (req) => {
      assembled before the untrusted context block. */
   const ctx = (body.context ?? {}) as {
     effort?: string;
+    dims?: { w_in?: number; h_in?: number; d_in?: number };
     household?: { kids?: { present?: boolean } };
   };
   const [minSteps, maxSteps] = EFFORT_STEP_RANGES[ctx.effort as string] ?? DEFAULT_STEP_RANGE;
   const kidsPresent = ctx.household?.kids?.present === true;
+  /* Product depth is checked against the usable SHELF depth, and for a walk-in
+     or an L-run that is nothing like the measured room depth. The model picks
+     the archetype, so give it both numbers rather than guessing which it will
+     choose — an unstated limit here is exactly what made earlier plans fail
+     validation after the user had already waited out the analysis. */
+  const roomDepth = usableShelfDepth(null, ctx.dims);
+  const wallDepth = usableShelfDepth('walkin-u', ctx.dims);
+  const depthLimit = !roomDepth ? null
+    : Math.abs(roomDepth - wallDepth) < 0.5
+      ? `- productNeeds: every maxDims.d_in must be at most ${(roomDepth - 0.5).toFixed(1)}in (the ${roomDepth}in depth less 0.5in clearance).`
+      : `- productNeeds: every maxDims.d_in must fit the usable SHELF depth, not the room. If you classify this as walkin-u or l-run, that is about ${wallDepth}in of shelving along the walls, so keep maxDims.d_in at or under ${(wallDepth - 0.5).toFixed(1)}in. For any other archetype the ${roomDepth}in measurement is the shelf itself, so the limit is ${(roomDepth - 0.5).toFixed(1)}in.`;
   const enforced = [
     '',
     'Enforced limits for this request. A plan that breaks any of these is rejected and the user sees nothing, so check each one before answering:',
@@ -182,6 +194,7 @@ Deno.serve(async (req) => {
       ? '- safety.flag: this household has children, so flag the rows that need it and give each one a plain-language safety.why.'
       : '- safety.flag: this household has NO children, so safety.flag MUST be null on every single map row. Heavy or hazardous items still belong low or high as good practice, and you can say so in the row\'s why, but the flag itself must be null.',
     '- shelfIndex: unique per row, and every value less than geometry.shelfCount.',
+    ...(depthLimit ? [depthLimit] : []),
   ].join('\n');
 
   const content: unknown[] = images.map((img) => ({

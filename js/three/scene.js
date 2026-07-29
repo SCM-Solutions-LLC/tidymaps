@@ -378,8 +378,18 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         const organizerNaturalW=organizer?(Number(productDims.w)||
           naturalOrganizerWidth(organizer.userData.type,maxDims)):0;
         const organizerW=organizer?organizerNaturalW:0;
+        /* How deep this particular surface is. For a cabinet or a reach-in the
+           room depth IS the shelf depth, but for a walk-in or an L-run, D is
+           the depth of the ROOM — 72 inches of floor, against shelves the
+           builder makes 8 to 18 inches deep. Clamping to D let an organizer
+           render far past the shelf it was sitting on. Builders whose surfaces
+           differ from the room publish `depth`; the rest are the room. */
+        const shelfD=Math.max(1,Number(sh.depth)||D);
+        // What the product actually claims to be, before any clamping.
+        const organizerRequestedD=organizer
+          ?(Number(productDims.d)||Number(maxDims.d_in)||0):0;
         const organizerD=organizer?(Number(productDims.d)||Math.min(
-          Number(maxDims.d_in)||Math.max(5,(sh.itemDepth||6)*1.28),Math.max(5,D*0.94))):0;
+          Number(maxDims.d_in)||Math.max(5,(sh.itemDepth||6)*1.28),Math.max(5,shelfD*0.94))):0;
         const type=organizer&&organizer.userData.type;
         const organizerBaseH=organizer?Math.min(
           Math.max(0.8,type==='turntable'?0.8:type==='riser'?3.5:type==='divider'?2.4:type==='basket'?6.5:6),
@@ -410,7 +420,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
           type==='divider'?Math.max(1.4,organizerH*0.78):maxH,
         );
         const itemD=Math.min(
-          organizer?organizerD*0.48:(sh.itemDepth||D*0.55),
+          organizer?organizerD*0.48:(sh.itemDepth||shelfD*0.55),
           KIND_DEPTH[kind]||6,
         );
         const offset=-usable/2+cell*(i+0.5);
@@ -429,8 +439,12 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         if(organizer){
           organizer.userData.requestedQty=requestedQty;
           organizer.userData.visibleQty=visibleQty;
+          /* organizerD is already clamped to the shelf, so testing it against
+             the shelf was true by construction and the depth axis could never
+             report a misfit. The question is whether the product AS SOLD fits,
+             so compare the depth it claims. */
           organizer.userData.fits=requestedQty<=fitQty&&organizerNaturalW<=organizerAvailable&&
-            organizerD<=D&&organizerH<=maxH;
+            (!organizerRequestedD||organizerRequestedD<=shelfD)&&organizerH<=maxH;
           const organizerVisuals=ensureOrganizerCopies(organizer,visibleQty);
           organizerVisuals.forEach((visual,visualIndex)=>{
             const organizerBaseOffset=spec.source==='plan'?0:offset;

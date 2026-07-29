@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validatePlan, EFFORT_STEP_RANGES, ARCHETYPES, SURFACES, PLACES } from '../supabase/functions/_shared/planSchema.js';
+import { validatePlan, EFFORT_STEP_RANGES, ARCHETYPES, SURFACES, PLACES, usableShelfDepth } from '../supabase/functions/_shared/planSchema.js';
 import {
   ARCHETYPES as CLIENT_ARCHETYPES,
   SURFACES as CLIENT_SURFACES,
@@ -163,7 +163,53 @@ test('productNeeds.maxDims must fit the measured shelf depth minus 0.5in clearan
   const tightContext = { ...noKidsContext, dims: { d_in: 14 } }; // 14in shelf, needs <=13.5in depth
   const result = validatePlan(plan, tightContext);
   assert.equal(result.ok, false);
-  assert.match(result.errors.join('\n'), /does not fit the measured 14in depth/);
+  assert.match(result.errors.join('\n'), /does not fit the 14in usable shelf depth/);
+});
+
+/* For a walk-in the user measured a ROOM, so d_in is 72 inches of floor while
+   the shelving along its walls is 8-18 inches deep. Checking product depth
+   against the room made this rule toothless exactly where it mattered most:
+   a 20in bin "fit" a shelf that could never hold it, and the same number drove
+   the 3D view, which rendered organizers straight through the shelf. */
+test('a walk-in checks product depth against its shelves, not the room', () => {
+  const roomDims = { w_in: 72, h_in: 96, d_in: 72 };
+  const shelf = usableShelfDepth('walkin-u', roomDims);
+  assert.ok(shelf >= 8 && shelf <= 18, `walk-in shelving should be 8-18in, got ${shelf}`);
+
+  const tooDeep = basePlan({
+    productNeeds: [
+      { type: 'clear-bin', qty: 2, purpose: 'Corral loose items', targetZone: 'Eye level', maxDims: { w_in: 10, h_in: 8, d_in: 20 }, priority: 'high' },
+    ],
+  });
+  tooDeep.layout = { type: 'walkin-u', sections: [] };
+  const result = validatePlan(tooDeep, { ...noKidsContext, dims: roomDims });
+  assert.equal(result.ok, false, 'a 20in bin cannot fit a walk-in shelf');
+  assert.match(result.errors.join('\n'), /usable shelf depth/);
+
+  // A bin sized for the shelving is still fine.
+  const fits = basePlan({
+    productNeeds: [
+      { type: 'clear-bin', qty: 2, purpose: 'Corral loose items', targetZone: 'Eye level', maxDims: { w_in: 10, h_in: 8, d_in: 12 }, priority: 'high' },
+    ],
+  });
+  fits.layout = { type: 'walkin-u', sections: [] };
+  const fitsResult = validatePlan(fits, { ...noKidsContext, dims: roomDims });
+  assert.equal(fitsResult.ok, true, fitsResult.errors && fitsResult.errors.join('; '));
+
+  // A cabinet's measured depth IS its shelf depth, so nothing changes there.
+  assert.equal(usableShelfDepth('cabinet', { w_in: 36, d_in: 16 }), 16);
+  assert.equal(usableShelfDepth(null, { w_in: 36, d_in: 16 }), 16);
+});
+
+/* Tightening a validator without telling the model is how the shelfCount and
+   shelfYFracs rejections happened: the user waited out a full analysis and got
+   a demo plan. The depth limit has to reach the prompt too, and because the
+   model picks the archetype, it has to carry both numbers. */
+test('the enforced-limits block states the depth rule the validator applies', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /usableShelfDepth/, 'the prompt must derive its depth limit from the validator helper');
+  assert.match(fn, /maxDims\.d_in/, 'the enforced-limits block never mentions the depth rule');
+  assert.match(fn, /walkin-u or l-run/, 'the model is not told the room-shaped archetypes are different');
 });
 
 test('productNeeds.maxDims that fits within clearance is valid', () => {
