@@ -44,6 +44,10 @@ export function buildResults(){
     hero.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
     hero.alt=`Illustrated ${resultArea.label.toLowerCase()} organization plan`;
     hero.dataset.space=resultArea.id;
+    // The figure carries the "Walk through it in 3D" button, so a failed load
+    // earlier in the session must not keep it hidden once a good illustration
+    // is in place — the onerror handler puts "hide" back if this one fails too.
+    hero.closest('.plan-hero-photo').classList.remove('hide');
     hero.closest('.plan-hero-photo').classList.add('illustrated');
   }
   const mastDate=document.getElementById('mast-date');
