@@ -12,7 +12,7 @@
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   KID_AGES, EFFORT_OPTS, SHOPPING_OPTS,
-  roomFor, areaFor, roomLower, goalIdFor, prefsForStyles,
+  roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
 import { state } from '../state.js';
@@ -306,6 +306,20 @@ function syncHouseholdPresence(){
   h.kids.present = (h.kidCount || 0) > 0 ? 'yes' : 'no';
   if(h.kids.present === 'no') h.kids.ages = [];
   h.pets.present = (h.petCount || 0) > 0 ? 'yes' : 'no';
+
+  /* Someone can tick "Kids' snacks", walk back to household, and set kids to
+     zero. Hiding the chip from then on is not enough: the earlier selection is
+     still in state and would ride into the analysis context, where the model
+     is told there are no children and the validator rejects any kid-safety
+     flag. Prune the selections to match the answer. */
+  if(Array.isArray(state.cats)) state.cats = optionsForHousehold(state.cats, h);
+  if(Array.isArray(state.goals)){
+    const kept = optionsForHousehold(state.goals, h);
+    if(kept.length !== state.goals.length){
+      state.goals = kept;
+      state.goal = kept.length ? goalIdFor(kept[0]) : null;
+    }
+  }
 }
 
 function renderKidAges(){
@@ -340,7 +354,7 @@ function renderContents(){
   const note = document.getElementById('contents-detected');
   if(note) note.classList.toggle('hide', !state.detected.length);
   wrap.innerHTML = '';
-  cfg.categories.forEach(cat => {
+  optionsForHousehold(cfg.categories, state.household).forEach(cat => {
     const c = document.createElement('button');
     c.type = 'button';
     c.className = 'chip wz-cat' + (state.cats.includes(cat) ? ' sel' : '');
@@ -364,7 +378,7 @@ function renderGoals(){
   if(!wrap) return;
   const cfg = SPACE_CFG[state.space] || SPACE_CFG.pantry;
   wrap.innerHTML = '';
-  cfg.goals.forEach(goal => {
+  optionsForHousehold(cfg.goals, state.household).forEach(goal => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'wz-goal' + (state.goals.includes(goal) ? ' sel' : '');

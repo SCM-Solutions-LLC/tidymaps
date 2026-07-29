@@ -1,7 +1,7 @@
 import { preflight, json } from '../_shared/cors.ts';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
-import { validatePlan } from '../_shared/planSchema.js';
+import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -46,7 +46,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "features": [{"icon": string, "title": string, "sub": string}],  // existing storage features you can see. icon keyword: shelf|basket|bin|drawer|door|vertical|horizontal|down|up|hook|rod|empty|missing
   "problems": [string],                        // 3-6 concrete organization problems
   "opportunities": [string],                   // 3-5 quick wins / underused assets
-  "map": [{
+  "map": [{                                    // 1-12 rows, one per storage level. NEVER more than 12.
     "level": string,                           // e.g. "Top shelf"
     "icon": string,                            // up|eye|middle|down|door|hook|rod|drawer
     "zone": string,                            // e.g. "Daily snacks · Breakfast items"
@@ -63,7 +63,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   } | null,                                    // null if the layout type is unclear from the photos
   "geometry": {                                // estimate from the photos if the user gave no dimensions
     "unit": "in", "width": number, "height": number, "depth": number,
-    "shelfCount": number,
+    "shelfCount": number,                      // MUST equal the number of map rows, and MUST be 12 or fewer
     "shelfYFracs": [number],                   // vertical position of each shelf top, 0=top of unit, 1=floor, ascending
     "estimated": boolean                       // false only when user-provided dimensions were used
   },
@@ -79,7 +79,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "existingLede": string,
   "existing": [{"icon": string, "title": string, "detail": string}],
   "dontBuy": string,
-  "steps": [{"task": string, "time": string, "why": string}],   // 6-9 ordered steps, time like "10 min"
+  "steps": [{"task": string, "time": string, "why": string}],   // ordered steps, time like "10 min". The exact count allowed for this request is in "Enforced limits" below.
   "time": string,                              // total estimate, e.g. "45-90 min"
   "cost": string                               // e.g. "$0 / $40-80"
 }
@@ -101,7 +101,7 @@ Layout & geometry rules — handle ANY space configuration:
 - Closets with rods: a hanging rod is its own level (e.g. "Hanging rod: long items"); shelves above or below it get their own rows.
 - Mixed spaces (shelves + drawers + floor + hooks + door racks): include every distinct storage surface as its own level, ordered top to bottom.
 - Multiple freestanding units side by side: treat them as one combined run, left to right, and prefix levels with the unit ("Unit 2: middle shelf").
-- If a space has more than 10 distinct levels, group the least-used surfaces into a single "Bulk storage" row so the plan stays actionable.
+- HARD LIMIT: the map must never exceed 12 rows, and geometry.shelfCount must equal the number of map rows, so it must never exceed 12 either. This is a schema limit, not a preference: a plan with more than 12 rows is rejected outright and the user sees nothing. Walk-in pantries and closets counted wall by wall are the usual way to blow past it, so count your rows before answering. If the space has more than 12 distinct levels, consolidate the least-used surfaces into shared rows (one "Bulk storage" row, or one row per wall instead of one per shelf) until the map is 12 rows or fewer. Aim for 10 or fewer so the plan stays actionable.
 
 Hard safety rules (apply whenever the household context says kids are present):
 - Heavy, chemical, sharp, or fragile items must NEVER be placed below 48 inches when kids ages 0-9 are present, unless that zone is flagged "lock-or-latch".
@@ -159,11 +159,36 @@ Deno.serve(async (req) => {
     return json(req, 500, { error: 'internal' });
   }
 
+  /* Every rule validatePlan enforces per-request, restated to the model in its
+     own terms. The prompt used to describe these approximately — "6-9 steps",
+     safety rules that "apply when kids are present" — while the validator
+     enforced something narrower, and a plan that split the difference was
+     rejected outright after 80 seconds of work. Anything checked against the
+     context belongs here, derived from the same constants the validator reads,
+     so the two cannot drift apart. This is trusted text and is deliberately
+     assembled before the untrusted context block. */
+  const ctx = (body.context ?? {}) as {
+    effort?: string;
+    household?: { kids?: { present?: boolean } };
+  };
+  const [minSteps, maxSteps] = EFFORT_STEP_RANGES[ctx.effort as string] ?? DEFAULT_STEP_RANGE;
+  const kidsPresent = ctx.household?.kids?.present === true;
+  const enforced = [
+    '',
+    'Enforced limits for this request. A plan that breaks any of these is rejected and the user sees nothing, so check each one before answering:',
+    `- steps: return between ${minSteps} and ${maxSteps} steps, matching the effort level this user chose.`,
+    '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
+    kidsPresent
+      ? '- safety.flag: this household has children, so flag the rows that need it and give each one a plain-language safety.why.'
+      : '- safety.flag: this household has NO children, so safety.flag MUST be null on every single map row. Heavy or hazardous items still belong low or high as good practice, and you can say so in the row\'s why, but the flag itself must be null.',
+    '- shelfIndex: unique per row, and every value less than geometry.shelfCount.',
+  ].join('\n');
+
   const content: unknown[] = images.map((img) => ({
     type: 'image',
     source: { type: 'base64', media_type: img.media_type, data: img.data },
   }));
-  content.push({ type: 'text', text: `${PROMPT_HEAD}\n\n${untrustedContextBlock(body.context)}` });
+  content.push({ type: 'text', text: `${PROMPT_HEAD}\n${enforced}\n\n${untrustedContextBlock(body.context)}` });
 
   const requestId = crypto.randomUUID();
 

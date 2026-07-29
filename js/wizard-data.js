@@ -256,6 +256,33 @@ export function scenarioKeyFor(spaceId, setupId) {
 
 /* ---------- People, effort, shopping ---------- */
 export const KID_AGES = ['Baby', 'Toddler', 'Big kid', 'Teen'];
+
+/* The household step (step 6 of 12) asks how many kids live here, and every
+   list after it was still offering kid-only options: "Kids' snacks" in the
+   contents chips, "Kids can't reach their things" in the goals, "Kid-friendly
+   setup" in the after-preview tabs. Answering "no kids" and then being asked
+   about them reads as the app not listening. Filter those options against the
+   answer instead. */
+const KID_OPTION_RE = /\bkids?\b|\bchildren\b/i;
+
+export function isKidOption(option) {
+  const label = typeof option === 'string' ? option : (option && option.label) || '';
+  return KID_OPTION_RE.test(label);
+}
+
+export function householdHasKids(household) {
+  if (!household) return false;
+  if (typeof household.kidCount === 'number') return household.kidCount > 0;
+  return !!(household.kids && household.kids.present === 'yes');
+}
+
+/* Keep every option when kids are present; drop the kid-only ones when they
+   are not. Selections made before the household answer changed are pruned the
+   same way, so a stale "Kids' snacks" cannot survive into the plan context. */
+export function optionsForHousehold(options, household) {
+  const list = Array.isArray(options) ? options : [];
+  return householdHasKids(household) ? list : list.filter((o) => !isKidOption(o));
+}
 export const EFFORT_OPTS = [
   { label: 'Quick refresh', desc: 'About 30 minutes' },
   { label: 'Weekend reset', desc: '2–3 hours, no rush' },

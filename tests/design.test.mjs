@@ -98,6 +98,25 @@ test('photo slots degrade gracefully until real photography exists', () => {
   assert.ok(landingCss.includes('.no-photo'), 'no-photo layout styles missing');
 });
 
+/* The plan hero shipped with a truncated 1x1 GIF as its placeholder — header
+   and screen descriptor, then a bare image separator and nothing else. Every
+   browser rejected it, so the img's onerror fired on every load and hid the
+   whole figure, taking the "Walk through it in 3D" button down with it. The
+   illustration results.js sets afterwards never brought either back. */
+test('the plan hero placeholder is a decodable image, not a truncated one', () => {
+  const src = /id="plan-hero-img"[^>]*\ssrc="data:image\/gif;base64,([^"]+)"/.exec(html);
+  assert.ok(src, 'plan hero placeholder is no longer an inline GIF — re-point this test');
+  const gif = Buffer.from(src[1], 'base64');
+  assert.equal(gif.subarray(0, 6).toString('latin1'), 'GIF89a', 'not a GIF header');
+  assert.equal(gif[gif.length - 1], 0x3b, 'GIF is truncated: no trailer byte, so it fails to decode');
+  assert.ok(gif.includes(Buffer.from([0x2c])), 'GIF has no image descriptor');
+
+  // And the figure has to come back even if some future src does fail first.
+  const results = readFileSync(new URL('../js/screens/results.js', import.meta.url), 'utf8');
+  assert.match(results, /plan-hero-photo'\)\.classList\.remove\('hide'\)/,
+    'results.js sets a good illustration without clearing a stale hide');
+});
+
 test('single terracotta accent, flat canvas, no ambient gradients', () => {
   assert.ok(tokens.includes('--primary:      oklch(0.555 0.145 55)'), 'brand accent drifted');
   for (const css of [landingCss, baseCss, tokens]) {
