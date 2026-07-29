@@ -140,13 +140,16 @@ export const CUSTOMIZE = [
   ['addprod','Add storage product recommendations','Turns on the optional upgrade plan.'],
   ['rmprod','Remove storage product recommendations','Turns off the optional upgrade plan.']
 ];
+/* Every entry here has to do something. "Schedule a session" used to sit in
+   this list and answer "coming soon" — there is no booking flow behind it and
+   no date for one, so it was advertising a service that does not exist. It
+   comes back the day there is something to book. */
 export const SAVE_OPTS = [
   [SVG.bookmark,'Save plan'],
   [SVG.download,'Download checklist'],
   [SVG.send,'Send shopping list'],
   [SVG.refreshCw,'Start another space'],
   [SVG.columns,'Compare before &amp; after'],
-  [SVG.calendar,'Schedule a session'],
   [SVG.users,'Share with family / roommate']
 ];
 export const FB_USEFUL = ['Not useful','Somewhat useful','Very useful','I would pay for this'];
