@@ -4,6 +4,9 @@ export const state = {
   room:'kitchen',
   space:'pantry', goal:null, capture:null,
   setup:'cabinet', setupLabel:'Cabinet',
+  // true once the user actually picks a setup card; setArea() only preselects
+  // one, and a preselection must not outrank what the photos show
+  setupTouched:false,
   goals:[],        // per-space goal texts ("What bugs you most?")
   styles:[],       // per-space organizing styles ("How do you like things kept?")
   shoppingPref:'Use what I have',   // 'Use what I have' | 'Open to a few ideas'
@@ -72,6 +75,7 @@ export function prepareDemoPlanState(target=state){
   target.capture='demo';
   target.setup='cabinet';
   target.setupLabel='Cabinet';
+  target.setupTouched=false;
   target.goals=[];
   target.styles=[];
   target.shoppingPref='Use what I have';
@@ -122,6 +126,7 @@ export function persistGuestDraft(){
       planReady: !!state.ai || !!(state.stepDone && state.stepDone.length),
       space:state.space, goal:state.goal, capture:state.capture,
       room:state.room, setup:state.setup, setupLabel:state.setupLabel,
+      setupTouched:!!state.setupTouched,
       goals:state.goals, styles:state.styles, shoppingPref:state.shoppingPref,
       catsTouched:state.catsTouched,
       prefs:[...state.prefs], budget:state.budget, effort:state.effort,
@@ -143,6 +148,7 @@ export function restoreGuestDraft(){
     state.space=d.space; state.goal=d.goal; state.capture=d.capture;
     if(d.room) state.room=d.room;
     if(d.setup){ state.setup=d.setup; state.setupLabel=d.setupLabel||state.setupLabel; }
+    state.setupTouched=!!d.setupTouched;
     state.goals=d.goals||[]; state.styles=d.styles||[];
     if(d.shoppingPref) state.shoppingPref=d.shoppingPref;
     state.catsTouched=!!d.catsTouched;

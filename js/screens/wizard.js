@@ -49,6 +49,7 @@ export function setArea(roomId, spaceId){
   const st = (SETUP_TYPES[spaceId] || [])[0];
   state.setup = st ? st.id : 'cabinet';
   state.setupLabel = st ? st.label : 'Cabinet';
+  state.setupTouched = false;   // a preselection, until the user picks one
   applySetupDims(st.id);
   state.cats = [];
   state.catsTouched = false;
@@ -64,6 +65,7 @@ export function setSetup(setupId){
   if(!st) return;
   state.setup = st.id;
   state.setupLabel = st.label;
+  state.setupTouched = true;   // an actual choice, not the preselected default
   applySetupDims(st.id);
 }
 

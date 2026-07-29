@@ -152,6 +152,7 @@ export function restart(){
   state.dims=null; state.dimsFt=null;
   state.household={ adults:2, kidCount:0, petCount:0, kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' };
   state.afterMode='Use existing containers';
+  state.setupTouched=false;
   resetPlanRecord(state);
   Object.keys(state).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete state[k]; });
   // back to the design defaults: Kitchen → Pantry → Cabinet

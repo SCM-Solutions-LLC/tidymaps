@@ -26,7 +26,7 @@ function rowFromState(name){
     // The guest draft has always kept these (js/state.js); this closes the gap
     // for signed-in spaces.
     prefs: { prefs:[...(state.prefs||[])], budget:state.budget, effort:state.effort,
-             setup:state.setup, setupLabel:state.setupLabel,
+             setup:state.setup, setupLabel:state.setupLabel, setupTouched:!!state.setupTouched,
              toggles:Object.fromEntries(Object.keys(state).filter(k=>k.startsWith('detail_')).map(k=>[k.slice(7),state[k]])) },
     plan: state.ai,
     plan_meta: state.planMeta,
@@ -169,6 +169,7 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
     if(data.prefs.setup){
       state.setup = data.prefs.setup;
       state.setupLabel = data.prefs.setupLabel || state.setupLabel;
+      state.setupTouched = !!data.prefs.setupTouched;
     }
     Object.entries(data.prefs.toggles||{}).forEach(([k,v])=>{ state['detail_'+k]=v; });
   }

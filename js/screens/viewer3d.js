@@ -36,6 +36,8 @@ function currentLayout(map=activeMapV2()){
   const resolved=resolveLayout({
     ai: state.ai||{ map },
     setup: state.setup,
+    setupTouched: state.setupTouched,
+    aiFromPhotos: !!(state.planMeta && state.planMeta.source === 'ai'),
     scenarioKey: state.space,
     override: layoutOverride,
     map,

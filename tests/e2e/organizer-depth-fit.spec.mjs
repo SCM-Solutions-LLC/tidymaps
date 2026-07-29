@@ -47,3 +47,46 @@ test('a bin deeper than the walk-in shelving is called out; one that fits is not
   await expect(page.locator('#v3d-fit-note'), 'an 11in bin fits walk-in shelving comfortably')
     .toHaveClass(/hide/);
 });
+
+/* resolveLayout ordered setup above the AI's reading of the photos, but
+   state.setup is never empty — setArea() preselects one — so the ai branch was
+   unreachable code and the viewer's "matched from your photos" status could
+   never appear. Worse, the setup step runs before the photos are taken, so a
+   guess made with nothing to look at always beat what the photos showed. */
+test('the photos decide the layout when the user never picked a setup', async ({ page }) => {
+  await page.goto('/index.html');
+
+  const resolved = await page.evaluate(async () => {
+    const [{ state }, { getDemoScenario }, { normalizeAi }] = await Promise.all([
+      import('/js/state.js'), import('/js/demo-scenarios.js'), import('/js/plan.js'),
+    ]);
+    const { setArea } = await import('/js/screens/wizard.js');
+    // Exactly what the wizard does when someone clicks through the setup step.
+    setArea('kitchen', 'pantry');
+    state.dims = { w_in: 72, h_in: 96, d_in: 72 };
+    const plan = getDemoScenario('walkin', null, state.household, null);
+    plan.layout = { type: 'walkin-u', sections: [] };
+    state.ai = normalizeAi(plan);
+    // Only a real photo analysis outranks a preselected setup; a canned
+    // scenario layout does not, so this has to look like the real thing.
+    state.planMeta = { model: 'test', source: 'ai', analyzedAt: 0 };
+
+    const out = {};
+    await window.openViewer3d();
+    out.untouched = document.getElementById('v3d-canvas').dataset.layout;
+    out.status = document.getElementById('v3d-status').textContent;
+
+    // Now the user actually picks a setup: their own choice wins again.
+    const m = await import('/js/screens/viewer3d.js');
+    m.disposeViewer3d();
+    const { setSetup } = await import('/js/screens/wizard.js');
+    setSetup('reachin');
+    await window.openViewer3d();
+    out.chosen = document.getElementById('v3d-canvas').dataset.layout;
+    return out;
+  });
+
+  expect(resolved.untouched, 'the photos said walk-in and nothing overrode them').toBe('walkin-u');
+  expect(resolved.status, 'the "matched from your photos" wording was unreachable').toMatch(/from your photos/);
+  expect(resolved.chosen, 'an explicit setup choice still wins').not.toBe('walkin-u');
+});

@@ -124,17 +124,44 @@ test('normalizeLayout clamps out-of-range rows', () => {
 
 // resolveLayout priority chain
 
-test('resolveLayout priority: override > setup > ai > scenario > default', () => {
+/* Priority is override > a setup the user actually chose > the AI's reading of
+   the photos > a merely preselected setup > scenario > default.
+
+   The setupTouched distinction is the whole point. state.setup is never empty
+   — setArea() preselects the first setup type and falls back to 'cabinet' —
+   and every setup id maps to an archetype, so a plain `setup > ai` chain made
+   the ai branch unreachable code. Worse, the setup step runs BEFORE the photos
+   are taken, so a guess made with nothing to look at silently beat what the
+   photos actually showed, and took the AI's wall-by-wall sections with it. */
+test('resolveLayout priority: override > chosen setup > ai > preselected setup > scenario > default', () => {
   const map = [{lv:'Top', surface:'shelf'}, {lv:'Bottom', surface:'shelf'}];
   const ai = { layout: { type: 'fridge' }, map };
 
-  const r1 = resolveLayout({ ai, setup: 'cabinet', scenarioKey: 'pantry', override: 'workbench', map });
+  const r1 = resolveLayout({ ai, setup: 'cabinet', setupTouched: true, scenarioKey: 'pantry', override: 'workbench', map });
   assert.equal(r1.type, 'workbench');
   assert.equal(r1.source, 'override');
 
-  const r2 = resolveLayout({ ai, setup: 'cabinet', scenarioKey: 'pantry', map });
+  // The user picked this setup themselves, so it outranks the photos.
+  const r2 = resolveLayout({ ai, setup: 'cabinet', setupTouched: true, scenarioKey: 'pantry', map });
   assert.equal(r2.type, 'cabinet');
   assert.equal(r2.source, 'setup');
+
+  // Nobody touched the setup step, so the photos win.
+  const r2b = resolveLayout({ ai, setup: 'cabinet', aiFromPhotos: true, scenarioKey: 'pantry', map });
+  assert.equal(r2b.type, 'fridge');
+  assert.equal(r2b.source, 'ai');
+
+  // A canned offline-scenario layout does NOT get that promotion: it has no
+  // more insight into this space than the preselected setup does.
+  const r2d = resolveLayout({ ai, setup: 'cabinet', scenarioKey: 'pantry', map });
+  assert.equal(r2d.type, 'cabinet');
+  assert.equal(r2d.source, 'setup');
+
+  // With no AI reading at all, the preselected setup is still better than the
+  // area's generic scenario.
+  const r2c = resolveLayout({ ai: { map }, setup: 'cabinet', scenarioKey: 'bathroom', map });
+  assert.equal(r2c.type, 'cabinet');
+  assert.equal(r2c.source, 'setup');
 
   const r3 = resolveLayout({ ai, scenarioKey: 'pantry', map });
   assert.equal(r3.type, 'fridge');
@@ -152,12 +179,13 @@ test('resolveLayout priority: override > setup > ai > scenario > default', () =>
 test('explicit setup choices cannot be replaced by a generic area layout', () => {
   const map=[{lv:'Hanging rod',surface:'rod'}];
   const ai={layout:{type:'closet-rod',sections:[{id:'main',rows:[0]}]},map};
-  const l=resolveLayout({ai,setup:'lshapeC',scenarioKey:'closet',map});
+  const l=resolveLayout({ai,setup:'lshapeC',setupTouched:true,scenarioKey:'closet',map});
   assert.equal(l.type,'l-run');
   assert.equal(l.source,'setup');
   assert.deepEqual(l.sections,[{id:'main',label:'',place:null,rows:[0]}]);
-  const builtIn=resolveLayout({ai,setup:'builtin',scenarioKey:'closet',map});
+  const builtIn=resolveLayout({ai,setup:'builtin',setupTouched:true,scenarioKey:'closet',map});
   assert.equal(builtIn.type,'closet-system');
+  // No AI layout to defer to, so a preselected setup still beats the scenario.
   const underBed=resolveLayout({ai:{map},setup:'underbed',scenarioKey:'dresser',map});
   assert.equal(underBed.type,'under-bed');
 });
