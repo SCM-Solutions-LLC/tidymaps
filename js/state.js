@@ -27,6 +27,42 @@ export const state = {
   shareView:false,      // viewing someone else's plan via a read-only share link
 };
 
+/* Everything that belongs to ONE plan of ONE space: the analysis, the saved
+   row it writes to, the 3D arrangement, the shopping list, the progress ticks,
+   and the rendered before/after images.
+
+   This has to be cleared whenever the user starts on a different space, and
+   the reason is not cosmetic. `activeSpaceId` is what saveSpace() branches on
+   (js/db.js): still set from the previous space, it turns the save of the new
+   plan into an UPDATE of the old space's row, overwriting every column — the
+   first space is silently destroyed with no prompt and no toast. `arrangement`
+   and `shareView` cause quieter versions of the same bleed: the old space's
+   dimensions and item placements get imposed on the new plan's 3D view, and a
+   visitor who arrived on a share link stays flagged read-only, so the plan
+   they then build for themselves is refused by both the signed-in saver and
+   the guest-draft writer and is lost on reload.
+
+   restart(), prepareDemoPlanState(), and setArea() all need exactly this set,
+   so it lives in one place — three hand-maintained copies is how the gap
+   opened in the first place. */
+export function resetPlanRecord(target=state){
+  target.ai=null;
+  target.aiError=null;
+  target.planMeta=null;
+  target.activeSpaceId=null;
+  target.shopping=null;
+  target.arrangement=null;
+  target.stepDone=[];
+  target.upgradeChecked=null;
+  target.shareView=false;
+  target.afterRenderB64=null;
+  target.afterRenderUrl=null;
+  target.beforePhotoUrl=null;
+  delete target.sharedName;
+  delete target._beforeUrl;
+  return target;
+}
+
 // Demo plans must never inherit a real user's media or saved-plan state.
 // Keeping this reset DOM-free makes the transition deterministic and testable.
 export function prepareDemoPlanState(target=state){
@@ -53,20 +89,7 @@ export function prepareDemoPlanState(target=state){
   target.frames=[];
   target.dims=null;
   target.household={ adults:2, kidCount:0, petCount:0, kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
-  target.ai=null;
-  target.aiError=null;
-  target.planMeta=null;
-  target.activeSpaceId=null;
-  target.shopping=null;
-  target.arrangement=null;
-  target.stepDone=[];
-  target.upgradeChecked=null;
-  target.beforePhotoUrl=null;
-  target.afterRenderB64=null;
-  target.afterRenderUrl=null;
-  target.shareView=false;
-  delete target.sharedName;
-  delete target._beforeUrl;
+  resetPlanRecord(target);
   Object.keys(target).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete target[k]; });
   return target;
 }

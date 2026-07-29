@@ -19,7 +19,14 @@ function rowFromState(name){
     goal: state.goal,
     dims: state.dims,
     household: state.household,
+    // setup/setupLabel ride in the prefs blob because the spaces table has no
+    // column for them. Without them a reopened space lost its setup type, and
+    // resolveLayout() keys the 3D archetype off exactly that — so a saved
+    // walk-in came back rendered as whatever setup happened to be in memory.
+    // The guest draft has always kept these (js/state.js); this closes the gap
+    // for signed-in spaces.
     prefs: { prefs:[...(state.prefs||[])], budget:state.budget, effort:state.effort,
+             setup:state.setup, setupLabel:state.setupLabel,
              toggles:Object.fromEntries(Object.keys(state).filter(k=>k.startsWith('detail_')).map(k=>[k.slice(7),state[k]])) },
     plan: state.ai,
     plan_meta: state.planMeta,
@@ -159,6 +166,10 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
     state.prefs = new Set(data.prefs.prefs||[]);
     state.budget = data.prefs.budget||null;
     state.effort = data.prefs.effort||null;
+    if(data.prefs.setup){
+      state.setup = data.prefs.setup;
+      state.setupLabel = data.prefs.setupLabel || state.setupLabel;
+    }
     Object.entries(data.prefs.toggles||{}).forEach(([k,v])=>{ state['detail_'+k]=v; });
   }
   state.ai = data.plan;

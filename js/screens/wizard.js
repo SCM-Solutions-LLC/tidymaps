@@ -15,7 +15,7 @@ import {
   roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
-import { state } from '../state.js';
+import { state, resetPlanRecord, clearGuestMedia } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { updateGate } from '../router.js';
 
@@ -33,8 +33,17 @@ export function setRoom(roomId){
 }
 
 /* Changing the area resets everything downstream that depends on it:
-   setup type, measurements, categories, goals, styles, and detection. */
+   setup type, measurements, categories, goals, styles, and detection — and,
+   just as importantly, the plan record and the photos.
+
+   Leaving the plan record behind was a data-loss bug: `activeSpaceId` survived
+   the switch, so saving the second space UPDATEd the first space's row instead
+   of inserting a new one and overwrote every column of it. The photos matter
+   for the same reason — shots of a pantry must not be analysed as a closet and
+   then filed against the closet's record. */
 export function setArea(roomId, spaceId){
+  resetPlanRecord(state);
+  clearGuestMedia(state);
   state.room = roomId;
   state.space = spaceId;
   const st = (SETUP_TYPES[spaceId] || [])[0];
