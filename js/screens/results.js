@@ -3,7 +3,7 @@ import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief } from '../plan.js';
-import { areaFor, art, fmtFt } from '../wizard-data.js';
+import { areaFor, art, fmtFt, optionsForHousehold } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -188,7 +188,11 @@ export function buildResults(){
 
   // after tabs
   const at=document.getElementById('after-tabs'); at.innerHTML='';
-  AFTER_MODES.forEach(m=>{
+  // "Kid-friendly setup" is meaningless for a household that told us it has no
+  // kids, and offering it here undoes the answer they gave in the wizard.
+  const afterModes=optionsForHousehold(AFTER_MODES, state.household);
+  if(!afterModes.includes(state.afterMode)) state.afterMode=afterModes[0];
+  afterModes.forEach(m=>{
     const b=document.createElement('button'); b.className='after-tab'+(m===state.afterMode?' sel':''); b.textContent=m;
     b.onclick=()=>{ state.afterMode=m; at.querySelectorAll('.after-tab').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); renderAfter(m); };
     at.appendChild(b);

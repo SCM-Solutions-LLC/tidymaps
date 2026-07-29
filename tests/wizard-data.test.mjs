@@ -4,8 +4,9 @@ import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   SETUP_GEOM, GEOM_TO_V3D_LAYOUT, SETUP_SCENARIO, scenarioKeyFor,
   roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, measureSummary, art,
+  isKidOption, householdHasKids, optionsForHousehold,
 } from '../js/wizard-data.js';
-import { PREFS } from '../js/data.js';
+import { PREFS, AFTER_MODES } from '../js/data.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 import { EFFORT_STEPS } from '../js/personalize.js';
 import { EFFORT_STEP_RANGES } from '../supabase/functions/_shared/planSchema.js';
@@ -162,4 +163,43 @@ test('workbench scenario: chemicals stay high; kids add a latch', () => {
   const withKids = getDemoScenario('workbench', 'find', { kids: { present: 'yes', ages: ['Big kid'] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' });
   assert.ok(withKids.safetyNotes.some(n => /kid|child|small hands/i.test(n)), 'kid household must surface a kid safety note');
   assert.ok(withKids.productNeeds.some(p => p.type === 'safety-latch'), 'chemical space with kids should recommend a latch');
+});
+
+/* The household step is step 6 of 12, and every list after it was still
+   offering kid-only options: "Kids' snacks" in the contents chips, "Kids can't
+   reach their things" in the goals, "Kid-friendly setup" in the after-preview
+   tabs. Answering "no kids" and then being asked about them anyway reads as
+   the app ignoring the answer, and a stale selection also contradicts the
+   analysis context, where the model is told there are no children and the
+   validator rejects any kid-safety flag. */
+test('kid-only options disappear once the household says there are no kids', () => {
+  const noKids = { kidCount: 0, kids: { present: 'no', ages: [] } };
+  const withKids = { kidCount: 2, kids: { present: 'yes', ages: ['Toddler'] } };
+
+  assert.equal(householdHasKids(noKids), false);
+  assert.equal(householdHasKids(withKids), true);
+
+  // Every space config the wizard can land on must come out kid-free.
+  for (const [spaceId, cfg] of Object.entries(SPACE_CFG)) {
+    for (const list of [cfg.categories, cfg.goals]) {
+      if (!Array.isArray(list)) continue;
+      const kept = optionsForHousehold(list, noKids);
+      assert.ok(kept.every((o) => !isKidOption(o)),
+        `${spaceId}: kid options survived a no-kids household`);
+      assert.deepEqual(optionsForHousehold(list, withKids), list,
+        `${spaceId}: nothing may be dropped when kids are present`);
+    }
+  }
+
+  // The after-preview tabs are rendered on the results screen, well past the
+  // household step, and were the most visible instance of this.
+  assert.ok(AFTER_MODES.some(isKidOption), 'fixture check: a kid tab exists to filter');
+  assert.ok(optionsForHousehold(AFTER_MODES, noKids).every((m) => !isKidOption(m)));
+
+  // Detection is on the option text, so it holds for labelled objects too.
+  assert.equal(isKidOption("Kids' snacks"), true);
+  assert.equal(isKidOption('Kid-friendly setup'), true);
+  assert.equal(isKidOption({ label: "Kids can't reach their things" }), true);
+  assert.equal(isKidOption('Clear containers'), false);
+  assert.equal(isKidOption('Maximize vertical space'), false);
 });
