@@ -12,7 +12,7 @@ import {
    hitboxes, snap into a slot on drop. onDrop(item, targetShelf) may veto
    nothing but can warn (safety). */
 
-export function attachDrag(view, { onDrop }={}){
+export function attachDrag(view, { onDrop, canDrop, onRejectDrop }={}){
   const { renderer, camera, controls, items, shelves, reflow }=view;
   const surfaces=view.surfaces||shelves;
   const canvas=renderer.domElement;
@@ -94,7 +94,14 @@ export function attachDrag(view, { onDrop }={}){
     dragging=null;
     controls.enabled=true;
     item.material.emissive=new THREE.Color(0x000000);
-    if(dragSurface){
+    /* A surface can refuse an item. Without this, anything dropped on a rod
+       was posed hanging below it — itemYForSurface keys that off the TARGET
+       surface alone — so a bottle or a stack of cans floated in mid-air under
+       the rail with its own geometry. Leaving shelfIndex and slot untouched
+       means the reflow below simply returns it to where it came from. */
+    if(dragSurface && canDrop && !canDrop(item, dragSurface)){
+      if(onRejectDrop) onRejectDrop(item, dragSurface);
+    }else if(dragSurface){
       item.userData.shelfIndex=dragSurface.index;
       const here=items.filter(m=>m!==item && m.userData.shelfIndex===dragSurface.index)
         .sort((a,b)=>uProject(a.position, dragSurface)-uProject(b.position, dragSurface));

@@ -371,6 +371,32 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+# Edge functions. These were previously undeclared, which meant verify_jwt was
+# whatever the CLI happened to default to on the deploy that created each one —
+# production drifted into analyze-space/render-after false and
+# track-events/get-shared-space true, with nothing in the repo recording it and
+# nothing stopping the next deploy from flipping it again.
+#
+# All four are browser-facing and called with the public anon key, which
+# satisfies verify_jwt without proving anything. Real identity is established
+# inside each function by getCaller(), and abuse is bounded by
+# check_and_log_usage. get-shared-space in particular is documented to work for
+# anyone holding the link, so gating it on a JWT contradicts its contract.
+[functions.analyze-space]
+verify_jwt = false
+
+[functions.render-after]
+verify_jwt = false
+
+[functions.track-events]
+verify_jwt = false
+
+[functions.get-shared-space]
+verify_jwt = false
+
+[functions.submit-form]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

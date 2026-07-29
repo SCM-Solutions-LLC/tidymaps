@@ -1,4 +1,5 @@
 import { supa, getUser } from './auth.js';
+import { submitForm } from './api.js';
 import { state } from './state.js';
 import { toast } from './ui.js';
 import { areaFor } from './wizard-data.js';
@@ -19,7 +20,14 @@ function rowFromState(name){
     goal: state.goal,
     dims: state.dims,
     household: state.household,
+    // setup/setupLabel ride in the prefs blob because the spaces table has no
+    // column for them. Without them a reopened space lost its setup type, and
+    // resolveLayout() keys the 3D archetype off exactly that — so a saved
+    // walk-in came back rendered as whatever setup happened to be in memory.
+    // The guest draft has always kept these (js/state.js); this closes the gap
+    // for signed-in spaces.
     prefs: { prefs:[...(state.prefs||[])], budget:state.budget, effort:state.effort,
+             setup:state.setup, setupLabel:state.setupLabel, setupTouched:!!state.setupTouched,
              toggles:Object.fromEntries(Object.keys(state).filter(k=>k.startsWith('detail_')).map(k=>[k.slice(7),state[k]])) },
     plan: state.ai,
     plan_meta: state.planMeta,
@@ -159,6 +167,11 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
     state.prefs = new Set(data.prefs.prefs||[]);
     state.budget = data.prefs.budget||null;
     state.effort = data.prefs.effort||null;
+    if(data.prefs.setup){
+      state.setup = data.prefs.setup;
+      state.setupLabel = data.prefs.setupLabel || state.setupLabel;
+      state.setupTouched = !!data.prefs.setupTouched;
+    }
     Object.entries(data.prefs.toggles||{}).forEach(([k,v])=>{ state['detail_'+k]=v; });
   }
   state.ai = data.plan;
@@ -255,20 +268,24 @@ export function shareUrlFor(shareId){
   return `${location.origin}${location.pathname}?share=${shareId}`;
 }
 
+/* Both of these used to insert straight into their table through PostgREST.
+   That path had no rate limit — the limiter lives in the edge functions, not
+   in RLS — so anyone with the public anon key could fill either table, and
+   user_id was whatever the browser put in the body. They now go through
+   submit-form, which applies the same ceilings as every other function and
+   takes user_id from the verified caller. */
 export async function submitFeedbackRow(row){
-  const c=supa();
-  if(!c) return false;
-  const u=getUser();
-  const { error } = await c.from('feedback').insert({ ...row, user_id: u?u.id:null });
-  return !error;
+  if(!supa()) return false;
+  try{ await submitForm({ kind:'feedback', ...row }); return true; }
+  catch(_){ return false; }
 }
 
-// Founding Circle: store the request where the owner can see it.
-// A duplicate email means "already on the list", which is success for the user.
+// Founding Circle: store the request where the owner can see it. An address
+// already on the list is success for the person asking, and the function
+// answers it identically to a fresh signup so the response cannot be used to
+// test whether an address is registered.
 export async function submitInviteRequest(email){
-  const c=supa();
-  if(!c) return false;
-  const u=getUser();
-  const { error } = await c.from('invite_requests').insert({ email, user_id: u?u.id:null });
-  return !error || error.code==='23505';
+  if(!supa()) return false;
+  try{ await submitForm({ kind:'invite', email }); return true; }
+  catch(_){ return false; }
 }

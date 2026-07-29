@@ -39,15 +39,15 @@ export const CAPTURE = [
   {id:'video',ico:SVG.video,ttl:'Record or upload a short video',sub:'We extract key frames automatically'},
   {id:'demo',ico:SVG.sparkles,ttl:'Use demo example',sub:'See a finished plan with sample data'}
 ];
-export const DETAIL_TOGGLES = [
-  ['drill','Can you drill or install hardware?'],
-  ['rental','Is this a rental?'],
-  ['kids','Will kids access this space?'],
-  ['heavy','Are there heavy items?'],
-  ['hidden','Any items that must stay hidden?'],
-  ['daily','Any items used daily?'],
-  ['rarely','Any items used rarely?']
-];
+/* DETAIL_TOGGLES used to live here: seven yes/no questions whose answers were
+   stored as state.detail_*, sent to the backend as `toggles`, and acted on by
+   applyToggles() in personalize.js. No screen has rendered them for a long
+   time, so the export had no importer and the questions could never be
+   answered — a dead list that read as a live feature.
+   The state plumbing stays: db.js rehydrates toggles from saved spaces, and
+   applyToggles still honours them, so a space saved while the questions
+   existed keeps its personalization. Re-introducing the questions is a product
+   decision about wizard length, not a repair. */
 export const PREFS = [
   'Use only what I already own','Open to buying storage','Keep frequent items easy to reach',
   'Hide visual clutter','Kid-friendly access','No drilling or permanent installation',

@@ -11,11 +11,11 @@
    ============================================================ */
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
-  KID_AGES, EFFORT_OPTS, SHOPPING_OPTS,
+  KID_AGES, MOBILITY_NEEDS, EFFORT_OPTS, SHOPPING_OPTS,
   roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
-import { state } from '../state.js';
+import { state, resetPlanRecord, clearGuestMedia } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { updateGate } from '../router.js';
 
@@ -33,13 +33,23 @@ export function setRoom(roomId){
 }
 
 /* Changing the area resets everything downstream that depends on it:
-   setup type, measurements, categories, goals, styles, and detection. */
+   setup type, measurements, categories, goals, styles, and detection — and,
+   just as importantly, the plan record and the photos.
+
+   Leaving the plan record behind was a data-loss bug: `activeSpaceId` survived
+   the switch, so saving the second space UPDATEd the first space's row instead
+   of inserting a new one and overwrote every column of it. The photos matter
+   for the same reason — shots of a pantry must not be analysed as a closet and
+   then filed against the closet's record. */
 export function setArea(roomId, spaceId){
+  resetPlanRecord(state);
+  clearGuestMedia(state);
   state.room = roomId;
   state.space = spaceId;
   const st = (SETUP_TYPES[spaceId] || [])[0];
   state.setup = st ? st.id : 'cabinet';
   state.setupLabel = st ? st.label : 'Cabinet';
+  state.setupTouched = false;   // a preselection, until the user picks one
   applySetupDims(st.id);
   state.cats = [];
   state.catsTouched = false;
@@ -55,6 +65,7 @@ export function setSetup(setupId){
   if(!st) return;
   state.setup = st.id;
   state.setupLabel = st.label;
+  state.setupTouched = true;   // an actual choice, not the preselected default
   applySetupDims(st.id);
 }
 
@@ -298,6 +309,31 @@ function renderHousehold(){
     };
   });
   renderKidAges();
+  renderMobility();
+}
+
+/* The reach question the model was already being told the answer to. */
+function renderMobility(){
+  const wrap = document.getElementById('mobility-chips');
+  if(!wrap) return;
+  const h = state.household;
+  if(!Array.isArray(h.mobility)) h.mobility = [];
+  wrap.innerHTML = '';
+  MOBILITY_NEEDS.forEach(need => {
+    const c = document.createElement('button');
+    c.type = 'button';
+    const on = () => h.mobility.includes(need);
+    c.className = 'chip' + (on() ? ' sel' : '');
+    c.setAttribute('aria-pressed', String(on()));
+    c.textContent = need;
+    c.onclick = () => {
+      const i = h.mobility.indexOf(need);
+      i < 0 ? h.mobility.push(need) : h.mobility.splice(i, 1);
+      c.classList.toggle('sel');
+      c.setAttribute('aria-pressed', String(on()));
+    };
+    wrap.appendChild(c);
+  });
 }
 
 /* Presence stays the canonical 'yes'/'no' strings the rest of the app expects. */

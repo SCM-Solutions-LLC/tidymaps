@@ -16,6 +16,8 @@ import { test, expect } from 'playwright/test';
 const REF = 'jwubrtaacveavbkosgtf';
 const USER_ID = '00000000-0000-4000-8000-000000000001';
 const NEW_SPACE_ID = '11111111-2222-4333-8444-555555555555';
+// A second id so a test can tell "inserted a new row" from "overwrote the old one".
+const SECOND_SPACE_ID = '99999999-8888-4777-8666-555555555555';
 
 function b64url(obj) {
   return Buffer.from(JSON.stringify(obj)).toString('base64')
@@ -43,6 +45,8 @@ function fakeSession() {
 // Records every Supabase call and answers it locally.
 async function stubBackend(page, { signedIn }) {
   const wire = [];
+  const newIds = [NEW_SPACE_ID, SECOND_SPACE_ID];
+  let inserted = 0;
   if (signedIn) {
     const session = fakeSession();
     await page.addInitScript(([key, value]) => {
@@ -60,7 +64,8 @@ async function stubBackend(page, { signedIn }) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession().user) });
     }
     if (/\/rest\/v1\/spaces/.test(url) && req.method() === 'POST') {
-      return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: NEW_SPACE_ID }) });
+      const id = newIds[Math.min(inserted++, newIds.length - 1)];
+      return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id }) });
     }
     if (/\/rest\/v1\//.test(url)) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
@@ -70,12 +75,18 @@ async function stubBackend(page, { signedIn }) {
   return wire;
 }
 
-async function buildAPlan(page) {
+async function buildAPlan(page, { room = 'Bedroom', area = 'Closet' } = {}) {
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Bedroom' }).first().click();
+  await walkWizardFromSpaceStep(page, { room, area });
+}
+
+// Everything from the room step onward. Split out so a test can re-enter the
+// wizard from "Edit answers" without starting a new page.
+async function walkWizardFromSpaceStep(page, { room, area }) {
+  await page.locator('#room-cards .room-card', { hasText: room }).first().click();
   await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Closet' }).first().click();
+  await page.locator('#area-cards .room-card', { hasText: area }).first().click();
   await page.locator('#flow-next').click();
   await page.locator('#flow-next').click();              // setup
   await page.fill('#m-num-w', '4');
@@ -95,6 +106,51 @@ async function buildAPlan(page) {
 }
 
 const spaceWrites = (wire) => wire.filter((c) => c.method === 'POST' && /\/rest\/v1\/spaces/.test(c.url));
+
+/* setArea() reset every answer that depends on the space — setup, dims,
+   categories, goals, styles — but not state.activeSpaceId. saveSpace()
+   branches on exactly that: still set from the first space, the second plan
+   became an UPDATE of the first space's row, and rowFromState() overwrites
+   every column, so the first space was destroyed. autoSaveSpace() only toasts
+   when the row is new, so there was no signal either. "Edit answers" is the
+   shortest way in, but the landing gallery and the Product Library's "Plan
+   this space" reach setArea() the same way. */
+test('planning a second space inserts its own row instead of overwriting the first', async ({ page }) => {
+  const wire = await stubBackend(page, { signedIn: true });
+  await buildAPlan(page, { room: 'Bedroom', area: 'Closet' });
+  await page.waitForTimeout(1500);
+  expect(spaceWrites(wire), 'the first space should have been autosaved').toHaveLength(1);
+
+  await page.getByRole('button', { name: 'Edit answers' }).click();
+  await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  await walkWizardFromSpaceStep(page, { room: 'Kitchen', area: 'Pantry' });
+  await page.waitForTimeout(1500);
+
+  const writes = spaceWrites(wire);
+  expect(writes, 'the second space needs a row of its own').toHaveLength(2);
+  expect(JSON.parse(writes[0].body).space_type).toBe('closet');
+  expect(JSON.parse(writes[1].body).space_type).toBe('pantry');
+
+  // The precise failure: the closet's row patched with the pantry's plan.
+  const clobbered = wire
+    .filter((c) => c.method === 'PATCH' && c.url.includes(NEW_SPACE_ID) && c.body)
+    .map((c) => JSON.parse(c.body))
+    .filter((body) => body.space_type && body.space_type !== 'closet');
+  expect(clobbered, 'the pantry plan overwrote the saved closet').toEqual([]);
+});
+
+/* The spaces table has no setup column, so the setup type was simply dropped
+   on save. resolveLayout() keys the 3D archetype off state.setup, so a saved
+   walk-in reopened as whatever setup happened to be in memory. */
+test('a saved space remembers its setup type', async ({ page }) => {
+  const wire = await stubBackend(page, { signedIn: true });
+  await buildAPlan(page, { room: 'Kitchen', area: 'Pantry' });
+  await page.waitForTimeout(1500);
+
+  const row = JSON.parse(spaceWrites(wire)[0].body);
+  expect(row.prefs.setup, 'setup must survive the round trip').toBeTruthy();
+  expect(row.prefs.setupLabel).toBeTruthy();
+});
 
 test('a signed-in plan saves itself, with a real name and no photo upload', async ({ page }) => {
   const wire = await stubBackend(page, { signedIn: true });

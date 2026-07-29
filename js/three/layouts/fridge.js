@@ -55,7 +55,7 @@ export function build(ctx){
       surfaces.push({
         index:i, kind:'drawer', row, y, hitbox:hit,
         uDir: new THREE.Vector3(1,0,0), normal: new THREE.Vector3(0,0,1),
-        length:usable, gap:drawerH-1, itemDepth:Math.min(pullOut*0.8, 8),
+        length:usable, gap:drawerH-1, depth:pullOut, itemDepth:Math.min(pullOut*0.8, 8),
       });
     } else {
       if(y<H-T*2 && y>T*1.6){

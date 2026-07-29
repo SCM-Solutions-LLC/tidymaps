@@ -23,8 +23,19 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm ci
+      # Both suites gate the deploy. Only the unit tests used to, so a change
+      # that broke an end-to-end path still shipped to production — and the
+      # e2e suite is the one that covers the wizard, the 3D viewer, and the
+      # saved-space writes, which is where the user-visible breakage lives.
       - name: Run regression tests
         run: node --test tests/*.test.mjs
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests
+        run: npx playwright test
+      - name: Check product links
+        run: npm run check:links
+        continue-on-error: true
       - uses: actions/configure-pages@v5
         with:
           enablement: true

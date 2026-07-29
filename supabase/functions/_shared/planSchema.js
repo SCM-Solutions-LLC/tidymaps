@@ -158,16 +158,39 @@ function checkInvariants(plan, context) {
     errors.push(`steps: expected ${minSteps}-${maxSteps} steps for effort "${(context && context.effort) || 'unspecified'}", got ${plan.steps.length}`);
   }
 
-  const measuredDepth = context && context.dims && Number(context.dims.d_in);
-  if (measuredDepth) {
+  const shelfDepth = usableShelfDepth(plan.layout && plan.layout.type, context && context.dims);
+  if (shelfDepth) {
     (plan.productNeeds || []).forEach((need, i) => {
-      if (need.maxDims && need.maxDims.d_in > measuredDepth - 0.5 + 1e-6) {
-        errors.push(`productNeeds[${i}] ("${need.type}"): maxDims.d_in ${need.maxDims.d_in} does not fit the measured ${measuredDepth}in depth minus 0.5in clearance`);
+      if (need.maxDims && need.maxDims.d_in > shelfDepth - 0.5 + 1e-6) {
+        errors.push(`productNeeds[${i}] ("${need.type}"): maxDims.d_in ${need.maxDims.d_in} does not fit the ${shelfDepth}in usable shelf depth minus 0.5in clearance`);
       }
     });
   }
 
   return errors;
+}
+
+/* For most archetypes the measured depth IS the shelf depth. For a walk-in or
+   an L-run it is not: the user measured a ROOM, so d_in is 72 inches of floor
+   while the shelving along its walls is 8 to 18 inches deep. Checking product
+   depth against the room let a 20-inch bin pass for a shelf that could never
+   hold it, and the same number drove the 3D view, which rendered organizers
+   straight through the shelf they sat on.
+
+   The two formulas mirror js/three/layouts/walkin-u.js and l-run.js, which are
+   what the viewer actually builds; keep them in step. Duplicated rather than
+   imported for the same reason as evenShelfFracs below — this module is shared
+   by the Deno edge function and the Node test suite, neither of which can
+   reach the browser bundle. */
+const ROOM_SHAPED_ARCHETYPES = { 'walkin-u': 0.2, 'l-run': 0.22 };
+
+export function usableShelfDepth(archetype, dims) {
+  const depth = Number(dims && dims.d_in) || 0;
+  if (!depth) return 0;
+  const factor = ROOM_SHAPED_ARCHETYPES[archetype];
+  if (!factor) return depth;
+  const width = Number(dims && dims.w_in) || depth;
+  return Math.max(8, Math.min(18, Math.min(width, depth) * factor));
 }
 
 /* Mirrors evenShelfFracs in js/three/viewerOptions.js. Duplicated rather than

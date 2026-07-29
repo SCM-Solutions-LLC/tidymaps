@@ -201,19 +201,45 @@ export function normalizeLayout(raw, shelfCount) {
 
 /* ---------- resolveLayout: the single resolution function ---------- */
 
-export function resolveLayout({ ai, setup, scenarioKey, override, map }) {
+/* Priority: override > a setup the user actually chose > the AI's reading of
+   the photos > setup > scenario > default.
+
+   The "actually chose" part matters. state.setup is never empty — setArea()
+   preselects the first setup type for the area and falls back to 'cabinet' —
+   and all 33 setup ids map to an archetype, so the plain `setup` branch always
+   won and the ai branch below was unreachable code. The setup step also runs
+   before the photos are taken, so what always won was a guess made before
+   there was anything to look at, and the AI's wall-by-wall sections were
+   dropped with it.
+
+   A setup the user actively picked still outranks the photos — they can see
+   their own space. A setup nobody touched no longer does.
+
+   Only a layout that genuinely came from photo analysis gets that promotion.
+   The offline scenarios carry a canned layout too, and canned data has no
+   business overruling even a preselected setup, so callers pass aiFromPhotos
+   (planMeta.source === 'ai') to say which kind they hold. */
+export function resolveLayout({ ai, setup, setupTouched, aiFromPhotos, scenarioKey, override, map }) {
   const rows = (map || (ai && ai.map) || []);
   const n = rows.length;
+  const aiType = ai && ai.layout && ai.layout.type && ARCHETYPE_SET.has(ai.layout.type)
+    ? ai.layout.type : null;
 
   let type, source;
   if (override && ARCHETYPE_SET.has(override)) {
     type = override;
     source = 'override';
+  } else if (setupTouched && setup && SETUP_ARCHETYPE[setup]) {
+    type = SETUP_ARCHETYPE[setup];
+    source = 'setup';
+  } else if (aiType && aiFromPhotos) {
+    type = aiType;
+    source = 'ai';
   } else if (setup && SETUP_ARCHETYPE[setup]) {
     type = SETUP_ARCHETYPE[setup];
     source = 'setup';
-  } else if (ai && ai.layout && ai.layout.type && ARCHETYPE_SET.has(ai.layout.type)) {
-    type = ai.layout.type;
+  } else if (aiType) {
+    type = aiType;
     source = 'ai';
   } else if (scenarioKey && SCENARIO_ARCHETYPE[scenarioKey]) {
     type = SCENARIO_ARCHETYPE[scenarioKey];

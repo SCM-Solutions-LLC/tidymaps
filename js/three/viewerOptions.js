@@ -22,9 +22,40 @@ export function normalizeViewerGeometry(geometry,layoutType){
   };
 }
 
-export function geometryWithShelfCount(geometry,count){
+/* Resample an existing set of shelf positions to a new count, keeping the
+   shape the user gave them. Linear interpolation over the index preserves the
+   endpoints and the relative spacing, and turns a strictly increasing input
+   into a strictly increasing output for any count. */
+function isEvenlySpaced(fracs){
+  const even=evenShelfFracs(fracs.length);
+  return fracs.every((value,index)=>Math.abs(value-even[index])<1e-9);
+}
+
+function resampleShelfFracs(fracs,count){
+  const src=Array.isArray(fracs)?fracs.map(Number).filter(Number.isFinite):[];
+  if(!src.length||count<1) return evenShelfFracs(count);
+  if(count===src.length) return src.slice();
+  if(src.length===1||count===1) return evenShelfFracs(count);
+  // Nothing to preserve if the user never moved a shelf — and going through
+  // the interpolation would only introduce float drift against evenShelfFracs.
+  if(isEvenlySpaced(src)) return evenShelfFracs(count);
+  return Array.from({length:count},(_,i)=>{
+    const t=i*(src.length-1)/(count-1);
+    const lo=Math.floor(t), hi=Math.min(src.length-1,lo+1);
+    return src[lo]+(src[hi]-src[lo])*(t-lo);
+  });
+}
+
+/* Nudging the shelf-count slider by one used to replace every shelf position
+   with even spacing, silently throwing away whatever heights the user had just
+   dragged out by hand. The count is now applied on top of their spacing;
+   "Space evenly" is the button that deliberately resets it. */
+export function geometryWithShelfCount(geometry,count,{ preserveSpacing=true }={}){
   const shelfCount=clamp(Math.round(Number(count)||1),1,12);
-  return {...geometry,shelfCount,shelfYFracs:evenShelfFracs(shelfCount),estimated:false};
+  const shelfYFracs=preserveSpacing
+    ?resampleShelfFracs(normalizeViewerGeometry(geometry).shelfYFracs,shelfCount)
+    :evenShelfFracs(shelfCount);
+  return {...geometry,shelfCount,shelfYFracs,estimated:false};
 }
 
 export function shelfHeightInches(geometry,index){

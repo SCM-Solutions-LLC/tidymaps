@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { callerIp } from './callerIp.js';
 
 export interface Caller {
   userId: string | null;
@@ -28,7 +29,7 @@ export async function getCaller(req: Request): Promise<Caller> {
     userId = data?.user?.id ?? null;
   }
 
-  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+  const ip = callerIp(req.headers) || 'unknown';
   const day = new Date().toISOString().slice(0, 10);
   const salt = Deno.env.get('IP_HASH_SALT');
   if (!salt) throw new Error('IP_HASH_SALT is not configured');

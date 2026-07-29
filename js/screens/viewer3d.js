@@ -13,13 +13,29 @@ import {
 
 /* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
 
-let view=null, detach=null, resizeHandler=null;
+let view=null, detach=null, resizeHandler=null, contextLostHandler=null;
 let layoutOverride=null;
 let dimsPreview=null;
 let lSideChoice='auto';
 let shelfPlacement='center';
 let rebuildTimer=null;
 let _buildScene=null, _attachDrag=null;
+
+/* A rod holds things that hang. itemYForSurface poses anything dropped on one
+   below the rail, keyed off the target surface alone, so before this a bottle
+   or a stack of cans could be left floating under the rod in its own geometry.
+   Everything else is fair game — a shelf takes anything. */
+const HANGABLE=new Set(['garment','linen']);
+
+function dropAllowed(item, surface){
+  if(!surface || surface.kind!=='rod') return true;
+  return HANGABLE.has(item.userData.kind);
+}
+
+function rejectReason(item){
+  const name=(item.userData&&item.userData.name)||'That item';
+  return '“'+name+'” doesn’t hang on a rod — it went back where it was.';
+}
 
 function organizerPlan(){
   const existing=(state.ai&&state.ai.existing)||[];
@@ -36,6 +52,8 @@ function currentLayout(map=activeMapV2()){
   const resolved=resolveLayout({
     ai: state.ai||{ map },
     setup: state.setup,
+    setupTouched: state.setupTouched,
+    aiFromPhotos: !!(state.planMeta && state.planMeta.source === 'ai'),
     scenarioKey: state.space,
     override: layoutOverride,
     map,
@@ -86,6 +104,8 @@ function rebuildScene(){
   canvas.dataset.layout=resolved.type;
   const kids=state.household.kids.present==='yes';
   detach=_attachDrag(view, {
+    canDrop: dropAllowed,
+    onRejectDrop(item, shelf){ toast(rejectReason(item, shelf)); },
     onDrop(item, shelf){
       const flags=item.userData.flags||[];
       const hazardous=flags.some(f=>['chemical','sharp','heavy','fragile'].includes(f));
@@ -127,6 +147,8 @@ export async function openViewer3d(){
     canvas.dataset.layout=resolved.type;
     const kids=state.household.kids.present==='yes';
     detach=attachDrag(view, {
+      canDrop: dropAllowed,
+      onRejectDrop(item, shelf){ toast(rejectReason(item, shelf)); },
       onDrop(item, shelf){
         const flags=item.userData.flags||[];
         const hazardous=flags.some(f=>['chemical','sharp','heavy','fragile'].includes(f));
@@ -140,7 +162,13 @@ export async function openViewer3d(){
     resizeHandler=()=>view && view.setSize();
     addEventListener('resize', resizeHandler);
     openViewer3d._retried=false;
-    canvas.addEventListener('webglcontextlost', ()=>{ disposeViewer3d(); }, { once:true });
+    /* The canvas is a permanent DOM node — go() only toggles .active — and
+       {once:true} only removes a handler that actually fires. Every open and
+       every "reset arrangement" used to add one more, so a session that
+       revisited the 3D view accumulated them. Keep a reference and take it off
+       in disposeViewer3d instead. */
+    contextLostHandler=()=>{ disposeViewer3d(); };
+    canvas.addEventListener('webglcontextlost', contextLostHandler, { once:true });
 
     const title=document.getElementById('v3d-title');
     if(title){
@@ -228,6 +256,11 @@ export function disposeViewer3d(){
   clearTimeout(rebuildTimer);
   if(detach){ detach(); detach=null; }
   if(resizeHandler){ removeEventListener('resize', resizeHandler); resizeHandler=null; }
+  if(contextLostHandler){
+    const canvas=document.getElementById('v3d-canvas');
+    if(canvas) canvas.removeEventListener('webglcontextlost', contextLostHandler);
+    contextLostHandler=null;
+  }
   if(view){ view.dispose(); view=null; }
   dirty=false;
 }
@@ -437,7 +470,8 @@ function initStructureControls(geometry,resolved){
     };
   });
   document.getElementById('v3d-even-shelves').onclick=()=>{
-    dimsPreview=geometryWithShelfCount(dimsPreview||geometry,geometry.shelfCount);
+    // The one control that is meant to discard manual shelf heights.
+    dimsPreview=geometryWithShelfCount(dimsPreview||geometry,geometry.shelfCount,{ preserveSpacing:false });
     markDirty();
     rebuildScene();
   };

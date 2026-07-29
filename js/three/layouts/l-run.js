@@ -99,7 +99,7 @@ export function build(ctx){
       uDir:side==='back'?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,1),
       normal:side==='back'?new THREE.Vector3(0,0,1):new THREE.Vector3(-sideSign,0,0),
       length,gap:rod?Math.max(10,gapAbove[idx]*0.75):gapAbove[idx],
-      itemDepth:rod?1.5:Math.min(shelfDepth*0.58,8),
+      depth:shelfDepth,itemDepth:rod?1.5:Math.min(shelfDepth*0.58,8),
     });
   }
 

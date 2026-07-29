@@ -1,8 +1,8 @@
-import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia } from './state.js';
+import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord } from './state.js';
 import { track } from './telemetry.js';
 import { setFootHeightVar } from './ui.js';
 import { getSession } from './auth.js';
-import { buildAll } from './screens/index.js';
+import { buildAll, buildCustomize } from './screens/index.js';
 import { runLoading } from './screens/loading.js';
 import { buildDashboard } from './screens/dashboard.js';
 import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
@@ -55,6 +55,9 @@ export function go(id){
   }
   // per-space screens re-render on entry so they always reflect the answers
   renderWizardScreen(id);
+  // the Adjust options depend on the household answer, which comes long after
+  // buildAll() ran at startup
+  if(id==='customize') buildCustomize();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('screen-'+id);
   el.classList.add('active');
@@ -141,7 +144,6 @@ export function restart(){
   if(hasProgress && !confirm('Start over? Your current answers will be cleared.')) return;
   state.goal=state.capture=state.budget=null;
   state.prefs=new Set(); state.upgrades=false;
-  state.shareView=false; delete state.sharedName;
   state.cats=[]; state.features=[];
   state.goals=[]; state.styles=[]; state.detected=[]; state.catsTouched=false;
   state.shoppingPref='Use what I have';
@@ -149,11 +151,9 @@ export function restart(){
   state.uploadedFiles=[]; state.uploadedVideo=null; state.frames=[];
   state.dims=null; state.dimsFt=null;
   state.household={ adults:2, kidCount:0, petCount:0, kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' };
-  state.ai=null; state.aiError=null; state.planMeta=null; state.afterMode='Use existing containers';
-  state.activeSpaceId=null; state.shopping=null; state.arrangement=null;
-  state.stepDone=[]; state.upgradeChecked=null;
-  state.afterRenderB64=null; state.afterRenderUrl=null; state.beforePhotoUrl=null;
-  delete state._beforeUrl;
+  state.afterMode='Use existing containers';
+  state.setupTouched=false;
+  resetPlanRecord(state);
   Object.keys(state).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete state[k]; });
   // back to the design defaults: Kitchen → Pantry → Cabinet
   state.room='kitchen';
