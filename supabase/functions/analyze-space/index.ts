@@ -194,6 +194,7 @@ Deno.serve(async (req) => {
       ? '- safety.flag: this household has children, so flag the rows that need it and give each one a plain-language safety.why.'
       : '- safety.flag: this household has NO children, so safety.flag MUST be null on every single map row. Heavy or hazardous items still belong low or high as good practice, and you can say so in the row\'s why, but the flag itself must be null.',
     '- shelfIndex: unique per row, and every value less than geometry.shelfCount.',
+    '- layout.sections: every row number must also be less than geometry.shelfCount, and no row may appear in two sections.',
     ...(depthLimit ? [depthLimit] : []),
   ].join('\n');
 

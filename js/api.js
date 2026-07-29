@@ -79,6 +79,14 @@ export function fetchSharedSpace(shareId){
   return callFn('get-shared-space', { shareId });
 }
 
+/* Feedback and invite requests go through a function rather than straight to
+   the table: the rate limiter lives in the functions, so a direct PostgREST
+   insert had no ceiling at all, and user_id is now taken from the verified
+   caller instead of the request body. */
+export function submitForm(payload){
+  return callFn('submit-form', payload);
+}
+
 export function renderAfterErrorMessage(error){
   if(error && error.code==='rate_limited') return error.message;
   if(error && error.code==='preview_misconfigured'){

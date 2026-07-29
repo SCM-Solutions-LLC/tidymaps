@@ -1,4 +1,5 @@
 import { supa, getUser } from './auth.js';
+import { submitForm } from './api.js';
 import { state } from './state.js';
 import { toast } from './ui.js';
 import { areaFor } from './wizard-data.js';
@@ -267,20 +268,24 @@ export function shareUrlFor(shareId){
   return `${location.origin}${location.pathname}?share=${shareId}`;
 }
 
+/* Both of these used to insert straight into their table through PostgREST.
+   That path had no rate limit — the limiter lives in the edge functions, not
+   in RLS — so anyone with the public anon key could fill either table, and
+   user_id was whatever the browser put in the body. They now go through
+   submit-form, which applies the same ceilings as every other function and
+   takes user_id from the verified caller. */
 export async function submitFeedbackRow(row){
-  const c=supa();
-  if(!c) return false;
-  const u=getUser();
-  const { error } = await c.from('feedback').insert({ ...row, user_id: u?u.id:null });
-  return !error;
+  if(!supa()) return false;
+  try{ await submitForm({ kind:'feedback', ...row }); return true; }
+  catch(_){ return false; }
 }
 
-// Founding Circle: store the request where the owner can see it.
-// A duplicate email means "already on the list", which is success for the user.
+// Founding Circle: store the request where the owner can see it. An address
+// already on the list is success for the person asking, and the function
+// answers it identically to a fresh signup so the response cannot be used to
+// test whether an address is registered.
 export async function submitInviteRequest(email){
-  const c=supa();
-  if(!c) return false;
-  const u=getUser();
-  const { error } = await c.from('invite_requests').insert({ email, user_id: u?u.id:null });
-  return !error || error.code==='23505';
+  if(!supa()) return false;
+  try{ await submitForm({ kind:'invite', email }); return true; }
+  catch(_){ return false; }
 }

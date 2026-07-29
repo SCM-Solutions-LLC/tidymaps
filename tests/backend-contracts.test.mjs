@@ -11,6 +11,7 @@ const migrations = [1, 2, 3, 4, 5, 6, 7]
 const renderAfter = readFileSync(new URL('../supabase/functions/render-after/index.ts', import.meta.url), 'utf8');
 const getSharedSpace = readFileSync(new URL('../supabase/functions/get-shared-space/index.ts', import.meta.url), 'utf8');
 const auth = readFileSync(new URL('../supabase/functions/_shared/auth.ts', import.meta.url), 'utf8');
+import { callerIp } from '../supabase/functions/_shared/callerIp.js';
 
 test('rate limiting is delegated to one atomic database operation', () => {
   assert.match(rateLimit, /\.rpc\(['"]check_and_log_usage['"]/);
@@ -48,4 +49,68 @@ test('anonymous caller hashing requires a configured secret salt', () => {
 
 test('public share lookup hides spaces whose deletion has started', () => {
   assert.match(getSharedSpace, /\.is\('deleting_at', null\)/);
+});
+
+/* X-Forwarded-For grows left to right: every proxy APPENDS the address of the
+   peer it received from, so a request that crossed one trusted edge reads
+   "<whatever the client sent>, <address the edge saw>". Reading entry [0] read
+   a value the caller chose, which meant an anonymous caller could vary the
+   header per request, mint a fresh rate-limit identity every time, and walk
+   past the 3/hour and 6/day ceilings on analyze-space — a function that spends
+   real API credit for 70-90 seconds on every call. */
+test('a forged X-Forwarded-For cannot change the rate-limit identity', () => {
+  const headers = (value) => new Headers(value ? { 'x-forwarded-for': value } : {});
+  const REAL = '203.0.113.7';
+
+  // One trusted hop, nothing forged.
+  assert.equal(callerIp(headers(REAL)), REAL);
+
+  // The caller prepends whatever it likes; our edge appends the truth.
+  assert.equal(callerIp(headers(`1.2.3.4, ${REAL}`)), REAL);
+  assert.equal(callerIp(headers(`9.9.9.9, 8.8.8.8, ${REAL}`)), REAL);
+
+  // Two callers forging different values still land on the same identity,
+  // which is the whole point — the bypass was that they did not.
+  assert.equal(callerIp(headers(`aaa, ${REAL}`)), callerIp(headers(`bbb, ${REAL}`)));
+
+  // Whitespace and empty entries do not shift which hop is trusted.
+  assert.equal(callerIp(headers(`  1.2.3.4 ,  ${REAL}  `)), REAL);
+  assert.equal(callerIp(headers('')), '');
+  assert.equal(callerIp(new Headers()), '');
+
+  // And the function actually uses it, rather than re-parsing the header.
+  assert.match(auth, /callerIp\(req\.headers\)/);
+  assert.doesNotMatch(auth, /x-forwarded-for['"]\s*\)\s*\?\?\s*['"]['"]\)\.split\(','\)\[0\]/);
+});
+
+/* feedback and invite_requests were the only tables the browser wrote
+   directly. The rate limiter lives in the edge functions, not in RLS, so that
+   path had no ceiling; user_id came from the request body; and the unique
+   index on lower(email) turned a duplicate-key error into an oracle for
+   whether an address had already signed up. */
+test('form submissions go through the rate-limited function, not straight to the table', () => {
+  const db = readFileSync(new URL('../js/db.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(db, /from\(['"]feedback['"]\)/, 'client still inserts into feedback directly');
+  assert.doesNotMatch(db, /from\(['"]invite_requests['"]\)/, 'client still inserts into invite_requests directly');
+
+  const submitForm = readFileSync(new URL('../supabase/functions/submit-form/index.ts', import.meta.url), 'utf8');
+  assert.match(submitForm, /checkAndLog\(/, 'submit-form does not rate limit');
+  assert.match(submitForm, /user_id: caller\.userId/, 'user_id must come from the caller, not the body');
+  // A duplicate invite is reported exactly like a fresh one.
+  assert.match(submitForm, /23505/);
+
+  const dropPolicies = readFileSync(
+    new URL('../supabase/migrations/0008_form_submissions_via_function.sql', import.meta.url), 'utf8');
+  assert.match(dropPolicies, /drop policy if exists "anyone can submit" on public\.feedback/);
+  assert.match(dropPolicies, /drop policy if exists "anyone can request an invite" on public\.invite_requests/);
+});
+
+/* verify_jwt was undeclared for every function, so production drifted into a
+   split state the repo did not record and the next deploy could flip again. */
+test('every edge function declares verify_jwt in config.toml', () => {
+  const config = readFileSync(new URL('../supabase/config.toml', import.meta.url), 'utf8');
+  for (const fn of ['analyze-space', 'render-after', 'track-events', 'get-shared-space', 'submit-form']) {
+    assert.match(config, new RegExp(`\\[functions\\.${fn}\\][\\s\\S]{0,80}?verify_jwt`),
+      `${fn}: verify_jwt is not declared, so the deploy decides it`);
+  }
 });
