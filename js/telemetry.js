@@ -30,6 +30,24 @@ export function telemetryEnabled() {
   return backendConfigured() && !optedOut();
 }
 
+/* Why telemetry is or isn't running, in one string.
+
+   Events stopped arriving on 2026-07-23 and it took a week and a database
+   audit to establish that nothing was broken: the browser was sending Global
+   Privacy Control (Brave, DuckDuckGo and Firefox all do by default), optedOut()
+   was correctly returning true, and no request was ever made. From the outside
+   that is indistinguishable from a dead pipeline. Exposing the reason on
+   window means the next person answers it from the console in one line. */
+export function telemetryStatus() {
+  if (!backendConfigured()) return 'off: backend not configured';
+  try {
+    if (navigator.webdriver) return 'off: automation (navigator.webdriver)';
+    if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return 'off: Do Not Track';
+    if (navigator.globalPrivacyControl) return 'off: Global Privacy Control';
+  } catch (_) { /* privacy checks must never throw */ }
+  return 'on';
+}
+
 function anonId() {
   try {
     let id = localStorage.getItem(ANON_KEY);

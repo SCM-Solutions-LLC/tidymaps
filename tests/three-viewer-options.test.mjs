@@ -33,3 +33,36 @@ test('L side auto follows explicit left section and otherwise uses right',()=>{
   assert.equal(inferLSide({sections:[{id:'left',rows:[0]}]}),'left');
   assert.equal(inferLSide({sections:[{id:'run-b',rows:[1]}]}),'right');
 });
+
+/* Dragging individual shelf heights and then nudging the count slider by one
+   used to replace every position with even spacing, with no warning and no
+   undo. The count now applies on top of the spacing the user set; "Space
+   evenly" is the control that deliberately resets it. */
+test('changing the shelf count keeps hand-set heights instead of discarding them',()=>{
+  const base=geometryWithShelfCount({width:48,height:72,depth:14},4);
+  // Push shelf 1 well away from where even spacing would put it.
+  const custom=geometryWithShelfHeight(base,1,50);
+  const customFracs=custom.shelfYFracs.slice();
+  assert.notDeepEqual(customFracs,evenShelfFracs(4));
+
+  // Same count: untouched.
+  assert.deepEqual(geometryWithShelfCount(custom,4).shelfYFracs,customFracs);
+
+  for(const count of [1,2,3,5,8,12]){
+    const resized=geometryWithShelfCount(custom,count);
+    assert.equal(resized.shelfCount,count);
+    assert.equal(resized.shelfYFracs.length,count);
+    assert.ok(resized.shelfYFracs.every(v=>Number.isFinite(v)&&v>=0&&v<=1),
+      `count ${count}: positions left the 0-1 range`);
+    assert.ok(resized.shelfYFracs.every((v,i,all)=>i===0||v>all[i-1]),
+      `count ${count}: positions are no longer strictly increasing`);
+    if(count>1){
+      assert.notDeepEqual(resized.shelfYFracs,evenShelfFracs(count),
+        `count ${count}: hand-set spacing was flattened back to even`);
+    }
+  }
+
+  // And the escape hatch still works.
+  const evened=geometryWithShelfCount(custom,4,{ preserveSpacing:false });
+  assert.deepEqual(evened.shelfYFracs,evenShelfFracs(4));
+});

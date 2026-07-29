@@ -5,7 +5,7 @@ import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
 import { state, restoreGuestDraft, applySharedSpace } from './state.js';
 import { fetchSharedSpace } from './api.js';
 import { normalizeAi } from './plan.js';
-import { track } from './telemetry.js';
+import { track, telemetryStatus } from './telemetry.js';
 import { setRail, go, goNext, goBack, restart, getCurrentScreen } from './router.js';
 import { getSession } from './auth.js';
 import { fetchSpace, applyLoadedSpace } from './db.js';
@@ -30,6 +30,9 @@ Object.assign(window, {
   toggleUpgrade, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, pickProduct, generateAfter, retryAnalysis,
   openAuth, closeAuth, sendAuthCode, verifyAuthCode, dashSignOut,
   openViewer3d, saveArrangement, resetArrangement,
+  // Answers "is telemetry actually running?" from the console. See
+  // telemetryStatus() for why this exists.
+  telemetryStatus,
 });
 
 buildAll();
