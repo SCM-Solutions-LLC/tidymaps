@@ -21,6 +21,32 @@ let shelfPlacement='center';
 let rebuildTimer=null;
 let _buildScene=null, _attachDrag=null;
 
+/* Can this browser do WebGL at all? Probed on a throwaway canvas so the answer
+   never consumes a context from the real one — contexts are a capped resource
+   and burning one here is what we are trying to avoid. */
+function webglAvailable(){
+  try{
+    const probe=document.createElement('canvas');
+    const gl=probe.getContext('webgl2')||probe.getContext('webgl');
+    if(!gl) return false;
+    const lose=gl.getExtension&&gl.getExtension('WEBGL_lose_context');
+    if(lose) lose.loseContext();   // hand it straight back
+    return true;
+  }catch(_){ return false; }
+}
+
+/* "Reloading usually fixes this" was wrong and it wasted people's time. A
+   refused context is almost never transient: it is hardware acceleration
+   switched off, a blocklisted driver, or a browser with WebGL disabled. Say
+   what actually helps, and make clear the plan itself is unaffected. */
+function webglHelpMessage(){
+  return 'This browser could not start the 3D view, which needs WebGL. '
+    + 'In Chrome, check Settings &rsaquo; System &rsaquo; “Use graphics acceleration when available”, '
+    + 'then reopen the browser. Everything in your plan is on the previous screen — '
+    + '<button class="btn btn-ghost btn-sm" type="button" onclick="go(\'results\')" '
+    + 'style="margin-left:4px">Back to the plan</button>';
+}
+
 /* A rod holds things that hang. itemYForSurface poses anything dropped on one
    below the rail, keyed off the target surface alone, so before this a bottle
    or a stack of cans could be left floating under the rod in its own geometry.
@@ -129,8 +155,15 @@ export async function openViewer3d(){
   const status=document.getElementById('v3d-status');
   if(view) return;
   restoreArrangementOptions();
-  status.textContent='Loading 3D view…';
   const canvas=document.getElementById('v3d-canvas');
+  // three.js is ~680KB. If the browser can't give a WebGL context at all,
+  // downloading it just to fail is wasted, so check first and skip straight to
+  // the advice.
+  if(!webglAvailable()){
+    status.innerHTML=webglHelpMessage();
+    return;
+  }
+  status.textContent='Loading 3D view…';
   try{
     const [{ buildScene }, { attachDrag }]=await Promise.all([
       import('../three/scene.js'),
@@ -191,8 +224,14 @@ export async function openViewer3d(){
       return openViewer3d();
     }
     openViewer3d._retried=false;
+    // A context failure is its own thing and has real advice; anything else
+    // still shows the underlying reason.
+    if((e&&e.code==='webgl-unavailable')||/webgl|context/i.test(String((e&&e.message)||e))){
+      status.innerHTML=webglHelpMessage();
+      return;
+    }
     const why=String((e&&e.message)||e).slice(0,140);
-    status.innerHTML='The 3D view could not load ('+escapeHtml(why)+'). Reloading the page usually fixes this. The plan above has everything you need.';
+    status.innerHTML='The 3D view could not load ('+escapeHtml(why)+'). The plan above has everything you need.';
   }
 }
 

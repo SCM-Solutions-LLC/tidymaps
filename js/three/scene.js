@@ -154,6 +154,29 @@ function createOrganizer(type){
 const KIND_MAX_W={garment:14,shoe:11,linen:12,bottle:6,can:6,dish:8,tool:7,food:8,container:13,'small-item':9};
 const KIND_DEPTH={garment:1.2,shoe:4,linen:5,bottle:3.5,can:3.5,dish:2.5,tool:2.5,food:4,container:6,'small-item':4};
 
+/* Some machines refuse the fancy context but grant a plainer one — a driver
+   that can't do MSAA, or Chrome with hardware acceleration off falling back to
+   software. Rather than throw on the first miss, walk down to simpler
+   attributes, and only give up (with a message the viewer turns into real
+   advice) if even a bare context is refused. */
+export function createRenderer(canvas){
+  const attempts=[
+    { antialias:true, powerPreference:'low-power' },
+    { antialias:false, powerPreference:'low-power' },
+    { antialias:false },
+    { antialias:false, failIfMajorPerformanceCaveat:false },
+  ];
+  let lastError;
+  for(const attrs of attempts){
+    try{ return new THREE.WebGLRenderer({ canvas, ...attrs }); }
+    catch(e){ lastError=e; }
+  }
+  const err=new Error('WebGL is unavailable in this browser.');
+  err.code='webgl-unavailable';
+  err.cause=lastError;
+  throw err;
+}
+
 export function buildScene({ geometry, map, placements, canvas, layout, organizerPlan={}, representativeItems=true }){
   const W=Math.max(8, Number(geometry.width)||30);
   const rawH=Math.max(10, Number(geometry.height)||60);
@@ -167,7 +190,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   const shelfFracs=fracs.length?fracs
     :Array.from({length:NSH},(_,i)=>0.08+0.82*(NSH===1?0.5:i/(NSH-1)));
 
-  const renderer=new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'low-power' });
+  const renderer=createRenderer(canvas);
   renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -506,6 +529,13 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
       material.dispose();
     });
     textures.forEach(texture=>texture.dispose());
+    /* Note: deliberately NOT forcing context loss here. canvas.getContext is
+       idempotent per canvas, and #v3d-canvas is permanent (go() only toggles
+       screens), so reopening the viewer reuses the one context this canvas
+       ever gets — there is nothing accumulating to reclaim. Calling
+       forceContextLoss/loseContext instead bricks the canvas: the next open
+       cannot obtain a context at all, which is the very failure it looks like
+       it would prevent. */
     renderer.dispose();
   }
 

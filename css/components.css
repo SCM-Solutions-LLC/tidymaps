@@ -12,13 +12,33 @@
   box-shadow:0 1px 2px oklch(0.42 0.03 55/.04);
   transition:border-color var(--dur,.18s), background-color var(--dur,.18s), box-shadow var(--dur,.18s), transform var(--dur,.18s);
 }
-.opt:hover{border-color:var(--primary-line);background:var(--primary-bg)}
-.opt:active{background:var(--primary-bg)}
+/* Hover lifts rather than only recolouring. A 1px rise plus the next shadow
+   tier is what makes a card feel like an object you can pick, and the press
+   returns it — without that, hover was a flat colour swap that read as a link. */
+.opt:hover{border-color:var(--primary-line);background:var(--primary-bg);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.opt:active{background:var(--primary-bg);box-shadow:var(--shadow-sm);transform:translateY(0)}
 .opt.sel{border-color:var(--primary);background:var(--primary-bg);box-shadow:0 0 0 1px var(--primary)}
 .opt .ico{font-size:22px;line-height:1;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;color:var(--primary)}
 .opt .ico svg{width:22px;height:22px}
-.opt .ttl{font-weight:600}
-.opt .sub{font-size:13px;color:var(--ink-3);margin-top:2px}
+/* Free-text household note. Matches the field inputs rather than inventing a
+   new control: same border, radius and focus ring. */
+.wz-notes{
+  width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);
+  border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;
+  resize:vertical;min-height:56px;line-height:1.5;
+}
+.wz-notes:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-bg)}
+.wz-notes::placeholder{color:var(--ink-3)}
+
+/* The title and the description are separate spans inside one wrapper, but
+   both default to inline, so they ran together as "Make it more
+   minimalFewer visible items..." — unreadable at a glance, which is the only
+   way anyone reads a list of choices. Each gets its own line. */
+.opt .ttl{font-weight:600;display:block;line-height:1.35}
+.opt .sub{font-size:13.5px;color:var(--ink-2);margin-top:3px;display:block;line-height:1.5}
+/* The label wrapper has to be a block for those to stack, and needs room to
+   shrink so the tick stays on the right instead of being pushed off. */
+.opt > span:not(.ico):not(.tick){display:block;flex:1 1 0;min-width:0}
 .opt .tick{margin-left:auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line-2);flex:none;display:grid;place-items:center;transition:.15s}
 .opt.sel .tick{background:var(--primary);border-color:var(--primary)}
 .opt .tick svg{width:13px;height:13px;color:#fff;opacity:0;transition:.15s}
@@ -77,7 +97,7 @@ textarea{resize:vertical;min-height:84px}
 .load-step .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line-2);flex:none;display:grid;place-items:center;transition:.3s}
 .load-step .dot svg{width:12px;height:12px;color:#fff;opacity:0}
 .load-step.doing{color:var(--ink)}
-.load-step.doing .dot{border-color:var(--primary);border-right-color:transparent;animation:spin .7s linear infinite}
+.load-step.doing .dot{border-color:var(--primary);border-right-color:transparent;animation:spin 0.9s linear infinite}
 .load-step.done{color:var(--ink-2)}
 .load-step.done .dot{background:var(--primary);border-color:var(--primary)}
 .load-step.done .dot svg{opacity:1}
@@ -260,7 +280,7 @@ textarea{resize:vertical;min-height:84px}
 .ai-dot.on{background:var(--good);box-shadow:0 0 0 3px color-mix(in oklch,var(--good) 25%,transparent)}
 #ai-status-btn{display:inline-flex;align-items:center}
 .modal-backdrop{position:fixed;inset:0;z-index:100;background:oklch(0.25 0.02 135 / .45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px}
-.modal{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);max-width:460px;width:100%;padding:clamp(22px,4vw,30px);animation:rise .3s cubic-bezier(.2,.7,.3,1);position:relative}
+.modal{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);max-width:460px;width:100%;padding:clamp(22px,4vw,30px);animation:rise 0.38s cubic-bezier(.2,.7,.3,1);position:relative}
 .modal-x{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:none;background:none;color:var(--ink-3);display:grid;place-items:center;transition:.15s}
 .modal-x:hover{background:var(--surface-2);color:var(--ink)}
 .modal-x svg{width:15px;height:15px}
@@ -278,7 +298,7 @@ textarea{resize:vertical;min-height:84px}
 .ai-banner svg{width:18px;height:18px;flex:none;margin-top:1px;color:var(--primary-2)}
 .ai-banner .x{margin-left:auto;cursor:pointer;color:var(--ink-3);font-size:18px;line-height:1;background:none;border:none;flex:none}
 .load-step.err .dot{border-color:var(--clay);background:var(--clay)}
-.spin-ring{width:16px;height:16px;border:2px solid var(--primary-line);border-right-color:transparent;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle}
+.spin-ring{width:16px;height:16px;border:2px solid var(--primary-line);border-right-color:transparent;border-radius:50%;display:inline-block;animation:spin 0.9s linear infinite;vertical-align:middle}
 
 .site-footer{max-width:1100px;margin:0 auto;border-top:1px solid var(--line);padding:32px var(--pad,18px) 48px}
 /* hidden inside the wizard — see the data-flow note in router.js */
@@ -367,39 +387,39 @@ body[data-flow="1"] .site-footer{display:none}
 .sa .p-flash{fill:var(--honey);stroke:none}
 .sa .dn-check{stroke:var(--primary);stroke-width:3}
 .sa .f-flap{fill:var(--primary-bg);stroke:var(--primary)}
-.sa .c1{animation:sa-slide-in 2.6s var(--ease) infinite}
-.sa .c2{animation:sa-slide-in 2.6s var(--ease) .5s infinite}
+.sa .c1{animation:sa-slide-in 3.33s var(--ease) infinite}
+.sa .c2{animation:sa-slide-in 3.33s var(--ease) .5s infinite}
 @keyframes sa-slide-in{0%,15%{transform:translateY(0);opacity:1}55%,70%{transform:translateY(16px);opacity:1}85%,100%{transform:translateY(16px);opacity:0}}
-.sa .d1{animation:sa-drop 2.8s ease-in infinite}
-.sa .d2{animation:sa-drop 2.8s ease-in .45s infinite}
-.sa .d3{animation:sa-drop 2.8s ease-in .9s infinite}
+.sa .d1{animation:sa-drop 3.58s ease-in infinite}
+.sa .d2{animation:sa-drop 3.58s ease-in .45s infinite}
+.sa .d3{animation:sa-drop 3.58s ease-in .9s infinite}
 @keyframes sa-drop{0%,20%{transform:translateY(0);opacity:1}55%{transform:translateY(19px);opacity:1}70%,100%{transform:translateY(19px);opacity:0}}
-.sa .u1{animation:sa-rise 2.8s ease-out infinite}
-.sa .u2{animation:sa-rise 2.8s ease-out .5s infinite}
+.sa .u1{animation:sa-rise 3.58s ease-out infinite}
+.sa .u2{animation:sa-rise 3.58s ease-out .5s infinite}
 @keyframes sa-rise{0%,20%{transform:translateY(8px);opacity:0}35%{opacity:1}60%,75%{transform:translateY(-8px);opacity:1}90%,100%{transform:translateY(-8px);opacity:0}}
-.sa-wipe .w-pad{animation:sa-sweep 2.4s var(--ease) infinite}
+.sa-wipe .w-pad{animation:sa-sweep 3.07s var(--ease) infinite}
 @keyframes sa-sweep{0%,10%{transform:translateX(0)}55%,65%{transform:translateX(24px)}100%{transform:translateX(0)}}
-.sa-wipe .w-dust{transform-origin:40px 31px;animation:sa-fade-dust 2.4s var(--ease) infinite}
+.sa-wipe .w-dust{transform-origin:40px 31px;animation:sa-fade-dust 3.07s var(--ease) infinite}
 @keyframes sa-fade-dust{0%,10%{transform:scaleX(1);opacity:.9}55%,100%{transform:scaleX(0);opacity:0}}
-.sa-label .l-tag{animation:sa-tag 2.6s var(--ease) infinite}
+.sa-label .l-tag{animation:sa-tag 3.33s var(--ease) infinite}
 @keyframes sa-tag{0%,12%{transform:translateY(-14px);opacity:0}35%,80%{transform:translateY(0);opacity:1}95%,100%{transform:translateY(0);opacity:1}}
-.sa-label .l-line{stroke:var(--honey-2);animation:sa-fade 2.6s var(--ease) .3s infinite}
+.sa-label .l-line{stroke:var(--honey-2);animation:sa-fade 3.33s var(--ease) .3s infinite}
 @keyframes sa-fade{0%,25%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
-.sa-hang .h1{animation:sa-hang-l 2.8s var(--ease) infinite}
-.sa-hang .h2{animation:sa-hang-r 2.8s var(--ease) infinite}
+.sa-hang .h1{animation:sa-hang-l 3.58s var(--ease) infinite}
+.sa-hang .h2{animation:sa-hang-r 3.58s var(--ease) infinite}
 @keyframes sa-hang-l{0%,15%{transform:translateX(7px)}50%,85%{transform:translateX(0)}100%{transform:translateX(7px)}}
 @keyframes sa-hang-r{0%,15%{transform:translateX(-7px)}50%,85%{transform:translateX(0)}100%{transform:translateX(-7px)}}
-.sa-fold .f-flap{transform-origin:24px 28px;animation:sa-fold 2.8s var(--ease) infinite}
+.sa-fold .f-flap{transform-origin:24px 28px;animation:sa-fold 3.58s var(--ease) infinite}
 @keyframes sa-fold{0%,20%{transform:scaleY(1)}55%,85%{transform:scaleY(0.12)}100%{transform:scaleY(1)}}
-.sa-photo .p-flash{animation:sa-flash 2.4s ease-out infinite}
+.sa-photo .p-flash{animation:sa-flash 3.07s ease-out infinite}
 @keyframes sa-flash{0%,42%{opacity:0;transform:scale(1)}50%{opacity:.9;transform:scale(2.6)}62%,100%{opacity:0;transform:scale(1)}}
-.sa-up .m-box{animation:sa-move-up 2.8s var(--ease) infinite}
+.sa-up .m-box{animation:sa-move-up 3.58s var(--ease) infinite}
 @keyframes sa-move-up{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(-14px)}100%{transform:translateY(0)}}
-.sa-down .m-box2{animation:sa-move-down 2.8s var(--ease) infinite}
+.sa-down .m-box2{animation:sa-move-down 3.58s var(--ease) infinite}
 @keyframes sa-move-down{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(14px)}100%{transform:translateY(0)}}
-.sa-zones .z1{animation:sa-fade 3s var(--ease) infinite}
-.sa-zones .z2{animation:sa-fade 3s var(--ease) .35s infinite}
-.sa-zones .z3{animation:sa-fade 3s var(--ease) .7s infinite}
+.sa-zones .z1{animation:sa-fade 3.84s var(--ease) infinite}
+.sa-zones .z2{animation:sa-fade 3.84s var(--ease) .35s infinite}
+.sa-zones .z3{animation:sa-fade 3.84s var(--ease) .7s infinite}
 .sa-group .g1{animation:sa-g1 3s var(--ease) infinite}
 .sa-group .g2{animation:sa-g2 3s var(--ease) infinite}
 .sa-group .g3{animation:sa-g3 3s var(--ease) infinite}
@@ -408,7 +428,7 @@ body[data-flow="1"] .site-footer{display:none}
 @keyframes sa-g2{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-7px,9px)}100%{transform:translate(0,0)}}
 @keyframes sa-g3{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(9px,-7px)}100%{transform:translate(0,0)}}
 @keyframes sa-g4{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-9px,-5px)}100%{transform:translate(0,0)}}
-.sa-done .dn-check{stroke-dasharray:30;animation:sa-draw 2.6s var(--ease) infinite}
+.sa-done .dn-check{stroke-dasharray:30;animation:sa-draw 3.33s var(--ease) infinite}
 @keyframes sa-draw{0%,15%{stroke-dashoffset:30}50%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:30}}
 
 @media (prefers-reduced-motion: reduce){
@@ -488,7 +508,7 @@ body[data-flow="1"] .site-footer{display:none}
   display:flex;flex-direction:column;text-align:left;
   box-shadow:0 10px 26px -22px rgba(60,50,40,.5);
   transition:transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s ease, border-color .2s ease;
-  animation:card-arrive .42s cubic-bezier(.2,.8,.2,1) backwards;
+  animation:card-arrive 0.54s cubic-bezier(.2,.8,.2,1) backwards;
 }
 .room-card:hover{transform:translateY(-4px);border-color:var(--primary-line);box-shadow:0 16px 34px -22px rgba(60,50,40,.55)}
 .room-card:active{transform:translateY(-1px) scale(.985)}
@@ -527,12 +547,12 @@ body[data-flow="1"] .site-footer{display:none}
 .card-visual::before{
   width:48%;aspect-ratio:1;top:8%;right:7%;border-radius:58% 42% 48% 52%;
   background:var(--art-glow);opacity:.7;transform:rotate(-10deg);
-  animation:art-drift 5.6s ease-in-out infinite alternate;
+  animation:art-drift 7.17s ease-in-out infinite alternate;
 }
 .card-visual::after{
   width:44%;aspect-ratio:1;left:-12%;bottom:-39%;border:2px solid var(--art-ring);
   border-radius:44% 56% 49% 51%;opacity:.38;
-  animation:art-ring-drift 7.2s ease-in-out infinite alternate;
+  animation:art-ring-drift 9.22s ease-in-out infinite alternate;
 }
 .card-art-svg{
   position:absolute;z-index:1;left:50%;top:50%;width:82%;height:82%;overflow:visible;
@@ -550,17 +570,34 @@ body[data-flow="1"] .site-footer{display:none}
 .card-art-svg .art-motion{
   transform-box:fill-box;will-change:transform,opacity;
   filter:drop-shadow(0 3px 2px rgba(112,69,38,.13));
+  /* The ambient loop is a deliberate contract: each card's detail has to move
+     at rest so the option reads without being hovered (see
+     tests/e2e/wizard-illustration-motion.spec.mjs). Each motion declares its
+     own duration and curve in its shorthand below; every loop was slowed by
+     about a quarter, which is what separates "considered" from "busy" across a
+     grid of thirty-odd cards. Nothing here may set animation-duration or
+     animation-timing-function: both would override those per-motion values,
+     and `inherit` in particular resolves against a parent with no animation
+     and stops the illustrations dead. */
 }
-.motion-drawer{transform-origin:left center;animation:drawer-pull 3.8s cubic-bezier(.2,.75,.25,1) infinite}
-.motion-cabinet-door{transform-origin:left center;animation:cabinet-door-open 4.2s cubic-bezier(.2,.75,.25,1) infinite}
-.motion-shirt{transform-origin:top center;animation:shirt-sway 3.4s ease-in-out infinite alternate}
-.motion-bin-pull{transform-origin:center top;animation:bin-pull 3.9s cubic-bezier(.2,.75,.25,1) infinite}
-.motion-tool{transform-origin:top center;animation:tool-sway 3.2s ease-in-out infinite alternate}
-.motion-towel-pull{transform-origin:left center;animation:towel-pull 4s cubic-bezier(.2,.75,.25,1) infinite}
-.motion-overhead-tote{transform-origin:center bottom;animation:overhead-tote-place 4.2s cubic-bezier(.2,.75,.25,1) infinite}
-.motion-shelf-jar{transform-origin:center bottom;animation:shelf-jar-lift 4s cubic-bezier(.2,.75,.25,1) infinite}
-.motion-water{transform-origin:center top;animation:water-flow 3.2s cubic-bezier(.2,.75,.25,1) infinite}
-.motion-steam path{stroke-dasharray:10 6;opacity:0;animation:steam-rise 1.85s ease-out infinite}
+/* Hovering a card commits to its motion: the detail travels further and
+   finishes sooner, so the option you are actually considering demonstrates
+   itself properly. */
+.room-card:hover .art-motion,.wz-setup:hover .art-motion,
+.room-card:focus-visible .art-motion,.wz-setup:focus-visible .art-motion{
+  animation-duration:2.4s;
+  scale:1.06;
+}
+.motion-drawer{transform-origin:left center;animation:drawer-pull 4.86s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-cabinet-door{transform-origin:left center;animation:cabinet-door-open 5.38s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-shirt{transform-origin:top center;animation:shirt-sway 4.35s ease-in-out infinite alternate}
+.motion-bin-pull{transform-origin:center top;animation:bin-pull 4.99s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-tool{transform-origin:top center;animation:tool-sway 4.1s ease-in-out infinite alternate}
+.motion-towel-pull{transform-origin:left center;animation:towel-pull 5.12s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-overhead-tote{transform-origin:center bottom;animation:overhead-tote-place 5.38s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-shelf-jar{transform-origin:center bottom;animation:shelf-jar-lift 5.12s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-water{transform-origin:center top;animation:water-flow 4.1s cubic-bezier(.2,.75,.25,1) infinite}
+.motion-steam path{stroke-dasharray:10 6;opacity:0;animation:steam-rise 2.37s ease-out infinite}
 .motion-steam path:nth-child(2){animation-delay:.3s}
 .motion-steam path:nth-child(3){animation-delay:.6s}
 .room-card:nth-child(2) .art-motion,.wz-setup:nth-child(2) .art-motion{animation-delay:-1.1s}
@@ -665,7 +702,7 @@ body[data-flow="1"] .site-footer{display:none}
   position:relative;display:block;width:100%;padding:18px 16px;text-align:left;
   border:2px solid #eee7db;border-radius:18px;background:#fff;color:var(--ink);
   transition:border-color .2s,box-shadow .2s,transform .2s;
-  animation:card-arrive .42s cubic-bezier(.2,.8,.2,1) backwards;
+  animation:card-arrive 0.54s cubic-bezier(.2,.8,.2,1) backwards;
 }
 .wz-setup:hover{border-color:var(--primary);transform:translateY(-2px)}
 .wz-setup:active{transform:translateY(0) scale(.985)}
@@ -737,7 +774,7 @@ body[data-flow="1"] .site-footer{display:none}
 .wz-spin{
   width:22px;height:22px;border-radius:50%;flex:none;
   border:3px solid var(--surface-3);border-top-color:var(--primary);
-  animation:wz-spin .8s linear infinite;
+  animation:wz-spin 1.02s linear infinite;
 }
 @keyframes wz-spin{to{transform:rotate(360deg)}}
 .wz-detected{margin-top:22px;padding:20px 22px;border:1px solid var(--sage-line);border-radius:18px;background:var(--sage-bg)}

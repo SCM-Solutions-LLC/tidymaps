@@ -69,15 +69,39 @@
   --warn:      oklch(0.60 0.108 76);
   --warn-bg:   oklch(0.950 0.034 86);
 
-  --radius: 10px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 3px oklch(0.30 0.01 100 / .07);
-  --shadow-lg: 0 8px 24px oklch(0.30 0.01 100 / .10);
+  --radius: 12px;
+  --radius-sm: 9px;
+  --radius-lg: 18px;
+
+  /* Depth. One flat shadow for everything is what made the whole page read as
+     a wireframe: nothing sat above anything else, so no element looked
+     touchable. These are layered rather than blurred — a tight contact shadow
+     for the edge plus a wider ambient one — which is what reads as a real
+     object on paper without resorting to gradients or glass. */
+  --shadow-sm: 0 1px 2px oklch(0.30 0.01 100 / .05);
+  --shadow: 0 1px 2px oklch(0.30 0.01 100 / .06), 0 2px 6px oklch(0.30 0.01 100 / .05);
+  --shadow-md: 0 1px 2px oklch(0.30 0.01 100 / .07), 0 4px 12px oklch(0.30 0.01 100 / .08);
+  --shadow-lg: 0 2px 4px oklch(0.30 0.01 100 / .06), 0 12px 32px oklch(0.30 0.01 100 / .11);
   --maxw: 760px;
 
-  /* motion — minimal and purposeful */
+  /* Motion. One duration and one curve for every kind of movement is why the
+     interface felt mechanical: a button pressing and a panel arriving are not
+     the same gesture. Four tiers, each with the curve that suits it.
+     --ease-physical carries a slight overshoot, for things that represent
+     real objects moving (drawers, doors, bins) and should settle rather than
+     stop dead. */
   --ease: cubic-bezier(.2,.7,.3,1);
-  --dur: .15s;
+  --ease-out: cubic-bezier(.16,.84,.28,1);
+  --ease-physical: cubic-bezier(.34,1.32,.48,1);
+  --dur-fast: .12s;
+  --dur: .18s;
+  --dur-slow: .34s;
+
+  /* Type. Large sizes need negative tracking to stop looking loose, and the
+     display serif needs tighter leading than body copy. */
+  --tracking-display: -0.021em;
+  --tracking-tight: -0.011em;
+  --leading-display: 1.08;
 
   --paper-grain: none;
 }
