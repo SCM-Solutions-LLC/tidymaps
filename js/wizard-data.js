@@ -265,6 +265,13 @@ export const KID_AGES = ['Baby', 'Toddler', 'Big kid', 'Teen'];
    step if this list changes. */
 export const MOBILITY_NEEDS = ['Limited reach', 'Avoid bending', 'Wheelchair user'];
 
+/* Pet types. household.pets.types was declared, reset, and forwarded to the
+   model, but nothing wrote it and no prompt rule read it, so it always shipped
+   as []. The floor and lowest shelf are reachable by an animal, which changes
+   where pet food and anything chewable belongs — naming the animal lets the
+   plan say "out of the dog's reach" instead of something generic. */
+export const PET_TYPES = ['Dog', 'Cat', 'Other'];
+
 /* The household step (step 6 of 12) asks how many kids live here, and every
    list after it was still offering kid-only options: "Kids' snacks" in the
    contents chips, "Kids can't reach their things" in the goals, "Kid-friendly

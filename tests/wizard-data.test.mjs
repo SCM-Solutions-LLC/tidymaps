@@ -5,7 +5,7 @@ import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   SETUP_GEOM, GEOM_TO_V3D_LAYOUT, SETUP_SCENARIO, scenarioKeyFor,
   roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, measureSummary, art,
-  isKidOption, householdHasKids, optionsForHousehold, MOBILITY_NEEDS,
+  isKidOption, householdHasKids, optionsForHousehold, MOBILITY_NEEDS, PET_TYPES,
 } from '../js/wizard-data.js';
 import { PREFS, AFTER_MODES, CUSTOMIZE } from '../js/data.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
@@ -243,4 +243,36 @@ test('kid-only options disappear once the household says there are no kids', () 
   assert.equal(isKidOption({ label: "Kids can't reach their things" }), true);
   assert.equal(isKidOption('Clear containers'), false);
   assert.equal(isKidOption('Maximize vertical space'), false);
+});
+
+/* household.pets.types and household.notes were the last two inputs declared
+   in state, reset on restart, and forwarded to the model by
+   buildAnalysisContext — with nothing anywhere to write them. pets.types was
+   worse than dormant: the prompt had no pet rule at all, so even a populated
+   value would have been ignored. */
+test('the pet and notes answers reach the wizard, the state, and the prompt', () => {
+  assert.ok(PET_TYPES.length >= 2, 'pet types need real options');
+
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const wizard = readFileSync(new URL('../js/screens/wizard.js', import.meta.url), 'utf8');
+  const plan = readFileSync(new URL('../js/plan.js', import.meta.url), 'utf8');
+  const prompt = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+
+  // A control exists for each, and something writes it.
+  for (const id of ['pet-type-chips', 'household-notes']) {
+    assert.ok(html.includes(`id="${id}"`), `${id} has no control in the wizard`);
+    assert.ok(wizard.includes(id), `nothing renders or reads ${id}`);
+  }
+  assert.match(wizard, /state\.household\.notes\s*=/, 'the notes field never writes to state');
+  assert.match(wizard, /h\.pets\.types/, 'the pet chips never write to state');
+
+  // Answering zero pets must not leave a stale pet type behind, the same way
+  // zero kids prunes the ages.
+  assert.match(wizard, /pets\.present === 'no'\) h\.pets\.types = \[\]/);
+
+  // Both still travel to the model, and the model is now told what to do with
+  // a pet: an unread input is the bug being closed here.
+  assert.match(plan, /types:h\.pets\.types\.slice\(\)/);
+  assert.match(plan, /notes,/);
+  assert.match(prompt, /pets/i, 'the prompt has no pet rule, so pets.types would be ignored');
 });

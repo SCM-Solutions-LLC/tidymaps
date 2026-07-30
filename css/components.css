@@ -17,6 +17,16 @@
 .opt.sel{border-color:var(--primary);background:var(--primary-bg);box-shadow:0 0 0 1px var(--primary)}
 .opt .ico{font-size:22px;line-height:1;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;color:var(--primary)}
 .opt .ico svg{width:22px;height:22px}
+/* Free-text household note. Matches the field inputs rather than inventing a
+   new control: same border, radius and focus ring. */
+.wz-notes{
+  width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);
+  border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;
+  resize:vertical;min-height:56px;line-height:1.5;
+}
+.wz-notes:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-bg)}
+.wz-notes::placeholder{color:var(--ink-3)}
+
 /* The title and the description are separate spans inside one wrapper, but
    both default to inline, so they ran together as "Make it more
    minimalFewer visible items..." — unreadable at a glance, which is the only

@@ -11,7 +11,7 @@
    ============================================================ */
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
-  KID_AGES, MOBILITY_NEEDS, EFFORT_OPTS, SHOPPING_OPTS,
+  KID_AGES, MOBILITY_NEEDS, PET_TYPES, EFFORT_OPTS, SHOPPING_OPTS,
   roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
@@ -306,34 +306,62 @@ function renderHousehold(){
       document.getElementById('count-' + k).textContent = h[k];
       syncHouseholdPresence();
       renderKidAges();
+      renderPetTypes();
     };
   });
   renderKidAges();
+  renderPetTypes();
   renderMobility();
+  renderHouseholdNotes();
 }
 
-/* The reach question the model was already being told the answer to. */
-function renderMobility(){
-  const wrap = document.getElementById('mobility-chips');
+/* Chip pickers all follow the kid-ages shape: toggle a value in an array on
+   state.household, keep aria-pressed truthful. */
+function renderChipPicker(wrapId, values, list){
+  const wrap = document.getElementById(wrapId);
   if(!wrap) return;
+  wrap.innerHTML = '';
+  values.forEach(value => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    const on = () => list().includes(value);
+    chip.className = 'chip' + (on() ? ' sel' : '');
+    chip.setAttribute('aria-pressed', String(on()));
+    chip.textContent = value;
+    chip.onclick = () => {
+      const arr = list();
+      const i = arr.indexOf(value);
+      i < 0 ? arr.push(value) : arr.splice(i, 1);
+      chip.classList.toggle('sel');
+      chip.setAttribute('aria-pressed', String(on()));
+    };
+    wrap.appendChild(chip);
+  });
+}
+
+function renderPetTypes(){
+  const block = document.getElementById('pet-types-block');
+  if(!block) return;
+  const h = state.household;
+  if(!Array.isArray(h.pets.types)) h.pets.types = [];
+  // Only worth asking once they've said there are pets.
+  block.classList.toggle('hide', (h.petCount || 0) < 1);
+  renderChipPicker('pet-type-chips', PET_TYPES, () => h.pets.types);
+}
+
+function renderMobility(){
   const h = state.household;
   if(!Array.isArray(h.mobility)) h.mobility = [];
-  wrap.innerHTML = '';
-  MOBILITY_NEEDS.forEach(need => {
-    const c = document.createElement('button');
-    c.type = 'button';
-    const on = () => h.mobility.includes(need);
-    c.className = 'chip' + (on() ? ' sel' : '');
-    c.setAttribute('aria-pressed', String(on()));
-    c.textContent = need;
-    c.onclick = () => {
-      const i = h.mobility.indexOf(need);
-      i < 0 ? h.mobility.push(need) : h.mobility.splice(i, 1);
-      c.classList.toggle('sel');
-      c.setAttribute('aria-pressed', String(on()));
-    };
-    wrap.appendChild(c);
-  });
+  renderChipPicker('mobility-chips', MOBILITY_NEEDS, () => h.mobility);
+}
+
+/* Free text, already forwarded to the model by buildAnalysisContext and
+   already fenced as untrusted there — it just had nowhere to be typed. */
+function renderHouseholdNotes(){
+  const box = document.getElementById('household-notes');
+  if(!box) return;
+  box.value = state.household.notes || '';
+  box.oninput = () => { state.household.notes = box.value; };
 }
 
 /* Presence stays the canonical 'yes'/'no' strings the rest of the app expects. */
@@ -342,6 +370,7 @@ function syncHouseholdPresence(){
   h.kids.present = (h.kidCount || 0) > 0 ? 'yes' : 'no';
   if(h.kids.present === 'no') h.kids.ages = [];
   h.pets.present = (h.petCount || 0) > 0 ? 'yes' : 'no';
+  if(h.pets.present === 'no') h.pets.types = [];
 
   /* Someone can tick "Kids' snacks", walk back to household, and set kids to
      zero. Hiding the chip from then on is not enough: the earlier selection is
