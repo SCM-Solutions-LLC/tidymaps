@@ -17,8 +17,15 @@
 .opt.sel{border-color:var(--primary);background:var(--primary-bg);box-shadow:0 0 0 1px var(--primary)}
 .opt .ico{font-size:22px;line-height:1;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;color:var(--primary)}
 .opt .ico svg{width:22px;height:22px}
-.opt .ttl{font-weight:600}
-.opt .sub{font-size:13px;color:var(--ink-3);margin-top:2px}
+/* The title and the description are separate spans inside one wrapper, but
+   both default to inline, so they ran together as "Make it more
+   minimalFewer visible items..." — unreadable at a glance, which is the only
+   way anyone reads a list of choices. Each gets its own line. */
+.opt .ttl{font-weight:600;display:block;line-height:1.35}
+.opt .sub{font-size:13.5px;color:var(--ink-2);margin-top:3px;display:block;line-height:1.5}
+/* The label wrapper has to be a block for those to stack, and needs room to
+   shrink so the tick stays on the right instead of being pushed off. */
+.opt > span:not(.ico):not(.tick){display:block;flex:1 1 0;min-width:0}
 .opt .tick{margin-left:auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line-2);flex:none;display:grid;place-items:center;transition:.15s}
 .opt.sel .tick{background:var(--primary);border-color:var(--primary)}
 .opt .tick svg{width:13px;height:13px;color:#fff;opacity:0;transition:.15s}
