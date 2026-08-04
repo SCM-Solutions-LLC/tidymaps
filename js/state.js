@@ -28,6 +28,10 @@ export const state = {
   shopping:null,        // chosen purchase items
   arrangement:null,     // 3D arrangement state
   shareView:false,      // viewing someone else's plan via a read-only share link
+  // Feedback answers, shared by the inline ask on the report and the dedicated
+  // feedback screen. fbRated gates the telemetry event (fire once per plan),
+  // fbSent gates the database row (one submission per plan).
+  fbUseful:null, fbVs:null, fbNext:null, fbRated:false, fbSent:false,
 };
 
 /* Everything that belongs to ONE plan of ONE space: the analysis, the saved
@@ -61,6 +65,13 @@ export function resetPlanRecord(target=state){
   target.afterRenderB64=null;
   target.afterRenderUrl=null;
   target.beforePhotoUrl=null;
+  // Feedback is about a specific plan, so a new plan gets a fresh ask rather
+  // than showing the previous space's rating back to the user.
+  target.fbUseful=null;
+  target.fbVs=null;
+  target.fbNext=null;
+  target.fbRated=false;
+  target.fbSent=false;
   delete target.sharedName;
   delete target._beforeUrl;
   return target;

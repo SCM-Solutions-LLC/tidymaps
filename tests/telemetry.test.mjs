@@ -10,8 +10,8 @@ import { EVENT_NAMES, sanitizeEvent, sanitizeBatch } from '../supabase/functions
 test('allowlist covers exactly the product events', () => {
   assert.deepEqual([...EVENT_NAMES].sort(), [
     'after_render_requested', 'feedback_submitted', 'plan_created',
-    'product_clicked', 'screen_viewed', 'share_link_created',
-    'shared_plan_viewed', 'step_checked',
+    'plan_rated', 'product_clicked', 'screen_viewed', 'share_link_created',
+    'shared_plan_viewed', 'space_saved', 'step_checked',
   ]);
 });
 

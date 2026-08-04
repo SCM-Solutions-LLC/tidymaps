@@ -633,12 +633,35 @@
               <span style="font-weight:600;font-family:var(--serif);font-size:18px" id="res-shop-total">$45&ndash;$85</span>
             </div>
             <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
-              <button class="btn btn-ghost btn-sm" onclick="toast('Shopping list saved')">Save shopping list</button>
-              <button class="btn btn-ghost btn-sm" onclick="toast('List sent')">Send list</button>
+              <button class="btn btn-ghost btn-sm" onclick="downloadShoppingList()">Download list</button>
+              <button class="btn btn-ghost btn-sm" onclick="sendShoppingList()">Send list</button>
               <button class="btn btn-ghost btn-sm" onclick="uncheckAllUpgrades()">Remove all upgrades</button>
               <button class="btn btn-ghost btn-sm" onclick="setUpgrades(false);toast('Switched to the $0 plan')">Use $0 plan instead</button>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- The pay-for-it question, asked under the finished plan rather than
+           two screens past it. See js/screens/feedback.js. -->
+      <section class="plan-rate hide" id="res-rate" aria-labelledby="rate-h">
+        <div id="rate-ask">
+          <h3 id="rate-h">Is this plan worth doing?</h3>
+          <p class="muted small" style="margin-top:4px">One tap. Your answer decides what we build next.</p>
+          <div class="grid" id="rate-opts" style="margin-top:14px"></div>
+        </div>
+        <div class="hide" id="rate-more">
+          <h4 style="margin-top:24px">Was the step-by-step plan more useful than just seeing an after image?</h4>
+          <div class="grid" id="rate-vs" style="margin-top:12px"></div>
+          <h4 style="margin-top:22px">What space would you organize next?</h4>
+          <div class="chips" id="rate-next" style="margin-top:12px"></div>
+          <h4 style="margin-top:22px">What would make this better?</h4>
+          <textarea id="rate-text" placeholder="Optional &mdash; tell us anything&hellip;" style="margin-top:10px"></textarea>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="sendRate()">Send feedback</button>
+        </div>
+        <div class="hide rate-thanks" id="rate-thanks">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>Thanks &mdash; that&rsquo;s genuinely useful. It goes straight into what we build next.</span>
         </div>
       </section>
 
@@ -678,20 +701,32 @@
 <!-- ============================================================ 11. FEEDBACK -->
 <section class="screen" id="screen-feedback">
   <div class="step-label">Last step</div>
-  <h2>How useful is this plan?</h2>
-  <div class="grid" id="fb-useful" style="margin-top:16px"></div>
+  <div id="fb-form">
+    <h2>How useful is this plan?</h2>
+    <div class="grid" id="fb-useful" style="margin-top:16px"></div>
 
-  <h3 style="margin-top:28px">Was the step-by-step plan more useful than just seeing an after image?</h3>
-  <div class="grid" id="fb-vs" style="margin-top:14px"></div>
+    <h3 style="margin-top:28px">Was the step-by-step plan more useful than just seeing an after image?</h3>
+    <div class="grid" id="fb-vs" style="margin-top:14px"></div>
 
-  <h3 style="margin-top:28px">What would make this better?</h3>
-  <textarea id="fb-text" placeholder="Tell us anything&hellip;" style="margin-top:12px"></textarea>
+    <h3 style="margin-top:28px">What would make this better?</h3>
+    <textarea id="fb-text" placeholder="Tell us anything&hellip;" style="margin-top:12px"></textarea>
 
-  <h3 style="margin-top:28px">What space would you organize next?</h3>
-  <div class="chips" id="fb-next" style="margin-top:14px"></div>
+    <h3 style="margin-top:28px">What space would you organize next?</h3>
+    <div class="chips" id="fb-next" style="margin-top:14px"></div>
 
-  <div style="margin-top:26px">
-    <button class="btn btn-primary btn-block" onclick="submitFeedback()">Submit feedback</button>
+    <div style="margin-top:26px">
+      <button class="btn btn-primary btn-block" onclick="submitFeedback()">Submit feedback</button>
+    </div>
+  </div>
+
+  <!-- Answered already on the report. Asking the same four questions again
+       reads as though the first answer went nowhere. -->
+  <div class="hide" id="fb-sent">
+    <h2>Thanks &mdash; you already sent this</h2>
+    <p class="muted" style="margin-top:8px">We have your feedback on this plan. It goes straight into what we build next.</p>
+    <div style="margin-top:26px">
+      <button class="btn btn-primary btn-block" onclick="go('done')">Continue</button>
+    </div>
   </div>
 </section>
 

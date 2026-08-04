@@ -37,10 +37,27 @@ test('the checklist and shopping list are built client-side, from the plan alrea
   // No network: these must work offline, on a plan that was never saved.
   assert.doesNotMatch(exporter, /fetch\(|supabase|callFn/);
 
-  assert.match(save, /doDownloadChecklist/);
-  assert.match(save, /doSendShoppingList/);
+  assert.match(save, /downloadChecklist\(\)/);
+  assert.match(save, /sendShoppingList\(\)/);
   // A mailto that runs past what browsers accept arrives truncated, so long
   // lists have to take another route rather than silently losing half.
-  assert.match(save, /MAILTO_LIMIT/);
-  assert.match(save, /clipboard\.writeText/);
+  assert.match(exporter, /MAILTO_LIMIT/);
+  assert.match(exporter, /clipboard\.writeText/);
+});
+
+/* The report's shopping card offered the same two things as the save screen
+   and faked both: "Save shopping list" toasted a save it never performed and
+   "Send list" toasted a send. That is the defect PR #46 removed from the save
+   screen, still live one screen earlier. */
+test('the report shopping card does the thing its buttons claim', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const card = html.slice(html.indexOf('id="res-shopping"'), html.indexOf('</section>', html.indexOf('id="res-shopping"')));
+  assert.doesNotMatch(card, /toast\('Shopping list saved'\)/);
+  assert.doesNotMatch(card, /toast\('List sent'\)/);
+  assert.match(card, /onclick="downloadShoppingList\(\)"/);
+  assert.match(card, /onclick="sendShoppingList\(\)"/);
+
+  // Both actions have to be reachable from an inline handler.
+  const main = readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
+  assert.match(main, /downloadShoppingList, sendShoppingList/);
 });

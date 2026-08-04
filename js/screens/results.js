@@ -16,6 +16,7 @@ import { track } from '../telemetry.js';
 import { applyCategoryEdits } from '../personalize.js';
 import { go } from '../router.js';
 import { runLoading } from './loading.js';
+import { buildRate } from './feedback.js';
 
 /* ---------- Results ---------- */
 export function buildResults(){
@@ -209,6 +210,10 @@ export function buildResults(){
 
   // photorealistic before/after (only when we have the user's photo)
   setupAfterPhoto();
+
+  // the pay-for-it question, asked here because nobody reaches the screen
+  // that used to be its only home
+  buildRate();
 }
 
 /* ---------- Photorealistic after-render (Gemini via edge function) ---------- */
