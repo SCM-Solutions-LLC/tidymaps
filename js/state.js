@@ -206,5 +206,14 @@ export function applySharedSpace(payload){
   state.upgrades=false;                  // sanitized plans carry no product needs
   state.dims=payload.dims||null;
   state.sharedName=payload.name||'A TidyMap plan';
+  /* A shared payload carries no household, and it never will — that is the
+     first thing the allowlist strips. But prepareDemoPlanState leaves the
+     wizard's default of two adults behind, and the report's masthead renders
+     whatever household it finds: a visitor was shown "2 adults" on someone
+     else's plan, which is not a leak of the owner's answer but is a plain
+     statement of something nobody said. Blank means blank — the chip hides,
+     and kid-only options stay filtered out because present is null, not 'no'. */
+  state.household={ adults:0, kidCount:0, petCount:0,
+    kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
   return payload;
 }
