@@ -4,10 +4,10 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-07-28, at the close of the session that fixed
-persistence and the before/after comparison, and delivered the telemetry
-analysis layer. Everything through PR #40 is merged; `main` is the single
-source of truth.
+**Last refreshed:** 2026-08-04, at the close of the session that moved the
+feedback ask onto the report, verified the share link in a browser, and
+**confirmed the AI analysis path works in production**. Everything through PR
+#47 is merged; `main` is the single source of truth.
 
 ## Product state in one paragraph
 
@@ -28,14 +28,14 @@ shared-plan view.
 
 | # | Item | Status | PR |
 |---|------|--------|----|
-| 1 | Plan generation engine | ✅ shipped | #19 |
+| 1 | Plan generation engine | ✅ shipped, and **confirmed live** 07-30 | #19 |
 | 2 | Vision detection hardening | ✅ shipped | #20 |
 | 3 | Imagery library pipeline | ✅ shipped (art itself pending, by design) | #20 |
 | 4 | Step-media pipeline | ✅ shipped (clips pending, by design) | #21 |
 | 5 | Products | ⏸ code done; blocked on business inputs | — |
-| 6 | Persistence: share links + photo promise | ✅ shipped + deployed | #23 |
+| 6 | Persistence: share links + photo promise | ✅ shipped + deployed + walked | #23 |
 | 7 | Automated QA (Playwright in CI) | ✅ shipped | #22 |
-| 8 | Telemetry + feedback loop | ✅ shipped + deployed | #24 |
+| 8 | Telemetry + feedback loop | ✅ shipped + deployed; **ask now on the report** | #24 |
 
 ### #1 Plan engine (PR #19)
 `supabase/functions/analyze-space/index.ts` validates model output against a
@@ -59,9 +59,10 @@ scenario engine. Fixture tests in `tests/`.
 license, `ready|pending`). `js/images.js hydrateImages()` fills ready images;
 pending/unknown keys fall through to each slot's declarative `onerror`.
 `tests/images.test.mjs` fails CI on undeclared keys, missing ready files, stray
-pending files, missing alt/license, or stock/CDN hotlinks. The two real photos
-(`hero-home`, `story-before`) remain `pending` — flipping status to `ready` is
-the whole ship step.
+pending files, missing alt/license, or stock/CDN hotlinks. 15 of 26 keys are
+`ready`; the 11 pending ones are all photographs and flipping status to `ready`
+is the whole ship step. See open item 5 for why that count overstates the gap —
+nine of them are referenced by nothing at all.
 
 ### #4 Step-media pipeline (PR #21)
 Clips are keyed `{action}-{motif}-{glyph}`: 13 `STEP_ART` scene types × 4
@@ -105,11 +106,15 @@ local requests; kid/no-kid safety variants; product-link shape.
 
 ### #8 Telemetry (PR #24, analysis layer 2026-07-28) — DEPLOYED
 - Migration `0006_telemetry.sql`: `telemetry_events` (RLS, no policies).
-- `track-events` edge function (live, v1) re-sanitizes every batch against
-  `_shared/telemetryEvents.js`: 8-event allowlist, flat primitive props,
+- `track-events` edge function (live, v4) re-sanitizes every batch against
+  `_shared/telemetryEvents.js`: 10-event allowlist, flat primitive props,
   80-char strings, 1KB/event, 25/batch. Client `js/telemetry.js`: random
   localStorage `anon_id`, debounce + flush-on-hide, honors DNT/GPC, disables
   under `navigator.webdriver`, fails silently.
+- The allowlist gained `plan_rated` and `space_saved` on 2026-08-04. Adding an
+  event means editing that file **and redeploying `track-events`** — the server
+  copy is the boundary, and an unknown name is dropped silently, which looks
+  exactly like a dead pipeline from the client side.
 - The queries that answer the business question now live in
   `supabase/queries/telemetry.sql`, with `docs/telemetry.md` explaining what to
   read and in what order. **Read the findings there before planning
@@ -140,7 +145,33 @@ Mostly product surface and 3D, no backend changes except a layout schema.
   scaled three-across is a picture of 6px text).
 - **Supabase CLI project setup** (`f0e2a30`) so migrations can run locally.
 
-## What this session changed (2026-07-28)
+## What shipped in PRs #41–#47 (2026-07-28 → 07-30)
+
+Recorded here because the previous refresh stopped at #40 and these are the
+changes a fresh session is most likely to trip over.
+
+- **#41** autosave (below) plus the before/after slider fix (below).
+- **#42** the analysis-timeout budget (Production health #2), and one
+  unreadable photo no longer cancels the whole analysis.
+- **#43** plan validation stopped rejecting good plans over rules the model was
+  never told, and the prompt now states the shelf-row cap the schema enforces.
+- **#44** the plan hero and its "walk through it in 3D" button came back; kid
+  options stop being offered to households that said there are no kids.
+- **#45** closed a rate-limit bypass and an anonymous write path (both tables
+  now go through `submit-form`); the 3D editor stopped discarding work; the
+  Adjust options that claim to revise the plan actually revise it; product
+  depth is checked against the shelf rather than the room; a second space no
+  longer overwrites the first one's saved plan (`resetPlanRecord`).
+- **#46** the save screen's "Download checklist" and "Send shopping list" became
+  real (`js/planExport.js`); "Schedule a session" was removed rather than
+  advertising a service that does not exist. A test walks `SAVE_OPTS` and fails
+  if any label is offered without a handler.
+- **#47** WebGL context failure recovers and explains itself; the plan's word
+  count was cut at the prompt rather than the UI; a craft pass added depth,
+  motion, and display-type tiers; `household.pets.types` and `household.notes`
+  became real questions with a prompt rule behind them.
+
+## What the 2026-07-28 session changed
 
 Two user-reported bugs, both reproduced in a browser before being fixed.
 
@@ -175,38 +206,65 @@ panel marked "After" was the user's original photo. One line of CSS
 Also delivered: `supabase/queries/telemetry.sql` + `docs/telemetry.md` (item
 #4 of the previous open list).
 
-## Production health as of 2026-07-28
+## What this session changed (2026-08-04)
 
-Three things found while diagnosing the above. Two are fixed.
+**The feedback ask moved onto the report.** Telemetry gave one unambiguous
+reading: 15 `screen_viewed` for `results`, and **zero** for `customize`, `save`,
+and `feedback`. The feedback screen is the last of nineteen and sits two screens
+past the plan, so the question that decides what to build next was being asked
+of nobody, and no amount of further waiting would have answered it. The ask now
+lives under the finished plan (`#res-rate` in `index.html`, built by
+`buildRate()` in `js/screens/feedback.js`), answering it unfolds the rest
+inline, and the rating fires `plan_rated` the moment it is tapped rather than
+when a form is completed. `state.fbRated` gates the event and `state.fbSent` the
+database row, so one person answering in both places is counted once; the old
+screen shows the answer back instead of asking again. That last part broke first
+— `buildFeedback()` ran once at startup, so it read `fbSent` long before there
+was anything to read, and it now rebuilds on entry the way `customize` and
+`dashboard` already did.
 
-1. ~~Zero saved spaces~~ — fixed above.
-2. ~~**`analyze-space` timing out in production**~~ — fixed and deployed
-   (function v10). The symptom was a **546 after 150.2 seconds**: Supabase's
-   wall-clock limit, hit by two unbounded model calls, returning no body at
-   all. The deterministic engine covered for it, so the only visible symptom
-   was a two-and-a-half-minute wait and a plan that was never the AI's — every
-   recorded plan is `source: 'demo'`. Two causes: Sonnet 4.6 runs at `high`
-   effort unless told otherwise and this function never told it otherwise, and
-   the post-validation retry re-sends every photo. Now `EFFORT` is explicit
-   (`medium`), thinking is pinned off, and the whole handler is measured
-   against `TOTAL_BUDGET_MS` (100s) — each attempt gets what's left via
-   `AbortSignal.timeout`, a retry runs only above `MIN_RETRY_MS`, and running
-   out returns a 504 the client explains. `MODEL` stays `claude-sonnet-4-6`,
-   which is current and active; it was not the problem.
-   - **Still unverified:** nothing in CI can call the real model, so the
-     `output_config.effort` / `thinking` parameters shipped untested against
-     the live API. If it rejects them the function drops the tuning, logs
-     `model rejected effort/thinking tuning`, and carries on slow rather than
-     broken. Grep the edge logs for that string before assuming it's fine.
-   - Not done, and worth doing if retries stay common: `cache_control` on the
-     first user turn would make the retry re-read the photos from cache instead
-     of re-processing them, which is most of what a retry costs.
+**The share link was walked in a browser, and it was claiming two adults.**
+`applySharedSpace()` resets through `prepareDemoPlanState()`, which leaves the
+wizard's default `household.adults = 2` behind, and the report masthead renders
+whatever household it finds. Not a leak — the allowlist strips household and it
+never crossed the wire — but a stranger was being shown "2 adults" on someone
+else's plan, which is a plain statement of something nobody said. Share view now
+blanks the household outright. New suite: `tests/e2e/shared-plan-view.spec.mjs`.
+
+**Also:** the report's shopping card had two buttons that toasted "Shopping list
+saved" and "List sent" without doing either — the same defect PR #46 removed
+from the save screen, still live one screen earlier. Both call the real
+exporters now. And `space_saved` + `cache_control` landed (see below).
+
+## Production health as of 2026-08-04
+
+1. ~~Zero saved spaces~~ — fixed 07-28.
+2. ~~**`analyze-space` timing out in production**~~ — fixed, deployed, and now
+   **confirmed working end to end.** The symptom was a **546 after 150.2
+   seconds**: Supabase's wall-clock limit, hit by two unbounded model calls,
+   returning no body at all. `EFFORT` is explicit (`medium`), thinking is pinned
+   off, and the handler is measured against `TOTAL_BUDGET_MS` (100s).
+   - **The confirmation, since "fixed" was previously only a claim about the
+     code:** the one row in `spaces` carries
+     `plan_meta = {"source":"ai","model":"claude-sonnet-4-6","analyzedAt":
+     1785373371923}`. That is 2026-07-30 01:02:51, and `usage_events` has the
+     `analyze-space` call at 01:01:37 — **74 seconds, inside the budget.** Its
+     summary describes a real walk-in pantry with L-shaped shelving, text that
+     appears in no `js/demo-scenarios.js` entry. The AI path works.
+   - The `output_config.effort` / `thinking` tuning is therefore also fine in
+     practice, since that run used it. `cache_control` shipped in this session
+     and has **not** been exercised — the same caveat applies, and the fallback
+     now strips it too. Grep the edge logs for
+     `model rejected effort/thinking/cache tuning` before assuming otherwise.
 3. **Telemetry is suppressed for the owner's own testing.** `usage_events`
-   shows edge-function calls on 2026-07-28; `telemetry_events` has nothing
-   after 2026-07-23. The client was verified working in a browser harness the
-   same day, so this is Do Not Track / Global Privacy Control doing exactly
-   what it is supposed to. Do not read a quiet week as low usage — check
+   shows edge-function calls; `telemetry_events` has nothing after 2026-07-23
+   from that browser. This is Do Not Track / Global Privacy Control doing
+   exactly what it should. Do not read a quiet week as low usage — check
    `usage_events` first (query 0 in the SQL file).
+4. **The numbers are a smoke test, not a trend.** As of 2026-08-04: 1 user,
+   1 saved space, 1 feedback row, 93 telemetry events, 79 usage events, and
+   nothing at all since 2026-07-30. `analyze-space` has been called 13 times
+   ever. Do not reason about conversion from this.
 
 ## Architecture crib sheet
 
@@ -226,7 +284,11 @@ Three things found while diagnosing the above. Two are fixed.
   sides (parity test in `tests/layout.test.mjs`).
 - **State.** `js/state.js`. Guest draft `tidymap_draft_v2` never contains media;
   `state.shareView` blocks the draft writer *and* autosave;
-  `prepareDemoPlanState` is the canonical reset.
+  `prepareDemoPlanState` is the canonical reset. Careful with that last one in
+  `applySharedSpace`: it resets to the wizard's *defaults*, not to empty, and
+  those defaults include `household.adults = 2`. Anything the report renders
+  from state has to be blanked explicitly for a share view, or the visitor is
+  shown a default as though it were the owner's answer.
 - **Persistence.** Signed in: `autoSaveSpace()` creates the row,
   `updateSpacePatch()` debounces incremental writes (progress, shopping,
   arrangement) at 800ms, explicit save/share uploads media. Signed out:
@@ -248,9 +310,22 @@ Three things found while diagnosing the above. Two are fixed.
 - Migrations applied: 0001 init, 0002 storage, 0003 feedback,
   0004 invite_requests, 0005 sharing, 0006 telemetry,
   0007 atomic_usage_and_storage.
-- Edge functions live: `analyze-space`, `render-after`, `get-shared-space`,
-  `track-events`. All verify_jwt (anon key passes); CORS allowlist in
-  `_shared/cors.ts` (Pages, scmsolutions.org, tidymaps.ai, localhost:8000/8123).
+- Edge functions live: `analyze-space` (v14), `render-after` (v11),
+  `get-shared-space` (v4), `track-events` (v4), `submit-form` (v1). All
+  `verify_jwt: false` — they check JWTs themselves so guests can call them.
+  CORS allowlist in `_shared/cors.ts` (Pages, scmsolutions.org, tidymaps.ai,
+  localhost:8000/8123).
+- **`analyze-space` is one version behind this branch.** The `cache_control`
+  change is committed but NOT deployed: it is an unreviewed change to the live
+  AI path, so it should go out with the PR rather than ahead of it. `v14` is
+  still the pre-`cache_control` build. `track-events` v4 already carries the new
+  allowlist, because an additive allowlist has to lead the client that sends to
+  it, not follow.
+- Note the two entrypoint layouts, which are not interchangeable:
+  `analyze-space` and `render-after` deploy under `supabase/functions/...`,
+  while `get-shared-space`, `track-events`, and `submit-form` deploy under
+  `functions/...`. Bundle `_shared/*` and `import_map.json` at the matching
+  depth or the imports do not resolve.
 - Deploys go through the Supabase MCP tools (`apply_migration`,
   `deploy_edge_function` with the `_shared/*` files bundled alongside the
   entrypoint). The CCR sandbox's network policy blocks direct HTTPS to
@@ -268,36 +343,68 @@ Three things found while diagnosing the above. Two are fixed.
 - CI: `.github/workflows/test.yml` on every PR. Pages deploy: `pages.yml` on
   push to main.
 - Two habits that keep paying off: browser smoke-test every user-facing change
-  rather than reasoning about it (both bugs this session were confirmed by
-  screenshotting pixels and reading the wire, and one of them looked like a
-  model-quality problem right up until it didn't), and mock the edge functions
-  with `page.route('**/functions/v1/...')` when the backend isn't reachable.
-  A faked Supabase session in `localStorage` (see
-  `tests/e2e/saved-space.spec.mjs`) makes the whole signed-in surface testable
-  offline.
+  rather than reasoning about it, and mock the edge functions with
+  `page.route('**/functions/v1/...')` when the backend isn't reachable. A faked
+  Supabase session in `localStorage` (see `tests/e2e/saved-space.spec.mjs`)
+  makes the whole signed-in surface testable offline.
+  - The 07-28 session found both its bugs by screenshotting pixels and reading
+    the wire, and one looked like a model-quality problem right up until it
+    didn't. The 08-04 session found two more the same way: the feedback screen
+    still asking a question already answered, and the share view claiming two
+    adults. Neither was visible in the code, and neither unit test would have
+    caught them.
+- **Do not use `git checkout <file>` to test whether a new test fails without
+  its fix.** It reverts every change in that file, not the one line you sed'd,
+  and it happened twice in the 08-04 session. Copy the file aside and restore
+  from the copy, or revert the edit with the inverse edit.
+
+## Closed since the last refresh
+
+- ~~Confirm the AI path completes~~ — confirmed from stored `plan_meta`
+  (Production health #2). This one is settled; do not re-open it on the
+  strength of `plan_created` telemetry alone, which still reads all-`demo`
+  because the only AI run happened in a browser sending GPC.
+- ~~Live share-link round trip~~ — a link is minted on the saved pantry and the
+  visitor's half is covered by `tests/e2e/shared-plan-view.spec.mjs`. It found
+  the "2 adults" bug. See the caveat in open item 2 below.
+- ~~Feedback on the results screen~~ — shipped this session.
+- ~~`space_saved` telemetry event~~ — shipped and deployed (`track-events` v4).
+- ~~`cache_control` on the retry~~ — committed, **not deployed** (see
+  Backend / deploy state).
 
 ## Open items / next actions
 
-1. **Confirm the AI path actually completes now** (Production health #2). One
-   real analysis with photos, then read the edge logs: a 200 with a plausible
-   elapsed time means the fix landed, `source: 'ai'` in telemetry confirms it
-   end to end. Until someone runs that, "fixed" is a claim about the code, not
-   about production.
-2. **Live share-link round trip** (user to-do, still unverified): mint a link
-   on a saved plan → open `?share=` signed out; expect banner + plan, no
-   household or photos. Now unblocked — spaces finally exist to share.
-3. **Get the funnel past the report.** Nobody has ever reached customize, save,
-   or feedback (`docs/telemetry.md`). Until feedback is asked for somewhere on
-   the results screen itself, the pay-for-it question cannot be answered no
-   matter how long telemetry runs.
+1. **Deploy `analyze-space`** once this PR is reviewed. The `cache_control`
+   change is in the branch and `v14` in production is without it. Nothing in
+   CI can call the real API, so watch the first live analysis and grep the edge
+   logs for `model rejected effort/thinking/cache tuning`.
+2. **The share round trip is verified client-side, not over the wire.** The
+   sandbox blocks HTTPS to `supabase.co`, so `tests/e2e/shared-plan-view.spec.mjs`
+   mocks `get-shared-space` and everything downstream of the response is real.
+   The remaining 30 seconds of work is a human one: open
+   `https://scm-solutions-llc.github.io/tidymaps/?share=1d6dcc74-5b57-486a-bc45-afb14524c5a0`
+   in a signed-out window and confirm a banner and a plan come back. Revoke
+   afterwards with `update spaces set share_id = null where id =
+   'e19b0766-3507-4c5a-b7d2-e78f67c4706e';` — that link is live right now.
+3. **Wait for the funnel to say something.** `plan_rated` is the new primary
+   signal and it has zero rows, because the ask shipped after the last session
+   of real usage. Read `plan_rated` before `feedback_submitted`: the first is
+   one tap on the report, the second needs someone to walk three more screens.
+   Both are joinable to `step_checked` depth per `anon_id`.
 4. **#5 products:** SKU curation + real affiliate IDs (business), then flip the
-   flags in `js/affiliates.js`.
-5. **Media production (design-owned):** shoot the two landing photos; produce
-   step clips against the SVG scene specs. Both ship by dropping a file and
-   flipping a manifest entry to `ready` — CI guards the rest.
-6. **A `space_saved` telemetry event** would let the fix above be measured
-   rather than assumed; it needs an allowlist entry and a `track-events`
-   redeploy (`docs/telemetry.md`, "Adding an event").
+   flags in `js/affiliates.js`. Every entry is still an empty string, so all 30
+   catalog products link plain and no disclosure renders.
+5. **Media production (design-owned).** The pending count overstates this. All
+   11 pending manifest keys are photographs, but only `hero-home` and
+   `sample-after` appear as `data-img` anywhere — the nine `wiz-room-*` /
+   `wiz-area-*` entries are a shot list, referenced by nothing, and the wizard
+   draws SVG art instead. `hero-home` already has a working declarative `src`
+   (`pantry-after.png`); its pending entry is an upgrade, not a hole. **Nothing
+   on the site is broken for want of these.** Step clips are likewise still
+   empty (`data/step-media.json`) with the inline SVGs as the permanent
+   fallback. Note that `tests/images.test.mjs` only checks that referenced keys
+   are declared, never that declared keys are referenced, which is why 24
+   unused entries sit there quietly.
 
 ## Session conventions
 
