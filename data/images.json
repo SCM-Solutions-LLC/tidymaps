@@ -23,34 +23,10 @@
       },
       "status": "ready"
     },
-    "product-plan-map": {
-      "file": "assets/product/plan-map.png",
-      "alt": "Screenshot of a TidyMap plan: the shelf-by-shelf map with zones and placement reasons",
-      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own sample plan." },
-      "status": "ready"
-    },
-    "product-plan-steps": {
-      "file": "assets/product/plan-steps.png",
-      "alt": "Screenshot of a TidyMap plan: the timed step-by-step list with progress tracking",
-      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own sample plan." },
-      "status": "ready"
-    },
-    "product-plan-shopping": {
-      "file": "assets/product/plan-shopping.png",
-      "alt": "Screenshot of a TidyMap plan: the optional shopping list with real retailer products and prices",
-      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own sample plan." },
-      "status": "ready"
-    },
     "product-hero-3d": {
       "file": "assets/product/hero-3d.png",
       "alt": "The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf",
       "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the app's own 3D viewer; interim hero stand-in until real photography lands." },
-      "status": "ready"
-    },
-    "product-wizard-household": {
-      "file": "assets/product/wizard-household.png",
-      "alt": "Screenshot of the TidyMap planner asking who uses the space: kids and their ages, pets, and reaching or mobility needs",
-      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Screenshot of the app's own wizard household step with example selections." },
       "status": "ready"
     },
     "hero-pantry-after": {

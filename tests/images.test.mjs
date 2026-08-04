@@ -37,19 +37,18 @@ function appSource() {
   return out.join('\n');
 }
 
-/* Declared-but-unreachable keys are allowed only here, with a reason. The
-   manifest is a shipping contract, not a wish list: an entry nothing can
-   reach costs a reader real time (it reads as work owed) and the guard used
-   to be blind to it, which is how seventeen dead wizard-card entries sat in
-   the file long after the wizard settled on line art.
-   These four are captures of real screens, on disk and ready, staged for a
-   product/marketing section that has not been built yet. */
-const UNREFERENCED_OK = new Set([
-  'product-plan-map',
-  'product-plan-steps',
-  'product-plan-shopping',
-  'product-wizard-household',
-]);
+/* Declared-but-unreachable keys are allowed only here, each with a reason.
+   The manifest is a shipping contract, not a wish list: an entry nothing can
+   reach costs a reader real time, because it reads as work owed.
+
+   Empty, and worth keeping that way. Both batches that would have gone here
+   turned out to be superseded rather than pending — the wizard's seventeen
+   card photos (the design chose line art) and four landing-page screenshots
+   (2265978 replaced them with drawn explainers, on the grounds that an app
+   screenshot at three-across is "a picture of text at 6px"). An entry that
+   nothing references is far more often a decision someone already made than
+   art still owed, so check the history before adding a key here. */
+const UNREFERENCED_OK = new Set([]);
 
 test('manifest is versioned and shaped correctly', () => {
   assert.equal(typeof manifest.version, 'number');

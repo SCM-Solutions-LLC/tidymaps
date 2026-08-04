@@ -107,20 +107,24 @@ its key path, declare `{ file, status: "ready", license }` in the manifest.
 
 ## Product screenshots
 
-`assets/product/plan-map.png`, `plan-steps.png`, and `plan-shopping.png` are
-real screenshots of the sample pantry plan, captured from the running app at
-a 920px-wide viewport. `hero-3d.png` is the same plan in the 3D viewer
-(the interim hero visual), and `wizard-household.png` is the "Who uses this
-space?" step with example selections, shown beside How it works. To
-regenerate after a product change:
+Only one is still shown: `assets/product/hero-3d.png`, the sample plan in the
+3D viewer, which backs the hero photo as its `onerror` fallback. Regenerate it
+after a product change and keep it honest — no retouching beyond cropping.
 
-1. Serve the repo root over HTTP.
-2. Load the site, click "View a sample plan".
-3. Screenshot the "Where things go" map, the "Step-by-step" chapter, and the
-   "Optional purchases" chapter (enable upgrades in the demo).
+`plan-map.png`, `plan-steps.png`, `plan-shopping.png`, and
+`wizard-household.png` are **not** on the site, and that is deliberate rather
+than an oversight. Commit 2265978 replaced them with drawn explainers because
+an app screenshot scaled to sit three-across is a picture of text at 6px: it
+proves a plan exists without telling anyone what is in one. The real screens
+stay one click away behind "View a sample plan". Their manifest entries were
+removed on 2026-08-04 for the same reason the wizard's were — a key nothing
+references reads as work owed.
 
-Keep them honest: no retouching beyond cropping. If the product UI changes,
-regenerate rather than letting the landing page drift from reality.
+The files stay on disk. They are honest captures and cost nothing where they
+sit, and a future case for showing a screenshot at readable size (a docs page,
+a press kit) should not have to re-shoot them. Anything that does show one
+needs a fresh manifest entry, since the reachability guard will otherwise fail
+the build.
 
 ## Social / OG image
 

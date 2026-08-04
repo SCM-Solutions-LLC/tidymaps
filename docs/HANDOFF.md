@@ -60,10 +60,12 @@ license, `ready|pending`). `js/images.js hydrateImages()` fills ready images;
 pending/unknown keys fall through to each slot's declarative `onerror`.
 `tests/images.test.mjs` fails CI on undeclared keys, missing ready files, stray
 pending files, missing alt/license, stock/CDN hotlinks, and — since 2026-08-04
-— any declared key nothing references. 8 of 9 keys are `ready`; the one pending
-key is `hero-home`, a photograph, and flipping status to `ready` is the whole
-ship step. The seventeen `wiz-*` entries that used to sit here were a wizard
-card photo plan the design had already superseded with line art; see
+— any declared key nothing references. The manifest is down to 5 keys, 4 of
+them `ready`; the one pending key is `hero-home`, a photograph, and flipping
+status to `ready` is the whole ship step. Twenty-one entries came out on
+2026-08-04 — seventeen wizard card photos the design had superseded with line
+art, and four landing screenshots commit 2265978 had replaced with drawn
+explainers. Both were superseded work reading as owed work; see
 `docs/asset-plan.md` for why they went and why they should not come back.
 
 ### #4 Step-media pipeline (PR #21)
@@ -383,7 +385,10 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
 ## Open items / next actions
 
 1. **Watch the first live analysis after 2026-08-04.** Two unexercised changes
-   now ride on it, and they fail in different ways.
+   now ride on it, and they fail in different ways. Still unexercised as of
+   2026-08-04 evening: the last `plan_created` was 2026-07-30 05:09 UTC and
+   there is no `analyze-space` traffic at all in the last 24h of edge logs, so
+   nothing below has run once in production yet.
    - `cache_control` (v15) has never been called: nothing in CI can reach the
      real API, and the last real analysis predates it. A 200 in a plausible
      time means it is fine. If the API rejects the tuning, the function drops
@@ -398,19 +403,23 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
      report rather than trusting the 200. If they run long, the cap needs to
      move into `checkInvariants`, where a violation costs a retry instead of
      shipping.
-2. **The share round trip is verified client-side, not over the wire.** The
-   sandbox blocks HTTPS to `supabase.co`, so `tests/e2e/shared-plan-view.spec.mjs`
-   mocks `get-shared-space` and everything downstream of the response is real.
-   The remaining 30 seconds of work is a human one: open
-   `https://scm-solutions-llc.github.io/tidymaps/?share=1d6dcc74-5b57-486a-bc45-afb14524c5a0`
-   in a signed-out window and confirm a banner and a plan come back. Revoke
-   afterwards with `update spaces set share_id = null where id =
-   'e19b0766-3507-4c5a-b7d2-e78f67c4706e';` — that link is live right now.
-3. **Wait for the funnel to say something.** `plan_rated` is the new primary
-   signal and it has zero rows, because the ask shipped after the last session
-   of real usage. Read `plan_rated` before `feedback_submitted`: the first is
-   one tap on the report, the second needs someone to walk three more screens.
-   Both are joinable to `step_checked` depth per `anon_id`.
+2. ~~**Share round trip over the wire.**~~ **Done, in production, 2026-08-04.**
+   The edge logs show a run of `get-shared-space` 200s that afternoon and
+   `telemetry_events` carries three `shared_plan_viewed` rows under three
+   distinct `anon_id`s (15:10, 15:14, 16:16 UTC) — real visits an hour apart,
+   not one test run, and not the e2e spec, which mocks the function and cannot
+   reach production from the sandbox anyway. The link was then revoked
+   (`spaces.share_id` is null, `updated_at` 17:53) and the two
+   `get-shared-space` 404s after that timestamp confirm revocation works too.
+   Both halves of the feature are now exercised against production.
+3. **Wait for the funnel to say something.** Still nothing to read, confirmed
+   2026-08-04: `plan_rated` and `space_saved` have **zero rows** — neither name
+   appears in `telemetry_events` at all. The only names present are
+   `screen_viewed` (92), `shared_plan_viewed` (3), and `plan_created` (4, none
+   since 2026-07-30). `feedback` holds one row, from 2026-07-29. Read
+   `plan_rated` before `feedback_submitted`: the first is one tap on the
+   report, the second needs someone to walk three more screens. Both are
+   joinable to `step_checked` depth per `anon_id`.
 4. **#5 products:** SKU curation + real affiliate IDs (business), then flip the
    flags in `js/affiliates.js`. Every entry is still an empty string, so all 30
    catalog products link plain and no disclosure renders.
@@ -427,10 +436,15 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
    the permanent fallback. **Nothing on the site is broken for want of these.**
    The reverse guard now exists (`tests/images.test.mjs` fails on a declared
    key nothing references), so this class of drift cannot rebuild silently.
-   Four `product-*` screenshots sit in that suite's `UNREFERENCED_OK`: real
-   captures, on disk, ready, staged for a product section nobody has built.
-   `docs/asset-plan.md` claims `wizard-household.png` is "shown beside How it
-   works" — it is not shown anywhere. Build the section or drop the four.
+   The same guard then caught a second batch: `plan-map`, `plan-steps`,
+   `plan-shopping`, and `wizard-household`, which commit 2265978 had removed
+   from the landing page on purpose (an app screenshot at three-across is "a
+   picture of text at 6px") and replaced with drawn explainers. Their entries
+   went too on 2026-08-04; the files stay on disk for any future page that
+   shows a screenshot at readable size. `UNREFERENCED_OK` is now empty and
+   should stay that way — both batches that would have gone in it turned out
+   to be decisions already made, not art still owed. Only `hero-3d.png`
+   remains in use, as the hero's `onerror` fallback.
 
 ## Session conventions
 
