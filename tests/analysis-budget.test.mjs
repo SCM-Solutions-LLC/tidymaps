@@ -58,8 +58,29 @@ test('effort and thinking are set explicitly, not left to the model default', ()
 test('a model that rejects the tuning degrades to slow, not to broken', () => {
   // Nothing in CI can send a real request, so the tuning ships unverified.
   assert.match(fn, /let tuningRejected = false;/);
-  assert.match(fn, /res\.status === 400 && \/output_config\|effort\|thinking\//);
-  assert.match(fn, /tuningRejected\s*\n?\s*\? \{ model: MODEL, max_tokens: 8192, messages \}/);
+  assert.match(fn, /res\.status === 400 && \/output_config\|effort\|thinking\|cache_control\//);
+  assert.match(fn, /tuningRejected\s*\n?\s*\? \{ model: MODEL, max_tokens: 8192, messages: untuned\(messages\) \}/);
+});
+
+test('the retry reads the photos from cache instead of re-processing them', () => {
+  // A retry re-sends every image; at ~100s of total budget that is most of
+  // what deciding to retry costs.
+  assert.match(fn, /cache_control: \{ type: 'ephemeral' \}/);
+  // The breakpoint belongs on the last block of the first user turn, so the
+  // cached prefix is every photo plus the prompt. Sitting on an image instead
+  // would leave the prompt text out of the cached prefix.
+  const turn = fn.slice(fn.indexOf('const content: unknown[]'), fn.indexOf('const requestId'));
+  assert.ok(
+    turn.lastIndexOf('cache_control') > turn.lastIndexOf('type: \'image\''),
+    'the cache breakpoint must come after the image blocks',
+  );
+});
+
+test('the untuned fallback drops cache_control too', () => {
+  // cache_control rides inside the messages, not alongside them: a fallback
+  // that rebuilt only the top level would re-send whatever just 400'd.
+  assert.match(fn, /function untuned\(/);
+  assert.match(fn, /cache_control: _drop, \.\.\.block/);
 });
 
 test('the client gives up before waiting forever, and says why', () => {

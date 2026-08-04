@@ -14,7 +14,8 @@ import { runDemo, requestInvite, initLanding, navHome } from './screens/landing.
 import { openProducts } from './screens/products.js';
 import { handleFiles } from './screens/capture.js';
 import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, buildResults, applySavedProgress, pickProduct, generateAfter, retryAnalysis } from './screens/results.js';
-import { submitFeedback } from './screens/feedback.js';
+import { submitFeedback, sendRate } from './screens/feedback.js';
+import { downloadShoppingList, sendShoppingList } from './planExport.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
 import { dashSignOut } from './screens/dashboard.js';
 import { openViewer3d, saveArrangement, resetArrangement } from './screens/viewer3d.js';
@@ -25,7 +26,8 @@ import { initializeRoute } from './startup.js';
 Object.assign(window, {
   go, goBack, goNext, restart,
   toast, uncheckAllUpgrades, setUpgrades,
-  runDemo, requestInvite, submitFeedback, navHome, openProducts,
+  runDemo, requestInvite, submitFeedback, sendRate, navHome, openProducts,
+  downloadShoppingList, sendShoppingList,
   handleFiles,
   toggleUpgrade, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, pickProduct, generateAfter, retryAnalysis,
   openAuth, closeAuth, sendAuthCode, verifyAuthCode, dashSignOut,

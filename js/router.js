@@ -5,6 +5,7 @@ import { getSession } from './auth.js';
 import { buildAll, buildCustomize } from './screens/index.js';
 import { runLoading } from './screens/loading.js';
 import { buildDashboard } from './screens/dashboard.js';
+import { buildFeedback } from './screens/feedback.js';
 import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
 
 /* ============================================================
@@ -103,6 +104,10 @@ export function go(id){
   }
   setFootHeightVar();
   if(id==='dashboard') buildDashboard();
+  // Rebuilt on entry, not once at startup: whether to ask at all depends on
+  // whether the report's inline ask was already answered, which is decided
+  // long after buildAll() runs.
+  if(id==='feedback') buildFeedback();
   // The plan is finished at 'done'. For signed-out visitors this is where the
   // landing page's photo promise is enforced: photos were only ever held in
   // memory for the analysis, and they're dropped here.

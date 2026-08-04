@@ -3,6 +3,7 @@ import { submitForm } from './api.js';
 import { state } from './state.js';
 import { toast } from './ui.js';
 import { areaFor } from './wizard-data.js';
+import { track } from './telemetry.js';
 
 /* Saved spaces: one row per organized area, media in the private
    space-media bucket under {user_id}/{space_id}/. */
@@ -49,7 +50,7 @@ export function defaultSpaceName(){
   return state.space ? areaFor(state.space).label : 'My space';
 }
 
-export async function saveSpace(name, { media=true }={}){
+export async function saveSpace(name, { media=true, auto=false }={}){
   const { c, u } = requireClient();
   const row = rowFromState(name);
   let spaceId = state.activeSpaceId;
@@ -61,6 +62,10 @@ export async function saveSpace(name, { media=true }={}){
     if(error) throw new Error('Saving failed — please try again.');
     spaceId = data.id;
     state.activeSpaceId = spaceId;
+    // Only the insert is reported. An update is a re-save of a space that has
+    // already been counted, and counting it again would make one diligent user
+    // look like a growing funnel.
+    track('space_saved', { auto:!!auto, space:String(state.space||'') });
   }
   if(media) await uploadPendingMedia(spaceId);
   return spaceId;
@@ -79,7 +84,7 @@ export async function autoSaveSpace(){
   if(state.shareView || !state.ai) return null;
   const isNew = !state.activeSpaceId;
   try{
-    const id = await saveSpace(defaultSpaceName(), { media:false });
+    const id = await saveSpace(defaultSpaceName(), { media:false, auto:true });
     // Say it once, when the space starts existing. Re-planning an open space
     // updates it quietly.
     if(isNew) toast('Saved to “My spaces”.');

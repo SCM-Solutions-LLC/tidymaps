@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { activeMapV2, activeSafetyNotes, activeProductNeeds } from './plan.js';
 import { areaFor } from './wizard-data.js';
+import { toast } from './ui.js';
 
 /* Plain-text renderings of the plan.
 
@@ -127,4 +128,45 @@ export function downloadText(filename, text) {
   a.remove();
   // Revoking immediately can cancel the download in some browsers.
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+/* The two actions themselves. They live here rather than on the save screen
+   because the report's shopping card offers the same two things, and a second
+   copy of them is how "Save shopping list" ended up on the report still
+   answering with a toast that claimed a save nothing had performed. */
+
+export function downloadChecklist() {
+  if (!state.ai) { toast('Build a plan first.'); return; }
+  downloadText(planFileName('checklist', 'txt'), checklistText());
+  toast('Checklist downloaded.');
+}
+
+export function downloadShoppingList() {
+  if (!state.ai) { toast('Build a plan first.'); return; }
+  downloadText(planFileName('shopping-list', 'txt'), shoppingListText());
+  toast('Shopping list downloaded.');
+}
+
+/* "Send" without a mail backend means handing it to the mail client the person
+   already uses. mailto has a practical length limit and silently truncates
+   past it, so anything long goes to the clipboard instead of arriving cut in
+   half — and the clipboard is the fallback again if no mail client answers. */
+const MAILTO_LIMIT = 1800;
+
+export async function sendShoppingList() {
+  if (!state.ai) { toast('Build a plan first.'); return; }
+  const body = shoppingListText();
+  const href = `mailto:?subject=${encodeURIComponent('TidyMap shopping list')}&body=${encodeURIComponent(body)}`;
+  if (href.length <= MAILTO_LIMIT) {
+    location.href = href;
+    toast('Opening your email with the list.');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(body);
+    toast('Shopping list copied — too long to email directly, so paste it wherever you like.');
+  } catch (_) {
+    downloadText(planFileName('shopping-list', 'txt'), body);
+    toast('Shopping list downloaded.');
+  }
 }
