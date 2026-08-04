@@ -21,30 +21,40 @@ let shelfPlacement='center';
 let rebuildTimer=null;
 let _buildScene=null, _attachDrag=null;
 
-/* Can this browser do WebGL at all? Probed on a throwaway canvas so the answer
-   never consumes a context from the real one — contexts are a capped resource
-   and burning one here is what we are trying to avoid. */
-function webglAvailable(){
-  try{
-    const probe=document.createElement('canvas');
-    const gl=probe.getContext('webgl2')||probe.getContext('webgl');
-    if(!gl) return false;
-    const lose=gl.getExtension&&gl.getExtension('WEBGL_lose_context');
-    if(lose) lose.loseContext();   // hand it straight back
-    return true;
-  }catch(_){ return false; }
-}
+/* There used to be a webglAvailable() pre-flight here that probed a throwaway
+   canvas and, if it got a context, called WEBGL_lose_context.loseContext() to
+   "hand it straight back". It was a veto: answer no and the viewer showed
+   hardware-acceleration advice without ever asking three.js for a real context.
+
+   Two things were wrong with that. Browsers cap how many context losses one
+   document may accumulate before they stop granting contexts at all, and the
+   router disposes the viewer on every navigation away, so each plan → 3D → plan
+   round trip deliberately burned one more. And the probe's verdict was final
+   while createRenderer below it already walks from an antialiased context down
+   to a bare one — so the fragile check could overrule the robust one and tell
+   somebody with a working GPU that their browser could not do 3D.
+
+   Now nothing decides but the renderer itself. The cost is downloading three.js
+   before discovering a genuinely WebGL-less browser, which is a one-time cost on
+   a click the user made on purpose; the benefit is that a browser which can run
+   this never gets told it cannot. */
 
 /* "Reloading usually fixes this" was wrong and it wasted people's time. A
    refused context is almost never transient: it is hardware acceleration
    switched off, a blocklisted driver, or a browser with WebGL disabled. Say
-   what actually helps, and make clear the plan itself is unaffected. */
-function webglHelpMessage(){
+   what actually helps, and make clear the plan itself is unaffected.
+
+   `reason` is the error the renderer actually threw. It is shown because the
+   advice below is a guess about someone else's machine: when it is the wrong
+   guess, the real message is the only thing that says so. */
+function webglHelpMessage(reason){
   return 'This browser could not start the 3D view, which needs WebGL. '
     + 'In Chrome, check Settings &rsaquo; System &rsaquo; “Use graphics acceleration when available”, '
     + 'then reopen the browser. Everything in your plan is on the previous screen — '
     + '<button class="btn btn-ghost btn-sm" type="button" onclick="go(\'results\')" '
-    + 'style="margin-left:4px">Back to the plan</button>';
+    + 'style="margin-left:4px">Back to the plan</button>'
+    + (reason ? '<span class="small muted" style="display:block;margin-top:8px">Reported by the browser: '
+        + escapeHtml(String(reason).slice(0,160)) + '</span>' : '');
 }
 
 /* A rod holds things that hang. itemYForSurface poses anything dropped on one
@@ -156,13 +166,6 @@ export async function openViewer3d(){
   if(view) return;
   restoreArrangementOptions();
   const canvas=document.getElementById('v3d-canvas');
-  // three.js is ~680KB. If the browser can't give a WebGL context at all,
-  // downloading it just to fail is wasted, so check first and skip straight to
-  // the advice.
-  if(!webglAvailable()){
-    status.innerHTML=webglHelpMessage();
-    return;
-  }
   status.textContent='Loading 3D view…';
   try{
     const [{ buildScene }, { attachDrag }]=await Promise.all([
@@ -227,7 +230,9 @@ export async function openViewer3d(){
     // A context failure is its own thing and has real advice; anything else
     // still shows the underlying reason.
     if((e&&e.code==='webgl-unavailable')||/webgl|context/i.test(String((e&&e.message)||e))){
-      status.innerHTML=webglHelpMessage();
+      // e.cause is the last thing WebGLRenderer threw; e.message is our own
+      // label, which tells the user nothing they can act on.
+      status.innerHTML=webglHelpMessage((e&&e.cause&&e.cause.message)||(e&&e.message));
       return;
     }
     const why=String((e&&e.message)||e).slice(0,140);
