@@ -310,16 +310,17 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
 - Migrations applied: 0001 init, 0002 storage, 0003 feedback,
   0004 invite_requests, 0005 sharing, 0006 telemetry,
   0007 atomic_usage_and_storage.
-- Edge functions live: `analyze-space` (v15), `render-after` (v11),
+- Edge functions live: `analyze-space` (v16), `render-after` (v11),
   `get-shared-space` (v4), `track-events` (v4), `submit-form` (v1). All
   `verify_jwt: false` — they check JWTs themselves so guests can call them.
   CORS allowlist in `_shared/cors.ts` (Pages, scmsolutions.org, tidymaps.ai,
   localhost:8000/8123).
-- **Production matches `main` as of 2026-08-04.** `analyze-space` v15 carries
-  `cache_control`, deployed after PR #48 merged rather than ahead of review;
-  `track-events` v4 carries the `plan_rated` / `space_saved` allowlist, which
-  went out *before* the client because an additive allowlist has to lead the
-  client that sends to it.
+- **Production matches `main` as of 2026-08-04.** `analyze-space` v16 carries
+  the step-length caps (task ≤8 words verb-first, why ≤12) and tells the model
+  the step animation exists, deployed after PR #50 merged rather than ahead of
+  review, same as v15's `cache_control` after #48; `track-events` v4 carries
+  the `plan_rated` / `space_saved` allowlist, which went out *before* the
+  client because an additive allowlist has to lead the client that sends to it.
 - After a `deploy_edge_function`, read the function back with
   `get_edge_function` and check the changed regions actually landed. The MCP
   tool takes file contents inline, so a deploy is a transcription of the repo
@@ -373,17 +374,28 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
 - ~~Feedback on the results screen~~ — shipped this session.
 - ~~`space_saved` telemetry event~~ — shipped and deployed (`track-events` v4).
 - ~~`cache_control` on the retry~~ — shipped and deployed (`analyze-space` v15).
+- ~~Step-length caps in the prompt~~ — shipped and deployed (`analyze-space`
+  v16). The old prompt bounded map-row whys at 14 words and said nothing at all
+  about step length, so a 9-word step was never out of spec.
 
 ## Open items / next actions
 
-1. **Watch the first live analysis after 2026-08-04.** `cache_control` is
-   deployed but has never been exercised: nothing in CI can call the real API,
-   and the last real analysis predates it. A 200 in a plausible time means it
-   is fine. If the API rejects the tuning, the function drops it and carries on
-   slow rather than broken — grep the edge logs for
-   `model rejected effort/thinking/cache tuning` before assuming otherwise.
-   The same caveat no longer applies to `effort`/`thinking`, which the
-   2026-07-30 run used successfully.
+1. **Watch the first live analysis after 2026-08-04.** Two unexercised changes
+   now ride on it, and they fail in different ways.
+   - `cache_control` (v15) has never been called: nothing in CI can reach the
+     real API, and the last real analysis predates it. A 200 in a plausible
+     time means it is fine. If the API rejects the tuning, the function drops
+     it and carries on slow rather than broken — grep the edge logs for
+     `model rejected effort/thinking/cache tuning` before assuming otherwise.
+     The same caveat no longer applies to `effort`/`thinking`, which the
+     2026-07-30 run used successfully.
+   - The v16 step caps cannot fail loudly at all. Nothing validates step
+     length server-side — `planSchema.js` only requires `task`/`time`/`why` to
+     be strings — so a model that ignores the 8-word cap produces a plan that
+     passes validation and renders long. Read the steps on the first real
+     report rather than trusting the 200. If they run long, the cap needs to
+     move into `checkInvariants`, where a violation costs a retry instead of
+     shipping.
 2. **The share round trip is verified client-side, not over the wire.** The
    sandbox blocks HTTPS to `supabase.co`, so `tests/e2e/shared-plan-view.spec.mjs`
    mocks `get-shared-space` and everything downstream of the response is real.
