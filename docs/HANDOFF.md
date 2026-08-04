@@ -59,10 +59,12 @@ scenario engine. Fixture tests in `tests/`.
 license, `ready|pending`). `js/images.js hydrateImages()` fills ready images;
 pending/unknown keys fall through to each slot's declarative `onerror`.
 `tests/images.test.mjs` fails CI on undeclared keys, missing ready files, stray
-pending files, missing alt/license, or stock/CDN hotlinks. 15 of 26 keys are
-`ready`; the 11 pending ones are all photographs and flipping status to `ready`
-is the whole ship step. See open item 5 for why that count overstates the gap —
-nine of them are referenced by nothing at all.
+pending files, missing alt/license, stock/CDN hotlinks, and — since 2026-08-04
+— any declared key nothing references. 8 of 9 keys are `ready`; the one pending
+key is `hero-home`, a photograph, and flipping status to `ready` is the whole
+ship step. The seventeen `wiz-*` entries that used to sit here were a wizard
+card photo plan the design had already superseded with line art; see
+`docs/asset-plan.md` for why they went and why they should not come back.
 
 ### #4 Step-media pipeline (PR #21)
 Clips are keyed `{action}-{motif}-{glyph}`: 13 `STEP_ART` scene types × 4
@@ -412,17 +414,23 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
 4. **#5 products:** SKU curation + real affiliate IDs (business), then flip the
    flags in `js/affiliates.js`. Every entry is still an empty string, so all 30
    catalog products link plain and no disclosure renders.
-5. **Media production (design-owned).** The pending count overstates this. All
-   11 pending manifest keys are photographs, but only `hero-home` and
-   `sample-after` appear as `data-img` anywhere — the nine `wiz-room-*` /
-   `wiz-area-*` entries are a shot list, referenced by nothing, and the wizard
-   draws SVG art instead. `hero-home` already has a working declarative `src`
-   (`pantry-after.png`); its pending entry is an upgrade, not a hole. **Nothing
-   on the site is broken for want of these.** Step clips are likewise still
-   empty (`data/step-media.json`) with the inline SVGs as the permanent
-   fallback. Note that `tests/images.test.mjs` only checks that referenced keys
-   are declared, never that declared keys are referenced, which is why 24
-   unused entries sit there quietly.
+5. **Media production (design-owned).** Now one slot, not eleven. The wizard
+   card photo plan was retired on 2026-08-04: seventeen `wiz-*` entries went,
+   because the design had already settled on line art (`css/components.css`
+   requires one "line-art language" across every card, and
+   `wizard-illustration-motion.spec.mjs` requires a detail that *moves at
+   rest*, which a photograph cannot do). Nothing referenced them, so nothing
+   changed on the site. See `docs/asset-plan.md` before re-adding any.
+   The single pending key left is `hero-home`, and it already has a working
+   declarative `src` (`pantry-after.png`) — an upgrade, not a hole. Step clips
+   are likewise still empty (`data/step-media.json`) with the inline SVGs as
+   the permanent fallback. **Nothing on the site is broken for want of these.**
+   The reverse guard now exists (`tests/images.test.mjs` fails on a declared
+   key nothing references), so this class of drift cannot rebuild silently.
+   Four `product-*` screenshots sit in that suite's `UNREFERENCED_OK`: real
+   captures, on disk, ready, staged for a product section nobody has built.
+   `docs/asset-plan.md` claims `wizard-household.png` is "shown beside How it
+   works" — it is not shown anywhere. Build the section or drop the four.
 
 ## Session conventions
 
