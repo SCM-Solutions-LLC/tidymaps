@@ -241,8 +241,16 @@ textarea{resize:vertical;min-height:84px}
 .prod a{overflow-wrap:anywhere}
 .prod.excluded{opacity:.5}
 .prod > input[type=checkbox]{width:19px;height:19px;margin-top:2px;accent-color:var(--primary);flex:none}
-.prod .pic{width:46px;height:46px;border-radius:10px;background:var(--clay-bg);display:grid;place-items:center;flex:none;color:var(--clay)}
-.prod .pic svg{width:22px;height:22px}
+/* Every product in the catalog currently ships without a photo, so .pic is the
+   type glyph in practice, not a fallback for one. At 46px it read as a bullet
+   point rather than a picture of the thing being suggested. Sized up so the
+   shape is legible; when real photography lands, img fills the same box. */
+.prod .pic{width:64px;height:64px;border-radius:10px;background:var(--clay-bg);display:grid;place-items:center;flex:none;color:var(--clay);overflow:hidden;position:relative}
+.prod .pic svg{width:32px;height:32px}
+.prod .pic img{width:100%;height:100%;object-fit:cover}
+/* the glyph is a fallback: hide it whenever a real photo loaded */
+.prod .pic:not(.noimg) .pic-ico{display:none}
+@media(max-width:419px){.prod .pic{width:54px;height:54px}.prod .pic svg{width:27px;height:27px}}
 .prod h4{margin:0 0 4px;font-size:15px;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
 .prod .pwhy{font-size:13px;color:var(--ink-3);line-height:1.45}
 /* chosen product line: link, retailer, and fit badge wrap as whole units */
@@ -324,7 +332,12 @@ body[data-flow="1"] .site-footer{display:none}
 .problems .pt.open .pt-d{display:block}
 
 /* real per-step tips */
-.step-tip{display:flex;gap:9px;align-items:flex-start;background:var(--sage-bg);border:1px solid var(--sage-line);border-radius:10px;padding:11px 13px;margin-top:10px;font-size:13.5px;color:var(--sage-ink);line-height:1.5}
+/* Now holds the why as well as the how, so it stacks instead of sitting on one
+   row. .tip-how keeps the original icon-beside-text layout for the hint. */
+.step-tip{background:var(--sage-bg);border:1px solid var(--sage-line);border-radius:10px;padding:11px 13px;margin-top:10px;font-size:13.5px;color:var(--sage-ink);line-height:1.5}
+.step-tip .why2{margin:0 0 9px;font-size:13.5px;color:var(--sage-ink)}
+.step-tip .why2:only-child{margin-bottom:0}
+.tip-how{display:flex;gap:9px;align-items:flex-start}
 .step-tip svg{width:16px;height:16px;flex:none;margin-top:1px}
 
 /* before/after preview: single-line rows so mode switches never resize it */
@@ -366,12 +379,21 @@ body[data-flow="1"] .site-footer{display:none}
 
 /* ---------- Animated step illustrations ---------- */
 .task{position:relative}
-.step-art{position:absolute;top:12px;right:12px;width:58px;height:58px;border-radius:12px;background:var(--surface-2);color:var(--ink-3);display:grid;place-items:center;pointer-events:none;overflow:hidden}
-.step-art .sa{width:42px;height:42px;overflow:visible}
+/* The scene is the point of the card: it shows the motion the step is asking
+   for, which is faster to read than the sentence describing it. It used to be
+   a 58px badge pinned in the corner, small enough that the animation inside it
+   could not be made out — decoration next to the text rather than the thing
+   doing the explaining. Now it is a band under the task name at a size the
+   motion actually reads at, and the text has the full column back. */
+.step-art{display:grid;place-items:center;width:100%;height:98px;margin:11px 0 3px;
+  border-radius:12px;background:var(--surface-2);color:var(--ink-3);
+  pointer-events:none;overflow:hidden}
+.step-art .sa{width:78px;height:78px;overflow:visible}
 /* a produced clip is playing: the inline SVG scene underneath steps aside */
 .step-art.has-clip .sa{visibility:hidden}
-.task .tname,.task .why2{padding-right:64px}
-@media(max-width:419px){.step-art{width:46px;height:46px}.step-art .sa{width:34px;height:34px}.task .tname,.task .why2{padding-right:52px}}
+.step-art video{width:100%;height:100%;object-fit:cover}
+@media(max-width:419px){.step-art{height:96px}.step-art .sa{width:68px;height:68px}}
+@media(prefers-reduced-motion:reduce){.step-art .sa *{animation:none!important}}
 
 .sa .d1,.sa .u1,.sa .c1{fill:var(--primary-bg);stroke:var(--primary)}
 .sa .d2,.sa .u2,.sa .c2{fill:var(--honey);stroke:var(--honey-2)}

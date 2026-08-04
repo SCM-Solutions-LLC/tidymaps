@@ -471,17 +471,20 @@ export function renderSteps(list){
     t.innerHTML=`
       <button type="button" class="check" onclick="toggleStep(${i})" aria-label="Mark step ${i+1} complete" aria-pressed="false">${ICON.check}</button>
       <div>
-        <span class="step-art" data-step-media="${mediaKeyFor(s, state.space)}">${art}</span>
         <div class="num">Step ${i+1}</div>
         <div class="tname">${escapeHtml(s.t)}</div>
+        <span class="step-art" data-step-media="${mediaKeyFor(s, state.space)}">${art}</span>
         <div class="meta"><span class="time">${SVG.clock} ${escapeHtml(s.m)}</span></div>
-        <div class="why2"><strong>Why:</strong> ${escapeHtml(s.w)}</div>
         <div class="acts">
           <button class="mark" onclick="toggleStep(${i})">Mark complete</button>
           <button onclick="skipStep(${i})">Skip</button>
-          <button onclick="toggleStepTip(${i})">Need help?</button>
+          <button class="whybtn" onclick="toggleStepTip(${i})"
+                  aria-expanded="false" aria-controls="step-tip-${i}">Why?</button>
         </div>
-        <div class="step-tip hide" id="step-tip-${i}">${ICON.why}<span>${escapeHtml(tipFor(s))}</span></div>
+        <div class="step-tip hide" id="step-tip-${i}">
+          <div class="why2"><strong>Why:</strong> ${escapeHtml(s.w)}</div>
+          <div class="tip-how">${ICON.why}<span>${escapeHtml(tipFor(s))}</span></div>
+        </div>
       </div>`;
     wrap.appendChild(t);
   });
@@ -492,9 +495,16 @@ export function renderSteps(list){
   // fire-and-forget — the inline SVGs above are already the full experience.
   hydrateStepMedia(wrap).catch(()=>{});
 }
+/* Holds both the "why" and the how-to hint. They used to be separate — the why
+   as permanent prose on every card, the hint behind a button — which put a
+   sentence of explanation on screen eight times over on a checklist someone
+   reads standing up with their hands full. One disclosure, closed by default. */
 export function toggleStepTip(i){
   const el=document.getElementById('step-tip-'+i);
-  if(el) el.classList.toggle('hide');
+  if(!el) return;
+  const open=el.classList.toggle('hide')===false;
+  const btn=document.querySelector('#task-'+i+' .whybtn');
+  if(btn) btn.setAttribute('aria-expanded', String(open));
 }
 
 /* ---------- "One at a time" focus mode for the checklist ---------- */

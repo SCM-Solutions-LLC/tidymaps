@@ -93,7 +93,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "existingLede": string,
   "existing": [{"icon": string, "title": string, "detail": string}],
   "dontBuy": string,
-  "steps": [{"task": string, "time": string, "why": string}],   // ordered steps, time like "10 min". The exact count allowed for this request is in "Enforced limits" below.
+  "steps": [{"task": string, "time": string, "why": string}],   // ordered steps, time like "10 min". task: an instruction, max 8 words, starts with a verb. why: max 12 words, one sentence. The exact count allowed for this request is in "Enforced limits" below.
   "time": string,                              // total estimate, e.g. "45-90 min"
   "cost": string                               // e.g. "$0 / $40-80"
 }
@@ -133,6 +133,8 @@ BREVITY IS A HARD REQUIREMENT. This plan is read on a phone by someone standing 
 - Every "why" is ONE sentence. Say the reason, stop. Do not add a second sentence telling the user what to put there: the zone already says that.
 - Never repeat in a "why" what the level or zone name already says.
 - Prefer 2 sharp problems over 6 padded ones. Fewer, better, shorter.
+- steps.task is an instruction, not a description of one: start with a verb and stop at 8 words. "Group cans by type" beats "Take all of the canned goods and group them together by what kind they are". The step's why carries the reason, so the task must not.
+- The report shows an animation of each step next to it. Do not narrate what that picture already shows: no "as shown", no describing the motion, no restating the task inside its own why.
 Keep all text concise and practical. If the images do not show a storage space, still return the JSON with spaceType:"Unclear" and explain in summary.`;
 
 interface Body {
