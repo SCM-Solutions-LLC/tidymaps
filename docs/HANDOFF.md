@@ -4,10 +4,15 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-04, at the close of the session that moved the
-feedback ask onto the report, verified the share link in a browser, and
-**confirmed the AI analysis path works in production**. Everything through PR
-#47 is merged; `main` is the single source of truth.
+**Last refreshed:** 2026-08-05, at the close of the session that moved the
+feedback ask onto the report, **verified the share round trip against
+production**, deployed the `analyze-space` step-length caps, and cleared
+twenty-one dead entries out of the imagery manifest. Everything through PR #53
+is merged; `main` is the single source of truth.
+
+Read the open items with one thing in mind: **all four are waiting on someone
+using the app, not on code.** Nothing below is blocked on a change anybody can
+write.
 
 ## Product state in one paragraph
 
@@ -30,10 +35,10 @@ shared-plan view.
 |---|------|--------|----|
 | 1 | Plan generation engine | ✅ shipped, and **confirmed live** 07-30 | #19 |
 | 2 | Vision detection hardening | ✅ shipped | #20 |
-| 3 | Imagery library pipeline | ✅ shipped (art itself pending, by design) | #20 |
+| 3 | Imagery library pipeline | ✅ shipped; manifest now 5 keys, 1 photo pending | #20, #52, #53 |
 | 4 | Step-media pipeline | ✅ shipped (clips pending, by design) | #21 |
 | 5 | Products | ⏸ code done; blocked on business inputs | — |
-| 6 | Persistence: share links + photo promise | ✅ shipped + deployed + walked | #23 |
+| 6 | Persistence: share links + photo promise | ✅ shipped + deployed + **proven in production** | #23 |
 | 7 | Automated QA (Playwright in CI) | ✅ shipped | #22 |
 | 8 | Telemetry + feedback loop | ✅ shipped + deployed; **ask now on the report** | #24 |
 
@@ -210,7 +215,7 @@ panel marked "After" was the user's original photo. One line of CSS
 Also delivered: `supabase/queries/telemetry.sql` + `docs/telemetry.md` (item
 #4 of the previous open list).
 
-## What this session changed (2026-08-04)
+## What this session changed (2026-08-04 → 08-05, PRs #48–#53)
 
 **The feedback ask moved onto the report.** Telemetry gave one unambiguous
 reading: 15 `screen_viewed` for `results`, and **zero** for `customize`, `save`,
@@ -240,7 +245,24 @@ saved" and "List sent" without doing either — the same defect PR #46 removed
 from the save screen, still live one screen earlier. Both call the real
 exporters now. And `space_saved` + `cache_control` landed (see below).
 
-## Production health as of 2026-08-04
+**Then the manifest turned out to be describing work nobody owed.** `#52` and
+`#53` removed twenty-one entries from `data/images.json` — seventeen `wiz-*`
+wizard card photos and four landing screenshots. Every one was unreferenced,
+and in both cases the design had already decided against them: the wizard
+settled on line art (`css/components.css` requires one "line-art language",
+and `wizard-illustration-motion.spec.mjs` requires a detail that *moves at
+rest*, which a photo cannot), and commit 2265978 replaced the screenshots with
+drawn explainers because an app screenshot at three-across is "a picture of
+text at 6px". They read as a shot list because the guard only ever checked
+that referenced keys were declared, never that declared keys were referenced.
+It now checks both, so the same drift cannot rebuild quietly.
+
+The lesson generalizes past imagery: **an entry nothing references is far more
+often a decision someone already made than work still owed.** Both batches had
+a plausible "staged for later" story, and both were wrong — the git history
+said so in each case. Check it before believing the backlog.
+
+## Production health as of 2026-08-05
 
 1. ~~Zero saved spaces~~ — fixed 07-28.
 2. ~~**`analyze-space` timing out in production**~~ — fixed, deployed, and now
@@ -265,10 +287,15 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
    from that browser. This is Do Not Track / Global Privacy Control doing
    exactly what it should. Do not read a quiet week as low usage — check
    `usage_events` first (query 0 in the SQL file).
-4. **The numbers are a smoke test, not a trend.** As of 2026-08-04: 1 user,
-   1 saved space, 1 feedback row, 93 telemetry events, 79 usage events, and
-   nothing at all since 2026-07-30. `analyze-space` has been called 13 times
-   ever. Do not reason about conversion from this.
+4. **The numbers are a smoke test, not a trend.** As of 2026-08-05: 1 user,
+   1 saved space, 1 feedback row, 99 telemetry events (last 08-04 16:16 UTC),
+   92 usage events (last 08-04 18:03 UTC). Do not reason about conversion from
+   this.
+   - **`analyze-space` has been called 13 times ever, and that number has not
+     moved since 2026-07-30.** It is the cleanest single check on open item 1:
+     if it still reads 13, neither `cache_control` nor the v16 step caps have
+     run in production, whatever else the tables show. The 08-04 activity was
+     share-link traffic and this session's own testing, not a new analysis.
 
 ## Architecture crib sheet
 
@@ -372,23 +399,38 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
   (Production health #2). This one is settled; do not re-open it on the
   strength of `plan_created` telemetry alone, which still reads all-`demo`
   because the only AI run happened in a browser sending GPC.
-- ~~Live share-link round trip~~ — a link is minted on the saved pantry and the
-  visitor's half is covered by `tests/e2e/shared-plan-view.spec.mjs`. It found
-  the "2 adults" bug. See the caveat in open item 2 below.
+- ~~Live share-link round trip~~ — **closed over the wire, 2026-08-04**, not
+  just in a mock. `tests/e2e/shared-plan-view.spec.mjs` covers the visitor's
+  half client-side (it found the "2 adults" bug), but the proof is in
+  production: edge logs show a run of `get-shared-space` 200s that afternoon,
+  and `telemetry_events` carries three `shared_plan_viewed` rows under three
+  distinct `anon_id`s (15:10, 15:14, 16:16 UTC) — real visits an hour apart,
+  not one test run, and not the e2e spec, which mocks the function and cannot
+  reach production from the sandbox anyway. The link was then revoked
+  (`spaces.share_id` null, `updated_at` 17:53) and the `get-shared-space` 404s
+  after that timestamp exercise the revoke path too. Both halves are done; no
+  live share link is outstanding.
 - ~~Feedback on the results screen~~ — shipped this session.
 - ~~`space_saved` telemetry event~~ — shipped and deployed (`track-events` v4).
 - ~~`cache_control` on the retry~~ — shipped and deployed (`analyze-space` v15).
 - ~~Step-length caps in the prompt~~ — shipped and deployed (`analyze-space`
   v16). The old prompt bounded map-row whys at 14 words and said nothing at all
   about step length, so a 9-word step was never out of spec.
+- ~~Dead imagery-manifest entries~~ — 21 removed across #52 and #53, and a
+  reachability guard added so they cannot rebuild silently. Both batches read
+  as art still owed and were in fact decisions already made: seventeen `wiz-*`
+  card photos (the design chose line art) and four landing screenshots (commit
+  2265978 replaced them with drawn explainers). Nothing on the site changed —
+  nothing had referenced any of them.
 
 ## Open items / next actions
 
 1. **Watch the first live analysis after 2026-08-04.** Two unexercised changes
    now ride on it, and they fail in different ways. Still unexercised as of
-   2026-08-04 evening: the last `plan_created` was 2026-07-30 05:09 UTC and
-   there is no `analyze-space` traffic at all in the last 24h of edge logs, so
-   nothing below has run once in production yet.
+   2026-08-05: `select count(*) from usage_events where fn = 'analyze-space'`
+   reads **13**, unchanged since 2026-07-30, and the last `plan_created` was
+   2026-07-30 05:09 UTC. Re-run that count first — while it says 13, nothing
+   below has run in production and there is nothing to check yet.
    - `cache_control` (v15) has never been called: nothing in CI can reach the
      real API, and the last real analysis predates it. A 200 in a plausible
      time means it is fine. If the API rejects the tuning, the function drops
@@ -403,16 +445,7 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
      report rather than trusting the 200. If they run long, the cap needs to
      move into `checkInvariants`, where a violation costs a retry instead of
      shipping.
-2. ~~**Share round trip over the wire.**~~ **Done, in production, 2026-08-04.**
-   The edge logs show a run of `get-shared-space` 200s that afternoon and
-   `telemetry_events` carries three `shared_plan_viewed` rows under three
-   distinct `anon_id`s (15:10, 15:14, 16:16 UTC) — real visits an hour apart,
-   not one test run, and not the e2e spec, which mocks the function and cannot
-   reach production from the sandbox anyway. The link was then revoked
-   (`spaces.share_id` is null, `updated_at` 17:53) and the two
-   `get-shared-space` 404s after that timestamp confirm revocation works too.
-   Both halves of the feature are now exercised against production.
-3. **Wait for the funnel to say something.** Still nothing to read, confirmed
+2. **Wait for the funnel to say something.** Still nothing to read, confirmed
    2026-08-04: `plan_rated` and `space_saved` have **zero rows** — neither name
    appears in `telemetry_events` at all. The only names present are
    `screen_viewed` (92), `shared_plan_viewed` (3), and `plan_created` (4, none
@@ -420,10 +453,10 @@ exporters now. And `space_saved` + `cache_control` landed (see below).
    `plan_rated` before `feedback_submitted`: the first is one tap on the
    report, the second needs someone to walk three more screens. Both are
    joinable to `step_checked` depth per `anon_id`.
-4. **#5 products:** SKU curation + real affiliate IDs (business), then flip the
+3. **#5 products:** SKU curation + real affiliate IDs (business), then flip the
    flags in `js/affiliates.js`. Every entry is still an empty string, so all 30
    catalog products link plain and no disclosure renders.
-5. **Media production (design-owned).** Now one slot, not eleven. The wizard
+4. **Media production (design-owned).** Now one slot, not eleven. The wizard
    card photo plan was retired on 2026-08-04: seventeen `wiz-*` entries went,
    because the design had already settled on line art (`css/components.css`
    requires one "line-art language" across every card, and
