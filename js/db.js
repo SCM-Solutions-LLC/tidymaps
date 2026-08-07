@@ -167,6 +167,11 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   state.space = data.space_type;
   state.goal = data.goal;
   state.dims = data.dims;
+  // Same contract as restoreGuestDraft: the measure screen renders from
+  // dimsFt, so reopening a saved space must rehydrate it or "Edit answers"
+  // shows the startup defaults against this plan's real measurements.
+  state.dimsFt = data.dims && data.dims.w_in
+    ? { w: data.dims.w_in/12, h: data.dims.h_in/12, d: data.dims.d_in/12 } : null;
   if(data.household) state.household = data.household;
   if(data.prefs){
     state.prefs = new Set(data.prefs.prefs||[]);

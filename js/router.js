@@ -82,6 +82,10 @@ export function go(id){
       stepEl.style.display='inline';
     } else {
       stepEl.style.display='none';
+      // Also clear the text: `.step-counter:not(:empty) ~ .restart` hides
+      // "Start over" whenever the counter holds anything, so stale "Step 12
+      // of 12" text kept the button hidden for the rest of the session.
+      stepEl.textContent='';
     }
   }
   // footer

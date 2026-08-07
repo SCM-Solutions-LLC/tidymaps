@@ -276,3 +276,18 @@ test('the pet and notes answers reach the wizard, the state, and the prompt', ()
   assert.match(plan, /notes,/);
   assert.match(prompt, /pets/i, 'the prompt has no pet rule, so pets.types would be ignored');
 });
+
+/* Re-confirming the setup card that is already selected (Back, or Review's
+   Edit) must not wipe the measurements typed on the next step. */
+test('setSetup keeps user measurements when the same card is re-clicked', async () => {
+  const { state } = await import('../js/state.js');
+  const { setArea, setSetup } = await import('../js/screens/wizard.js');
+  setArea('garage', 'garage');            // preselects 'utility' with defaults
+  setSetup('utility');                    // the user actually picks it
+  state.dimsFt = { w: 12, h: 6.5, d: 1.5 };
+  state.dims = { w_in: 144, h_in: 78, d_in: 18, shelves: null };
+  setSetup('utility');                    // re-confirm the same card
+  assert.equal(state.dims.w_in, 144, 're-clicking the selected setup reset the width');
+  setSetup('wallcab');                    // a REAL change re-applies defaults
+  assert.notEqual(state.dims.w_in, 144);
+});
