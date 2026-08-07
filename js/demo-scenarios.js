@@ -1446,27 +1446,86 @@ function isPresent(v) {
 
 const KID_WORDS = /kid|child|little hands|small hands/i;
 
+/* Kid-phrase rewrites, applied before the sentence-level scrub. Deleting
+   whole sentences was how the garage's chemical warning became "Placed here
+   for easy, safe access." for any household without kids: the warnings name
+   children AND pets (and the hazard itself) in one sentence, so the hazard
+   rationale went down with the kid mention. Each rule keeps the sentence and
+   removes only the kid reference — naming pets when the household has them,
+   falling back to neutral phrasing when it doesn't. */
+const KID_PHRASES = [
+  // longer patterns first, so "children and pets" wins over "children"
+  [/(?:well )?above kid and pet reach/gi, 'well above pet reach', 'up high, out of easy reach'],
+  [/away from kid and pet reach/gi, 'away from pet reach', 'out of easy reach'],
+  [/away from (?:children|kids) and pets/gi, 'away from pets', 'out of easy reach'],
+  [/out of reach for children and pets/gi, 'out of reach of pets', 'out of easy reach'],
+  [/,? out of reach for children/gi, '', ''],
+  [/,? and kid snacks stay within reach/gi, '', ''],
+  [/ and kids’ toys/gi, '', ''],
+  [/guests and kids/gi, 'guests', 'guests'],
+  [/, kid-safe(?= items)/gi, '', ''],
+  [/, behind a latch if small kids are in the house/gi, '', ''],
+  [/, out of low drawers kids open/gi, '', ''],
+  [/,? above kid reach/gi, '', ''],
+  [/ where small hands explore/gi, '', ''],
+];
+
+function dekidText(text, petsPresent) {
+  let t = String(text || '');
+  for (const [re, withPets, without] of KID_PHRASES) t = t.replace(re, petsPresent ? withPets : without);
+  if (KID_WORDS.test(t)) {
+    // anything a phrase rule doesn't cover is a purely-kid sentence: drop it
+    t = t.split(/(?<=[.!])\s+/).filter(s => !KID_WORDS.test(s)).join(' ');
+  }
+  return t.trim();
+}
+
 function applyHousehold(plan, household) {
   const kidsPresent = isPresent(household && household.kids && household.kids.present);
 
   // Safety content fires ONLY when relevant: the base scenarios are written
   // for a family household, so when no kids are in the picture the
   // kid-specific notes, flags, and placement reasons must come out — a
-  // no-kid household seeing "so small hands can reach them" is a bug.
+  // no-kid household seeing "so small hands can reach them" is a bug. That
+  // covers every user-visible field: zone labels, item lists, and category
+  // chips leaked "Kid snacks" long after safetyNotes were being filtered.
   // Exception: the Kids' storage space is about kids by definition.
   if (!kidsPresent && !/kids/i.test(plan.spaceType || '')) {
-    plan.safetyNotes = (plan.safetyNotes || []).filter(n => !KID_WORDS.test(n));
+    const petsPresent = isPresent(household && household.pets && household.pets.present);
+    const scrub = (s) => dekidText(s, petsPresent);
+    plan.summary = scrub(plan.summary) || plan.summary;
+    plan.safetyNotes = (plan.safetyNotes || []).map(scrub).filter(Boolean);
+    plan.problems = (plan.problems || []).map(scrub).filter(Boolean);
+    plan.opportunities = (plan.opportunities || []).map(scrub).filter(Boolean);
+    plan.categories = (plan.categories || []).filter(c => !KID_WORDS.test(c));
     (plan.map || []).forEach(m => {
-      if (KID_WORDS.test(m.why || '')) {
-        // scrub kid-referencing sentences from placement rationales too
-        const kept = String(m.why).split(/(?<=[.!])\s+/).filter(s => !KID_WORDS.test(s));
-        m.why = kept.join(' ').trim() || 'Placed here for easy, safe access.';
-      }
+      m.items = (m.items || []).filter(it => !KID_WORDS.test(it && it.name || ''));
+      m.zone = String(m.zone || '').split(' · ').filter(seg => !KID_WORDS.test(seg)).join(' · ')
+        || (m.items.length ? m.items.map(i => i.name).slice(0, 3).join(' · ') : 'Flexible space');
+      m.why = scrub(m.why) || 'Placed here for easy, safe access.';
       if (!m.safety) return;
-      if (m.safety.flag === 'kid-safe' || KID_WORDS.test(m.safety.why || '')) {
+      if (m.safety.flag === 'kid-safe') {
         m.safety = { flag: null, why: null };
+      } else if (KID_WORDS.test(m.safety.why || '')) {
+        // keep-high / lock-or-latch flags exist because the items are
+        // hazardous, not because of who lives here — the flag stays, only
+        // the kid reference in its reason goes.
+        m.safety.why = scrub(m.safety.why)
+          || (m.safety.flag === 'lock-or-latch'
+            ? 'Keep this zone latched or locked.'
+            : 'Keep these items up high, out of easy reach.');
       }
     });
+    plan.steps = (plan.steps || []).filter(st => {
+      const task = scrub(st.task);
+      if (!task) return false;
+      st.task = task;
+      st.why = scrub(st.why);
+      return true;
+    });
+    plan.existingLede = scrub(plan.existingLede) || plan.existingLede;
+    (plan.existing || []).forEach(e => { e.detail = scrub(e.detail) || e.detail; });
+    plan.dontBuy = scrub(plan.dontBuy) || plan.dontBuy;
     plan.productNeeds = (plan.productNeeds || []).filter(p =>
       p.type !== 'safety-latch' || !KID_WORDS.test(p.purpose || ''));
   }
