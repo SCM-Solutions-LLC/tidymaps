@@ -32,14 +32,17 @@ const KIDS = { adults: 2, kidCount: 2, petCount: 0, kids: { present: 'yes', ages
 const ALL_SETUPS = Object.entries(SETUP_TYPES).flatMap(([space, list]) =>
   list.map(t => ({ space, id: t.id, label: t.label })));
 
-function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping = 'Open to a few ideas', effort = 'Weekend reset' } = {}) {
+function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping = 'Open to a few ideas', effort = 'Weekend reset', styles = null } = {}) {
   const d = dimsFt || SETUP_DIMS[id];
   state.room = 'x'; state.space = space; state.setup = id;
   state.setupLabel = (SETUP_TYPES[space].find(t => t.id === id) || {}).label || id;
   state.dims = { w_in: Math.round(d.w * 12), h_in: Math.round(d.h * 12), d_in: Math.round(d.d * 12), shelves: null };
-  state.goals = []; state.goal = null; state.styles = []; state.cats = []; state.detected = [];
+  state.goals = []; state.goal = null; state.styles = styles || []; state.cats = []; state.detected = [];
   state.shoppingPref = shopping;
-  state.prefs = new Set(shopping === 'Use what I have' ? ['Use only what I already own'] : ['Open to buying storage']);
+  state.prefs = new Set([
+    ...(shopping === 'Use what I have' ? ['Use only what I already own'] : ['Open to buying storage']),
+    ...prefsForStyles(styles || []),
+  ]);
   state.budget = shopping === 'Use what I have' ? '$0' : null;
   state.upgrades = shopping !== 'Use what I have';
   // Takes the effort from the caller. Hardcoding it here silently defeated
@@ -319,7 +322,7 @@ test('every level cap actually constrains its archetype', () => {
 /* ---------- second-round review findings ---------- */
 
 import { planMinutes, EFFORT_STEPS } from '../js/personalize.js';
-import { SPACE_CFG, goalIdFor } from '../js/wizard-data.js';
+import { SPACE_CFG, goalIdFor, STYLESETS, prefsForStyles } from '../js/wizard-data.js';
 
 test('the headline time always matches the checklist under it', () => {
   // The effort label used to set the time on its own, so a two-level rack
@@ -691,5 +694,29 @@ test('a plan never asks for clear containers and an opaque front at once', () =>
     const text = p.steps.map(x => x.t).join(' | ');
     assert.ok(!(/opaque/i.test(text) && /clear containers/i.test(text)),
       `${s.space}/${s.id}: asks for both — ${text}`);
+  }
+});
+
+test('every style the wizard offers changes the plan and cites itself', () => {
+  /* The style step reads as a taste question. It only earns that if picking
+     one changes something: seven of the 27 cards resolved to no preference,
+     and a wizard that asks and then ignores is worse than one that never
+     asked. Compares the whole plan, not just the checklist — "Minimal look"
+     trims what each zone shows and adds a line to the summary without
+     touching a single step. */
+  const shape = (p) => JSON.stringify([p.steps.map(s => s.t + '|' + s.w), p.summary,
+    p.map.map(m => [m.items, m.why, (m.safety || {}).why])]);
+  for (const s of ALL_SETUPS) {
+    const styles = STYLESETS[s.space] || [];
+    assert.ok(styles.length, `${s.space}: no styles to check`);
+    const bare = shape(planFor(s, { household: NO_KIDS }));
+    for (const style of styles) {
+      const p = planFor(s, { household: NO_KIDS, styles: [style.label] });
+      assert.notEqual(shape(p), bare,
+        `${s.space}/${s.id}: picking "${style.label}" leaves the plan byte-identical`);
+      const cited = [p.summary, ...p.steps.map(x => x.w || ''), ...p.opportunities]
+        .some(t => /You asked (?:for|to)/i.test(t));
+      assert.ok(cited, `${s.space}/${s.id}: "${style.label}" changed the plan without saying why`);
+    }
   }
 });

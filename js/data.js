@@ -52,7 +52,12 @@ export const PREFS = [
   'Use only what I already own','Open to buying storage','Keep frequent items easy to reach',
   'Hide visual clutter','Kid-friendly access','No drilling or permanent installation',
   'Minimal look','Labels and categories','Maximize vertical space',
-  'Make heavy items safer','Use clear containers','Use baskets / hidden storage','Easy to maintain'
+  'Make heavy items safer','Use clear containers','Use baskets / hidden storage','Easy to maintain',
+  /* Seven of the 27 style cards resolved to no preference at all — "Drawer
+     dividers", "Matching hangers", "File-folded drawers", "Shelf dividers",
+     "A slot for everything", "Shadow-board pegboard", "A drawer per tool
+     type". The style step read as a taste question the plan never answered. */
+  'Use dividers','Matching hangers','File-fold clothes','Outline tools on a pegboard','One category per drawer'
 ];
 export const BUDGETS = ['$0','Under $50','Under $100','Under $250','No budget selected'];
 export const EFFORT = [

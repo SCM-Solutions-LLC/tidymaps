@@ -210,6 +210,36 @@ const PREF_HANDLERS = {
       { task: 'Set a 5-minute weekly reset: return strays to their zones', time: '5 min / week' },
       'You asked for a system that is easy to maintain — a tiny weekly reset keeps the plan alive.');
   },
+  /* The five below back the style cards that used to resolve to nothing. Each
+     follows the rule of the layer: if the space's own checklist already does
+     this, cite the answer on that step rather than adding a second one. */
+  'Use dividers': (plan) => {
+    raisePriority(plan, ['drawer-organizer']);
+    ensureCitedStep(plan, /divider|one type per compartment|its own slot/i,
+      { task: 'Add dividers so each category keeps its own slot and stacks stay upright' },
+      'You asked for dividers — a divided space holds its shape without anyone maintaining it.');
+  },
+  'Matching hangers': (plan) => {
+    ensureCitedStep(plan, /hanger/i,
+      { task: 'Switch the whole rail to one hanger style, and recycle the rest' },
+      'You asked for matching hangers — one hanger depth is what makes a rail read as a single line.');
+  },
+  'File-fold clothes': (plan) => {
+    ensureCitedStep(plan, /file[- ]?fold/i,
+      { task: 'File-fold so every item stands upright and shows its edge' },
+      'You asked for file-folded drawers — filed upright, nothing gets pulled from under a stack.');
+  },
+  'Outline tools on a pegboard': (plan) => {
+    raisePriority(plan, ['hook-rack']);
+    ensureCitedStep(plan, /pegboard|shadow.?board/i,
+      { task: 'Outline each tool on the pegboard so the gap shows what has not come back' },
+      'You asked for a shadow board — the outline is what makes a missing tool obvious.');
+  },
+  'One category per drawer': (plan) => {
+    ensureCitedStep(plan, /one (?:category|type) per drawer|a drawer per/i,
+      { task: 'Give each category its own drawer, and name the front so none of them get shared' },
+      'You asked for one category per drawer.');
+  },
   'Open to buying storage': (plan) => {
     plan.opportunities = plan.opportunities || [];
     plan.opportunities.push('You are open to buying storage — the shopping list below is sized to your space’s measurements.');

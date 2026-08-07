@@ -126,9 +126,17 @@ test('per-space goals map onto plan-engine goal ids', () => {
 
 test('styles resolve to real preference strings the personalizer can cite', () => {
   const known = new Set(PREFS);
-  for (const styles of Object.values(STYLESETS)) {
-    const prefs = prefsForStyles(styles.map(s => s.label));
-    for (const p of prefs) assert.ok(known.has(p), `style-derived pref "${p}" is not a known preference`);
+  /* Checking only that derived prefs are known passes when a style derives
+     nothing at all, which is how seven of the 27 style cards — "Drawer
+     dividers", "Matching hangers", "File-folded drawers", "Shelf dividers",
+     "A slot for everything", "Shadow-board pegboard", "A drawer per tool
+     type" — sat in the wizard changing no plan. Require a pref per card. */
+  for (const [space, styles] of Object.entries(STYLESETS)) {
+    for (const s of styles) {
+      const prefs = prefsForStyles([s.label]);
+      assert.ok(prefs.size >= 1, `${space}: style "${s.label}" resolves to no preference, so picking it does nothing`);
+      for (const p of prefs) assert.ok(known.has(p), `style-derived pref "${p}" is not a known preference`);
+    }
   }
   const labeled = prefsForStyles(['Labeled everything']);
   assert.ok(labeled.has('Labels and categories'));

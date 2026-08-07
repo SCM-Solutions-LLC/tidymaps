@@ -1495,6 +1495,104 @@ function dekidText(text, petsPresent) {
   return t.trim();
 }
 
+/* Which animal lives here was asked, stored, forwarded to the model — and
+   read by nothing. It matters twice.
+
+   It changes the wording: "out of reach of pets" is what a template says;
+   "out of the dog's reach" is what a plan that listened says.
+
+   It also changes whether the placement is true. Half this app's hazard
+   rationales are height arguments — chemicals on the top shelf, "well above
+   pet reach". That is a control for a dog and no control at all for a cat,
+   which will be on the top shelf by dinnertime. Telling a cat owner their
+   solvents are safe because they are high is the same class of mistake as
+   the mobility swap: asserting a safety property the arrangement does not
+   have. So for a cat household the height claim is not repeated — the row
+   says what actually contains a cat, which is a closed door or a latch. */
+const PET_NOUN = { Dog: ['dog', 'dogs'], Cat: ['cat', 'cats'] };
+
+function petVocabulary(types) {
+  const named = types.filter(t => PET_NOUN[t]);
+  if (named.length !== 1) return null;   // "Other", or a mixed household: stay generic
+  const [one, many] = PET_NOUN[named[0]];
+  // No replacement contains the word it matched, so the rules cannot cascade.
+  return [
+    [/\bpet reach\b/gi, `${one} reach`],
+    [/\bpets\b/gi, many],
+    [/\bpet\b(?!-)/gi, one],
+  ];
+}
+
+/* Height claims about the animal, rewritten into the thing that is actually
+   true. Longest first, and each replacement drops the phrase it matched, so
+   nothing re-matches. Claims about children survive intact — the top shelf
+   IS out of a toddler's reach; it is only the cat half that was never true. */
+const CAT_PHRASES = [
+  /* An imperative keeps its verb — swallowing "Keep" left the row reading
+     "…are toxic. behind a door or latch." A declarative sentence gets advice
+     rather than a swapped claim: "are on the top shelf, behind a door or
+     latch" would assert a latch the plan has no idea exists. */
+  [/out of reach for (children|kids) and (?:cat|pet)s\b/gi,
+    'out of reach for $1; a cat can reach any shelf, so they need a door or latch'],
+  [/away from (children|kids) and (?:cat|pet)s\b/gi,
+    'away from $1; a cat can reach any shelf, so they need a door or latch'],
+  [/\b(Keeps?|Stored?|Store|keeps?|stored?|store)\s+(?:well\s+)?(?:above|away from) kid and (?:cat|pet)s? reach\b/g,
+    '$1 above kid reach, and behind a door or latch'],
+  [/\b(Keeps?|Stored?|Store|keeps?|stored?|store)\s+(?:well\s+)?(?:above|away from|out of) (?:cat|pet)s? reach\b/g,
+    '$1 behind a door or latch'],
+  [/\b(?:well )?(?:above|away from) kid and (?:cat|pet)s? reach\b/gi,
+    'above kid reach, and behind a door or latch'],
+  [/\b(?:well )?(?:above|away from|out of) (?:cat|pet)s? reach\b/gi, 'behind a door or latch'],
+  [/,? out of reach (?:of|for) (?:cat|pet)s\b/gi,
+    '; a cat can reach any shelf, so they need a door or latch'],
+];
+
+function applyPets(plan, household) {
+  const pets = household && household.pets;
+  if (!isPresent(pets && pets.present)) return;
+  const types = Array.isArray(pets.types) ? pets.types.filter(t => typeof t === 'string') : [];
+  if (!types.length) return;
+
+  const rules = petVocabulary(types);
+  if (rules) {
+    const fix = (t) => rules.reduce((acc, [re, to]) => String(acc || '').replace(re, to), t);
+    plan.summary = fix(plan.summary);
+    plan.safetyNotes = (plan.safetyNotes || []).map(fix);
+    plan.problems = (plan.problems || []).map(fix);
+    plan.opportunities = (plan.opportunities || []).map(fix);
+    plan.steps = (plan.steps || []).map(s => ({ ...s, task: fix(s.task), why: fix(s.why) }));
+    (plan.map || []).forEach(m => {
+      m.why = fix(m.why);
+      if (m.safety && m.safety.why) m.safety.why = fix(m.safety.why);
+    });
+    // the shopping list explains itself too ("Latch this zone so pets cannot
+    // get into it"); targetZone is a map key, so it is left alone
+    (plan.productNeeds || []).forEach(p => { p.purpose = fix(p.purpose); });
+  }
+
+  if (!types.includes('Cat')) return;
+  const decat = (t) => CAT_PHRASES
+    .reduce((acc, [re, to]) => String(acc || '').replace(re, to), t)
+    .replace(/\s+/g, ' ').trim();
+  plan.summary = decat(plan.summary);
+  plan.safetyNotes = (plan.safetyNotes || []).map(decat);
+  plan.problems = (plan.problems || []).map(decat);
+  plan.opportunities = (plan.opportunities || []).map(decat);
+  plan.steps = (plan.steps || []).map(s => ({ ...s, task: decat(s.task), why: decat(s.why) }));
+  (plan.productNeeds || []).forEach(p => { p.purpose = decat(p.purpose); });
+  const caveat = 'A cat can get to any shelf, so height is not what keeps this closed — a door or a latch is.';
+  (plan.map || []).forEach(m => {
+    m.why = decat(m.why);
+    if (!m.safety || !m.safety.why) return;
+    m.safety.why = decat(m.safety.why);
+    // only when the row does not already say it — the phrase rules above
+    // often turn the height claim into exactly this advice
+    if (m.safety.flag === 'keep-high' && !/door or latch/i.test(m.safety.why)) {
+      m.safety.why = (m.safety.why + ' ' + caveat).trim();
+    }
+  });
+}
+
 function applyHousehold(plan, household) {
   const kidsPresent = isPresent(household && household.kids && household.kids.present);
 
@@ -1749,6 +1847,7 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   // Last: prefs and toggles add steps of their own, and the reach vocabulary
   // has to reach those too.
   rewriteMobilityLanguage(plan, household && household.mobility);
+  applyPets(plan, household);   // same reason: prefs and toggles add their own text
 
   /* Last, because the three layers above inject product needs of their own —
      the kid household's safety latch hardcodes "Top shelf", which a rolling
