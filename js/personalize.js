@@ -20,6 +20,8 @@
    - One trigger per behavior: if two answers ask for the same step (e.g.
      rental=yes and "No drilling"), it's added once, citing the first. */
 
+import { goalIdFor } from './wizard-data.js';
+
 export const EFFORT_STEPS = {
   // design-contract effort labels (the wizard's three options)
   'Quick refresh': 6,
@@ -270,86 +272,184 @@ export function applyRevision(plan, id) {
 
    These match the answer's own words rather than an id, so a new option in
    SPACE_CFG is covered by whichever rule fits it, and every selected goal
-   gets its own cited step instead of only the first. */
+   gets its own cited step instead of only the first.
+
+   Each rule carries three things beyond its advice:
+   - `dedupe`, a regex describing the BEHAVIOR, so an existing scenario step
+     that already does this is found and cited instead of a near-duplicate
+     being appended. Matching the advice's own first words instead — which is
+     what this did — never found the scenario's phrasing of the same idea, so
+     a dresser plan carried both "File-fold tops so they stand upright" and
+     "File-fold so every item stands upright and shows its edge".
+   - `noBuy`, the version that works with what is already in the space. A $0
+     plan promises "every step below works with what is already in the
+     space", so any advice naming a bin, a band or a label needs one.
+   - `noOpaque`, for the one piece of advice that contradicts a style the
+     wizard also offers: "Use clear containers" and "put it behind an opaque
+     front" cannot both be followed. */
 const GOAL_ADVICE = [
-  [/expired|hides in back/i, 'Pull everything forward and put the oldest at the front, newest behind',
-    'Date-order beats depth-order: what is oldest is what you reach first, so nothing expires unseen.'],
-  [/restock/i, 'Write the restock level on the shelf edge — the count that means "buy more"',
-    'A number on the shelf turns restocking into a glance instead of a memory test.'],
-  [/hard to keep tidy/i, 'Set a five-minute weekly reset and put it in the calendar',
-    'Every system drifts. A short scheduled reset is what separates the ones that last from the ones that do not.'],
-  [/counter|bench is buried|pile up on a chair|floor is a pile/i, 'Give the overflow a named home, and clear it as the last step every day',
-    'Things pile up in the open because they have nowhere assigned. A named landing spot is what stops the pile re-forming.'],
-  [/lids|sets get separated/i, 'Store each set as one unit — lid on its base, sheets inside their own pillowcase',
-    'A set stored as one piece cannot come apart, which is what makes the hunt disappear.'],
-  [/junk drawer/i, 'Empty the catch-all completely and give each thing in it a real home elsewhere',
-    'A catch-all stays a catch-all while it exists. The fix is to stop it being the default destination.'],
-  [/jam|overflow/i, 'Take out enough that the drawer closes with a finger of space to spare',
-    'Jamming is a volume problem, not a layout one. Nothing organizes its way out of being too full.'],
-  [/outfits take forever/i, 'Group by when you wear it — work, weekend, formal — not by garment type',
-    'You choose clothes by occasion, so grouping by occasion means the decision is made by walking to one section.'],
-  [/folding never lasts/i, 'File-fold so every item stands upright and shows its edge',
-    'A stack hides everything below the top. Filed upright, nothing gets pulled out of the middle.'],
-  [/multiplying/i, 'Gather every duplicate into one place and keep only the open one plus a single backup',
-    'Duplicates multiply because backstock is invisible. Once it is in one place, the count is obvious.'],
-  [/under-sink is a jumble/i, 'Work around the plumbing: two shallow zones either side of the trap, nothing behind it',
-    'The pipe is the constraint. Zoning around it beats stacking against it.'],
-  [/avalanche/i, 'Add shelf dividers so each stack is held upright and can be pulled without the rest following',
-    'An avalanche means the stacks are leaning on each other. Dividers make each one independent.'],
-  [/seasonal stuff gets buried/i, 'Put each season in its own labelled bin and rotate the current one to the front',
-    'Seasonal storage only works if swapping takes one motion twice a year.'],
-  [/small parts/i, 'Sort small parts into a compartment box, one type per compartment, and label the lid',
-    'Loose small parts cost more time to search than they cost to replace. Compartments end that.'],
-  [/cords tangle/i, 'Coil each cable, band it, and label what it belongs to',
-    'A coiled, labelled cable takes a quarter of the space and never needs identifying twice.'],
+  { match: /expired|hides in back/i, dedupe: /pull everything forward|oldest at the front/i,
+    task: 'Pull everything forward and put the oldest at the front, newest behind',
+    why: 'Date-order beats depth-order: what is oldest is what you reach first, so nothing expires unseen.' },
+  { match: /restock/i, dedupe: /restock/i,
+    task: 'Write the restock level on the shelf edge — the count that means "buy more"',
+    why: 'A number on the shelf turns restocking into a glance instead of a memory test.' },
+  { match: /hard to keep tidy/i, dedupe: /weekly reset|five-minute/i,
+    task: 'Set a five-minute weekly reset and put it in the calendar',
+    why: 'Every system drifts. A short scheduled reset is what separates the ones that last from the ones that do not.' },
+  { match: /counter|bench is buried|pile up on a chair|floor is a pile/i, dedupe: /named home|landing spot/i,
+    task: 'Give the overflow a named home, and clear it as the last step every day',
+    why: 'Things pile up in the open because they have nowhere assigned. A named landing spot is what stops the pile re-forming.' },
+  { match: /lids|sets get separated/i, dedupe: /as one unit|lid on its base|inside their own pillowcase/i,
+    task: 'Store each set as one unit — lid on its base, sheets inside their own pillowcase',
+    why: 'A set stored as one piece cannot come apart, which is what makes the hunt disappear.' },
+  { match: /junk drawer/i, dedupe: /catch-all/i,
+    task: 'Empty the catch-all completely and give each thing in it a real home elsewhere',
+    why: 'A catch-all stays a catch-all while it exists. The fix is to stop it being the default destination.' },
+  { match: /jam|overflow/i, dedupe: /take out enough|closes with a finger/i,
+    task: 'Take out enough that the drawer closes with a finger of space to spare',
+    why: 'Jamming is a volume problem, not a layout one. Nothing organizes its way out of being too full.' },
+  { match: /outfits take forever/i, dedupe: /group by when you wear|by occasion/i,
+    task: 'Group by when you wear it — work, weekend, formal — not by garment type',
+    why: 'You choose clothes by occasion, so grouping by occasion means the decision is made by walking to one section.' },
+  { match: /folding never lasts/i, dedupe: /file[- ]?fold/i,
+    task: 'File-fold so every item stands upright and shows its edge',
+    why: 'A stack hides everything below the top. Filed upright, nothing gets pulled out of the middle.' },
+  { match: /multiplying/i, dedupe: /duplicate/i,
+    task: 'Gather every duplicate into one place and keep only the open one plus a single backup',
+    why: 'Duplicates multiply because backstock is invisible. Once it is in one place, the count is obvious.' },
+  { match: /under-sink is a jumble/i, dedupe: /around the plumbing|either side of the trap/i,
+    task: 'Work around the plumbing: two shallow zones either side of the trap, nothing behind it',
+    why: 'The pipe is the constraint. Zoning around it beats stacking against it.' },
+  { match: /avalanche/i, dedupe: /shelf divider|front-to-back/i,
+    task: 'Add shelf dividers so each stack is held upright and can be pulled without the rest following',
+    noBuy: 'Split each stack in two and turn the halves front-to-back, so pulling one does not topple the rest',
+    why: 'An avalanche means the stacks are leaning on each other. Dividers make each one independent.' },
+  // the garage already boxes its holiday decorations; that is this behavior
+  { match: /seasonal stuff gets buried/i, dedupe: /each season in its own|holiday decorations into|seasonal items and lift/i,
+    task: 'Put each season in its own labelled bin and rotate the current one to the front',
+    noBuy: 'Put each season in its own box or bag you already have, and rotate the current one to the front',
+    why: 'Seasonal storage only works if swapping takes one motion twice a year.' },
+  { match: /small parts/i, dedupe: /small parts into/i,
+    task: 'Sort small parts into a compartment box, one type per compartment, and label the lid',
+    noBuy: 'Sort small parts into jars or cut-down boxes, one type each, and mark the lids',
+    why: 'Loose small parts cost more time to search than they cost to replace. Compartments end that.' },
+  { match: /cords tangle/i, dedupe: /coil (?:each cable|cords)/i,
+    task: 'Coil each cable, band it, and label what it belongs to',
+    noBuy: 'Coil each cable, tie it with its own plug lead, and write what it belongs to on a tape flag',
+    why: 'A coiled, labelled cable takes a quarter of the space and never needs identifying twice.' },
   /* The four goals that DO map to an id already move the summary, the
      opportunities and the product priorities — but through applyGoal, which
      never quotes the user. These give them the verbatim citation every other
      answer in this layer carries. */
-  [/can't find|cannot find/i, 'Label the front edge of every zone so the whole household can find things without asking',
-    'Searching is what a labelled zone removes; the label is read from the doorway, not the shelf.'],
-  [/running out of room|no room for the car/i, 'Measure the empty air above each level and add a riser or a stacking bin to claim it',
-    'Most spaces are short on usable levels, not on volume — the gap above each shelf is the room you already own.'],
-  [/kids can't reach/i, 'Move the things they get for themselves down to the zone they can reach standing flat',
-    'Independence is a height question: what a child can reach unaided is what they will put back.'],
-  [/looks cluttered/i, 'Put the visually noisy things behind one opaque front, and keep the open levels sparse',
-    'A calm space is mostly about how many different things are visible at once, not how much is stored.'],
+  /* Any labelling step counts: nearly every space's own checklist already
+     labels something ("Label each drawer by category", "Label every shelf
+     edge"), and a second, more general label step next to it was the most
+     common duplicate this layer produced. */
+  { match: /can't find|cannot find/i, dedupe: /\blabell?(?:s|ed|ing)?\b/i,
+    task: 'Label the front edge of every zone so the whole household can find things without asking',
+    noBuy: 'Write each zone on a strip of tape along the front edge, so the whole household can find things without asking',
+    why: 'Searching is what a labelled zone removes; the label is read from the doorway, not the shelf.' },
+  { match: /running out of room|no room for the car/i, dedupe: /\briser\b/i,
+    task: 'Measure the empty air above each level and add a riser or a stacking bin to claim it',
+    noBuy: 'Measure the empty air above each level and reuse a sturdy box as a riser to claim it',
+    why: 'Most spaces are short on usable levels, not on volume — the gap above each shelf is the room you already own.' },
+  { match: /kids can't reach/i, dedupe: /reach standing flat|zone they can reach/i,
+    task: 'Move the things they get for themselves down to the zone they can reach standing flat',
+    why: 'Independence is a height question: what a child can reach unaided is what they will put back.' },
+  { match: /looks cluttered/i, dedupe: /opaque front|onto one level and keep/i,
+    task: 'Put the visually noisy things behind one opaque front, and keep the open levels sparse',
+    noBuy: 'Group the visually noisy things onto one level and keep the others sparse',
+    noOpaque: 'Group the visually noisy things onto one level and keep the others sparse',
+    why: 'A calm space is mostly about how many different things are visible at once, not how much is stored.' },
 ];
-
-/* Advice that only works if you buy something. On a $0 plan the alternative
-   runs instead, so the checklist never contradicts "every step below works
-   with what is already in the space". */
-const NO_BUY_SWAP = {
-  'Measure the empty air above each level and add a riser or a stacking bin to claim it':
-    'Measure the empty air above each level and reuse a sturdy box as a riser to claim it',
-  'Add shelf dividers so each stack is held upright and can be pulled without the rest following':
-    'Split each stack in two and turn the halves front-to-back, so pulling one does not topple the rest',
-  'Sort small parts into a compartment box, one type per compartment, and label the lid':
-    'Sort small parts into jars or cut-down boxes, one type each, and label the lids',
-};
 
 function applyGoals(plan, answers) {
   const goals = (answers.goals || []).filter(g => typeof g === 'string' && g.trim());
+  if (!goals.length) return;
   /* Goal steps are personalized, so effort trimming protects them — which
      means an unbounded number of them evicts the whole space-specific
      checklist. A closet with all seven goals on "Quick refresh" came out as
-     seven pieces of generic advice and nothing about closets. Cap them at a
-     third of the plan so the space keeps its own core; the goals beyond the
-     cap still reach the summary and product priorities through applyGoal. */
+     seven pieces of generic advice and nothing about closets. So they are
+     capped at a third of the plan.
+
+     The cap only counts answers that produce a NEW step. Attaching a
+     citation to a step the plan already has costs the checklist nothing, and
+     counting those spent the whole budget on one step: a garage plan given
+     "Always running out of room" and "No room for the car" — one rule, one
+     step, two citations — had no room left for a third answer. */
   const cap = Math.max(1, Math.floor((EFFORT_STEPS[answers.effort] || 10) / 3));
   const ownOnly = answers.budget === '$0' || (answers.prefs || []).includes('Use only what I already own');
+  const clearWanted = (answers.prefs || []).includes('Use clear containers');
+  /* When the cap does bite it should fall on the answer that has another way
+     into the plan. Exactly one answer has one: the wizard sends goals[0]
+     through goalIdFor to state.goal, and applyGoal moves the summary, the
+     opportunities and the product priorities from it. Every other answer has
+     its step and nothing else — so goals[0] goes last when it maps to an id
+     applyGoal understands. Click order alone dropped the answers with no
+     other route, which is the opposite of what the cap is for. */
+  const queue = goals
+    .map((goal, i) => ({ goal, i, spare: i === 0 && goalIdFor(goal) !== 'unsure' }))
+    .sort((a, b) => (a.spare - b.spare) || (a.i - b.i));
   let added = 0;
-  for (const goal of goals) {
-    if (added >= cap) break;
-    const rule = GOAL_ADVICE.find(([re]) => re.test(goal));
+  const unplanned = [];
+  for (const { goal } of queue) {
+    const rule = GOAL_ADVICE.find(r => r.match.test(goal));
     if (!rule) continue;
-    const [, rawTask, why] = rule;
-    const task = (ownOnly && NO_BUY_SWAP[rawTask]) || rawTask;
+    const task = (ownOnly && rule.noBuy) || (clearWanted && rule.noOpaque) || rule.task;
+    const fresh = !plan.steps.some(st => rule.dedupe.test(stepText(st)));
+    if (fresh && added >= cap) { unplanned.push(goal); continue; }
     // The user's own words, verbatim — the rule of this layer.
-    ensureCitedStep(plan, new RegExp(task.split(/[\s,—]+/).slice(0, 3).join('\\s+'), 'i'),
-      { task, why }, `You told us: “${goal}”.`);
-    added++;
+    ensureCitedStep(plan, rule.dedupe, { task, why: rule.why }, `You told us: “${goal}”.`);
+    if (fresh) added++;
   }
+  /* Saying nothing was the real bug: a pantry on "Quick refresh" quietly
+     dropped five of seven answers, and the plan read as though it had acted
+     on all of them. Name what was left out, and what would take it in. */
+  if (unplanned.length) {
+    const quoted = unplanned.map(g => `“${g}”`);
+    const list = quoted.length > 1
+      ? quoted.slice(0, -1).join(', ') + ' and ' + quoted[quoted.length - 1]
+      : quoted[0];
+    plan.opportunities = plan.opportunities || [];
+    plan.opportunities.push(
+      `${list} ${unplanned.length > 1 ? 'are' : 'is'} not in this checklist — a `
+      + `${String(answers.effort || 'short session').toLowerCase()} only fits so many changes. Choose a longer session to plan `
+      + `${unplanned.length > 1 ? 'them' : 'it'} in.`);
+  }
+}
+
+/* A $0 plan promises "every step below works with what is already in the
+   space", and then the space's own checklist said "Bin the backstock and
+   label the bins", "Put all chemicals in one caddy" and "Stand baking sheets
+   upright using vertical dividers" — 27 of the 33 setups named a container to
+   buy while the plan said not to buy one. Swapping the goal advice was not
+   enough; the scenario content needed the same treatment.
+
+   Every replacement is a phrase that cannot match again after it is made, so
+   the rules cannot cascade into each other whatever order they run in. */
+const OWN_ONLY_WORDS = [
+  [/\bBin (?=[a-z])/g, 'Box up '],
+  [/\bin a bin\b/gi, 'in a box you already have'],
+  [/\bto bins\b/gi, 'to boxes you already have'],
+  [/\bvertical dividers\b/gi, 'a box on its side as a divider'],
+  [/\bshelf dividers\b/gi, 'a box turned on its side'],
+  [/\bcadd(?:y|ies)\b/gi, 'tray or box'],
+  [/\bbins\b/gi, 'boxes'],
+  [/\bbin\b/gi, 'box'],
+];
+
+function ownOnlyVocabulary(plan) {
+  /* Zone names are places, not purchases, and the checklist references them
+     by name — rewriting "Set up the Beach towels bin zone" would point the
+     step at a zone the map does not have. */
+  const zones = (plan.map || []).map(m => m.zone).filter(z => typeof z === 'string' && z.trim());
+  const fix = (text) => {
+    const t = String(text || '');
+    if (!t || zones.some(z => t.includes(z))) return text;
+    return OWN_ONLY_WORDS.reduce((acc, [re, to]) => acc.replace(re, to), t);
+  };
+  plan.steps = (plan.steps || []).map(s => ('t' in s ? { ...s, t: fix(s.t) } : { ...s, task: fix(s.task) }));
 }
 
 function applyPrefs(plan, answers) {
@@ -507,6 +607,8 @@ export function applyAnswers(plan, answers) {
   applyPrefs(plan, answers);
   applyToggles(plan, answers);
   applyDims(plan, answers);
+  // after every layer that can add a step, so none of them slips a purchase past it
+  if (answers.budget === '$0' || (answers.prefs || []).includes('Use only what I already own')) ownOnlyVocabulary(plan);
   applyEffort(plan, answers); // last: sizes the final step list
   return plan;
 }

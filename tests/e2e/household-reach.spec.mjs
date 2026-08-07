@@ -51,12 +51,18 @@ test('the reach question is answerable and changes the plan', async ({ page }) =
   await expect(limited).toHaveAttribute('aria-pressed', 'true');
 
   await finishFromHousehold(page);
-  await expect(page.locator('#res-safety-notes')).toContainText(/mid-height|easier reach/i);
+  /* The answer used to produce one generic safety note and nothing else. The
+     plan cannot know which things the user reaches for or how high this unit
+     hangs, so it no longer rearranges anything — it puts an actionable step
+     in the checklist that quotes the answer back. */
+  await expect(page.locator('#res-steps')).toContainText(/off the top level/i);
+  await expect(page.locator('#res-steps')).toContainText(/reaching high is difficult/i);
 });
 
 test('no reach answer produces no reach guidance', async ({ page }) => {
   await driveToHousehold(page);
   await finishFromHousehold(page);
+  await expect(page.locator('#screen-results')).not.toContainText('reaching high is difficult');
   await expect(page.locator('#screen-results')).not.toContainText('mid-height');
 });
 
