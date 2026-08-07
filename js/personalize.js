@@ -261,6 +261,73 @@ export function applyRevision(plan, id) {
   return true;
 }
 
+/* ---------- goals ----------
+   The wizard asks "What bugs you most?" and takes as many answers as the
+   user wants. Only the FIRST was ever read, and it was read through
+   goalIdFor(), which collapses 30 of the 57 options to 'unsure' — a branch
+   that does nothing. So a third of a whole step, including every answer for
+   the bathroom but one, changed the plan in no way at all.
+
+   These match the answer's own words rather than an id, so a new option in
+   SPACE_CFG is covered by whichever rule fits it, and every selected goal
+   gets its own cited step instead of only the first. */
+const GOAL_ADVICE = [
+  [/expired|hides in back/i, 'Pull everything forward and put the oldest at the front, newest behind',
+    'Date-order beats depth-order: what is oldest is what you reach first, so nothing expires unseen.'],
+  [/restock/i, 'Write the restock level on the shelf edge — the count that means "buy more"',
+    'A number on the shelf turns restocking into a glance instead of a memory test.'],
+  [/hard to keep tidy/i, 'Set a five-minute weekly reset and put it in the calendar',
+    'Every system drifts. A short scheduled reset is what separates the ones that last from the ones that do not.'],
+  [/counter|bench is buried|pile up on a chair|floor is a pile/i, 'Give the overflow a named home, and clear it as the last step every day',
+    'Things pile up in the open because they have nowhere assigned. A named landing spot is what stops the pile re-forming.'],
+  [/lids|sets get separated/i, 'Store each set as one unit — lid on its base, sheets inside their own pillowcase',
+    'A set stored as one piece cannot come apart, which is what makes the hunt disappear.'],
+  [/junk drawer/i, 'Empty the catch-all completely and give each thing in it a real home elsewhere',
+    'A catch-all stays a catch-all while it exists. The fix is to stop it being the default destination.'],
+  [/jam|overflow/i, 'Take out enough that the drawer closes with a finger of space to spare',
+    'Jamming is a volume problem, not a layout one. Nothing organizes its way out of being too full.'],
+  [/outfits take forever/i, 'Group by when you wear it — work, weekend, formal — not by garment type',
+    'You choose clothes by occasion, so grouping by occasion means the decision is made by walking to one section.'],
+  [/folding never lasts/i, 'File-fold so every item stands upright and shows its edge',
+    'A stack hides everything below the top. Filed upright, nothing gets pulled out of the middle.'],
+  [/multiplying/i, 'Gather every duplicate into one place and keep only the open one plus a single backup',
+    'Duplicates multiply because backstock is invisible. Once it is in one place, the count is obvious.'],
+  [/under-sink is a jumble/i, 'Work around the plumbing: two shallow zones either side of the trap, nothing behind it',
+    'The pipe is the constraint. Zoning around it beats stacking against it.'],
+  [/avalanche/i, 'Add shelf dividers so each stack is held upright and can be pulled without the rest following',
+    'An avalanche means the stacks are leaning on each other. Dividers make each one independent.'],
+  [/seasonal stuff gets buried/i, 'Put each season in its own labelled bin and rotate the current one to the front',
+    'Seasonal storage only works if swapping takes one motion twice a year.'],
+  [/small parts/i, 'Sort small parts into a compartment box, one type per compartment, and label the lid',
+    'Loose small parts cost more time to search than they cost to replace. Compartments end that.'],
+  [/cords tangle/i, 'Coil each cable, band it, and label what it belongs to',
+    'A coiled, labelled cable takes a quarter of the space and never needs identifying twice.'],
+  /* The four goals that DO map to an id already move the summary, the
+     opportunities and the product priorities — but through applyGoal, which
+     never quotes the user. These give them the verbatim citation every other
+     answer in this layer carries. */
+  [/can't find|cannot find/i, 'Label the front edge of every zone so the whole household can find things without asking',
+    'Searching is what a labelled zone removes; the label is read from the doorway, not the shelf.'],
+  [/running out of room|no room for the car/i, 'Measure the empty air above each level and add a riser or a stacking bin to claim it',
+    'Most spaces are short on usable levels, not on volume — the gap above each shelf is the room you already own.'],
+  [/kids can't reach/i, 'Move the things they get for themselves down to the zone they can reach standing flat',
+    'Independence is a height question: what a child can reach unaided is what they will put back.'],
+  [/looks cluttered/i, 'Put the visually noisy things behind one opaque front, and keep the open levels sparse',
+    'A calm space is mostly about how many different things are visible at once, not how much is stored.'],
+];
+
+function applyGoals(plan, answers) {
+  const goals = (answers.goals || []).filter(g => typeof g === 'string' && g.trim());
+  for (const goal of goals) {
+    const rule = GOAL_ADVICE.find(([re]) => re.test(goal));
+    if (!rule) continue;
+    const [, task, why] = rule;
+    // The user's own words, verbatim — the rule of this layer.
+    ensureCitedStep(plan, new RegExp(task.split(/[\s,—]+/).slice(0, 3).join('\\s+'), 'i'),
+      { task, why }, `You told us: “${goal}”.`);
+  }
+}
+
 function applyPrefs(plan, answers) {
   for (const pref of answers.prefs || []) {
     const h = PREF_HANDLERS[pref];
@@ -412,6 +479,7 @@ export function applyAnswers(plan, answers) {
   plan.steps = plan.steps || [];
   plan.map = plan.map || [];
   applyBudget(plan, answers);
+  applyGoals(plan, answers);   // before prefs, so a pref can cite a goal's step
   applyPrefs(plan, answers);
   applyToggles(plan, answers);
   applyDims(plan, answers);
