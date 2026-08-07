@@ -233,3 +233,56 @@ test('an unknown Adjust option revises nothing and says so', () => {
   assert.equal(applyRevision(plan, 'fewer'), false, 'step-count options are handled separately, not as revisions');
   assert.equal(applyRevision(null, 'minimal'), false, 'a missing plan must not throw');
 });
+
+/* ---------- revisions run on the NORMALIZED plan ----------
+   The Adjust screen calls applyRevision on state.ai, where steps are {t,m,w}
+   — not the raw {task,time,why} the scenarios emit. The handlers used to
+   assume raw and appended steps the renderer showed as "undefined". */
+
+const { state } = await import('../js/state.js');
+const { normalizeAi } = await import('../js/plan.js');
+
+function normalizedPlan(space = 'pantry', goal = 'find', household = NO_KIDS) {
+  state.dims = null; // normalizeGeometry reads the wizard's measurements
+  return normalizeAi(getDemoScenario(space, goal, household));
+}
+
+test('every revision keeps the normalized step shape — no raw {task} steps, no "undefined"', () => {
+  for (const id of Object.keys(REVISIONS)) {
+    const plan = normalizedPlan();
+    assert.equal(applyRevision(plan, id), true, `${id}: first application refused`);
+    for (const st of plan.steps) {
+      assert.equal(typeof st.t, 'string', `${id}: step lost its title: ${JSON.stringify(st)}`);
+      assert.ok(st.t && st.t !== 'undefined', `${id}: step renders as undefined`);
+      assert.ok(!('task' in st), `${id}: raw-shape step leaked into the normalized plan`);
+      assert.ok((st.m ?? '') !== 'undefined' && (st.w ?? '') !== 'undefined', `${id}: time/why render as undefined`);
+    }
+    assert.equal(applyRevision(plan, id), false, `${id}: second application must refuse`);
+  }
+});
+
+test('a revision that cites an existing step writes to the normalized field', () => {
+  const plan = normalizedPlan(); // pantry has an "Add labels if available" step
+  applyRevision(plan, 'labels');
+  const labeled = plan.steps.find(s => /label/i.test(s.t + ' ' + s.w));
+  assert.ok(labeled, 'label step missing');
+  assert.match(labeled.w, /labels and categories/i, 'citation landed on the wrong field');
+  assert.ok(!('why' in labeled), 'citation created a parallel raw field');
+});
+
+test('minimal look cites once, even after the style already asked for it', () => {
+  state.dims = null;
+  const plan = normalizeAi(getDemoScenario('closet', 'find', NO_KIDS, { prefs: ['Minimal look'] }));
+  applyRevision(plan, 'minimal');
+  assert.equal(plan.summary.split('You asked for a minimal look').length - 1, 1,
+    `summary stacked the sentence: ${plan.summary}`);
+});
+
+test('kid-friendly revision leaves a visible trace even when a kid-safe zone already exists', () => {
+  const KIDS = { kids: { present: 'yes', ages: ['Toddler'] }, pets: { present: null, types: [] }, mobility: [], notes: '' };
+  const plan = normalizedPlan('pantry', 'find', KIDS);
+  assert.ok(plan.map.some(m => m.safety && m.safety.flag === 'kid-safe'), 'precondition: scenario already kid-safe');
+  const before = JSON.stringify(plan.map);
+  assert.equal(applyRevision(plan, 'kid'), true);
+  assert.notEqual(JSON.stringify(plan.map), before, '"Plan revised" announced with nothing visibly changed');
+});

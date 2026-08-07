@@ -61,3 +61,46 @@ test('the report shopping card does the thing its buttons claim', () => {
   const main = readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
   assert.match(main, /downloadShoppingList, sendShoppingList/);
 });
+
+/* ---------- the exporter runs on the NORMALIZED plan ----------
+   state.ai holds normalizeAi's output: steps are {t,m,w}, map rows carry lv.
+   The source-grep tests above passed for months while the produced file had
+   no STEPS section and "- undefined:" on every zone, because the exporter
+   read the raw names. These tests run the exporter for real. */
+
+const { state } = await import('../js/state.js');
+const { normalizeAi, activeProductNeeds } = await import('../js/plan.js');
+const { getDemoScenario } = await import('../js/demo-scenarios.js');
+const { checklistText, shoppingListText } = await import('../js/planExport.js');
+
+const NO_KIDS = { kids: { present: 'no', ages: [] }, pets: { present: null, types: [] }, mobility: [], notes: '' };
+
+test('checklistText carries every step and every zone of a normalized plan', () => {
+  state.space = 'workbench';
+  state.dims = null;
+  state.ai = normalizeAi(getDemoScenario('workbench', 'find', NO_KIDS));
+  state.stepDone = state.ai.steps.map((_, i) => i === 0);
+  const txt = checklistText();
+  assert.ok(!txt.includes('undefined'), `exported text contains "undefined":\n${txt}`);
+  assert.match(txt, /\nSTEPS\n/, 'the STEPS section is missing');
+  for (const s of state.ai.steps) assert.ok(txt.includes(s.t), `step missing from export: ${s.t}`);
+  for (const m of state.ai.map) assert.ok(txt.includes(`- ${m.lv}: ${m.zone}`), `zone missing or unnamed: ${m.lv}`);
+  assert.match(txt, /\[x\] 1\./, 'on-screen progress should carry into the export');
+});
+
+test('a $0 plan exports "nothing to buy" — never the demo pantry list', () => {
+  state.space = 'workbench';
+  state.dims = null;
+  state.ai = normalizeAi(getDemoScenario('workbench', null, NO_KIDS,
+    { prefs: ['Use only what I already own'], budget: '$0' }));
+  state.shopping = null;
+  assert.deepEqual(activeProductNeeds(), [], 'an empty productNeeds list is an answer, not missing data');
+  const txt = shoppingListText();
+  assert.match(txt, /Nothing to buy/);
+  assert.ok(!/snack|can rack|lazy susan/i.test(txt), `pantry demo products leaked into a workbench $0 list:\n${txt}`);
+});
+
+test('with no plan at all, the demo needs still back the sample report', () => {
+  state.ai = null;
+  assert.ok(activeProductNeeds().length > 0);
+});

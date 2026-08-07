@@ -58,7 +58,7 @@ async function next(page) {
 
 /* Drive the wizard through all 12 steps. The household step makes no child
    assumption; kid variants explicitly add one child. */
-async function driveWizard(page, areaId, { kids = 'no', onContents = null } = {}) {
+async function driveWizard(page, areaId, { kids = 'no', onContents = null, shopping = null } = {}) {
   const [roomText, areaText] = MATRIX[areaId];
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
@@ -93,6 +93,7 @@ async function driveWizard(page, areaId, { kids = 'no', onContents = null } = {}
   await next(page);
   await next(page);
   await next(page);
+  if (shopping) await page.locator('#shopping-cards .wz-shop', { hasText: shopping }).click();
   await next(page);
 
   // 12 review → build
@@ -231,13 +232,11 @@ test('wizard answers personalize the plan: style cited, effort sized, use-what-I
 });
 
 test('product links are https and point at known retailers', async ({ page }) => {
-  await driveWizard(page, 'pantry');
-  // Turn the optional upgrades section on if it isn't already.
-  const upgradesOn = await page.evaluate(() => {
-    window.setUpgrades(true);
-    return true;
-  });
-  expect(upgradesOn).toBe(true);
+  // Opt into shopping through the wizard: a "$0 / use what I have" plan now
+  // correctly carries NO product needs (the demo-pantry fallback that this
+  // test used to lean on was the bug), so links only exist when asked for.
+  await driveWizard(page, 'pantry', { shopping: 'Open to a few ideas' });
+  await expect(page.locator('#res-upgrades-wrap')).not.toHaveClass(/hide/);
   await expect(page.locator('#res-upgrades a[href]').first()).toBeVisible();
   const hrefs = await page.$$eval('#res-upgrades a[href]', (as) => as.map((a) => a.href));
   const allowed = /^https:\/\/([a-z0-9-]+\.)*(amazon\.com|target\.com|walmart\.com|containerstore\.com|ikea\.com)\//i;

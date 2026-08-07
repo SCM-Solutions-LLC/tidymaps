@@ -117,8 +117,11 @@ export function activeSafetyNotes(){
   return state.household.kids.present==='yes' ? DEMO_SAFETY_NOTES : [];
 }
 export function activeProductNeeds(){
-  return (state.ai && state.ai.productNeeds && state.ai.productNeeds.length)
-    ? state.ai.productNeeds : DEMO_PRODUCT_NEEDS;
+  // An EMPTY list is an answer, not missing data: "Use what I have" (the
+  // wizard default) deliberately zeroes productNeeds. Falling back on empty
+  // used to hand every $0 plan — pantry or workbench alike — the demo
+  // pantry's $153 shopping list. Only a missing plan gets the demo needs.
+  return state.ai ? (state.ai.productNeeds || []) : DEMO_PRODUCT_NEEDS;
 }
 
 // The edit brief for the photorealistic "after" render. The transformation

@@ -35,21 +35,37 @@ export const EFFORT_STEPS = {
 const SAFETY_RE = /kid|child|heavy|chemical|sharp|latch|medicine|safety/i;
 const FILLER_RE = /photo|wipe|dust|label/i; // trimmed first when effort is low
 
+/* Steps come in two shapes. applyAnswers runs on RAW plans ({task,time,why},
+   what the scenarios and the AI emit); applyRevision runs on the NORMALIZED
+   plan ({t,m,w}, what state.ai holds after normalizeAi — the Adjust screen
+   has nothing else). Every helper reads both spellings and writes new steps
+   in the plan's own shape; assuming raw here is how three Adjust options once
+   appended a step card that rendered as "undefined / undefined". */
+const stepTask = st => (st && (st.task ?? st.t)) || '';
+const stepWhy = st => (st && (st.why ?? st.w)) || '';
+const stepText = st => stepTask(st) + ' ' + stepWhy(st);
+const isNormalized = plan => Array.isArray(plan.steps) && plan.steps.length
+  ? ('t' in plan.steps[0]) : Array.isArray(plan.cats);
+
 function hasStep(plan, re) {
-  return plan.steps.some(st => re.test(st.task + ' ' + (st.why || '')));
+  return plan.steps.some(st => re.test(stepText(st)));
 }
 
 function addStep(plan, step) {
-  plan.steps.push({ time: '5–10 min', ...step, _p: true }); // _p = personalized, protected
+  const s = { time: '5–10 min', ...step };
+  plan.steps.push(isNormalized(plan)
+    ? { t: s.task, m: s.time, w: s.why || '', _p: true }
+    : { ...s, _p: true }); // _p = personalized, protected
 }
 
 /* The core promise: the user's answer is VISIBLE in the plan. If a matching
    step already exists in the scenario, cite the answer on it (and protect it
    from effort trimming); only add a new step when nothing covers the need. */
 function ensureCitedStep(plan, re, step, cite) {
-  const existing = plan.steps.find(st => re.test(st.task + ' ' + (st.why || '')));
+  const existing = plan.steps.find(st => re.test(stepText(st)));
   if (existing) {
-    if (!(existing.why || '').includes(cite)) existing.why = ((existing.why || '') + ' ' + cite).trim();
+    const key = 't' in existing ? 'w' : 'why';
+    if (!stepWhy(existing).includes(cite)) existing[key] = (stepWhy(existing) + ' ' + cite).trim();
     existing._p = true;
     return existing;
   }
@@ -58,7 +74,7 @@ function ensureCitedStep(plan, re, step, cite) {
 }
 
 function isProtected(st) {
-  return !!st._p || SAFETY_RE.test((st.task || '') + ' ' + (st.why || ''));
+  return !!st._p || SAFETY_RE.test(stepText(st));
 }
 
 function dropNeeds(plan, keepFn) {
@@ -112,12 +128,17 @@ const PREF_HANDLERS = {
   },
   'Kid-friendly access': (plan) => {
     const low = plan.map[plan.map.length - 2] || plan.map[plan.map.length - 1];
-    if (low && (!low.safety || !low.safety.flag)) {
+    if (!low) return;
+    if (!low.safety || !low.safety.flag) {
       low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
+    } else if (!(low.safety.why || '').includes('kid-friendly access')) {
+      // The scenario already keeps a kid-safe zone; cite the answer on it so
+      // the revision visibly did something instead of announcing a no-op.
+      low.safety.why = ((low.safety.why || '') + ' You asked for kid-friendly access.').trim();
     }
   },
   'No drilling or permanent installation': (plan) => {
-    plan.steps = plan.steps.filter(st => !/drill|mount|screw|install hardware/i.test(st.task));
+    plan.steps = plan.steps.filter(st => !/drill|mount|screw|install hardware/i.test(stepTask(st)));
     dropNeeds(plan, p => !['door-rack', 'hook-rack'].includes(p.type));
     plan.opportunities = plan.opportunities || [];
     plan.opportunities.push('Everything in this plan is freestanding — you asked for no drilling or permanent installation.');
@@ -126,7 +147,9 @@ const PREF_HANDLERS = {
     plan.map.forEach(m => {
       if (m.items && m.items.length > 2) m.items = m.items.slice(0, 2);
     });
-    plan.summary += ' You asked for a minimal look, so each zone keeps fewer visible categories.';
+    // Style + Adjust can both route here; the sentence must not stack.
+    const cite = ' You asked for a minimal look, so each zone keeps fewer visible categories.';
+    if (!plan.summary.includes(cite)) plan.summary += cite;
   },
   'Labels and categories': (plan) => {
     raisePriority(plan, ['label-set']);
@@ -190,6 +213,19 @@ export const REVISIONS = {
   labels:   'Labels and categories',
 };
 
+/* A revision the user clicked must be visible ON THE REPORT, not only in the
+   "Plan revised" banner. Some handlers' whole effect otherwise lands behind
+   a collapsed "Why?" disclosure or on the hidden upgrades list (citing an
+   existing label step, raising a product's priority) — an invisible change
+   under a "Plan revised" toast reads as the button doing nothing. */
+const REVISION_NOTES = {
+  minimal:  'Each zone keeps fewer visible categories — you asked for a more minimal look.',
+  kid:      'The lower zone stays kid-reachable and hazard-free — you asked for a more kid-friendly setup.',
+  capacity: 'Risers and stacking reclaim the vertical space — you asked to maximize capacity.',
+  hide:     'Loose items move into opaque bins and baskets — you asked to hide more clutter.',
+  labels:   'Every zone and container gets a label — you asked for more labels.',
+};
+
 export function applyRevision(plan, id) {
   const pref = REVISIONS[id];
   const handler = pref && PREF_HANDLERS[pref];
@@ -197,6 +233,8 @@ export function applyRevision(plan, id) {
   plan.revisions = Array.isArray(plan.revisions) ? plan.revisions : [];
   if (plan.revisions.includes(id)) return false;
   handler(plan);
+  plan.opportunities = plan.opportunities || [];
+  if (!plan.opportunities.includes(REVISION_NOTES[id])) plan.opportunities.push(REVISION_NOTES[id]);
   plan.revisions.push(id);
   return true;
 }
@@ -275,8 +313,8 @@ function applyEffort(plan, answers) {
       .map((st, i) => ({ st, i }))
       .filter(x => !isProtected(x.st));
     const fillerFirst = [
-      ...removable.filter(x => FILLER_RE.test(x.st.task)),
-      ...removable.filter(x => !FILLER_RE.test(x.st.task)).reverse(),
+      ...removable.filter(x => FILLER_RE.test(stepTask(x.st))),
+      ...removable.filter(x => !FILLER_RE.test(stepTask(x.st))).reverse(),
     ];
     const toDrop = new Set();
     for (const x of fillerFirst) {
@@ -291,7 +329,7 @@ function applyEffort(plan, answers) {
       const zoneWord = (m.zone || '').split(/\s*·\s*|,/)[0].trim();
       if (!zoneWord || hasStep(plan, new RegExp(zoneWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'))) continue;
       addStep(plan, {
-        task: `Set up the ${zoneWord} zone (${m.level})`,
+        task: `Set up the ${zoneWord} zone (${m.level ?? m.lv})`,
         why: `${cite} A full pass gives every zone its own dedicated setup step.`,
       });
     }

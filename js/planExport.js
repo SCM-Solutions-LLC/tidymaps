@@ -19,9 +19,21 @@ function spaceName() {
   return state.space ? areaFor(state.space).label : 'My space';
 }
 
+/* state.ai is the NORMALIZED plan: normalizeAi renames steps {task,time,why}
+   to {t,m,w} and map rows' level to lv. Reading the raw names here is how
+   "Download checklist" once shipped a file with no steps and "undefined:" on
+   every zone. Both spellings are accepted because restored guest drafts can
+   still carry raw-shaped steps appended by the old Adjust-screen bug. */
+const stepTask = (s) => s && (s.t ?? s.task);
+const stepTime = (s) => {
+  const t = s && (s.m ?? s.time);
+  return t && t !== '—' ? t : '';
+};
+const stepWhy = (s) => s && (s.w ?? s.why);
+
 function planSteps() {
   const steps = (state.ai && state.ai.steps) || [];
-  return steps.filter((s) => s && s.task);
+  return steps.filter((s) => stepTask(s));
 }
 
 export function checklistText() {
@@ -37,8 +49,9 @@ export function checklistText() {
       // The tick is the point of a checklist: mark off what is already done
       // on screen so a printed copy starts where the person left off.
       const done = Array.isArray(state.stepDone) && state.stepDone[i] ? 'x' : ' ';
-      lines.push(`[${done}] ${i + 1}. ${step.task}${step.time ? `  (${step.time})` : ''}`);
-      if (step.why) lines.push(`      why: ${step.why}`);
+      const time = stepTime(step);
+      lines.push(`[${done}] ${i + 1}. ${stepTask(step)}${time ? `  (${time})` : ''}`);
+      if (stepWhy(step)) lines.push(`      why: ${stepWhy(step)}`);
     });
     lines.push('');
   }
@@ -47,7 +60,7 @@ export function checklistText() {
   if (map.length) {
     lines.push('ZONES', '');
     map.forEach((row) => {
-      lines.push(`- ${row.level}: ${row.zone}`);
+      lines.push(`- ${row.lv ?? row.level}: ${row.zone}`);
       if (row.why) lines.push(`    ${row.why}`);
       if (row.safety && row.safety.why) lines.push(`    safety: ${row.safety.why}`);
     });
