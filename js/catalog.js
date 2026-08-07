@@ -20,10 +20,17 @@ export function priceAsOf(){ return catalog ? catalog.priceAsOf : ''; }
 // Fit verdicts: 'fits' (≥0.5in clearance on every known axis), 'tight'
 // (positive but <0.5in), 'no-fit', or 'unknown' when nothing is measurable.
 export function fitFor(product, need){
+  // The tighter of the two constraints wins on every axis: the need's own
+  // maxDims (where the plan wants it to sit) AND the user's measured space.
+  // maxDims used to override a smaller measured depth outright, so a 12.9″
+  // tray on a 9″ shelf was badged "Fits your 9″ shelf depth".
+  const md = need.maxDims || {};
+  const measured = state.dims || {};
+  const tighter = (a, b) => (a && b) ? Math.min(a, b) : (a || b || null);
   const limits={
-    w: need.maxDims ? need.maxDims.w_in : null,
-    h: need.maxDims ? need.maxDims.h_in : null,
-    d: (need.maxDims && need.maxDims.d_in) || (state.dims && state.dims.d_in ? state.dims.d_in-0.5 : null),
+    w: tighter(md.w_in, measured.w_in),
+    h: tighter(md.h_in, measured.h_in),
+    d: tighter(md.d_in, measured.d_in ? measured.d_in-0.5 : null),
   };
   let margin=Infinity, known=false;
   for(const axis of ['w','h','d']){

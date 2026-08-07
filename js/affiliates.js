@@ -34,7 +34,9 @@ export function withAffiliate(url, retailer){
       u.searchParams.set(cfg.param, cfg.value);
       return u.toString();
     }
-    if(cfg.wrap) return cfg.wrap.replace('{url}', encodeURIComponent(url));
+    // split/join, not replace(): a template using {url} twice (impact.com
+    // subId patterns do) must not leak a literal "{url}" into the href.
+    if(cfg.wrap) return cfg.wrap.split('{url}').join(encodeURIComponent(url));
   }catch(e){ /* malformed url: fall through to the plain link */ }
   return url;
 }
