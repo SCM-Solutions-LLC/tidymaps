@@ -164,7 +164,7 @@ test('every mobility answer the wizard offers reaches the plan and the prompt', 
       kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] },
       mobility: [need], notes: '',
     });
-    assert.ok(plan.safetyNotes.some(n => /mid-height|easier reach/i.test(n)),
+    assert.ok(plan.safetyNotes.some(n => /easier reach|seated reach/i.test(n)),
       `"${need}" produced no reach guidance in the offline plan`);
   }
 

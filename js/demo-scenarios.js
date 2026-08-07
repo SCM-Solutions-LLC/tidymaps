@@ -1595,23 +1595,109 @@ function applyHousehold(plan, household) {
     }
   }
 
-  // Limited mobility
-  if (household.mobility && household.mobility.length) {
-    // Matches every label the wizard offers (MOBILITY_NEEDS in wizard-data.js)
-    // as well as the older free-text "limited reach" phrasing kept in saved
-    // spaces and guest drafts from before the question shipped.
-    const hasLimitedReach = household.mobility.some(m =>
-      typeof m === 'string' && /limited.?reach|avoid.?bending|wheelchair/i.test(m)
-    );
-    if (hasLimitedReach) {
-      plan.safetyNotes.push('Daily-use items are kept at mid-height to accommodate limited reach.');
-      // Move eye-level zone to true center
-      plan.map.forEach(m => {
-        if (m.eye) {
-          m.why += ' Placed at mid-height for easier reach.';
-        }
-      });
+  applyMobility(plan, household.mobility);
+}
+
+/* ---------- Mobility ----------
+   All three answers used to collapse into one branch that pushed a single
+   note — "Daily-use items are kept at mid-height to accommodate limited
+   reach" — and changed nothing on the map. The plan still told an
+   Avoid-bending user to put heavy items on the lowest shelf, and told a
+   wheelchair user about "limited reach". The note asserted a placement the
+   plan had not made, which is worse than saying nothing.
+
+   Each need names a different unreachable band, so each moves different
+   content, and the note describes what the plan actually did. */
+/* Out-of-band rows are identified by what the level IS, not where it sits in
+   the array. Indexing by position swapped a pantry's door rack — the last
+   row, but at chest height — as though it were the floor. */
+const isHighRow = (m, i) => i === 0 && /top|high|upper/i.test(m.level || '') && m.surface === 'shelf';
+const isFloorRow = (m) => m.surface === 'floor' || /floor|bottom|lowest/i.test(m.level || '');
+
+const MOBILITY_RULES = [
+  {
+    id: 'reach',
+    match: /limited.?reach/i,
+    // Overhead is the problem: nothing needed regularly goes up top.
+    outOfBand: (map) => map.map((m, i) => (isHighRow(m, i) ? i : -1)).filter(i => i >= 0),
+    note: 'Nothing you use regularly is on the top level — you told us reaching high is difficult, so the upper zone holds long-cycle storage only.',
+    // True whatever the shape of the space, because it describes the rule the
+    // plan is built on rather than a specific level.
+    always: 'You told us reaching high is difficult, so everyday items are placed at or below eye level for easier reach.',
+  },
+  {
+    id: 'bend',
+    match: /avoid.?bending/i,
+    // Floor level is the problem: nothing regular goes down low.
+    outOfBand: (map) => map.map((m, i) => (isFloorRow(m) ? i : -1)).filter(i => i >= 0),
+    note: 'Nothing you use regularly is at floor level — you told us bending is difficult, so the lowest zone holds long-cycle storage only.',
+    always: 'You told us bending is difficult, so heavy and everyday items sit between knee and waist height for easier reach rather than down at floor level.',
+    // "Heavy items on the lowest shelf" is right for lifting and wrong for
+    // bending; knee-to-waist is the compromise that serves both.
+    rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'between knee and waist height'],
+      [/\blowest shelf\b/gi, 'knee-to-waist zone']],
+  },
+  {
+    id: 'chair',
+    match: /wheelchair/i,
+    // Seated reach is roughly 15–48 inches: both extremes are out.
+    outOfBand: (map) => map.map((m, i) => (isHighRow(m, i) || isFloorRow(m) ? i : -1)).filter(i => i >= 0),
+    note: 'The top and floor zones hold long-cycle storage only — seated reach is roughly 15 to 48 inches, so everything used regularly sits inside that band.',
+    always: 'Seated reach is roughly 15 to 48 inches from the ground, so everyday items are placed inside that band for easier reach.',
+    rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'within seated reach'],
+      [/\bstep stool\b/gi, 'reacher grabber']],
+  },
+];
+
+/* Is this row's content something you go to often? The scenarios mark
+   long-cycle storage in the zone label ("Bulk overflow", "Seasonal items",
+   "Rarely used"), so the absence of those words means regular use. */
+const LONG_CYCLE_RE = /bulk|overflow|backup|rarely|seasonal|holiday|out-of-rotation|archive|spare|luggage|off-season/i;
+
+function applyMobility(plan, mobility) {
+  const needs = (mobility || []).filter(m => typeof m === 'string');
+  if (!needs.length) return;
+  const rules = MOBILITY_RULES.filter(r => needs.some(n => r.match.test(n)));
+  if (!rules.length) return;
+
+  for (const rule of rules) {
+    const outIdx = rule.outOfBand(plan.map);
+    for (const i of outIdx) {
+      const row = plan.map[i];
+      if (!row || LONG_CYCLE_RE.test(row.zone || '')) continue;
+      /* The row is out of the user's band but holds everyday things. Swap its
+         contents with the nearest in-band row that holds long-cycle storage —
+         a real placement change, which is what the note claims. */
+      const out = new Set(outIdx);
+      const donor = plan.map.find((m, j) => !out.has(j) && LONG_CYCLE_RE.test(m.zone || ''));
+      if (!donor) continue;
+      ['zone', 'items', 'why'].forEach(k => { const t = row[k]; row[k] = donor[k]; donor[k] = t; });
+      donor.why = `${donor.why} Moved here because you told us this zone needs to stay easy to get to.`;
     }
+    if (rule.rewrite) {
+      const fix = (t) => rule.rewrite.reduce((s, [re, to]) => String(s || '').replace(re, to), t);
+      plan.steps = (plan.steps || []).map(s => ({ ...s, task: fix(s.task), why: fix(s.why) }));
+      plan.safetyNotes = (plan.safetyNotes || []).map(fix);
+      plan.map.forEach(m => { m.why = fix(m.why); if (m.safety && m.safety.why) m.safety.why = fix(m.safety.why); });
+    }
+    /* Only claim it if it is now true. A space with no zone in the awkward
+       band (a wall cabinet has no floor) needs no note, and a swap that could
+       not find a donor must not be announced as though it had. */
+    // Every need always says the thing that is true of the whole plan.
+    if (!plan.safetyNotes.includes(rule.always)) plan.safetyNotes.push(rule.always);
+
+    const stuck = outIdx.filter(i => plan.map[i] && !LONG_CYCLE_RE.test(plan.map[i].zone || ''));
+    if (!outIdx.length) continue;   // no zone in the awkward band; nothing more to say
+    if (!stuck.length) {
+      if (!plan.safetyNotes.includes(rule.note)) plan.safetyNotes.push(rule.note);
+      continue;
+    }
+    /* Nowhere to move it to — a reach-in closet's middle is two hanging rods,
+       so the shoes on the floor have no in-band shelf to trade with. Saying
+       so is worth more than either a false claim or silence. */
+    const zones = stuck.map(i => `“${plan.map[i].level}”`).join(' and ');
+    const unmet = `${zones} still holds things you use regularly, and this space has no better level to move them to. A pull-down rail, a rolling cart, or one added mid-height shelf would bring it inside your reach.`;
+    if (!plan.safetyNotes.includes(unmet)) plan.safetyNotes.push(unmet);
   }
 }
 

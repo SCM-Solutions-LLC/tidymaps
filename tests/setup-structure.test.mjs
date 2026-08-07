@@ -407,3 +407,70 @@ test('a replacement never introduces a surface the archetype also lacks', () => 
     }
   }
 });
+
+/* ---------- mobility ----------
+   All three answers used to collapse into one branch that pushed a single
+   note ("Daily-use items are kept at mid-height") and changed nothing on the
+   map — a claim the plan had not acted on, while still telling an
+   Avoid-bending user to put heavy items on the lowest shelf. */
+
+const MOBILITY = ['Limited reach', 'Avoid bending', 'Wheelchair user'];
+const withMobility = (need) => ({ ...NO_KIDS, mobility: need ? [need] : [] });
+const LONG_CYCLE = /bulk|overflow|backup|rarely|seasonal|holiday|out-of-rotation|archive|spare|luggage|off-season/i;
+
+test('each mobility answer produces a different plan', () => {
+  const seen = new Map();
+  for (const need of MOBILITY) {
+    const p = planFor({ space: 'closet', id: 'reachinC' }, { household: withMobility(need) });
+    const fingerprint = JSON.stringify([p.map.map(m => m.zone), p.safetyNotes, p.steps.map(s => s.t)]);
+    for (const [other, fp] of seen) {
+      assert.notEqual(fingerprint, fp, `"${need}" and "${other}" produce identical plans`);
+    }
+    seen.set(need, fingerprint);
+  }
+});
+
+test('an Avoid-bending plan never tells the user to reach the lowest shelf', () => {
+  for (const s of [{ space: 'pantry', id: 'reachin' }, { space: 'garage', id: 'utility' }, { space: 'closet', id: 'reachinC' }]) {
+    const p = planFor(s, { household: withMobility('Avoid bending') });
+    const text = [...p.steps.map(x => x.t + ' ' + x.w), ...p.map.map(m => m.why)].join(' | ');
+    assert.ok(!/\b(?:on|to) the (?:lowest|bottom) shelf\b/i.test(text),
+      `${s.space}/${s.id}: still directs the user to the lowest shelf — "${text.match(/[^|]*(?:lowest|bottom) shelf[^|]*/i)}"`);
+  }
+});
+
+test('a mobility note is never a claim the plan did not act on', () => {
+  for (const s of ALL_SETUPS) {
+    for (const need of MOBILITY) {
+      const p = planFor(s, { household: withMobility(need) });
+      // The strong claims name a specific band; they may only appear when
+      // every zone in that band really does hold long-cycle storage.
+      for (const note of p.safetyNotes) {
+        // Only the STRONG claims — the ones naming a specific band as clear.
+        // The general notes describe the rule the plan is built on and
+        // mention the same words without asserting a zone is empty.
+        if (/Nothing you use regularly is on the top level/i.test(note)) {
+          assert.ok(LONG_CYCLE.test(p.map[0].zone || ''),
+            `${s.space}/${s.id} (${need}): claims the top level is long-cycle, but it holds "${p.map[0].zone}"`);
+        }
+        if (/Nothing you use regularly is at floor level/i.test(note)) {
+          const floors = p.map.filter(m => m.surface === 'floor' || /floor|bottom|lowest/i.test(m.lv));
+          for (const f of floors) {
+            assert.ok(LONG_CYCLE.test(f.zone || ''),
+              `${s.space}/${s.id} (${need}): claims nothing regular at floor level, but "${f.lv}" holds "${f.zone}"`);
+          }
+        }
+      }
+    }
+  }
+});
+
+test('every mobility answer leaves guidance, whatever the shape of the space', () => {
+  for (const s of ALL_SETUPS) {
+    for (const need of MOBILITY) {
+      const p = planFor(s, { household: withMobility(need) });
+      assert.ok(p.safetyNotes.some(n => /easier reach|seated reach/i.test(n)),
+        `${s.space}/${s.id}: "${need}" produced no reach guidance`);
+    }
+  }
+});
