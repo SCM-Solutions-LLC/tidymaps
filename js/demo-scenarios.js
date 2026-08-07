@@ -1595,23 +1595,103 @@ function applyHousehold(plan, household) {
     }
   }
 
-  // Limited mobility
-  if (household.mobility && household.mobility.length) {
-    // Matches every label the wizard offers (MOBILITY_NEEDS in wizard-data.js)
-    // as well as the older free-text "limited reach" phrasing kept in saved
-    // spaces and guest drafts from before the question shipped.
-    const hasLimitedReach = household.mobility.some(m =>
-      typeof m === 'string' && /limited.?reach|avoid.?bending|wheelchair/i.test(m)
-    );
-    if (hasLimitedReach) {
-      plan.safetyNotes.push('Daily-use items are kept at mid-height to accommodate limited reach.');
-      // Move eye-level zone to true center
-      plan.map.forEach(m => {
-        if (m.eye) {
-          m.why += ' Placed at mid-height for easier reach.';
-        }
-      });
-    }
+  applyMobility(plan, household.mobility);
+}
+
+/* ---------- Mobility ----------
+   All three answers used to collapse into one branch that pushed a note and
+   changed nothing. The first fix for that rearranged the shelf map — moving
+   everyday contents out of a hard-to-reach band and swapping long-cycle
+   storage in — and then described what it had done.
+
+   That design kept producing claims the plan could not back. Two rounds of
+   review found: solvents moved down toward child height with their warning
+   left behind on the shelf they left; heavy luggage moved to the floor to
+   answer "bending is difficult"; first-aid overflow chosen as the thing to
+   put on the floor; a note telling a user with a toddler that the shelf
+   holding the solvents "still holds things you use regularly" and that a
+   rolling cart would bring it into reach; "everything is already within
+   reach" printed on a ceiling rack and on under-bed drawers; and a kid-safe
+   badge on a floor zone silently blocking the whole thing.
+
+   The through-line is that every one of those came from the engine either
+   MOVING things it could not reason about, or ASSERTING a state it had not
+   verified. It has the zone labels and the item flags; it does not know
+   which of a user's belongings they touch daily, how heavy a "large
+   container" is, or how high off the ground this particular unit sits.
+
+   So it no longer does either. Each answer contributes one cited, actionable
+   step — an instruction to the person standing in the room, who does know
+   those things — plus the vocabulary changes that are true regardless of
+   layout. Nothing is rearranged and nothing is claimed about a zone. */
+/* The plan does not move a user's belongings for a mobility answer — it has
+   no way to know what they touch daily or how high the unit hangs. What it
+   must not do is keep telling them a level is easy to get to when they have
+   just said it is not: a garage map told a wheelchair user that bulky gear
+   "stores best on the lowest level where it is easy to grab and return". The
+   placement is still right — low is where weight belongs — so only the claim
+   about ease is rewritten, never the position. */
+const EASE_OF_ACCESS = [
+  [/ where it is easy to grab and return\b/gi, ', which is where its weight belongs — though it is not the easiest level for you to reach'],
+  [/ where they are easy to grab and return\b/gi, ', which is where their weight belongs — though it is not the easiest level for you to reach'],
+];
+
+const MOBILITY_RULES = [
+  {
+    match: /limited.?reach/i,
+    task: 'Move anything you reach for weekly off the top level, down to where you can get it flat-footed',
+    why: 'The top level is the one that costs you a stool or a stretch, so it should hold only what you want a few times a year.',
+    cite: 'You told us reaching high is difficult.',
+  },
+  {
+    match: /avoid.?bending/i,
+    task: 'Move anything you reach for weekly up off the floor, to between knee and waist height',
+    why: 'Knee-to-waist is the band you can work from standing, and it is also the safest height to lift from.',
+    cite: 'You told us bending is difficult.',
+    // "Heavy items on the lowest shelf" is right for lifting and wrong for
+    // bending; knee-to-waist is the compromise that serves both.
+    rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'between knee and waist height'],
+      [/\blowest shelf\b/gi, 'knee-to-waist zone'],
+      ...EASE_OF_ACCESS],
+  },
+  {
+    match: /wheelchair/i,
+    task: 'Keep everything you use weekly between 15 and 48 inches from the floor — the seated reach band',
+    why: 'Above and below that band needs a helper or a grabber, so keep those levels for things you need a few times a year.',
+    cite: 'You told us this space is used from a wheelchair.',
+    rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'within seated reach'],
+      [/\bstep stool\b/gi, 'reacher grabber'],
+      ...EASE_OF_ACCESS],
+  },
+];
+
+function applyMobility(plan, mobility) {
+  const needs = (mobility || []).filter(m => typeof m === 'string');
+  const rules = MOBILITY_RULES.filter(r => needs.some(n => r.match.test(n)));
+  if (!rules.length) return;
+  for (const rule of rules) {
+    if (plan.steps.some(s => s.task === rule.task)) continue;
+    plan.steps.push({ task: rule.task, time: '10 min', why: `${rule.cite} ${rule.why}`, _p: true });
+  }
+}
+
+/* The vocabulary changes run again after applyAnswers, because the prefs and
+   toggles add their own "move heavy items to the lowest shelf" step long
+   after applyHousehold has finished — which is how a plan came to say
+   "seated reach is roughly 15 to 48 inches" and "move heavy items to the
+   lowest shelf" on the same page. */
+function rewriteMobilityLanguage(plan, mobility) {
+  const needs = (mobility || []).filter(m => typeof m === 'string');
+  for (const rule of MOBILITY_RULES) {
+    if (!rule.rewrite || !needs.some(n => rule.match.test(n))) continue;
+    const fix = (t) => rule.rewrite.reduce((acc, [re, to]) => String(acc || '').replace(re, to), t);
+    plan.steps = (plan.steps || []).map(s => ({ ...s, task: fix(s.task), why: fix(s.why) }));
+    plan.safetyNotes = (plan.safetyNotes || []).map(fix);
+    plan.opportunities = (plan.opportunities || []).map(fix);
+    (plan.map || []).forEach(m => {
+      m.why = fix(m.why);
+      if (m.safety && m.safety.why) m.safety.why = fix(m.safety.why);
+    });
   }
 }
 
@@ -1666,6 +1746,9 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   applyGoal(plan, goal);
   applyHousehold(plan, household);
   if (answers) applyAnswers(plan, answers);
+  // Last: prefs and toggles add steps of their own, and the reach vocabulary
+  // has to reach those too.
+  rewriteMobilityLanguage(plan, household && household.mobility);
 
   /* Last, because the three layers above inject product needs of their own —
      the kid household's safety latch hardcodes "Top shelf", which a rolling

@@ -319,6 +319,7 @@ test('every level cap actually constrains its archetype', () => {
 /* ---------- second-round review findings ---------- */
 
 import { planMinutes, EFFORT_STEPS } from '../js/personalize.js';
+import { SPACE_CFG, goalIdFor } from '../js/wizard-data.js';
 
 test('the headline time always matches the checklist under it', () => {
   // The effort label used to set the time on its own, so a two-level rack
@@ -405,5 +406,290 @@ test('a replacement never introduces a surface the archetype also lacks', () => 
         assert.ok(!new RegExp(word, 'i').test(out), `${archetype}: "${sample}" -> "${out}" still names ${word}`);
       }
     }
+  }
+});
+
+/* ---------- mobility ----------
+   All three answers used to collapse into one branch that pushed a single
+   note ("Daily-use items are kept at mid-height") and changed nothing on the
+   map — a claim the plan had not acted on, while still telling an
+   Avoid-bending user to put heavy items on the lowest shelf. */
+
+const MOBILITY = ['Limited reach', 'Avoid bending', 'Wheelchair user'];
+const withMobility = (need) => ({ ...NO_KIDS, mobility: need ? [need] : [] });
+const LONG_CYCLE = /bulk|overflow|backup|rarely|seasonal|holiday|out-of-rotation|archive|spare|luggage|off-season/i;
+
+test('each mobility answer produces a different plan', () => {
+  const seen = new Map();
+  for (const need of MOBILITY) {
+    const p = planFor({ space: 'closet', id: 'reachinC' }, { household: withMobility(need) });
+    const fingerprint = JSON.stringify([p.map.map(m => m.zone), p.safetyNotes, p.steps.map(s => s.t)]);
+    for (const [other, fp] of seen) {
+      assert.notEqual(fingerprint, fp, `"${need}" and "${other}" produce identical plans`);
+    }
+    seen.set(need, fingerprint);
+  }
+});
+
+test('an Avoid-bending plan never tells the user to reach the lowest shelf', () => {
+  for (const s of [{ space: 'pantry', id: 'reachin' }, { space: 'garage', id: 'utility' }, { space: 'closet', id: 'reachinC' }]) {
+    const p = planFor(s, { household: withMobility('Avoid bending') });
+    const text = [...p.steps.map(x => x.t + ' ' + x.w), ...p.map.map(m => m.why)].join(' | ');
+    assert.ok(!/\b(?:on|to) the (?:lowest|bottom) shelf\b/i.test(text),
+      `${s.space}/${s.id}: still directs the user to the lowest shelf — "${text.match(/[^|]*(?:lowest|bottom) shelf[^|]*/i)}"`);
+  }
+});
+
+test('a mobility note is never a claim the plan did not act on', () => {
+  for (const s of ALL_SETUPS) {
+    for (const need of MOBILITY) {
+      const p = planFor(s, { household: withMobility(need) });
+      // The strong claims name a specific band; they may only appear when
+      // every zone in that band really does hold long-cycle storage.
+      for (const note of p.safetyNotes) {
+        // Only the STRONG claims — the ones naming a specific band as clear.
+        // The general notes describe the rule the plan is built on and
+        // mention the same words without asserting a zone is empty.
+        if (/Nothing you use regularly is on the top level/i.test(note)) {
+          assert.ok(LONG_CYCLE.test(p.map[0].zone || ''),
+            `${s.space}/${s.id} (${need}): claims the top level is long-cycle, but it holds "${p.map[0].zone}"`);
+        }
+        if (/Nothing you use regularly is at floor level/i.test(note)) {
+          const floors = p.map.filter(m => m.surface === 'floor' || /floor|bottom|lowest/i.test(m.lv));
+          for (const f of floors) {
+            assert.ok(LONG_CYCLE.test(f.zone || ''),
+              `${s.space}/${s.id} (${need}): claims nothing regular at floor level, but "${f.lv}" holds "${f.zone}"`);
+          }
+        }
+      }
+    }
+  }
+});
+
+test('every mobility answer leaves guidance, whatever the shape of the space', () => {
+  for (const s of ALL_SETUPS) {
+    for (const need of MOBILITY) {
+      const p = planFor(s, { household: withMobility(need) });
+      const guidance = [...p.safetyNotes, ...p.steps.map(x => x.t + ' ' + x.w)];
+      assert.ok(guidance.some(n => /reach|bending|seated/i.test(n)),
+        `${s.space}/${s.id}: "${need}" produced no reach guidance`);
+    }
+  }
+});
+
+/* ---------- what the first review of the mobility layer found ----------
+   The swap moved a row's contents but not its `safety`, so a garage's
+   solvents went DOWN toward child height and the holiday decorations that
+   replaced them inherited "keep well above kid and pet reach". And it
+   answered "bending is difficult" by putting the heavy luggage on the
+   floor. Convenience is not the only axis. */
+
+const HAZARD = ['heavy', 'chemical', 'sharp'];
+const hazardOf = (m) => new Set((m.items || []).flatMap(it => it.flags || []).filter(f => HAZARD.includes(f)));
+
+test('a mobility answer never rearranges the shelf map', () => {
+  /* The engine has zone labels and item flags; it does not know which of a
+     user's belongings they touch daily, how heavy a "large container" is, or
+     how high off the ground this unit sits. Two rounds of review found every
+     serious defect in this feature came from it moving things on that
+     guesswork — solvents down toward child height, heavy luggage onto the
+     floor, first-aid overflow chosen as the thing to put underfoot. It
+     advises now; it does not rearrange. */
+  for (const s of ALL_SETUPS) {
+    for (const household of [NO_KIDS, KIDS]) {
+      const base = planFor(s, { household }).map.map(m => `${m.lv}=${m.zone}|${(m.safety || {}).flag}|${(m.safety || {}).why}`);
+      for (const need of MOBILITY) {
+        const after = planFor(s, { household: { ...household, mobility: [need] } })
+          .map.map(m => `${m.lv}=${m.zone}|${(m.safety || {}).flag}|${(m.safety || {}).why}`);
+        assert.deepEqual(after, base,
+          `${s.space}/${s.id} (${need}): the shelf map was rearranged`);
+      }
+    }
+  }
+});
+
+test('a mobility answer never claims a zone is clear', () => {
+  // Every claim of that shape was false somewhere: "nothing you use
+  // regularly is at floor level" on a unit whose every level is the floor,
+  // "everything is already within reach" on a ceiling rack.
+  const CLAIMS = /nothing you use regularly|already within reach|holds long-cycle storage only|no better level/i;
+  for (const s of ALL_SETUPS) {
+    for (const need of MOBILITY) {
+      for (const note of planFor(s, { household: { ...KIDS, mobility: [need] } }).safetyNotes) {
+        assert.ok(!CLAIMS.test(note), `${s.space}/${s.id} (${need}): asserts zone state — "${note}"`);
+      }
+    }
+  }
+});
+
+test('no plan tells a bending or seated user to use the lowest shelf', () => {
+  for (const s of ALL_SETUPS) {
+    for (const need of ['Avoid bending', 'Wheelchair user']) {
+      for (const prefs of [[], ['Make heavy items safer']]) {
+        state.goals = [];
+        const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), null,
+          { ...NO_KIDS, mobility: [need] },
+          { ...buildAnalysisContext(), prefs, toggles: { heavy: 'yes' }, effort: 'Weekend reset' }, s.id));
+        const text = p.steps.map(x => x.t + ' ' + x.w).join(' | ');
+        assert.ok(!/\b(?:on|to) the (?:lowest|bottom) shelf\b/i.test(text),
+          `${s.space}/${s.id} (${need}, prefs ${JSON.stringify(prefs)}): "${text.match(/[^|]*(?:lowest|bottom) shelf[^|]*/i)}"`);
+      }
+    }
+  }
+});
+
+test('no plan tells a bending or seated user a level is easy to get to', () => {
+  /* The map is not rearranged for a mobility answer, so a low level stays a
+     low level — but a garage map went on telling a wheelchair user that bulky
+     gear "stores best on the lowest level where it is easy to grab and
+     return". The placement is right; the claim about ease is not. */
+  for (const s of ALL_SETUPS) {
+    for (const need of ['Avoid bending', 'Wheelchair user']) {
+      const p = planFor(s, { household: { ...NO_KIDS, mobility: [need] } });
+      const text = [...p.map.map(m => m.why), ...p.steps.map(x => x.t + ' ' + x.w)].join(' | ');
+      assert.ok(!/(?:lowest|bottom|floor)[^|]*\beasy to (?:grab|get|reach)\b/i.test(text),
+        `${s.space}/${s.id} (${need}): "${text.match(/[^|]*easy to (?:grab|get|reach)[^|]*/i)}"`);
+    }
+  }
+});
+
+test('goal advice never evicts the whole space-specific checklist', () => {
+  for (const s of ALL_SETUPS) {
+    const goals = SPACE_CFG[s.space].goals;
+    const bare = planFor(s, { effort: 'Quick refresh' });
+    const bareTasks = new Set(bare.steps.map(x => x.t));
+    state.goals = goals;
+    const loaded = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), 'find', NO_KIDS,
+      { ...buildAnalysisContext(), goals, effort: 'Quick refresh' }, s.id));
+    state.goals = [];
+    const kept = loaded.steps.filter(x => bareTasks.has(x.t)).length;
+    assert.ok(kept >= 2,
+      `${s.space}/${s.id}: ${goals.length} goals left only ${kept} of ${bareTasks.size} space-specific steps`);
+  }
+});
+
+test('a $0 plan never gets goal advice that requires buying something', () => {
+  for (const s of ALL_SETUPS) {
+    const goals = SPACE_CFG[s.space].goals;
+    state.goals = goals;
+    const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), 'find', NO_KIDS,
+      { ...buildAnalysisContext(), goals, effort: 'Full overhaul', budget: '$0', prefs: ['Use only what I already own'] }, s.id));
+    state.goals = [];
+    /* This used to name the three sentences that had been fixed, so it could
+       only ever catch those three coming back. A $0 plan promises "every step
+       below works with what is already in the space" — so scan for the thing
+       being promised against, which caught seven more: "Bin the backstock and
+       label the bins", "Put all chemicals in one caddy", "Stand baking sheets
+       upright using vertical dividers". Zone names are exempt: they name a
+       place on the map, not something to buy. */
+    const zones = new Set(p.map.map(m => m.zone));
+    for (const step of p.steps) {
+      if ([...zones].some(z => step.t.includes(z))) continue;
+      assert.ok(!/\bbins?\b|\bcadd(?:y|ies)\b|\bshelf dividers\b|\bvertical dividers\b|\bcompartment box\b|\badd a riser\b/i.test(step.t),
+        `${s.space}/${s.id}: $0 plan says "${step.t}"`);
+    }
+  }
+});
+
+test('every answer the user picks is either planned or named as unplanned', () => {
+  /* The cap was silent: a pantry on "Quick refresh" acted on two of seven
+     answers and read as though it had acted on all seven. Dropping an answer
+     is allowed — a short session cannot fit everything — but hiding that it
+     was dropped is not. */
+  for (const s of ALL_SETUPS) {
+    for (const effort of ['Quick refresh', 'Weekend reset', 'Full overhaul']) {
+      const goals = SPACE_CFG[s.space].goals;
+      state.goals = goals;
+      const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), 'find', NO_KIDS,
+        { ...buildAnalysisContext(), goals, effort }, s.id));
+      state.goals = [];
+      const said = p.steps.map(x => x.w || '').join(' | ');
+      const unplanned = p.opportunities.filter(o => /not in this checklist/.test(o)).join(' ');
+      for (const goal of goals) {
+        assert.ok(said.includes(`“${goal}”`) || unplanned.includes(`“${goal}”`),
+          `${s.space}/${s.id} (${effort}): "${goal}" was neither acted on nor named as unplanned`);
+      }
+    }
+  }
+});
+
+test('the goal cap is spent on new advice, not on repeating itself', () => {
+  /* Two answers that share one rule produce one step and two citations. That
+     cost the whole budget once — a garage given "Always running out of room"
+     and "No room for the car" had nothing left for a third answer, though
+     only one step had been added. */
+  const s = ALL_SETUPS.find(x => x.space === 'pantry' && x.id === 'reachin');
+  /* The pantry already says "Add labels if available", so "Can't find
+     anything" lands on a step the plan has and adds nothing to it. On a Quick
+     refresh (cap 2) the two answers around it must both still get advice. */
+  const goals = ['Expired food hides in back', "Can't find anything", 'No system for restocking', 'Hard to keep tidy'];
+  state.goals = goals;
+  const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), goalIdFor(goals[0]), NO_KIDS,
+    { ...buildAnalysisContext(), goals, effort: 'Quick refresh' }, s.id));
+  state.goals = [];
+  const said = p.steps.map(x => x.w || '').join(' | ');
+  assert.ok(said.includes('“Can’t find anything”'.replace('’', "'")) || said.includes('“Can\'t find anything”'),
+    'the answer that merged onto an existing step lost its citation');
+  assert.ok(said.includes('“No system for restocking”'),
+    'the cap was spent on an answer that added no step, so a fresh one was dropped');
+});
+
+test('an answer with no other route into the plan outranks one that has', () => {
+  /* Click order alone dropped exactly the wrong answers: every space lists
+     "Can't find anything" first, and that is the one answer that also moves
+     the summary, the opportunities and the product priorities through
+     applyGoal. The answers with nothing but their own step went last. */
+  const s = ALL_SETUPS.find(x => x.space === 'pantry');
+  /* All three need a step the plan does not have, and a Quick refresh fits
+     two. The first answer is the one the wizard turns into state.goal, so it
+     also reaches the summary, the opportunities and the product priorities —
+     it is the one that can afford to lose its step. */
+  const goals = ['Always running out of room', 'Expired food hides in back', 'No system for restocking'];
+  state.goals = goals;
+  const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), goalIdFor(goals[0]), NO_KIDS,
+    { ...buildAnalysisContext(), goals, effort: 'Quick refresh' }, s.id));
+  state.goals = [];
+  const said = p.steps.map(x => x.w || '').join(' | ');
+  assert.ok(said.includes('“No system for restocking”'),
+    'an answer whose only route is its own step was dropped for one that has another');
+});
+
+test('goal advice never repeats a behavior the checklist already has', () => {
+  /* Deduping on the advice's own first three words never matched the
+     scenario's phrasing of the same idea, so a dresser plan carried both
+     "Label each drawer by category" and "Label the front edge of every
+     zone", and both "File-fold tops so they stand upright" and "File-fold so
+     every item stands upright". */
+  const BEHAVIORS = [[/\blabell?(?:s|ed|ing)?\b/i, 'labelling'], [/file[- ]?fold/i, 'file-folding'],
+    [/coil (?:each cable|cords)/i, 'coiling cords'], [/\briser\b/i, 'adding a riser']];
+  for (const s of ALL_SETUPS) {
+    for (const goal of SPACE_CFG[s.space].goals) {
+      state.goals = [goal];
+      const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), null, NO_KIDS,
+        { ...buildAnalysisContext(), goals: [goal], effort: 'Full overhaul' }, s.id));
+      state.goals = [];
+      for (const [re, name] of BEHAVIORS) {
+        const hits = p.steps.filter(x => re.test(x.t));
+        // small parts get their own compartment step; that is not a label step
+        const real = name === 'labelling' ? hits.filter(x => !/small parts into/i.test(x.t)) : hits;
+        assert.ok(real.length <= 1,
+          `${s.space}/${s.id} ("${goal}"): ${name} twice — ${real.map(x => `"${x.t}"`).join(' and ')}`);
+      }
+    }
+  }
+});
+
+test('a plan never asks for clear containers and an opaque front at once', () => {
+  // Both are reachable from the wizard's own style step.
+  for (const s of ALL_SETUPS) {
+    const goals = SPACE_CFG[s.space].goals.filter(g => /looks cluttered/i.test(g));
+    if (!goals.length) continue;
+    state.goals = goals;
+    const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), 'clutter', NO_KIDS,
+      { ...buildAnalysisContext(), goals, effort: 'Full overhaul', prefs: ['Use clear containers'] }, s.id));
+    state.goals = [];
+    const text = p.steps.map(x => x.t).join(' | ');
+    assert.ok(!(/opaque/i.test(text) && /clear containers/i.test(text)),
+      `${s.space}/${s.id}: asks for both — ${text}`);
   }
 });

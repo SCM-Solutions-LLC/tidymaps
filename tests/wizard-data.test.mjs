@@ -164,8 +164,15 @@ test('every mobility answer the wizard offers reaches the plan and the prompt', 
       kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] },
       mobility: [need], notes: '',
     });
-    assert.ok(plan.safetyNotes.some(n => /mid-height|easier reach/i.test(n)),
-      `"${need}" produced no reach guidance in the offline plan`);
+    /* A note is not guidance. The version of this that only asked for the
+       word "reach" somewhere passed against the code that shipped a single
+       generic sentence ("Daily-use items are kept at mid-height to
+       accommodate limited reach") for all three answers. The contract is an
+       actionable step that quotes the answer back, so require both. */
+    const step = plan.steps.find(s => /You told us/.test(s.why || ''));
+    assert.ok(step, `"${need}" produced no step in the offline plan`);
+    assert.match(step.why, /You told us [^.]*(?:reach|bending|wheelchair)/i,
+      `"${need}" produced a step that does not say which answer it came from`);
   }
 
   // No mobility answer must not invent a reach note.

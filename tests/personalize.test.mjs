@@ -320,3 +320,46 @@ test('the kid revision never touches a hazard zone', () => {
       `${space}: the revision promised a kid-safe zone and produced none`);
   }
 });
+
+/* ---------- goals ----------
+   The wizard takes as many answers to "What bugs you most?" as the user
+   wants. Only the FIRST was read, through goalIdFor(), which collapses 30 of
+   the 57 options to 'unsure' — a branch that does nothing. A third of a
+   whole step, including every bathroom answer but one, changed nothing. */
+
+import { SPACE_CFG, goalIdFor } from '../js/wizard-data.js';
+
+const ALL_GOALS = Object.entries(SPACE_CFG).flatMap(([space, cfg]) => cfg.goals.map(g => ({ space, goal: g })));
+
+test('every goal the wizard offers leaves a step citing the user\'s own words', () => {
+  assert.ok(ALL_GOALS.length >= 50, `expected the full goal set, got ${ALL_GOALS.length}`);
+  for (const { space, goal } of ALL_GOALS) {
+    const plan = getDemoScenario(space, goalIdFor(goal), NO_KIDS, { goals: [goal], effort: 'Full overhaul' });
+    assert.ok(stepText(plan).includes(goal),
+      `${space}: "${goal}" (id ${goalIdFor(goal)}) produced no step quoting it`);
+  }
+});
+
+test('every selected goal is read, not just the first', () => {
+  const goals = ['Can\'t find anything', 'Hard to keep tidy', 'Expired food hides in back'];
+  const plan = getDemoScenario('pantry', 'find', NO_KIDS, { goals, effort: 'Full overhaul' });
+  for (const g of goals) {
+    assert.ok(stepText(plan).includes(g), `"${g}" was dropped — only the first goal was read`);
+  }
+});
+
+test('goal advice is not duplicated when the same goal is passed twice', () => {
+  const plan = getDemoScenario('pantry', 'find', NO_KIDS,
+    { goals: ['Hard to keep tidy', 'Hard to keep tidy'], effort: 'Full overhaul' });
+  const cited = plan.steps.filter(s => (s.why || '').includes('Hard to keep tidy'));
+  assert.equal(cited.length, 1, `expected one cited step, got ${cited.length}`);
+});
+
+test('a goal-cited step survives effort trimming', () => {
+  // Goal steps are personalized, so the "Quick refresh" trim must not drop
+  // the one thing the user said bothers them most.
+  const plan = getDemoScenario('pantry', 'find', NO_KIDS,
+    { goals: ['Expired food hides in back'], effort: 'Quick refresh' });
+  assert.ok(stepText(plan).includes('Expired food hides in back'),
+    'the trim removed the step that cites the user\'s stated problem');
+});
