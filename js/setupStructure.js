@@ -147,14 +147,32 @@ export const ARCHETYPE_LEVELS = {
   ],
 };
 
+/* Two archetypes serve both shelved spaces and clothes closets, and the
+   right level list differs: an L-shaped pantry is six shelves, an L-shaped
+   closet is two runs of hanging with a shelf over each. Keyed by the SOURCE
+   scenario's archetype so the content decides, not the space id. */
+export const ARCHETYPE_LEVELS_FOR_SOURCE = {
+  'l-run': {
+    'closet-rod': [
+      { level: 'Long run: top shelf', icon: 'up', surface: 'shelf', role: 'high' },
+      { level: 'Long run: hanging rod', icon: 'rod', surface: 'rod', eye: true, role: 'rod' },
+      { level: 'Corner: deep shelf', icon: 'middle', surface: 'shelf', role: 'mid' },
+      { level: 'Short run: hanging rod', icon: 'rod', surface: 'rod', role: 'rod' },
+      { level: 'Floor / corner', icon: 'down', surface: 'floor', role: 'floor' },
+    ],
+  },
+};
+
 /* Some setups are a smaller instance of their archetype: a tall narrow
    drawer tower is a drawer-bank, but so is a wide dresser, and a rolling
    tool chest has more, shallower drawers than either. Capping the level
-   count here keeps the plan honest about how many zones actually exist. */
+   count here keeps the plan honest about how many zones actually exist.
+
+   Only the entries that actually bite are listed: a cap at or above its
+   archetype's template length is a no-op, and leaving those in reads as a
+   constraint that is doing something. */
 export const SETUP_LEVEL_CAP = {
-  underbed: 2, overhead: 2, wallcab: 3, wallcabW: 3, wallshelf: 3,
-  tower: 4, chest: 4, toolchest: 5, sideboard: 2, incounter: 4,
-  openshelf: 4, undersink: 4, vanitydr: 4, cabinetL: 5, reachinL: 5,
+  wallcab: 3, wallcabW: 3, wallshelf: 3, sideboard: 2, openshelf: 4,
 };
 
 /* The surfaces each archetype genuinely offers. Prose that names a surface
@@ -164,10 +182,12 @@ export const SETUP_LEVEL_CAP = {
 export const ARCHETYPE_SURFACES = {
   'shelves':       ['shelf'],
   'cabinet':       ['shelf', 'door'],
-  'l-run':         ['shelf'],
-  // walk-in covers pantries and closets alike, and a walk-in closet does
-  // hang clothes — the surface list gates prose scrubbing, so it has to be
-  // permissive enough for every space the archetype serves.
+  'l-run':         ['shelf', 'rod', 'floor'],
+  // walk-in and L-run each cover pantries AND clothes closets, and a closet
+  // hangs things — the surface list gates prose scrubbing, so it has to be
+  // permissive enough for every space the archetype serves. Listing only
+  // 'shelf' for l-run stripped every rod from L-shaped closets while the
+  // steps went on telling the user to hang their work clothes.
   'walkin-u':      ['shelf', 'rod', 'floor'],
   'closet-rod':    ['shelf', 'rod', 'floor'],
   'closet-system': ['shelf', 'rod', 'drawer', 'floor'],
@@ -196,11 +216,18 @@ const SURFACE_PHRASES = [
     [/\bthe counter\b/gi, 'the top drawer'],
   ]],
   ['door', [
+    // Longest first: "the door back" must not become "the front edge back".
+    [/\bthe (?:back of the door|door back)\b/gi, 'the wall beside it'],
+    [/\bon the (?:back of the )?door\b/gi, 'on the wall beside it'],
     [/\bthe (?:inside of the )?door\b/gi, 'the front edge'],
     [/\bdoor rack\b/gi, 'front shelf'],
     [/\bdoor-mounted\b/gi, 'front-facing'],
   ]],
   ['floor', [
+    // Qualified forms first — "the cabinet floor" never matched "the floor",
+    // so a wall shelf kept advising items "sit stable on the cabinet floor".
+    [/\bthe (?:cabinet|closet|pantry|unit) floor\b/gi, 'the lowest level'],
+    [/\bthe floor of the \w+\b/gi, 'the lowest level'],
     [/\bthe floor\b/gi, 'the lowest level'],
     [/\bfloor level\b/gi, 'lowest level'],
   ]],
@@ -230,7 +257,12 @@ export function rewriteForSurfaces(text, archetype) {
   let out = String(text);
   for (const [surface, rules] of SURFACE_PHRASES) {
     if (have.has(surface)) continue;
-    for (const [re, to] of rules) out = out.replace(re, to);
+    for (const [re, to] of rules) {
+      // Every replacement is written lowercase, so a match that opened a
+      // sentence used to lowercase it: "The counter is cluttered." became
+      // "the counter…". Carry the matched text's own capitalization across.
+      out = out.replace(re, (match) => (/^[A-Z]/.test(match) ? to.charAt(0).toUpperCase() + to.slice(1) : to));
+    }
   }
   return out.replace(/\s{2,}/g, ' ').trim();
 }
@@ -272,6 +304,12 @@ const LEVEL_NOUN = {
   'counter': 'zones', 'walkin-u': 'zones', 'l-run': 'zones',
   'overhead-rack': 'deck halves', 'fridge': 'zones',
 };
+/* "has one shelves" — a level count of 1 is reachable once the content rules
+   drop an emptied level, so the noun needs a singular. */
+const LEVEL_NOUN_ONE = {
+  shelves: 'shelf', drawers: 'drawer', bays: 'bay', zones: 'zone',
+  'deck halves': 'deck half',
+};
 
 /* The wizard's setup labels are card captions, not noun phrases — "Butler's",
    "L-shaped", "Reach-in", "Counter + uppers". Dropping one into a sentence
@@ -303,9 +341,19 @@ export const SETUP_NOUN = {
 
 export function describeSetup({ archetype, setupId, dims, levelCount }) {
   const entry = SETUP_NOUN[setupId];
-  if (!dims || !dims.w_in || !dims.h_in || !entry) return '';
+  if (!entry) return '';
   const [name, plural] = entry;
-  const noun = LEVEL_NOUN[archetype] || 'shelves';
+  /* No measurements (a restored space that never had them, the landing
+     sample). The hardcoded "A 48-inch-wide unit…" must still go — it is a
+     claim about someone else's furniture either way — so describe the setup
+     without a size rather than leaving the false sentence in place. */
+  if (!dims || !dims.w_in || !dims.h_in) {
+    const many = LEVEL_NOUN[archetype] || 'shelves';
+    const n = levelCount === 1 ? (LEVEL_NOUN_ONE[many] || many) : many;
+    return `Your ${name} ${plural ? 'have' : 'has'} ${COUNT_WORDS[levelCount] || levelCount} ${n} to work with.`;
+  }
+  const many = LEVEL_NOUN[archetype] || 'shelves';
+  const noun = levelCount === 1 ? (LEVEL_NOUN_ONE[many] || many) : many;
   const count = COUNT_WORDS[levelCount] || String(levelCount);
   const size = ROOMY_ARCHETYPES.has(archetype) && dims.d_in
     ? `${ft(dims.w_in)} × ${ft(dims.d_in)} and ${ft(dims.h_in)} tall`
@@ -315,9 +363,18 @@ export function describeSetup({ archetype, setupId, dims, levelCount }) {
 
 /* Swap the scenario's leading furniture claim for the measured one, keeping
    every sentence after it. */
+/* Replace the leading sentence only when it is in fact a claim about the
+   furniture's size or shelf count — that is the sentence the measurements
+   contradict. Anything else is diagnosis the user needs, so the measured
+   sentence goes in front of it instead of over it. */
+const FURNITURE_CLAIM_RE = /\b\d+[- ]?inch|\bfoot\b|\bfeet\b|\b(?:one|two|three|four|five|six|seven|eight|nine|ten)[- ](?:shelf|shelves|drawer|drawers|level|levels|tier)\b|\b\d+\s*(?:shelves|shelf|drawers|drawer|levels)\b/i;
+
 export function rewriteOpening(summary, opening) {
   if (!opening) return summary;
-  const rest = String(summary || '').split(/(?<=[.!?])\s+/).slice(1).join(' ').trim();
+  const sentences = String(summary || '').split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (!sentences.length) return opening;
+  const replaceable = FURNITURE_CLAIM_RE.test(sentences[0]);
+  const rest = (replaceable ? sentences.slice(1) : sentences).join(' ').trim();
   return rest ? `${opening} ${rest}` : opening;
 }
 
@@ -344,22 +401,41 @@ const ARCHETYPE_CONTENT_RULES = {
   },
 };
 
+const HAZARD_FLAGS = ['heavy', 'chemical', 'sharp'];
+
 function applyContentRules(plan, archetype) {
   const rule = ARCHETYPE_CONTENT_RULES[archetype];
   if (!rule) return;
   const flags = new Set(rule.excludeFlags || []);
   let removed = false;
   plan.map.forEach(m => {
+    const before = (m.items || []).length;
     const keptItems = (m.items || []).filter(it => !(it.flags || []).some(f => flags.has(f)));
-    if (keptItems.length !== (m.items || []).length) removed = true;
-    const keptZone = String(m.zone || '').split(' · ').filter(seg => !rule.excludeZone.test(seg));
-    if (keptZone.length !== String(m.zone || '').split(' · ').length) removed = true;
-    // Never empty a level: if the rule would clear it, keep what is left of
-    // the label rather than rendering a blank zone.
-    m.items = keptItems.length ? keptItems : (m.items || []);
+    const segs = String(m.zone || '').split(' · ').filter(Boolean);
+    const keptZone = segs.filter(seg => !rule.excludeZone.test(seg));
+    if (keptItems.length !== before || keptZone.length !== segs.length) removed = true;
+    /* Never re-admit what the rule just excluded. The old fallback restored
+       the original list whenever a level came out empty, so a rack whose
+       every item was hazardous got all of them back — under a note saying
+       they do not belong there. An empty level is dropped instead. */
+    m.items = keptItems;
     m.zone = keptZone.length ? keptZone.join(' · ')
-      : (m.items.length ? m.items.map(i => i.name).slice(0, 3).join(' · ') : m.zone);
+      : keptItems.map(i => i.name).slice(0, 3).join(' · ');
+    /* The flag existed because of the items that just left. Leaving it puts
+       a "keep high" badge on holiday decorations. */
+    if (m.safety && m.safety.flag && !keptItems.some(it => (it.flags || []).some(f => HAZARD_FLAGS.includes(f)))) {
+      m.safety = { flag: null, why: null };
+    }
   });
+  // A level with nothing left in it is not a level.
+  plan.map = plan.map.filter(m => m.zone && m.zone.trim() && (m.items || []).length);
+  plan.map.forEach((m, i) => { m.shelfIndex = i; });
+  if (!plan.map.some(m => m.eye) && plan.map.length) plan.map[0].eye = true;
+  plan.geometry = { ...(plan.geometry || {}), shelfCount: plan.map.length };
+  // The category chips render from plan.categories, so leaving the excluded
+  // ones there put "Chemicals & paint" back on a ceiling-rack plan — and
+  // applyCategoryEdits would have re-seeded them into a zone.
+  plan.categories = (plan.categories || []).filter(c => !rule.excludeZone.test(c));
   if (removed) {
     plan.safetyNotes = plan.safetyNotes || [];
     if (!plan.safetyNotes.includes(rule.note)) plan.safetyNotes.unshift(rule.note);
@@ -384,18 +460,28 @@ function dropHeightArguments(plan, archetype) {
   plan.map.forEach(m => {
     const w = keep(m.why);
     if (w) m.why = w;
+    /* Rewrite the reason, never drop the flag. Nulling safety here threw
+       away the hazard marker the bucket merge had gone out of its way to
+       carry across — the sentence was stale, the hazard was not. */
     if (m.safety && m.safety.why && HEIGHT_ARGUMENT_RE.test(m.safety.why)) {
-      m.safety = { flag: null, why: null };
+      const kept = keep(m.safety.why);
+      m.safety = { ...m.safety, why: kept || 'Keep this zone out of easy reach.' };
     }
   });
 }
 
 /* ---------- The projection ---------- */
 
-function levelsFor(archetype, setupId, wanted) {
-  const template = ARCHETYPE_LEVELS[archetype] || ARCHETYPE_LEVELS.shelves;
+function levelsFor(archetype, setupId, sourceArchetype) {
+  const bySource = ARCHETYPE_LEVELS_FOR_SOURCE[archetype];
+  const template = (bySource && bySource[sourceArchetype])
+    || ARCHETYPE_LEVELS[archetype] || ARCHETYPE_LEVELS.shelves;
   const cap = SETUP_LEVEL_CAP[setupId] || template.length;
-  const n = Math.max(1, Math.min(template.length, cap, wanted || template.length));
+  // NOT clamped by the scenario's row count. Clipping to it deleted the
+  // levels that define the setup: a "Counter + uppers" run took its three
+  // rows from the cabinet scenario and lost both its drawers and its lower
+  // cabinet, on a card that says "Cabinets above and below a counter".
+  const n = Math.max(1, Math.min(template.length, cap));
   // Take the first n slots. Templates run top-to-bottom with the incidental
   // slot last (a cabinet's door rack, a walk-in's floor), so truncating from
   // the end drops the optional level rather than a defining one — a
@@ -413,11 +499,110 @@ function levelsFor(archetype, setupId, wanted) {
    four. Every row lands somewhere, so a 5-shelf pantry projected onto a
    2-level overhead rack keeps every category rather than silently losing
    three shelves' worth of the user's things. */
-function bucketRows(rows, n) {
-  if (rows.length <= n) return rows.map(r => [r]);
-  const buckets = Array.from({ length: n }, () => []);
-  rows.forEach((row, i) => buckets[Math.floor(i * n / rows.length)].push(row));
+/* Returns [{ slot, rows }] for the slots that ended up with content, so the
+   slot a bucket belongs to can never drift from its index. */
+function bucketRows(rows, slots) {
+  const n = slots.length;
+  const pair = (buckets) => buckets
+    .map((b, i) => ({ slot: slots[i], rows: b }))
+    .filter(x => x.rows && x.rows.length);
+  /* When the source rows carry more than one kind of surface, WHICH slot a
+     row lands on matters more than its position: an L-shaped closet's rod
+     slots must get the rows that were hanging, or the plan files work shirts
+     on a corner shelf and out-of-season coats on the rail. */
+  const sourceSurfaces = new Set(rows.map(r => r.surface).filter(Boolean));
+  const targetSurfaces = new Set(slots.map(s => s.surface));
+  if (sourceSurfaces.size > 1 && targetSurfaces.size > 1) return pair(alignBySurface(rows, slots));
+
+  if (rows.length === n) return pair(rows.map(r => [r]));
+  if (rows.length > n) {
+    const buckets = Array.from({ length: n }, () => []);
+    rows.forEach((row, i) => buckets[Math.floor(i * n / rows.length)].push(row));
+    return pair(buckets);
+  }
+  return pair(splitRows(rows, n).map(r => [r]));
+}
+
+/* Greedy surface-first assignment, preserving source order within a surface. */
+function alignBySurface(rows, slots) {
+  const pool = rows.map((r, i) => ({ r, i, used: false }));
+  const buckets = slots.map(() => []);
+  const takeFirst = (pred) => {
+    const e = pool.find(x => !x.used && pred(x));
+    if (e) { e.used = true; return e.r; }
+    return null;
+  };
+  // 1. exact surface match, in order
+  slots.forEach((slot, s) => {
+    const row = takeFirst(x => x.r.surface === slot.surface);
+    if (row) buckets[s].push(row);
+  });
+  // 2. anything still unplaced fills the still-empty slots, in order
+  slots.forEach((slot, s) => {
+    if (buckets[s].length) return;
+    const row = takeFirst(() => true);
+    if (row) buckets[s].push(row);
+  });
+  // 3. leftovers merge into the nearest slot that already shares their surface
+  pool.filter(x => !x.used).forEach(x => {
+    let target = buckets.findIndex((b, s) => b.length && slots[s].surface === x.r.surface);
+    if (target < 0) target = buckets.findIndex(b => b.length);
+    if (target < 0) target = 0;
+    buckets[target].push(x.r);
+    x.used = true;
+  });
+  /* 4. An empty slot borrows from whichever bucket can spare content —
+     same surface first, then any splittable one. Restricting donors to a
+     matching surface starved the slots that define the setup: a "Built-in +
+     drawers" closet has no drawer row to inherit from, so its drawer bank
+     came out empty on the one card that advertises it. */
+  const splittable = (c) => c.length === 1 && (c[0].items || []).length > 1
+    && String(c[0].zone || '').split(' · ').length > 1;
+  buckets.forEach((b, s) => {
+    if (b.length) return;
+    let donor = buckets.findIndex((c, j) => splittable(c) && slots[j].surface === slots[s].surface);
+    if (donor < 0) {
+      // the fullest splittable bucket, so the busiest level sheds first
+      donor = buckets.reduce((best, c, j) => (splittable(c)
+        && (best < 0 || (c[0].items || []).length > (buckets[best][0].items || []).length)) ? j : best, -1);
+    }
+    if (donor < 0) return;
+    const [head, tail] = splitRows(buckets[donor], 2);
+    if (!head || !tail) return;
+    buckets[donor] = [head];
+    buckets[s] = [tail];
+  });
   return buckets;
+}
+
+/* Fewer scenario rows than the setup has levels. Rather than leave the
+   defining levels empty (a counter run with no drawers and no lower
+   cabinet), split the fullest rows until every level has something. A row
+   with one item cannot be split, so this stops when nothing is divisible —
+   fewer, honest levels beat invented ones. */
+function splitRows(rows, n) {
+  const out = rows.map(r => ({ ...r, items: [...(r.items || [])] }));
+  const segsOf = (r) => String(r.zone || '').split(' · ').filter(Boolean);
+  while (out.length < n) {
+    let best = -1, bestScore = 1;
+    out.forEach((r, i) => {
+      const score = Math.min(segsOf(r).length, (r.items || []).length);
+      if (score > bestScore) { bestScore = score; best = i; }
+    });
+    if (best < 0) break;
+    const row = out[best];
+    const segs = segsOf(row), items = row.items || [];
+    const sMid = Math.ceil(segs.length / 2), iMid = Math.ceil(items.length / 2);
+    const head = { ...row, zone: segs.slice(0, sMid).join(' · '), items: items.slice(0, iMid) };
+    const tail = { ...row, zone: segs.slice(sMid).join(' · '), items: items.slice(iMid),
+      // A hazard flag belongs with the items that earned it; keep it on the
+      // half that still holds a flagged item.
+      safety: items.slice(iMid).some(it => (it.flags || []).some(f => ['heavy', 'chemical', 'sharp'].includes(f)))
+        ? row.safety : { flag: null, why: null } };
+    if (!head.zone || !tail.zone || !head.items.length || !tail.items.length) break;
+    out.splice(best, 1, head, tail);
+  }
+  return out;
 }
 
 function joinUnique(parts, sep) {
@@ -428,11 +613,11 @@ function joinUnique(parts, sep) {
    Mutates and returns the plan. Safe to call with an unknown archetype. */
 export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
   if (!plan || !Array.isArray(plan.map) || !ARCHETYPE_LEVELS[archetype]) return plan;
-  const slots = levelsFor(archetype, setupId, plan.map.length);
-  const buckets = bucketRows(plan.map, slots.length);
+  const rewrite = (t) => rewriteForSurfaces(t, archetype);
+  const slots = levelsFor(archetype, setupId, opts.sourceArchetype);
+  const buckets = bucketRows(plan.map, slots);
 
-  plan.map = buckets.map((rows, i) => {
-    const slot = slots[i] || slots[slots.length - 1];
+  plan.map = buckets.map(({ slot, rows }, i) => {
     const base = rows[0];
     const merged = rows.length === 1 ? base : {
       ...base,
@@ -448,6 +633,13 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
     };
     return {
       ...merged,
+      // Rows that pass through 1:1 need the surface scrub too — they were the
+      // one field it never reached, so a wall shelf kept a rationale about
+      // items sitting "on the cabinet floor".
+      zone: rewrite(merged.zone),
+      why: rewrite(merged.why),
+      safety: merged.safety && merged.safety.why
+        ? { ...merged.safety, why: rewrite(merged.safety.why) } : merged.safety,
       level: slot.level,
       icon: slot.icon,
       surface: slot.surface,
@@ -474,9 +666,12 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
   plan.safetyNotes = (plan.safetyNotes || []).filter(n => !mentionsMissingSurface(n, archetype)).map(fix);
   plan.steps = (plan.steps || []).filter(s => !mentionsMissingSurface(s.task, archetype))
     .map(s => ({ ...s, task: fix(s.task), why: fix(s.why) }));
-  plan.features = (plan.features || []).filter(f => !mentionsMissingSurface(f.title + ' ' + f.sub, archetype));
+  // Titles need the rewrite too, not just the bodies: "Cabinet height" on a
+  // wall shelf and "5 metal shelves" on a two-deck rack are both title text.
+  plan.features = (plan.features || []).filter(f => !mentionsMissingSurface(f.title + ' ' + f.sub, archetype))
+    .map(f => ({ ...f, title: fix(f.title), sub: fix(f.sub) }));
   plan.existing = (plan.existing || []).filter(e => !mentionsMissingSurface(e.title + ' ' + e.detail, archetype))
-    .map(e => ({ ...e, detail: fix(e.detail) }));
+    .map(e => ({ ...e, title: fix(e.title), detail: fix(e.detail) }));
   plan.existingLede = fix(plan.existingLede);
   plan.dontBuy = fix(plan.dontBuy);
 
@@ -504,11 +699,23 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
 export function alignTargetZones(plan) {
   if (!plan || !Array.isArray(plan.map) || !plan.map.length) return plan;
   const levels = new Set(plan.map.map(m => m.level));
-  const fallback = (plan.map.find(m => m.eye) || plan.map[0]).level;
+  const eye = (plan.map.find(m => m.eye) || plan.map[0]).level;
+  /* Prefer a level that shares a word with the old target ("Top shelf" ->
+     "Rack deck: front half" is a worse answer than "Top drawer" when one
+     exists). Pointing every unmatched need at the eye zone piled them all
+     onto one level, which the 3D view then renders as a single stack. */
+  const relocate = (want) => {
+    const words = String(want).toLowerCase().match(/[a-z]+/g) || [];
+    const scored = plan.map.map(m => {
+      const have = String(m.level).toLowerCase();
+      return { level: m.level, score: words.filter(w => w.length >= 3 && have.includes(w)).length };
+    }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+    return scored.length ? scored[0].level : eye;
+  };
   plan.productNeeds = (plan.productNeeds || []).map(p => ({
     ...p,
     targetZone: (!p.targetZone || /^every\b/i.test(p.targetZone) || levels.has(p.targetZone))
-      ? p.targetZone : fallback,
+      ? p.targetZone : relocate(p.targetZone),
   }));
   return plan;
 }

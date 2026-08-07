@@ -1369,9 +1369,11 @@ function applyGoal(plan, goal) {
       if (!plan.safetyNotes.some(n => /kid|child/i.test(n))) {
         plan.safetyNotes.push('All heavy and sharp items are placed above kid reach or behind latched containers.');
       }
-      // Tag lower-shelf items as kid-accessible
+      // Tag lower-shelf items as kid-accessible. The floor is 1, not 0: on a
+      // two-level plan (an overhead rack, an under-bed bay) "the bottom two"
+      // is every zone, which marked the whole space kid-reachable.
       plan.map.forEach(m => {
-        if (m.shelfIndex >= plan.geometry.shelfCount - 2) {
+        if (m.shelfIndex >= Math.max(1, plan.geometry.shelfCount - 2)) {
           m.items.forEach(it => {
             if (!it.flags.includes('kid-frequent')) it.flags.push('kid-frequent');
           });
@@ -1650,7 +1652,10 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   const archetype = setupId && SETUP_ARCHETYPE[setupId];
   const scenarioArchetype = SCENARIO_ARCHETYPE[spaceType];
   if (archetype && archetype !== scenarioArchetype) {
-    projectOntoArchetype(plan, archetype, setupId, { dims: answers && answers.dims });
+    projectOntoArchetype(plan, archetype, setupId, {
+      dims: answers && answers.dims,
+      sourceArchetype: scenarioArchetype,
+    });
   } else if (archetype) {
     // Shape already agrees; still replace the hardcoded opening claim about
     // the furniture's size with what the user actually measured.

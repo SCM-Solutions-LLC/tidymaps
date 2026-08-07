@@ -5,7 +5,16 @@ import { normalizeAi, buildAnalysisContext } from '../js/plan.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 import { scenarioKeyFor, SETUP_TYPES, SETUP_DIMS } from '../js/wizard-data.js';
 import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from '../js/layout.js';
-import { ARCHETYPE_LEVELS, ARCHETYPE_SURFACES, SETUP_NOUN } from '../js/setupStructure.js';
+import { ARCHETYPE_LEVELS, ARCHETYPE_LEVELS_FOR_SOURCE, ARCHETYPE_SURFACES, SETUP_NOUN } from '../js/setupStructure.js';
+
+/* Two archetypes serve both shelved spaces and clothes closets and pick
+   their level list from the source scenario, so a valid level for a setup is
+   any level in either template. */
+function validLevels(archetype, sourceArchetype) {
+  const bySource = ARCHETYPE_LEVELS_FOR_SOURCE[archetype];
+  const variant = (bySource && bySource[sourceArchetype]) || [];
+  return new Set([...ARCHETYPE_LEVELS[archetype], ...variant].map(l => l.level));
+}
 
 /* The wizard spends a whole step (3 of 12) asking which of 33 setups looks
    like the user's space, and the plan then ignored it: 18 of the 33 got a
@@ -54,7 +63,7 @@ test('every zone sits on a surface the chosen setup actually has', () => {
     // hand-written zones; only the mismatched ones are re-projected.
     if (archetype === SCENARIO_ARCHETYPE[scenarioKeyFor(s.space, s.id)]) continue;
     const surfaces = new Set(ARCHETYPE_SURFACES[archetype]);
-    const templateLevels = new Set(ARCHETYPE_LEVELS[archetype].map(l => l.level));
+    const templateLevels = validLevels(archetype, SCENARIO_ARCHETYPE[scenarioKeyFor(s.space, s.id)]);
     for (const m of planFor(s).map) {
       assert.ok(surfaces.has(m.surface), `${s.space}/${s.id}: zone "${m.lv}" is a ${m.surface}, which a ${archetype} does not have`);
       assert.ok(templateLevels.has(m.lv), `${s.space}/${s.id}: zone "${m.lv}" is not a ${archetype} level`);
@@ -166,13 +175,22 @@ test('no zone is left empty and no category is dropped when levels are merged', 
   }
 });
 
-test('a hazard flag survives being merged into a shared level', () => {
-  // The garage projects 5 shelves onto a 2-level overhead rack and a 3-level
-  // wall cabinet; the chemicals row must not lose keep-high on the way.
-  for (const id of ['overhead', 'wallcab']) {
-    const p = planFor({ space: 'garage', id });
-    assert.ok(p.map.some(m => m.safety && m.safety.flag === 'keep-high'),
-      `garage/${id}: the chemical shelf lost its hazard flag in the merge`);
+test('a hazard flag survives a merge when the hazard does', () => {
+  // The garage projects 5 shelves onto a 3-level wall cabinet; the chemicals
+  // row must not lose keep-high on the way.
+  const p = planFor({ space: 'garage', id: 'wallcab' });
+  assert.ok(p.map.some(m => m.safety && m.safety.flag === 'keep-high'),
+    'garage/wallcab: the chemical shelf lost its hazard flag in the merge');
+});
+
+test('a hazard flag does not outlive the items that earned it', () => {
+  // The overhead rack excludes chemicals entirely, so a "keep high" badge
+  // there would be pinned to holiday decorations.
+  const p = planFor({ space: 'garage', id: 'overhead' });
+  for (const m of p.map) {
+    if (!m.safety || !m.safety.flag) continue;
+    assert.ok((m.items || []).some(it => (it.flags || []).some(f => ['heavy', 'chemical', 'sharp'].includes(f))),
+      `"${m.lv}" is flagged ${m.safety.flag} but holds nothing hazardous: ${(m.items || []).map(i => i.name).join(', ')}`);
   }
 });
 
@@ -223,5 +241,70 @@ test('no level is emptied by the content rules', () => {
       assert.ok(m.zone && m.zone.trim(), `${space}/${id}: "${m.lv}" was emptied`);
       assert.ok((m.items || []).length, `${space}/${id}: "${m.lv}" has no items left`);
     }
+  }
+});
+
+/* ---------- regressions the first review of this layer found ----------
+   All eight were live on main before being caught: the projection shipped
+   with an adversarial review still running against it. */
+
+import { rewriteForSurfaces, rewriteOpening, describeSetup, SETUP_LEVEL_CAP } from '../js/setupStructure.js';
+
+test('L-shaped closets keep their hanging rods', () => {
+  // l-run serves pantries AND clothes closets. Listing only 'shelf' for the
+  // archetype stripped every rod from lshapeC while the steps went on
+  // telling the user to hang their work clothes.
+  const p = planFor({ space: 'closet', id: 'lshapeC' });
+  assert.ok(p.map.some(m => m.surface === 'rod'), `no rod: ${p.map.map(m => m.lv + ':' + m.surface).join(', ')}`);
+  const hanging = p.map.find(m => m.surface === 'rod');
+  assert.match(hanging.zone, /clothes|shirts|blazers|wear/i,
+    `the rod holds "${hanging.zone}" while clothes sit on a shelf`);
+});
+
+test('surface rewrites keep sentence capitalization and stay grammatical', () => {
+  assert.equal(rewriteForSurfaces('The counter is cluttered.', 'drawer-bank'), 'The top drawer is cluttered.');
+  assert.equal(rewriteForSurfaces('Hang hooks on the door back for bags.', 'drawer-bank'),
+    'Hang hooks on the wall beside it for bags.');
+  assert.ok(!/the front edge back/i.test(rewriteForSurfaces('Hooks on the door back.', 'shelves')));
+  // "the cabinet floor" never matched the bare "the floor" rule
+  assert.ok(!/cabinet floor/i.test(rewriteForSurfaces('Items sit on the cabinet floor.', 'shelves')));
+});
+
+test('a setup with more levels than its scenario has rows fills them all', () => {
+  // "Counter + uppers" took three rows from the cabinet scenario and lost
+  // both its drawers and its lower cabinet.
+  const p = planFor({ space: 'cabinet', id: 'counterup' });
+  assert.equal(p.map.length, 5, `levels: ${p.map.map(m => m.lv).join(', ')}`);
+  assert.ok(p.map.some(m => m.surface === 'drawer'), 'no drawers on a counter run');
+  assert.ok(p.map.some(m => m.surface === 'worktop'), 'no counter surface on a counter run');
+});
+
+test('a two-level plan does not mark every zone kid-reachable', () => {
+  // applyGoal('kid') tags shelfIndex >= shelfCount - 2, which on a 2-level
+  // plan is every zone.
+  const p = planFor({ space: 'garage', id: 'overhead' }, { household: KIDS });
+  const tagged = p.map.filter(m => (m.items || []).some(it => (it.flags || []).includes('kid-frequent')));
+  assert.ok(tagged.length < p.map.length, 'every zone on a 2-level plan was marked kid-reachable');
+});
+
+test('the opening sentence replaces a size claim but never a diagnosis', () => {
+  assert.equal(rewriteOpening('A 30-inch-wide cabinet with three shelves. Plates are stacked too high.', 'NEW.'),
+    'NEW. Plates are stacked too high.');
+  // no size claim in the first sentence: prepend rather than overwrite
+  assert.equal(rewriteOpening('Plates are stacked too high.', 'NEW.'), 'NEW. Plates are stacked too high.');
+});
+
+test('describeSetup degrades cleanly without measurements and reads right at one level', () => {
+  assert.match(describeSetup({ archetype: 'drawer-bank', setupId: 'toolchest', dims: null, levelCount: 4 }),
+    /^Your rolling tool chest has four drawers/);
+  assert.match(describeSetup({ archetype: 'shelves', setupId: 'cabinet', dims: { w_in: 36, h_in: 78, d_in: 18 }, levelCount: 1 }),
+    /has one shelf to work with/);
+});
+
+test('every level cap actually constrains its archetype', () => {
+  for (const [id, cap] of Object.entries(SETUP_LEVEL_CAP)) {
+    const template = ARCHETYPE_LEVELS[SETUP_ARCHETYPE[id]];
+    assert.ok(cap < template.length,
+      `${id}: cap ${cap} >= ${SETUP_ARCHETYPE[id]} template length ${template.length}, so it does nothing`);
   }
 });
