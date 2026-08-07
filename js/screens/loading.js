@@ -103,7 +103,7 @@ export function runLoading(){
     // (prefs, budget, effort, toggles, dims) — never a bare template. The
     // chosen setup can refine the scenario (a walk-in closet gets the
     // walk-in plan, not the reach-in one).
-    const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext());
+    const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
     state.ai = normalizeAi(scenario);
     state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
     document.getElementById('load-sub').textContent =
@@ -135,7 +135,7 @@ export function finishLoading(aiPromise){
         '<span style="color:var(--clay)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';
       if(fin){ fin.classList.remove('doing'); fin.classList.add('err'); }
       // Fallback to demo scenario on AI failure too — same personalization
-      const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext());
+      const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
       state.ai = normalizeAi(scenario);
       state.planMeta = { model: 'demo', source: 'demo-fallback', analyzedAt: Date.now() };
       setTimeout(()=>{ syncCategoriesToResults(); autoSaveSpace(); go('results'); }, 1400);
