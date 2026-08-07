@@ -113,3 +113,71 @@ test('kid households keep the full kid content the scrub would otherwise touch',
   assert.ok(KID_WORDS.test(visibleText(plan)), 'kid content should stay for a kid household');
   assert.ok(plan.categories.some(c => KID_WORDS.test(c)), 'kid category chip should stay');
 });
+
+/* ---------- hazard flags are never repurposed as kid-safe ----------
+   applyHousehold's kids branch used to overwrite map[len-2] unconditionally.
+   In the bathroom scenario that row is the latched chemicals caddy, so a
+   household WITH kids got a green "kid safe" badge on the cleaning sprays —
+   the inverse of the warning that household needs. */
+const KIDS_HH = { kids: { present: 'yes', ages: ['Toddler'] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' };
+const HAZARD_FLAGS = ['keep-high', 'lock-or-latch'];
+
+test('a kids household never converts a hazard zone into a kid-safe zone', () => {
+  for (const space of REACHABLE_SPACES) {
+    const base = getDemoScenario(space, null, null);
+    const hazards = new Set((base.map || [])
+      .filter(m => m.safety && HAZARD_FLAGS.includes(m.safety.flag))
+      .map(m => m.level));
+    const withKids = getDemoScenario(space, null, KIDS_HH);
+    for (const m of withKids.map || []) {
+      if (hazards.has(m.level)) {
+        assert.ok(HAZARD_FLAGS.includes(m.safety.flag),
+          `${space}: hazard zone "${m.level}" was relabelled "${m.safety.flag}" for a kid household`);
+      }
+    }
+    assert.ok((withKids.map || []).some(m => m.safety && m.safety.flag === 'kid-safe'),
+      `${space}: a kid household still needs a kid-safe zone somewhere`);
+  }
+});
+
+test('a pet household keeps the latch it is told about', () => {
+  const petsOnly = { kids: { present: 'no', ages: [] }, pets: { present: 'yes', types: ['Dog'] }, mobility: [], notes: '' };
+  const plan = getDemoScenario('bathroom', null, petsOnly);
+  const latchText = (plan.map || []).some(m => m.safety && /latch/i.test(m.safety.why || ''));
+  if (latchText) {
+    assert.ok((plan.productNeeds || []).some(p => p.type === 'safety-latch'),
+      'the plan says a zone stays latched but recommends nothing that latches it');
+  }
+});
+
+test('no-kid plans carry no kid-frequent item flags', () => {
+  for (const space of REACHABLE_SPACES) {
+    const plan = getDemoScenario(space, 'find', NO_KIDS_NO_PETS);
+    const leaked = (plan.map || []).flatMap(m => (m.items || []))
+      .filter(it => (it.flags || []).includes('kid-frequent'));
+    assert.deepEqual(leaked, [], `${space}: kid-frequent flags survived the scrub`);
+  }
+});
+
+test('the kid scrub never leaves mangled prose or empties a field back to kid text', () => {
+  for (const space of REACHABLE_SPACES) {
+    for (const goal of [null, 'find', 'kid', 'capacity', 'clutter']) {
+      const plan = getDemoScenario(space, goal, NO_KIDS_NO_PETS);
+      const text = visibleText(plan);
+      assert.ok(!KID_WORDS.test(text), `${space}/${goal}: kid text returned via a || fallback`);
+      // "placed up high or behind latched containers" is the REPAIRED form;
+      // "placed or behind latched containers" is the mangled one.
+      for (const bad of ['placed or ', 'are placed or', '  ', ' .', ' ,', 'and contained and']) {
+        assert.ok(!text.includes(bad), `${space}/${goal}: mangled prose "${bad}" in: ${text.slice(0, 200)}`);
+      }
+    }
+  }
+});
+
+test('the clutter goal never doubles a word when rewriting bin purposes', () => {
+  for (const space of REACHABLE_SPACES) {
+    for (const p of getDemoScenario(space, 'clutter', NO_KIDS_NO_PETS).productNeeds || []) {
+      assert.ok(!/\b(\w+)\s+and\s+\1\b/i.test(p.purpose), `${space}: "${p.purpose}"`);
+    }
+  }
+});

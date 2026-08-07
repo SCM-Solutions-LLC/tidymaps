@@ -24,8 +24,13 @@ export function fitFor(product, need){
   // maxDims (where the plan wants it to sit) AND the user's measured space.
   // maxDims used to override a smaller measured depth outright, so a 12.9″
   // tray on a 9″ shelf was badged "Fits your 9″ shelf depth".
+  //
+  // Door racks and hook racks mount on a door, wall, or pegboard — outside
+  // the measured carcass — so the enclosure never bounds them. Measuring a
+  // 36″ closet must not rule out a 41″ hook rail for the wall beside it.
+  const MOUNTS_OUTSIDE = new Set(['door-rack', 'hook-rack']);
   const md = need.maxDims || {};
-  const measured = state.dims || {};
+  const measured = MOUNTS_OUTSIDE.has(need.type) ? {} : (state.dims || {});
   const tighter = (a, b) => (a && b) ? Math.min(a, b) : (a || b || null);
   const limits={
     w: tighter(md.w_in, measured.w_in),
@@ -85,7 +90,10 @@ export const TYPE_LABEL={
 // Dimension-qualified search links — always available as a fallback
 export function searchLinks(need){
   let q=TYPE_QUERY[need.type]||need.type;
-  const depth=(need.maxDims && need.maxDims.d_in) || (state.dims && state.dims.d_in);
+  // Same rule as fitFor: the search cap is the tighter of the two, so the
+  // query can't send someone shopping for a bin deeper than their shelf.
+  const caps=[need.maxDims && need.maxDims.d_in, state.dims && state.dims.d_in].filter(Boolean);
+  const depth=caps.length?Math.min(...caps):null;
   if(depth) q+=` max ${Math.floor(depth)} inch deep`;
   const enc=encodeURIComponent(q);
   return [

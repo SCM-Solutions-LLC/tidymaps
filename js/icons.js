@@ -99,6 +99,10 @@ export function iconFor(name){
     spice:SVG.layoutGrid, label:SVG.tag, riser:SVG.trendingUp, jar:SVG.box
   };
   if(!name) return SVG.archive;
+  // Idempotent: an already-normalized plan (saved rows, share payloads) holds
+  // the resolved SVG here, not a keyword. Re-resolving it would strip every
+  // icon down to the generic fallback.
+  if(/^\s*<svg/i.test(String(name))) return name;
   const k = String(name).toLowerCase().replace(/[^a-z]/g,'');
   return m[k] || SVG.archive;
 }

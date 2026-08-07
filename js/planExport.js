@@ -31,9 +31,12 @@ const stepTime = (s) => {
 };
 const stepWhy = (s) => s && (s.w ?? s.why);
 
+/* Keeps each step's ORIGINAL index: state.stepDone is indexed by the
+   on-screen position, so ticking against the filtered position would shift
+   every [x] up by the number of dropped steps. */
 function planSteps() {
   const steps = (state.ai && state.ai.steps) || [];
-  return steps.filter((s) => stepTask(s));
+  return steps.map((s, i) => ({ step: s, i })).filter((x) => stepTask(x.step));
 }
 
 export function checklistText() {
@@ -45,12 +48,12 @@ export function checklistText() {
   const steps = planSteps();
   if (steps.length) {
     lines.push('STEPS', '');
-    steps.forEach((step, i) => {
+    steps.forEach(({ step, i }, n) => {
       // The tick is the point of a checklist: mark off what is already done
       // on screen so a printed copy starts where the person left off.
       const done = Array.isArray(state.stepDone) && state.stepDone[i] ? 'x' : ' ';
       const time = stepTime(step);
-      lines.push(`[${done}] ${i + 1}. ${stepTask(step)}${time ? `  (${time})` : ''}`);
+      lines.push(`[${done}] ${n + 1}. ${stepTask(step)}${time ? `  (${time})` : ''}`);
       if (stepWhy(step)) lines.push(`      why: ${stepWhy(step)}`);
     });
     lines.push('');

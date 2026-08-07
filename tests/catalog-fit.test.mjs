@@ -33,3 +33,26 @@ test('nothing measurable at all stays unknown', () => {
   state.dims = null;
   assert.equal(fitFor({ dims_in: { w: 10, h: 6, d: 12 } }, { maxDims: null }), 'unknown');
 });
+
+/* Door racks and hook racks mount on a door, wall, or pegboard — outside the
+   measured carcass. Capping them by the enclosure's width/height ruled out
+   every wall-mounted rail wider than the shelf unit it hangs beside. */
+test('wall/door-mounted needs are not bounded by the measured enclosure', () => {
+  state.dims = { w_in: 36, h_in: 78, d_in: 18, shelves: null };
+  const wideRail = { dims_in: { w: 41.75, h: 5, d: 3 } };
+  for (const type of ['hook-rack', 'door-rack']) {
+    assert.notEqual(fitFor(wideRail, { type, maxDims: null }), 'no-fit',
+      `${type} is mounted outside the carcass; the enclosure must not veto it`);
+  }
+  // ...but an explicit maxDims on the need is still honoured.
+  assert.equal(fitFor(wideRail, { type: 'hook-rack', maxDims: { w_in: 24, h_in: 8, d_in: 4 } }), 'no-fit');
+});
+
+test('everything that sits INSIDE the space is still capped by the measurement', () => {
+  state.dims = { w_in: 36, h_in: 78, d_in: 18, shelves: null };
+  assert.equal(fitFor({ dims_in: { w: 41, h: 5, d: 3 } }, { type: 'clear-bin', maxDims: null }), 'no-fit');
+  state.dims = { w_in: 30, h_in: 30, d_in: 9, shelves: null };
+  assert.equal(fitFor({ dims_in: { w: 10, h: 6, d: 12.9 } },
+    { type: 'drawer-organizer', maxDims: { w_in: 12, h_in: 18, d_in: 18 } }), 'no-fit',
+    'the original bug: a stale maxDims must not outrank a smaller measured depth');
+});

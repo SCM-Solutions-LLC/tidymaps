@@ -286,3 +286,26 @@ test('kid-friendly revision leaves a visible trace even when a kid-safe zone alr
   assert.equal(applyRevision(plan, 'kid'), true);
   assert.notEqual(JSON.stringify(plan.map), before, '"Plan revised" announced with nothing visibly changed');
 });
+
+/* The kid-friendly revision must cite the zone that IS kid-safe and must
+   never weld "you asked for kid-friendly access" onto a keep-high or
+   lock-or-latch hazard zone (the bathroom's chemicals caddy sits at
+   map[len-2], which the old handler picked by position). */
+test('the kid revision never touches a hazard zone', () => {
+  for (const space of ['pantry', 'cabinet', 'closet', 'garage', 'bathroom', 'dresser', 'linen', 'drawers', 'workbench']) {
+    state.dims = null;
+    const plan = normalizeAi(getDemoScenario(space, null,
+      { kids: { present: 'yes', ages: ['Toddler'] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' }));
+    const hazardsBefore = plan.map
+      .filter(m => m.safety && ['keep-high', 'lock-or-latch'].includes(m.safety.flag))
+      .map(m => ({ lv: m.lv, flag: m.safety.flag, why: m.safety.why }));
+    applyRevision(plan, 'kid');
+    for (const h of hazardsBefore) {
+      const now = plan.map.find(m => m.lv === h.lv);
+      assert.equal(now.safety.flag, h.flag, `${space}: hazard flag on "${h.lv}" was changed`);
+      assert.equal(now.safety.why, h.why, `${space}: kid citation landed on hazard zone "${h.lv}"`);
+    }
+    assert.ok(plan.map.some(m => m.safety && m.safety.flag === 'kid-safe'),
+      `${space}: the revision promised a kid-safe zone and produced none`);
+  }
+});

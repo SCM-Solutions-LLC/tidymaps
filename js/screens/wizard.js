@@ -250,6 +250,10 @@ function renderMeasure(){
       syncDims(); refreshMeasure(f.k, false);
     };
     num.onblur = () => {
+      // Same guard as oninput: dimsFt is legitimately null for a plan that
+      // never measured anything (the sample plan, a restored draft with no
+      // dims), and blur fires on a field the user only focused.
+      state.dimsFt = state.dimsFt || dimsFtNums();
       const v = Math.min(f.max, Math.max(f.min, dimsFtNums()[f.k]));
       state.dimsFt[f.k] = v; num.value = v;
       syncDims(); refreshMeasure(f.k, true);

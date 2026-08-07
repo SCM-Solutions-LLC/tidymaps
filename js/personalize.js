@@ -77,6 +77,24 @@ function isProtected(st) {
   return !!st._p || SAFETY_RE.test(stepText(st));
 }
 
+/* The kid-safe zone is "low but not hazardous". Position alone (map[len-2])
+   put the badge on the bathroom's latched chemicals caddy; skipping every
+   flagged row entirely picked the pantry's narrow door rack. So: keep the
+   original low-zone preference, then walk upward past anything already
+   carrying a flag of its own. */
+export function lowestUnflaggedZone(map) {
+  const rows = Array.isArray(map) ? map : [];
+  const order = [];
+  if (rows.length >= 2) order.push(rows.length - 2);
+  if (rows.length >= 1) order.push(rows.length - 1);
+  for (let i = rows.length - 3; i >= 0; i--) order.push(i);
+  for (const i of order) {
+    const m = rows[i];
+    if (m && (!m.safety || !m.safety.flag)) return m;
+  }
+  return null;
+}
+
 function dropNeeds(plan, keepFn) {
   plan.productNeeds = (plan.productNeeds || []).filter(keepFn);
 }
@@ -127,15 +145,19 @@ const PREF_HANDLERS = {
       'You asked to hide visual clutter.');
   },
   'Kid-friendly access': (plan) => {
-    const low = plan.map[plan.map.length - 2] || plan.map[plan.map.length - 1];
-    if (!low) return;
-    if (!low.safety || !low.safety.flag) {
-      low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
-    } else if (!(low.safety.why || '').includes('kid-friendly access')) {
-      // The scenario already keeps a kid-safe zone; cite the answer on it so
-      // the revision visibly did something instead of announcing a no-op.
-      low.safety.why = ((low.safety.why || '') + ' You asked for kid-friendly access.').trim();
+    // Cite the zone that IS kid-safe; otherwise promote a low zone that
+    // carries no flag of its own. Never touch a keep-high / lock-or-latch
+    // row: welding "you asked for kid-friendly access" onto the latched
+    // chemicals zone inverts the one warning that matters.
+    const existing = plan.map.find(m => m.safety && m.safety.flag === 'kid-safe');
+    if (existing) {
+      if (!(existing.safety.why || '').includes('kid-friendly access')) {
+        existing.safety.why = ((existing.safety.why || '') + ' You asked for kid-friendly access.').trim();
+      }
+      return;
     }
+    const low = lowestUnflaggedZone(plan.map);
+    if (low) low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
   },
   'No drilling or permanent installation': (plan) => {
     plan.steps = plan.steps.filter(st => !/drill|mount|screw|install hardware/i.test(stepTask(st)));
@@ -220,7 +242,7 @@ export const REVISIONS = {
    under a "Plan revised" toast reads as the button doing nothing. */
 const REVISION_NOTES = {
   minimal:  'Each zone keeps fewer visible categories — you asked for a more minimal look.',
-  kid:      'The lower zone stays kid-reachable and hazard-free — you asked for a more kid-friendly setup.',
+  kid:      'A kid-reachable, hazard-free zone is called out on the shelf map — you asked for a more kid-friendly setup.',
   capacity: 'Risers and stacking reclaim the vertical space — you asked to maximize capacity.',
   hide:     'Loose items move into opaque bins and baskets — you asked to hide more clutter.',
   labels:   'Every zone and container gets a label — you asked for more labels.',
@@ -279,8 +301,10 @@ function applyToggles(plan, answers) {
   }
   if (t.kids === 'yes' && !prefs.has('Kid-friendly access')) {
     PREF_HANDLERS['Kid-friendly access'](plan);
-    const low = plan.map[plan.map.length - 2] || plan.map[plan.map.length - 1];
-    if (low && low.safety && low.safety.flag === 'kid-safe') {
+    // Re-word whichever zone the handler actually settled on, rather than
+    // assuming it landed at a fixed index.
+    const low = (plan.map || []).find(m => m.safety && m.safety.flag === 'kid-safe');
+    if (low) {
       low.safety.why = 'You said kids will access this space — this lower zone stays reachable and hazard-free.';
     }
   }

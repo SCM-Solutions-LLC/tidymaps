@@ -5,7 +5,7 @@
    plan object ready to pass through normalizeAi() in js/plan.js —
    personalized by every wizard answer via js/personalize.js.
    ============================================================ */
-import { applyAnswers } from './personalize.js';
+import { applyAnswers, lowestUnflaggedZone } from './personalize.js';
 
 /* ---------- Base scenarios keyed by space id ---------- */
 
@@ -1405,7 +1405,14 @@ function applyGoal(plan, goal) {
       plan.productNeeds.forEach(p => {
         if (p.type === 'clear-bin') {
           p.type = 'basket';
-          p.purpose = p.purpose.replace(/visible|see\b/gi, 'contained');
+          // "Keep backstock visible and contained" must not become
+          // "...contained and contained"; collapse the pair instead.
+          p.purpose = /contained/i.test(p.purpose)
+            ? p.purpose
+                .replace(/\bvisible\s+and\s+contained\b/gi, 'contained')
+                .replace(/\bcontained\s+and\s+visible\b/gi, 'contained')
+                .replace(/\s{2,}/g, ' ').trim()
+            : p.purpose.replace(/visible|see\b/gi, 'contained');
         }
       });
       break;
@@ -1454,6 +1461,10 @@ const KID_WORDS = /kid|child|little hands|small hands/i;
    removes only the kid reference — naming pets when the household has them,
    falling back to neutral phrasing when it doesn't. */
 const KID_PHRASES = [
+  // Most specific first. This one is mid-sentence ("...placed above kid reach
+  // or behind latched containers"), so the generic trailing rule below would
+  // leave "are placed or behind latched containers."
+  [/above kid reach or behind/gi, 'up high or behind', 'up high or behind'],
   // longer patterns first, so "children and pets" wins over "children"
   [/(?:well )?above kid and pet reach/gi, 'well above pet reach', 'up high, out of easy reach'],
   [/away from kid and pet reach/gi, 'away from pet reach', 'out of easy reach'],
@@ -1493,7 +1504,10 @@ function applyHousehold(plan, household) {
   if (!kidsPresent && !/kids/i.test(plan.spaceType || '')) {
     const petsPresent = isPresent(household && household.pets && household.pets.present);
     const scrub = (s) => dekidText(s, petsPresent);
-    plan.summary = scrub(plan.summary) || plan.summary;
+    // NB: never `scrub(x) || x` — when the scrub empties a field it is
+    // because every sentence in it was about kids, and falling back to the
+    // original puts exactly the text we just removed back on screen.
+    plan.summary = scrub(plan.summary);
     plan.safetyNotes = (plan.safetyNotes || []).map(scrub).filter(Boolean);
     plan.problems = (plan.problems || []).map(scrub).filter(Boolean);
     plan.opportunities = (plan.opportunities || []).map(scrub).filter(Boolean);
@@ -1523,11 +1537,23 @@ function applyHousehold(plan, household) {
       st.why = scrub(st.why);
       return true;
     });
-    plan.existingLede = scrub(plan.existingLede) || plan.existingLede;
-    (plan.existing || []).forEach(e => { e.detail = scrub(e.detail) || e.detail; });
-    plan.dontBuy = scrub(plan.dontBuy) || plan.dontBuy;
-    plan.productNeeds = (plan.productNeeds || []).filter(p =>
-      p.type !== 'safety-latch' || !KID_WORDS.test(p.purpose || ''));
+    plan.existingLede = scrub(plan.existingLede);
+    (plan.existing || []).forEach(e => { e.detail = scrub(e.detail); });
+    plan.dontBuy = scrub(plan.dontBuy);
+    // A latch is for children OR animals. Dropping it for a pet household
+    // left the zone still saying "stay latched away from pets" with nothing
+    // in the plan that provides the latch.
+    plan.productNeeds = (plan.productNeeds || []).map(p => {
+      if (p.type !== 'safety-latch') return p;
+      if (!KID_WORDS.test(p.purpose || '')) return p;
+      if (!petsPresent) return null;
+      return { ...p, purpose: scrub(p.purpose) || 'Latch this zone so pets cannot get into it' };
+    }).filter(Boolean);
+    (plan.map || []).forEach(m => {
+      (m.items || []).forEach(it => {
+        it.flags = (it.flags || []).filter(f => f !== 'kid-frequent');
+      });
+    });
   }
 
   if (!household) return;
@@ -1537,11 +1563,15 @@ function applyHousehold(plan, household) {
     if (!plan.safetyNotes.some(n => /kid|child/i.test(n))) {
       plan.safetyNotes.push('With children in the household, heavy and hazardous items are kept on upper shelves.');
     }
-    // Ensure at least one kid-safe zone
+    // Ensure at least one kid-safe zone — but never by overwriting a hazard
+    // flag. map[len-2] is the chemicals caddy in the bathroom scenario, so
+    // the old unconditional write put a green "kid safe" badge on the
+    // cleaning sprays for exactly the households that need the latch
+    // warning. Pick the lowest row that carries no flag of its own.
     const hasKidSafe = plan.map.some(m => m.safety.flag === 'kid-safe');
     if (!hasKidSafe && plan.map.length >= 2) {
-      const lower = plan.map[plan.map.length - 2];
-      lower.safety = {flag: 'kid-safe', why: 'Lower zones stay kid-accessible and free of hazards.'};
+      const lower = lowestUnflaggedZone(plan.map);
+      if (lower) lower.safety = {flag: 'kid-safe', why: 'Lower zones stay kid-accessible and free of hazards.'};
     }
     // Add safety latch recommendation for chemical spaces
     const hasChemicals = plan.map.some(m => m.items.some(it => it.flags.includes('chemical')));

@@ -414,3 +414,28 @@ test('the enforced-limits block is derived from the validator constants', () => 
       `${label} must map to a [min, max] pair`);
   }
 });
+
+/* ---------- normalizeAi is idempotent ----------
+   Saved rows and share payloads store the ALREADY-normalized plan (db.js
+   writes state.ai), and the share-link path (js/main.js loadSharedPlan) runs
+   it through normalizeAi again. Reading only the raw names blanked every
+   step title, zone level and category for every visitor on a shared plan. */
+import { normalizeAi as _normalizeAi } from '../js/plan.js';
+import { getDemoScenario as _getDemoScenario } from '../js/demo-scenarios.js';
+import { state as _state } from '../js/state.js';
+
+test('normalizing an already-normalized plan is a no-op, not a wipe', () => {
+  _state.dims = null;
+  const once = _normalizeAi(_getDemoScenario('pantry', 'find',
+    { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' }));
+  const twice = _normalizeAi(once);
+
+  assert.ok(once.steps.length > 0 && once.map.length > 0 && once.cats.length > 0, 'precondition');
+  assert.deepEqual(twice.steps, once.steps, 'steps lost their titles on re-normalize');
+  assert.deepEqual(twice.cats, once.cats, 'categories were dropped on re-normalize');
+  assert.deepEqual(twice.map.map(m => m.lv), once.map.map(m => m.lv), 'zone levels blanked');
+  assert.deepEqual(twice.map.map(m => m.ic), once.map.map(m => m.ic), 'zone icons reset to the fallback');
+  assert.deepEqual(twice.existing, once.existing, 'reuse list blanked');
+  assert.deepEqual(twice.features, once.features, 'features blanked');
+  for (const s of twice.steps) assert.ok(s.t && s.m !== '—' || s.m === once.steps[0].m, 'step time lost');
+});

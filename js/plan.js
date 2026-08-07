@@ -60,6 +60,13 @@ function deriveSurface(raw, iconKeyword) {
   return surfaceFromIcon(iconKeyword) || null;
 }
 
+/* normalizeAi must be IDEMPOTENT. Saved rows and share payloads store the
+   already-normalized plan (db.js writes state.ai), and the share-link path
+   runs it through here again — reading only the raw names blanked every step
+   title, zone level and category for every visitor on a shared plan. Each
+   field below accepts the raw name first, then its normalized twin. */
+const pick = (raw, norm) => (raw !== undefined && raw !== null ? raw : norm);
+
 // Convert raw AI JSON into the exact shapes the UI render code expects
 export function normalizeAi(j){
   const rawMap = Array.isArray(j.map)?j.map:[];
@@ -67,12 +74,12 @@ export function normalizeAi(j){
   return {
     spaceType: s(j.spaceType)||'Space',
     summary: s(j.summary),
-    cats: (j.categories||[]).map(s).filter(Boolean),
-    features: (j.features||[]).map(f=>({ico:iconFor(f.icon), ttl:s(f.title), sub:s(f.sub)})),
+    cats: (pick(j.categories, j.cats)||[]).map(s).filter(Boolean),
+    features: (j.features||[]).map(f=>({ico:iconFor(pick(f.icon, f.ico)), ttl:s(pick(f.title, f.ttl)), sub:s(f.sub)})),
     problems: (j.problems||[]).map(s).filter(Boolean),
     opportunities: (j.opportunities||[]).map(s).filter(Boolean),
     map: rawMap.map((m,i)=>({
-      lv:s(m.level), ic:iconFor(m.icon), zone:s(m.zone), why:s(m.why), eye:!!m.eye,
+      lv:s(pick(m.level, m.lv)), ic:iconFor(pick(m.icon, m.ic)), zone:s(m.zone), why:s(m.why), eye:!!m.eye,
       shelfIndex: Math.max(0, Math.min(geometry.shelfCount-1, Math.round(num(m.shelfIndex, i)))),
       safety: {
         flag: (m.safety && SAFETY_FLAGS.has(m.safety.flag)) ? m.safety.flag : null,
@@ -97,9 +104,9 @@ export function normalizeAi(j){
         priority: p.priority==='high'?'high':'nice',
       })),
     existingLede: s(j.existingLede),
-    existing: (j.existing||[]).map(e=>({ico:iconFor(e.icon), ft:s(e.title), fd:s(e.detail)})),
+    existing: (j.existing||[]).map(e=>({ico:iconFor(pick(e.icon, e.ico)), ft:s(pick(e.title, e.ft)), fd:s(pick(e.detail, e.fd))})),
     dontBuy: s(j.dontBuy),
-    steps: (j.steps||[]).map(st=>({t:s(st.task), m:s(st.time)||'—', w:s(st.why)})),
+    steps: (j.steps||[]).map(st=>({t:s(pick(st.task, st.t)), m:s(pick(st.time, st.m))||'—', w:s(pick(st.why, st.w))})),
     time: s(j.time)||'45–90 min',
     cost: s(j.cost)||'$0 / $45–85'
   };
