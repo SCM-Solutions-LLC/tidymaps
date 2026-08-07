@@ -227,16 +227,25 @@ const SURFACE_PHRASES = [
     // Qualified forms first — "the cabinet floor" never matched "the floor",
     // so a wall shelf kept advising items "sit stable on the cabinet floor".
     [/\bthe (?:cabinet|closet|pantry|unit) floor\b/gi, 'the lowest level'],
-    [/\bthe floor of the \w+\b/gi, 'the lowest level'],
-    [/\bthe floor\b/gi, 'the lowest level'],
+    /* Only where the floor is being used as a STORAGE level. "Sweep the
+       floor before you start" and "art happens at the table, not on the
+       floor" are about the room, are true whatever the setup is, and became
+       "sweep the lowest level" under a blanket rule. */
+    [/\b(\w+)(\s+(?:up |out )?(?:on|onto|to) the floor)\b/gi,
+      (m, verb, tail) => (/^(?:sweep|sweeps|vacuum|mop|clean|cleans|happens|happen|play|plays|spill|spills|fall|falls|drop|drops)$/i.test(verb)
+        ? m : `${verb}${tail.replace(/the floor$/, 'the lowest level')}`)],
     [/\bfloor level\b/gi, 'lowest level'],
   ]],
   ['rod', [
+    [/\bthe hanging rods\b/gi, 'the shelves'],
     [/\bthe (?:hanging )?rod\b/gi, 'the shelf'],
     [/\bhanging rod\b/gi, 'shelf'],
   ]],
   ['drawer', [
-    [/\bthe drawers?\b/gi, 'the shelf'],
+    // Number has to survive the swap: "the drawers are jammed shut" became
+    // "the shelf are jammed shut".
+    [/\bthe drawers\b/gi, 'the shelves'],
+    [/\bthe drawer\b/gi, 'the shelf'],
   ]],
 ];
 
@@ -261,7 +270,13 @@ export function rewriteForSurfaces(text, archetype) {
       // Every replacement is written lowercase, so a match that opened a
       // sentence used to lowercase it: "The counter is cluttered." became
       // "the counter…". Carry the matched text's own capitalization across.
-      out = out.replace(re, (match) => (/^[A-Z]/.test(match) ? to.charAt(0).toUpperCase() + to.slice(1) : to));
+      // A rule may also supply a function when it needs to inspect context.
+      out = out.replace(re, (...args) => {
+        const match = args[0];
+        const replacement = typeof to === 'function' ? to(...args) : to;
+        if (replacement === match) return match;
+        return /^[A-Z]/.test(match) ? replacement.charAt(0).toUpperCase() + replacement.slice(1) : replacement;
+      });
     }
   }
   return out.replace(/\s{2,}/g, ' ').trim();
@@ -605,6 +620,10 @@ function splitRows(rows, n) {
   return out;
 }
 
+/* How much a single merged level may advertise. Beyond this a zone reads as
+   a dumping list rather than a plan, and the shelf drawing runs out of room. */
+const MERGED_MAX = 6;
+
 function joinUnique(parts, sep) {
   return [...new Set(parts.filter(Boolean))].join(sep);
 }
@@ -621,13 +640,17 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
     const base = rows[0];
     const merged = rows.length === 1 ? base : {
       ...base,
-      zone: joinUnique(rows.flatMap(r => String(r.zone || '').split(' · ')), ' · '),
+      // Label and item list are capped together. Capping only `items` left
+      // the zone advertising nine categories over six things, so the shelf
+      // map and the 3D view disagreed about what is on the level.
+      zone: joinUnique(rows.flatMap(r => String(r.zone || '').split(' · ')), ' · ')
+        .split(' · ').slice(0, MERGED_MAX).join(' · '),
       // NOT a concatenation of the originals: each was written for the height
       // its row used to sit at, so joining them made a ceiling rack argue
       // that "heavy power tools are safer on lower shelves". One true
       // sentence for the level they have all landed on instead.
       why: ROLE_WHY[slot.role] || base.why,
-      items: rows.flatMap(r => r.items || []).slice(0, 6),
+      items: rows.flatMap(r => r.items || []).slice(0, MERGED_MAX),
       // A hazard flag anywhere in the bucket has to survive the merge.
       safety: rows.map(r => r.safety).find(s => s && s.flag) || base.safety,
     };

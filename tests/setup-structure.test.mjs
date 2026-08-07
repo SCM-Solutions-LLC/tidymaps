@@ -308,3 +308,48 @@ test('every level cap actually constrains its archetype', () => {
       `${id}: cap ${cap} >= ${SETUP_ARCHETYPE[id]} template length ${template.length}, so it does nothing`);
   }
 });
+
+/* ---------- second-round review findings ---------- */
+
+import { planMinutes } from '../js/personalize.js';
+
+test('the headline time always matches the checklist under it', () => {
+  // The effort label used to set the time on its own, so a two-level rack
+  // announced "Full overhaul · 4–8 hours" over an hour of work, and every
+  // "Quick refresh" promised ~30 min over an hour-long checklist.
+  const BANDS = [[45, '~30 min'], [100, '45–90 min'], [200, '2–3 hours'], [330, '3–5 hours'], [Infinity, '4–8 hours']];
+  for (const s of ALL_SETUPS) {
+    for (const effort of ['Quick refresh', 'Weekend reset', 'Full overhaul']) {
+      state.effort = effort;
+      const p = planFor(s);
+      const mins = planMinutes(p.steps);
+      const expected = BANDS.find(([max]) => mins < max)[1];
+      assert.equal(p.time, expected,
+        `${s.space}/${s.id} (${effort}): says "${p.time}" over ${Math.round(mins)} min of steps`);
+    }
+  }
+  state.effort = 'Weekend reset';
+});
+
+test('the room\'s own floor is not rewritten as a storage level', () => {
+  assert.equal(rewriteForSurfaces('Sweep the floor before you start.', 'drawer-bank'),
+    'Sweep the floor before you start.');
+  // ...but a storage claim still is
+  assert.equal(rewriteForSurfaces('Boxes sit on the floor.', 'drawer-bank'),
+    'Boxes sit on the lowest level.');
+});
+
+test('surface swaps keep singular and plural agreement', () => {
+  assert.equal(rewriteForSurfaces('The drawers are jammed shut.', 'shelves'), 'The shelves are jammed shut.');
+  assert.equal(rewriteForSurfaces('Empty the drawer first.', 'shelves'), 'Empty the shelf first.');
+});
+
+test('a merged level advertises exactly what it holds', () => {
+  for (const s of ALL_SETUPS) {
+    for (const m of planFor(s).map) {
+      const segs = String(m.zone).split(' · ').filter(Boolean).length;
+      assert.ok(segs <= 6, `${s.space}/${s.id}: "${m.lv}" lists ${segs} categories`);
+      assert.ok((m.items || []).length <= 6, `${s.space}/${s.id}: "${m.lv}" holds ${(m.items || []).length} items`);
+    }
+  }
+});
