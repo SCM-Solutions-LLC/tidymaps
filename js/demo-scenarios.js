@@ -6,6 +6,8 @@
    personalized by every wizard answer via js/personalize.js.
    ============================================================ */
 import { applyAnswers, lowestUnflaggedZone } from './personalize.js';
+import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from './layout.js';
+import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones } from './setupStructure.js';
 
 /* ---------- Base scenarios keyed by space id ---------- */
 
@@ -1625,14 +1627,46 @@ function applyHousehold(plan, household) {
  * @param {string|null} goal  - goal id: find, clutter, own, capacity, kid, minimal, shop, unsure
  * @param {object|null} household - { kids:{present}, pets:{present}, mobility:[] }
  * @param {object|null} answers - { prefs[], budget, effort, toggles{}, dims } from the wizard
+ * @param {string|null} setupId - the setup card the user chose (SETUP_TYPES id).
+ *        The scenario supplies the CONTENT; the setup supplies the STRUCTURE.
+ *        Passing it re-projects the plan onto the levels that setup actually
+ *        has, so an overhead rack stops being described as a 5-shelf unit
+ *        with a floor. Omit it and the scenario's own shape stands.
  */
-export function getDemoScenario(spaceType, goal, household, answers) {
+export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   const fn = SCENARIO_FNS[spaceType] || SCENARIO_FNS.other;
   const plan = fn();
 
+  // Structure first: goal/household/answers all reason about the zone list
+  // (kid-safe placement, per-zone effort padding, category edits), so they
+  // have to see the setup's real zones rather than the scenario's.
+  /* Only re-project when the scenario's own shape disagrees with the setup's.
+     15 of the 33 setups already line up (a reach-in pantry really is
+     `shelves`, a walk-in closet really is `walkin-u`), and those scenarios
+     are hand-written for that shape — the walk-in closet's wall-by-wall rod
+     zones are better than any template could generate. Rewriting them would
+     trade specific content for generic content. Only the 18 that disagree
+     get restructured. */
+  const archetype = setupId && SETUP_ARCHETYPE[setupId];
+  const scenarioArchetype = SCENARIO_ARCHETYPE[spaceType];
+  if (archetype && archetype !== scenarioArchetype) {
+    projectOntoArchetype(plan, archetype, setupId, { dims: answers && answers.dims });
+  } else if (archetype) {
+    // Shape already agrees; still replace the hardcoded opening claim about
+    // the furniture's size with what the user actually measured.
+    plan.summary = rewriteOpening(plan.summary, describeSetup({
+      archetype, setupId, dims: answers && answers.dims, levelCount: plan.map.length,
+    }));
+  }
   applyGoal(plan, goal);
   applyHousehold(plan, household);
   if (answers) applyAnswers(plan, answers);
+
+  /* Last, because the three layers above inject product needs of their own —
+     the kid household's safety latch hardcodes "Top shelf", which a rolling
+     tool chest does not have. Runs for every plan, projected or not: some
+     scenarios also ship a targetZone their own map never contained. */
+  alignTargetZones(plan);
 
   return plan;
 }

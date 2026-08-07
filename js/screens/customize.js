@@ -20,7 +20,7 @@ import { renderSteps, setUpgrades, applySavedProgress, buildResults } from './re
    them), so this only ever has to rebuild the deterministic path. */
 function restoreProductNeeds(){
   if(!state.ai || (state.ai.productNeeds||[]).length) return;
-  const scenario=getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, null);
+  const scenario=getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, null, state.setup);
   state.ai.productNeeds=normalizeAi(scenario).productNeeds;
   state.ai.cost=scenario.cost||state.ai.cost;
   state.shopping=null;   // rebuilt by initShopping against the new needs
