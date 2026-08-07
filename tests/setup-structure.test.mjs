@@ -32,7 +32,7 @@ const KIDS = { adults: 2, kidCount: 2, petCount: 0, kids: { present: 'yes', ages
 const ALL_SETUPS = Object.entries(SETUP_TYPES).flatMap(([space, list]) =>
   list.map(t => ({ space, id: t.id, label: t.label })));
 
-function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping = 'Open to a few ideas' } = {}) {
+function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping = 'Open to a few ideas', effort = 'Weekend reset' } = {}) {
   const d = dimsFt || SETUP_DIMS[id];
   state.room = 'x'; state.space = space; state.setup = id;
   state.setupLabel = (SETUP_TYPES[space].find(t => t.id === id) || {}).label || id;
@@ -42,7 +42,10 @@ function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping =
   state.prefs = new Set(shopping === 'Use what I have' ? ['Use only what I already own'] : ['Open to buying storage']);
   state.budget = shopping === 'Use what I have' ? '$0' : null;
   state.upgrades = shopping !== 'Use what I have';
-  state.effort = 'Weekend reset'; state.household = household;
+  // Takes the effort from the caller. Hardcoding it here silently defeated
+  // the sweep below, which set state.effort and then had it overwritten —
+  // "33 setups x 3 efforts" was really one label run three times.
+  state.effort = effort; state.household = household;
   return normalizeAi(getDemoScenario(scenarioKeyFor(space, id), null, household, buildAnalysisContext(), id));
 }
 
@@ -262,7 +265,11 @@ test('L-shaped closets keep their hanging rods', () => {
 });
 
 test('surface rewrites keep sentence capitalization and stay grammatical', () => {
-  assert.equal(rewriteForSurfaces('The counter is cluttered.', 'drawer-bank'), 'The top drawer is cluttered.');
+  // The replacement is the archetype's own surface noun, so it can never
+  // name a fitting the setup lacks — and never a specific LEVEL either,
+  // which "top drawer" was.
+  assert.equal(rewriteForSurfaces('The counter is cluttered.', 'drawer-bank'), 'The drawer is cluttered.');
+  assert.equal(rewriteForSurfaces('A pegboard area sits empty.', 'cabinet'), 'A shelf area sits empty.');
   assert.equal(rewriteForSurfaces('Hang hooks on the door back for bags.', 'drawer-bank'),
     'Hang hooks on the wall beside it for bags.');
   assert.ok(!/the front edge back/i.test(rewriteForSurfaces('Hooks on the door back.', 'shelves')));
@@ -311,24 +318,28 @@ test('every level cap actually constrains its archetype', () => {
 
 /* ---------- second-round review findings ---------- */
 
-import { planMinutes } from '../js/personalize.js';
+import { planMinutes, EFFORT_STEPS } from '../js/personalize.js';
 
 test('the headline time always matches the checklist under it', () => {
   // The effort label used to set the time on its own, so a two-level rack
   // announced "Full overhaul · 4–8 hours" over an hour of work, and every
   // "Quick refresh" promised ~30 min over an hour-long checklist.
   const BANDS = [[45, '~30 min'], [100, '45–90 min'], [200, '2–3 hours'], [330, '3–5 hours'], [Infinity, '4–8 hours']];
+  /* EVERY label in EFFORT_STEPS, not just the three the wizard offers today.
+     The legacy names are kept deliberately so saved drafts stay personalized,
+     and two of them ("1-hour cleanup", "Weekend project") went uncorrected
+     because their canned strings are not band names — a saved plan announced
+     "2–4 hours" over 42 minutes of steps. Iterating the real key list is what
+     catches that; a hardcoded trio never can. */
   for (const s of ALL_SETUPS) {
-    for (const effort of ['Quick refresh', 'Weekend reset', 'Full overhaul']) {
-      state.effort = effort;
-      const p = planFor(s);
+    for (const effort of Object.keys(EFFORT_STEPS)) {
+      const p = planFor(s, { effort });
       const mins = planMinutes(p.steps);
       const expected = BANDS.find(([max]) => mins < max)[1];
       assert.equal(p.time, expected,
         `${s.space}/${s.id} (${effort}): says "${p.time}" over ${Math.round(mins)} min of steps`);
     }
   }
-  state.effort = 'Weekend reset';
 });
 
 test('the room\'s own floor is not rewritten as a storage level', () => {
@@ -350,6 +361,49 @@ test('a merged level advertises exactly what it holds', () => {
       const segs = String(m.zone).split(' · ').filter(Boolean).length;
       assert.ok(segs <= 6, `${s.space}/${s.id}: "${m.lv}" lists ${segs} categories`);
       assert.ok((m.items || []).length <= 6, `${s.space}/${s.id}: "${m.lv}" holds ${(m.items || []).length} items`);
+    }
+  }
+});
+
+/* The FORBIDDEN probe above only looked for pegboard / door rack / hanging
+   rod, and the rewrite DELETES those words — so it passed on exactly the
+   strings it had corrupted into naming a drawer or a bench instead. This
+   checks the whole visible plan for any storage noun the setup lacks, and
+   includes existingLede and dontBuy, which the earlier probe never read. */
+test('no projected plan names a fitting its setup does not have', () => {
+  const NOUN_FOR = { shelf: 'shelf', drawer: 'drawer', bench: 'bench', pegboard: 'pegboard', rod: 'rod' };
+  for (const s of ALL_SETUPS) {
+    const archetype = SETUP_ARCHETYPE[s.id];
+    if (archetype === SCENARIO_ARCHETYPE[scenarioKeyFor(s.space, s.id)]) continue;
+    const have = new Set(ARCHETYPE_SURFACES[archetype]);
+    for (const household of [NO_KIDS, KIDS]) {
+      const p = planFor(s, { household });
+      const text = [p.summary, p.existingLede, p.dontBuy, ...p.problems, ...p.opportunities,
+        ...p.safetyNotes, ...p.steps.flatMap(x => [x.t, x.w]),
+        ...p.map.flatMap(m => [m.zone, m.why]), ...p.existing.flatMap(e => [e.ft, e.fd]),
+      ].filter(Boolean).join(' | ');
+      for (const [surface, noun] of Object.entries(NOUN_FOR)) {
+        if (have.has(surface)) continue;
+        // "junk drawer" is an idiom, not a claim about the furniture.
+        const re = new RegExp(`\\b(?:the|a|an|every|each|upper|top|lower|middle|your)\\s+${noun}s?\\b`, 'i');
+        const hit = text.match(re);
+        assert.ok(!hit, `${s.space}/${s.id} (${archetype}) names a ${noun}: "${hit && hit[0]}" in ${text.slice(Math.max(0, text.indexOf(hit ? hit[0] : '') - 50), 140)}`);
+      }
+    }
+  }
+});
+
+test('a replacement never introduces a surface the archetype also lacks', () => {
+  const SAMPLES = ['Hang tools on the pegboard.', 'Clear the bench surface.', 'Empty it onto the counter.',
+    'The drawers are stuck.', 'Use the hanging rod.'];
+  for (const archetype of Object.keys(ARCHETYPE_SURFACES)) {
+    const have = new Set(ARCHETYPE_SURFACES[archetype]);
+    for (const sample of SAMPLES) {
+      const out = rewriteForSurfaces(sample, archetype);
+      for (const [surface, word] of Object.entries({ pegboard: 'pegboard', worktop: 'bench surface', rod: 'hanging rod' })) {
+        if (have.has(surface)) continue;
+        assert.ok(!new RegExp(word, 'i').test(out), `${archetype}: "${sample}" -> "${out}" still names ${word}`);
+      }
     }
   }
 });

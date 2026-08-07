@@ -394,11 +394,16 @@ export function planMinutes(steps) {
 
 export function capTimeToPlan(label, steps) {
   const mins = planMinutes(steps);
+  /* Always derived from the steps, never from the label. Gating this on
+     `BAND_ORDER.includes(label)` made the correction depend on whether an
+     effort's canned string happened to collide with a band name: of the four
+     legacy labels, "Quick 30-minute reset" and "Full reorganization" were
+     corrected and "1-hour cleanup" and "Weekend project" were not, so a
+     saved plan could still announce "2–4 hours" over 42 minutes of steps.
+     The only case for keeping the label is a plan whose steps carry no
+     times at all, where there is nothing to derive from. */
   if (!mins) return label;
-  const supported = TIME_BANDS.find(([max]) => mins < max)[1];
-  // Labels outside the band vocabulary (the legacy effort names) keep their
-  // own wording rather than being forced into one.
-  return BAND_ORDER.includes(label) ? supported : label;
+  return TIME_BANDS.find(([max]) => mins < max)[1];
 }
 
 /* Apply the full wizard answer set to a raw plan. Mutates and returns it. */
