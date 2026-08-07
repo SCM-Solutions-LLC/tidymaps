@@ -35,21 +35,37 @@ export const EFFORT_STEPS = {
 const SAFETY_RE = /kid|child|heavy|chemical|sharp|latch|medicine|safety/i;
 const FILLER_RE = /photo|wipe|dust|label/i; // trimmed first when effort is low
 
+/* Steps come in two shapes. applyAnswers runs on RAW plans ({task,time,why},
+   what the scenarios and the AI emit); applyRevision runs on the NORMALIZED
+   plan ({t,m,w}, what state.ai holds after normalizeAi — the Adjust screen
+   has nothing else). Every helper reads both spellings and writes new steps
+   in the plan's own shape; assuming raw here is how three Adjust options once
+   appended a step card that rendered as "undefined / undefined". */
+const stepTask = st => (st && (st.task ?? st.t)) || '';
+const stepWhy = st => (st && (st.why ?? st.w)) || '';
+const stepText = st => stepTask(st) + ' ' + stepWhy(st);
+const isNormalized = plan => Array.isArray(plan.steps) && plan.steps.length
+  ? ('t' in plan.steps[0]) : Array.isArray(plan.cats);
+
 function hasStep(plan, re) {
-  return plan.steps.some(st => re.test(st.task + ' ' + (st.why || '')));
+  return plan.steps.some(st => re.test(stepText(st)));
 }
 
 function addStep(plan, step) {
-  plan.steps.push({ time: '5–10 min', ...step, _p: true }); // _p = personalized, protected
+  const s = { time: '5–10 min', ...step };
+  plan.steps.push(isNormalized(plan)
+    ? { t: s.task, m: s.time, w: s.why || '', _p: true }
+    : { ...s, _p: true }); // _p = personalized, protected
 }
 
 /* The core promise: the user's answer is VISIBLE in the plan. If a matching
    step already exists in the scenario, cite the answer on it (and protect it
    from effort trimming); only add a new step when nothing covers the need. */
 function ensureCitedStep(plan, re, step, cite) {
-  const existing = plan.steps.find(st => re.test(st.task + ' ' + (st.why || '')));
+  const existing = plan.steps.find(st => re.test(stepText(st)));
   if (existing) {
-    if (!(existing.why || '').includes(cite)) existing.why = ((existing.why || '') + ' ' + cite).trim();
+    const key = 't' in existing ? 'w' : 'why';
+    if (!stepWhy(existing).includes(cite)) existing[key] = (stepWhy(existing) + ' ' + cite).trim();
     existing._p = true;
     return existing;
   }
@@ -58,7 +74,25 @@ function ensureCitedStep(plan, re, step, cite) {
 }
 
 function isProtected(st) {
-  return !!st._p || SAFETY_RE.test((st.task || '') + ' ' + (st.why || ''));
+  return !!st._p || SAFETY_RE.test(stepText(st));
+}
+
+/* The kid-safe zone is "low but not hazardous". Position alone (map[len-2])
+   put the badge on the bathroom's latched chemicals caddy; skipping every
+   flagged row entirely picked the pantry's narrow door rack. So: keep the
+   original low-zone preference, then walk upward past anything already
+   carrying a flag of its own. */
+export function lowestUnflaggedZone(map) {
+  const rows = Array.isArray(map) ? map : [];
+  const order = [];
+  if (rows.length >= 2) order.push(rows.length - 2);
+  if (rows.length >= 1) order.push(rows.length - 1);
+  for (let i = rows.length - 3; i >= 0; i--) order.push(i);
+  for (const i of order) {
+    const m = rows[i];
+    if (m && (!m.safety || !m.safety.flag)) return m;
+  }
+  return null;
 }
 
 function dropNeeds(plan, keepFn) {
@@ -111,13 +145,22 @@ const PREF_HANDLERS = {
       'You asked to hide visual clutter.');
   },
   'Kid-friendly access': (plan) => {
-    const low = plan.map[plan.map.length - 2] || plan.map[plan.map.length - 1];
-    if (low && (!low.safety || !low.safety.flag)) {
-      low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
+    // Cite the zone that IS kid-safe; otherwise promote a low zone that
+    // carries no flag of its own. Never touch a keep-high / lock-or-latch
+    // row: welding "you asked for kid-friendly access" onto the latched
+    // chemicals zone inverts the one warning that matters.
+    const existing = plan.map.find(m => m.safety && m.safety.flag === 'kid-safe');
+    if (existing) {
+      if (!(existing.safety.why || '').includes('kid-friendly access')) {
+        existing.safety.why = ((existing.safety.why || '') + ' You asked for kid-friendly access.').trim();
+      }
+      return;
     }
+    const low = lowestUnflaggedZone(plan.map);
+    if (low) low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
   },
   'No drilling or permanent installation': (plan) => {
-    plan.steps = plan.steps.filter(st => !/drill|mount|screw|install hardware/i.test(st.task));
+    plan.steps = plan.steps.filter(st => !/drill|mount|screw|install hardware/i.test(stepTask(st)));
     dropNeeds(plan, p => !['door-rack', 'hook-rack'].includes(p.type));
     plan.opportunities = plan.opportunities || [];
     plan.opportunities.push('Everything in this plan is freestanding — you asked for no drilling or permanent installation.');
@@ -126,7 +169,9 @@ const PREF_HANDLERS = {
     plan.map.forEach(m => {
       if (m.items && m.items.length > 2) m.items = m.items.slice(0, 2);
     });
-    plan.summary += ' You asked for a minimal look, so each zone keeps fewer visible categories.';
+    // Style + Adjust can both route here; the sentence must not stack.
+    const cite = ' You asked for a minimal look, so each zone keeps fewer visible categories.';
+    if (!plan.summary.includes(cite)) plan.summary += cite;
   },
   'Labels and categories': (plan) => {
     raisePriority(plan, ['label-set']);
@@ -190,6 +235,19 @@ export const REVISIONS = {
   labels:   'Labels and categories',
 };
 
+/* A revision the user clicked must be visible ON THE REPORT, not only in the
+   "Plan revised" banner. Some handlers' whole effect otherwise lands behind
+   a collapsed "Why?" disclosure or on the hidden upgrades list (citing an
+   existing label step, raising a product's priority) — an invisible change
+   under a "Plan revised" toast reads as the button doing nothing. */
+const REVISION_NOTES = {
+  minimal:  'Each zone keeps fewer visible categories — you asked for a more minimal look.',
+  kid:      'A kid-reachable, hazard-free zone is called out on the shelf map — you asked for a more kid-friendly setup.',
+  capacity: 'Risers and stacking reclaim the vertical space — you asked to maximize capacity.',
+  hide:     'Loose items move into opaque bins and baskets — you asked to hide more clutter.',
+  labels:   'Every zone and container gets a label — you asked for more labels.',
+};
+
 export function applyRevision(plan, id) {
   const pref = REVISIONS[id];
   const handler = pref && PREF_HANDLERS[pref];
@@ -197,6 +255,8 @@ export function applyRevision(plan, id) {
   plan.revisions = Array.isArray(plan.revisions) ? plan.revisions : [];
   if (plan.revisions.includes(id)) return false;
   handler(plan);
+  plan.opportunities = plan.opportunities || [];
+  if (!plan.opportunities.includes(REVISION_NOTES[id])) plan.opportunities.push(REVISION_NOTES[id]);
   plan.revisions.push(id);
   return true;
 }
@@ -241,8 +301,10 @@ function applyToggles(plan, answers) {
   }
   if (t.kids === 'yes' && !prefs.has('Kid-friendly access')) {
     PREF_HANDLERS['Kid-friendly access'](plan);
-    const low = plan.map[plan.map.length - 2] || plan.map[plan.map.length - 1];
-    if (low && low.safety && low.safety.flag === 'kid-safe') {
+    // Re-word whichever zone the handler actually settled on, rather than
+    // assuming it landed at a fixed index.
+    const low = (plan.map || []).find(m => m.safety && m.safety.flag === 'kid-safe');
+    if (low) {
       low.safety.why = 'You said kids will access this space — this lower zone stays reachable and hazard-free.';
     }
   }
@@ -275,8 +337,8 @@ function applyEffort(plan, answers) {
       .map((st, i) => ({ st, i }))
       .filter(x => !isProtected(x.st));
     const fillerFirst = [
-      ...removable.filter(x => FILLER_RE.test(x.st.task)),
-      ...removable.filter(x => !FILLER_RE.test(x.st.task)).reverse(),
+      ...removable.filter(x => FILLER_RE.test(stepTask(x.st))),
+      ...removable.filter(x => !FILLER_RE.test(stepTask(x.st))).reverse(),
     ];
     const toDrop = new Set();
     for (const x of fillerFirst) {
@@ -291,7 +353,7 @@ function applyEffort(plan, answers) {
       const zoneWord = (m.zone || '').split(/\s*·\s*|,/)[0].trim();
       if (!zoneWord || hasStep(plan, new RegExp(zoneWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'))) continue;
       addStep(plan, {
-        task: `Set up the ${zoneWord} zone (${m.level})`,
+        task: `Set up the ${zoneWord} zone (${m.level ?? m.lv})`,
         why: `${cite} A full pass gives every zone its own dedicated setup step.`,
       });
     }

@@ -63,10 +63,14 @@ export function setArea(roomId, spaceId){
 export function setSetup(setupId){
   const st = (SETUP_TYPES[state.space] || []).find(t => t.id === setupId);
   if(!st) return;
+  // Re-confirming the card that is already selected (coming Back, or Review's
+  // Edit) must not reset measurements the user typed on the next step —
+  // defaults only apply when the setup actually changes.
+  const changed = state.setup !== st.id;
   state.setup = st.id;
   state.setupLabel = st.label;
   state.setupTouched = true;   // an actual choice, not the preselected default
-  applySetupDims(st.id);
+  if(changed) applySetupDims(st.id);
 }
 
 function applySetupDims(setupId){
@@ -246,6 +250,10 @@ function renderMeasure(){
       syncDims(); refreshMeasure(f.k, false);
     };
     num.onblur = () => {
+      // Same guard as oninput: dimsFt is legitimately null for a plan that
+      // never measured anything (the sample plan, a restored draft with no
+      // dims), and blur fires on a field the user only focused.
+      state.dimsFt = state.dimsFt || dimsFtNums();
       const v = Math.min(f.max, Math.max(f.min, dimsFtNums()[f.k]));
       state.dimsFt[f.k] = v; num.value = v;
       syncDims(); refreshMeasure(f.k, true);

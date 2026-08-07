@@ -462,8 +462,13 @@ const STEP_ART={
   done:A_WRAP('done',`<circle cx="24" cy="24" r="17"/><path class="dn-check" d="M15 24.5l6.5 6.5L33 18"/>`),
 };
 
-export function renderSteps(list){
+export function renderSteps(rawList){
   const wrap=document.getElementById('res-steps'); wrap.innerHTML='';
+  /* Steps normally arrive normalized ({t,m,w}), but a guest draft or a saved
+     row written before the Adjust-screen shape fix can still carry raw
+     {task,time,why} steps — which rendered as "undefined". Accept both. */
+  const list=(rawList||[]).map(s=>(s && s.t!==undefined) ? s
+    : {t:(s&&s.task)||'', m:((s&&s.time)||'—'), w:(s&&s.why)||''}).filter(s=>s.t);
   state.stepDone=new Array(list.length).fill(false);
   list.forEach((s,i)=>{
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;

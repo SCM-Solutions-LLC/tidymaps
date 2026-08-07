@@ -1,6 +1,6 @@
 import { ROOMS, AREAS, SETUP_TYPES } from '../wizard-data.js';
 import { loadCatalog, priceAsOf, TYPE_LABEL } from '../catalog.js';
-import { withAffiliate, affiliateRel } from '../affiliates.js';
+import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { getDemoScenario } from '../demo-scenarios.js';
 import { productArt } from '../product-art.js';
 import { go } from '../router.js';
@@ -145,7 +145,10 @@ function renderList(){
   wrap.innerHTML = html || '<p class="muted">No products in that combination yet.</p>';
   const asOf = priceAsOf();
   const note = document.getElementById('prod-asof');
-  if(note) note.textContent = asOf ? `Prices approximate, checked ${asOf}. Links open the retailer's own page.` : '';
+  // This page carries every affiliate link on the site, so the FTC disclosure
+  // that already accompanies the report's shopping card belongs here too.
+  if(note) note.textContent = (asOf ? `Prices approximate, checked ${asOf}. Links open the retailer's own page.` : '')
+    + (affiliatesConfigured() ? ' ' + AFFILIATE_DISCLOSURE : '');
 }
 
 /* ---------- Entry ---------- */

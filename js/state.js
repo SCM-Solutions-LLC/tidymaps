@@ -166,6 +166,11 @@ export function restoreGuestDraft(){
     state.prefs=new Set(d.prefs||[]); state.budget=d.budget; state.effort=d.effort;
     state.upgrades=!!d.upgrades; state.cats=d.cats||[]; state.afterMode=d.afterMode||state.afterMode;
     state.dims=d.dims||null;
+    // The measure screen renders from dimsFt, not dims. Restoring dims alone
+    // left dimsFt at buildAll()'s pantry-cabinet defaults, so after a reload
+    // the Review row showed 3′ against a 12′ plan — and focusing any measure
+    // field wrote the stale default back over the real measurement on blur.
+    state.dimsFt=d.dims?{w:d.dims.w_in/12, h:d.dims.h_in/12, d:d.dims.d_in/12}:null;
     if(d.household) state.household=d.household;
     Object.entries(d.toggles||{}).forEach(([k,v])=>{ state[k]=v; });
     state.ai=d.ai||null; state.planMeta=d.planMeta||null;
