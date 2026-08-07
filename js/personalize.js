@@ -363,7 +363,47 @@ function applyEffort(plan, answers) {
     'Quick refresh': '~30 min', 'Weekend reset': '2–3 hours', 'Full overhaul': '4–8 hours',
     'Quick 30-minute reset': '~30 min', '1-hour cleanup': '~1 hour', 'Weekend project': '2–4 hours', 'Full reorganization': '4–8 hours',
   };
-  if (times[answers.effort]) plan.time = times[answers.effort];
+  if (times[answers.effort]) plan.time = capTimeToPlan(times[answers.effort], plan.steps);
+}
+
+/* The effort label alone used to set the headline time, and it was wrong in
+   both directions: a two-level overhead rack with six steps announced
+   "Full overhaul · 4–8 hours" over about an hour of work, while every
+   "Quick refresh" promised "~30 min" over a checklist that adds up to an
+   hour or more.
+
+   The effort answer chooses the SCOPE of the plan (how many steps it runs
+   to — see EFFORT_STEPS). The time is then a fact about the steps that
+   ended up on the page, not a restatement of the label, so the number the
+   user reads always matches the checklist under it. */
+const TIME_BANDS = [
+  [45, '~30 min'], [100, '45–90 min'], [200, '2–3 hours'], [330, '3–5 hours'], [Infinity, '4–8 hours'],
+];
+const BAND_ORDER = TIME_BANDS.map(b => b[1]);
+
+export function planMinutes(steps) {
+  return (steps || []).reduce((sum, st) => {
+    const raw = String((st && (st.time ?? st.m)) || '');
+    const m = raw.match(/(\d+)(?:\s*[–-]\s*(\d+))?/);
+    if (!m) return sum;
+    // "5 min / week" is a maintenance cadence, not part of the one-off job.
+    if (/\/\s*week/i.test(raw)) return sum;
+    return sum + (m[2] ? (Number(m[1]) + Number(m[2])) / 2 : Number(m[1]));
+  }, 0);
+}
+
+export function capTimeToPlan(label, steps) {
+  const mins = planMinutes(steps);
+  /* Always derived from the steps, never from the label. Gating this on
+     `BAND_ORDER.includes(label)` made the correction depend on whether an
+     effort's canned string happened to collide with a band name: of the four
+     legacy labels, "Quick 30-minute reset" and "Full reorganization" were
+     corrected and "1-hour cleanup" and "Weekend project" were not, so a
+     saved plan could still announce "2–4 hours" over 42 minutes of steps.
+     The only case for keeping the label is a plan whose steps carry no
+     times at all, where there is nothing to derive from. */
+  if (!mins) return label;
+  return TIME_BANDS.find(([max]) => mins < max)[1];
 }
 
 /* Apply the full wizard answer set to a raw plan. Mutates and returns it. */

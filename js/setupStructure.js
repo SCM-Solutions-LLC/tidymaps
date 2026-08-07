@@ -203,40 +203,67 @@ export const ARCHETYPE_SURFACES = {
 
 /* Phrases that only make sense when a surface exists, and what to say when
    it does not. A null replacement means the whole sentence goes. */
+/* `{n}` / `{ns}` expand to the archetype's OWN primary surface noun. That
+   matters twice over: a replacement must never name a surface the setup
+   also lacks (pegboard -> "drawer" on a wall cabinet said the user had
+   drawers), and because the substituted noun is always a surface the
+   archetype HAS, no later rule — which only fire for surfaces it LACKS —
+   can match it. That is what stopped the rules cascading into each other
+   and turning "The pegboard, shelf, and drawers already cover every zone"
+   into "The shelf, shelf, and drawers…". */
+const PRIMARY_NOUN = {
+  'shelves': 'shelf', 'cabinet': 'shelf', 'l-run': 'shelf', 'walkin-u': 'shelf',
+  'closet-rod': 'shelf', 'closet-system': 'shelf', 'drawer-bank': 'drawer',
+  'under-bed': 'drawer', 'under-sink': 'drawer', 'counter': 'shelf',
+  'garage-rack': 'shelf', 'overhead-rack': 'rack deck', 'workbench': 'bench',
+  'fridge': 'shelf',
+};
+
+const PLURAL_NOUN = { shelf: 'shelves', drawer: 'drawers', bench: 'benches', 'rack deck': 'rack decks' };
+
 const SURFACE_PHRASES = [
   ['pegboard', [
-    [/\bon the pegboard\b/gi, 'in the top drawer'],
-    [/\bpegboard wall\b/gi, 'drawer bank'],
-    [/\bpegboard\b/gi, 'drawer'],
+    [/\bon the pegboard\b/gi, 'on the {n}'],
+    [/\bpegboard wall\b/gi, '{n}'],
+    [/\bpegboard\b/gi, '{n}'],
   ]],
   ['worktop', [
-    [/\bthe bench surface\b/gi, 'the top drawer'],
-    [/\bbench surface\b/gi, 'top drawer'],
-    [/\bon the bench\b/gi, 'in the chest'],
-    [/\bthe counter\b/gi, 'the top drawer'],
+    [/\bthe bench surface\b/gi, 'the {n}'],
+    [/\bbench surface\b/gi, '{n}'],
+    [/\bon the bench\b/gi, 'on the {n}'],
+    [/\bthe counter\b/gi, 'the {n}'],
   ]],
   ['door', [
     // Longest first: "the door back" must not become "the front edge back".
     [/\bthe (?:back of the door|door back)\b/gi, 'the wall beside it'],
     [/\bon the (?:back of the )?door\b/gi, 'on the wall beside it'],
     [/\bthe (?:inside of the )?door\b/gi, 'the front edge'],
-    [/\bdoor rack\b/gi, 'front shelf'],
+    [/\bdoor rack\b/gi, 'front {n}'],
     [/\bdoor-mounted\b/gi, 'front-facing'],
   ]],
   ['floor', [
     // Qualified forms first — "the cabinet floor" never matched "the floor",
     // so a wall shelf kept advising items "sit stable on the cabinet floor".
     [/\bthe (?:cabinet|closet|pantry|unit) floor\b/gi, 'the lowest level'],
-    [/\bthe floor of the \w+\b/gi, 'the lowest level'],
-    [/\bthe floor\b/gi, 'the lowest level'],
+    /* Only where the floor is being used as a STORAGE level. "Sweep the
+       floor before you start" and "art happens at the table, not on the
+       floor" are about the room, are true whatever the setup is, and became
+       "sweep the lowest level" under a blanket rule. */
+    [/\b(\w+)(\s+(?:up |out )?(?:on|onto|to) the floor)\b/gi,
+      (m, verb, tail) => (/^(?:sweep|sweeps|vacuum|mop|clean|cleans|happens|happen|play|plays|spill|spills|fall|falls|drop|drops)$/i.test(verb)
+        ? m : `${verb}${tail.replace(/the floor$/, 'the lowest level')}`)],
     [/\bfloor level\b/gi, 'lowest level'],
   ]],
   ['rod', [
-    [/\bthe (?:hanging )?rod\b/gi, 'the shelf'],
-    [/\bhanging rod\b/gi, 'shelf'],
+    [/\bthe hanging rods\b/gi, 'the {ns}'],
+    [/\bthe (?:hanging )?rod\b/gi, 'the {n}'],
+    [/\bhanging rod\b/gi, '{n}'],
   ]],
   ['drawer', [
-    [/\bthe drawers?\b/gi, 'the shelf'],
+    // Number has to survive the swap: "the drawers are jammed shut" became
+    // "the shelf are jammed shut".
+    [/\bthe drawers\b/gi, 'the {ns}'],
+    [/\bthe drawer\b/gi, 'the {n}'],
   ]],
 ];
 
@@ -244,11 +271,16 @@ const SURFACE_PHRASES = [
    into something true — it has to go. */
 const SURFACE_ONLY_LINES = {
   pegboard: /pegboard/i,
-  worktop: /\bbench (?:surface|top)\b|\bcountertop\b/i,
+  worktop: /\bbench\b|\bcountertop\b/i,
   door: /\bdoor (?:rack|shelf|storage)\b|over-the-door/i,
   rod: /\bhanging rod\b|\bhang(?:ing)? (?:clothes|shirts|items) on\b/i,
-  drawer: /\bdrawer (?:divider|organizer|liner)s?\b/i,
+  // "Label every drawer" on a wall cabinet, "an under-sink cabinet" on open
+  // wall shelves — the sentence is about a fitting the setup does not have,
+  // and no wording makes it true. "Junk drawer" is idiomatic, so the
+  // patterns are anchored to determiners rather than the bare noun.
+  drawer: /\bdrawer (?:divider|organizer|liner)s?\b|\b(?:every|each) drawer\b|\bunder-sink\b/i,
   floor: /\bfloor (?:bin|zone|space|pile)\b/i,
+  shelf: /\b(?:upper|top|lower|middle) shelf\b/i,
 };
 
 export function rewriteForSurfaces(text, archetype) {
@@ -261,7 +293,16 @@ export function rewriteForSurfaces(text, archetype) {
       // Every replacement is written lowercase, so a match that opened a
       // sentence used to lowercase it: "The counter is cluttered." became
       // "the counter…". Carry the matched text's own capitalization across.
-      out = out.replace(re, (match) => (/^[A-Z]/.test(match) ? to.charAt(0).toUpperCase() + to.slice(1) : to));
+      // A rule may also supply a function when it needs to inspect context.
+      out = out.replace(re, (...args) => {
+        const match = args[0];
+        const raw = typeof to === 'function' ? to(...args) : to;
+        if (raw === match) return match;
+        const noun = PRIMARY_NOUN[archetype] || 'shelf';
+        const plural = PLURAL_NOUN[noun] || noun + 's';
+        const replacement = raw.replace(/\{ns\}/g, plural).replace(/\{n\}/g, noun);
+        return /^[A-Z]/.test(match) ? replacement.charAt(0).toUpperCase() + replacement.slice(1) : replacement;
+      });
     }
   }
   return out.replace(/\s{2,}/g, ' ').trim();
@@ -605,6 +646,10 @@ function splitRows(rows, n) {
   return out;
 }
 
+/* How much a single merged level may advertise. Beyond this a zone reads as
+   a dumping list rather than a plan, and the shelf drawing runs out of room. */
+const MERGED_MAX = 6;
+
 function joinUnique(parts, sep) {
   return [...new Set(parts.filter(Boolean))].join(sep);
 }
@@ -621,13 +666,17 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
     const base = rows[0];
     const merged = rows.length === 1 ? base : {
       ...base,
-      zone: joinUnique(rows.flatMap(r => String(r.zone || '').split(' · ')), ' · '),
+      // Label and item list are capped together. Capping only `items` left
+      // the zone advertising nine categories over six things, so the shelf
+      // map and the 3D view disagreed about what is on the level.
+      zone: joinUnique(rows.flatMap(r => String(r.zone || '').split(' · ')), ' · ')
+        .split(' · ').slice(0, MERGED_MAX).join(' · '),
       // NOT a concatenation of the originals: each was written for the height
       // its row used to sit at, so joining them made a ceiling rack argue
       // that "heavy power tools are safer on lower shelves". One true
       // sentence for the level they have all landed on instead.
       why: ROLE_WHY[slot.role] || base.why,
-      items: rows.flatMap(r => r.items || []).slice(0, 6),
+      items: rows.flatMap(r => r.items || []).slice(0, MERGED_MAX),
       // A hazard flag anywhere in the bucket has to survive the merge.
       safety: rows.map(r => r.safety).find(s => s && s.flag) || base.safety,
     };
@@ -637,7 +686,13 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
       // one field it never reached, so a wall shelf kept a rationale about
       // items sitting "on the cabinet floor".
       zone: rewrite(merged.zone),
-      why: rewrite(merged.why),
+      /* A rationale ABOUT a fitting the setup lacks cannot be reworded into
+         a true one — "The bench is a work area, not storage" on a rolling
+         tool chest. Merged rows already fall back to the level's own reason;
+         unmerged ones need the same escape hatch. */
+      why: mentionsMissingSurface(merged.why, archetype)
+        ? (ROLE_WHY[slot.role] || rewrite(merged.why))
+        : rewrite(merged.why),
       safety: merged.safety && merged.safety.why
         ? { ...merged.safety, why: rewrite(merged.safety.why) } : merged.safety,
       level: slot.level,
@@ -672,8 +727,13 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
     .map(f => ({ ...f, title: fix(f.title), sub: fix(f.sub) }));
   plan.existing = (plan.existing || []).filter(e => !mentionsMissingSurface(e.title + ' ' + e.detail, archetype))
     .map(e => ({ ...e, title: fix(e.title), detail: fix(e.detail) }));
-  plan.existingLede = fix(plan.existingLede);
-  plan.dontBuy = fix(plan.dontBuy);
+  /* A sentence that ENUMERATES surfaces cannot be reworded into a true one —
+     "The pegboard, shelf, and drawers already cover every zone" rewrites to
+     "The shelf, shelf, and drawers…" whatever the replacement noun is. Gate
+     these the same way steps and safety notes already are; the report has a
+     fallback for both. */
+  plan.existingLede = mentionsMissingSurface(plan.existingLede, archetype) ? '' : fix(plan.existingLede);
+  plan.dontBuy = mentionsMissingSurface(plan.dontBuy, archetype) ? '' : fix(plan.dontBuy);
 
   // Order matters: the height-argument sweep would otherwise delete the very
   // note applyContentRules adds, since that note names a height on purpose.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyAnswers, applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision } from '../js/personalize.js';
+import { applyAnswers, applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision, planMinutes } from '../js/personalize.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 
 // Every wizard answer must leave a visible, attributable trace in the plan —
@@ -15,6 +15,13 @@ function freshPlan(space = 'pantry', goal = 'find', answers = null) {
 
 function stepText(plan) {
   return plan.steps.map(s => s.task + ' ' + (s.why || '')).join(' | ');
+}
+
+/* The band the plan's own step times fall into — the headline time must
+   always be this, whichever effort was chosen. */
+const TIME_BANDS = [[45, '~30 min'], [100, '45–90 min'], [200, '2–3 hours'], [330, '3–5 hours'], [Infinity, '4–8 hours']];
+function bandFor(plan) {
+  return TIME_BANDS.find(([max]) => planMinutes(plan.steps) < max)[1];
 }
 
 /* ---------- prefs: all 13 leave a trace ---------- */
@@ -113,7 +120,11 @@ test('Quick reset trims to its band; safety and personalized steps survive', () 
     `expected <=${EFFORT_STEPS['Quick 30-minute reset']} steps, got ${plan.steps.length}`);
   assert.match(stepText(plan), /labels and categories/i, 'personalized label step was trimmed');
   assert.match(stepText(plan), /heavy/i, 'safety-relevant heavy step was trimmed');
-  assert.equal(plan.time, '~30 min');
+  /* This used to assert '~30 min' flat, which is the defect rather than the
+     contract: the six surviving steps add up to about an hour, and the
+     report printed half that. The effort answer sizes the plan; the time is
+     a fact about the steps that ended up on it. */
+  assert.equal(plan.time, bandFor(plan), `"${plan.time}" does not match ${Math.round(planMinutes(plan.steps))} min of steps`);
 });
 
 test('Full reorganization grows to its band with cited per-zone steps', () => {
