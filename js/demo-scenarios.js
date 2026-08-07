@@ -1624,6 +1624,7 @@ const MOBILITY_RULES = [
     // True whatever the shape of the space, because it describes the rule the
     // plan is built on rather than a specific level.
     always: 'You told us reaching high is difficult, so everyday items are placed at or below eye level for easier reach.',
+    caveat: 'Reaching high should not be a problem here.',
   },
   {
     id: 'bend',
@@ -1632,6 +1633,7 @@ const MOBILITY_RULES = [
     outOfBand: (map) => map.map((m, i) => (isFloorRow(m) ? i : -1)).filter(i => i >= 0),
     note: 'Nothing you use regularly is at floor level — you told us bending is difficult, so the lowest zone holds long-cycle storage only.',
     always: 'You told us bending is difficult, so heavy and everyday items sit between knee and waist height for easier reach rather than down at floor level.',
+    caveat: 'Bending should not be a problem here — but if this unit itself sits low, a raised base would bring the whole thing up.',
     // "Heavy items on the lowest shelf" is right for lifting and wrong for
     // bending; knee-to-waist is the compromise that serves both.
     rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'between knee and waist height'],
@@ -1644,6 +1646,7 @@ const MOBILITY_RULES = [
     outOfBand: (map) => map.map((m, i) => (isHighRow(m, i) || isFloorRow(m) ? i : -1)).filter(i => i >= 0),
     note: 'The top and floor zones hold long-cycle storage only — seated reach is roughly 15 to 48 inches, so everything used regularly sits inside that band.',
     always: 'Seated reach is roughly 15 to 48 inches from the ground, so everyday items are placed inside that band for easier reach.',
+    caveat: 'Seated reach is roughly 15 to 48 inches from the ground; check that this unit sits inside that band.',
     rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'within seated reach'],
       [/\bstep stool\b/gi, 'reacher grabber']],
   },
@@ -1652,7 +1655,8 @@ const MOBILITY_RULES = [
 /* Is this row's content something you go to often? The scenarios mark
    long-cycle storage in the zone label ("Bulk overflow", "Seasonal items",
    "Rarely used"), so the absence of those words means regular use. */
-const LONG_CYCLE_RE = /bulk|overflow|backup|rarely|seasonal|holiday|out-of-rotation|archive|spare|luggage|off-season/i;
+const LONG_CYCLE_RE = /bulk\b|overflow|backup|rarely|seasonal|holiday|out-of-rotation|archive|spare|luggage|off-season/i;
+const HAZARD_ITEM_FLAGS = ['heavy', 'chemical', 'sharp'];
 
 function applyMobility(plan, mobility) {
   const needs = (mobility || []).filter(m => typeof m === 'string');
@@ -1667,12 +1671,28 @@ function applyMobility(plan, mobility) {
       if (!row || LONG_CYCLE_RE.test(row.zone || '')) continue;
       /* The row is out of the user's band but holds everyday things. Swap its
          contents with the nearest in-band row that holds long-cycle storage —
-         a real placement change, which is what the note claims. */
+         a real placement change, which is what the note claims.
+
+         Nothing hazardous or heavy moves, in either direction. Relocating by
+         convenience alone sent a garage's solvents DOWN to child height (and
+         left the "keep well above kid and pet reach" flag behind on the
+         holiday decorations that replaced them), and answered "bending is
+         difficult" by putting the heavy luggage on the floor. Where the safe
+         swap is unavailable the plan says so instead — see the note below. */
       const out = new Set(outIdx);
-      const donor = plan.map.find((m, j) => !out.has(j) && LONG_CYCLE_RE.test(m.zone || ''));
+      const hazardous = (m) => (m.items || []).some(it => (it.flags || []).some(f => HAZARD_ITEM_FLAGS.includes(f)))
+        || (m.safety && m.safety.flag);
+      if (hazardous(row)) continue;
+      const donor = plan.map.find((m, j) => !out.has(j) && LONG_CYCLE_RE.test(m.zone || '') && !hazardous(m));
       if (!donor) continue;
-      ['zone', 'items', 'why'].forEach(k => { const t = row[k]; row[k] = donor[k]; donor[k] = t; });
-      donor.why = `${donor.why} Moved here because you told us this zone needs to stay easy to get to.`;
+      /* `safety` travels WITH the contents — the flag describes what is
+         stored, not the shelf it sits on. */
+      ['zone', 'items', 'safety'].forEach(k => { const t = row[k]; row[k] = donor[k]; donor[k] = t; });
+      /* The old `why` argued from the level, not the contents, so carrying it
+         across left a daily-routine zone explaining it was "out of the daily
+         path". Both rows get a sentence true of where they now are. */
+      row.why = 'This level holds what you need least often, so the zones you can reach easily stay clear for everyday things.';
+      donor.why = 'Moved here because you told us this needs to stay easy to get to.';
     }
     if (rule.rewrite) {
       const fix = (t) => rule.rewrite.reduce((s, [re, to]) => String(s || '').replace(re, to), t);
@@ -1683,11 +1703,19 @@ function applyMobility(plan, mobility) {
     /* Only claim it if it is now true. A space with no zone in the awkward
        band (a wall cabinet has no floor) needs no note, and a swap that could
        not find a donor must not be announced as though it had. */
-    // Every need always says the thing that is true of the whole plan.
-    if (!plan.safetyNotes.includes(rule.always)) plan.safetyNotes.push(rule.always);
-
     const stuck = outIdx.filter(i => plan.map[i] && !LONG_CYCLE_RE.test(plan.map[i].zone || ''));
-    if (!outIdx.length) continue;   // no zone in the awkward band; nothing more to say
+    if (!outIdx.length) {
+      /* No zone in the awkward band. The general note is not universally
+         true either — "everyday items are placed at or below eye level" is
+         false on a ceiling rack, and "rather than down at floor level" is
+         false on an under-bed drawer where every level IS floor level. Say
+         what the space actually is instead of a rule it cannot follow. */
+      const note = `This space has no zone outside your comfortable range, so everything in the plan is already within reach. ${rule.caveat}`;
+      if (!plan.safetyNotes.includes(note)) plan.safetyNotes.push(note);
+      continue;
+    }
+    // The band exists, so the rule the plan is built on is worth stating.
+    if (!plan.safetyNotes.includes(rule.always)) plan.safetyNotes.push(rule.always);
     if (!stuck.length) {
       if (!plan.safetyNotes.includes(rule.note)) plan.safetyNotes.push(rule.note);
       continue;

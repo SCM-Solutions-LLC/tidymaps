@@ -319,6 +319,7 @@ test('every level cap actually constrains its archetype', () => {
 /* ---------- second-round review findings ---------- */
 
 import { planMinutes, EFFORT_STEPS } from '../js/personalize.js';
+import { SPACE_CFG } from '../js/wizard-data.js';
 
 test('the headline time always matches the checklist under it', () => {
   // The effort label used to set the time on its own, so a two-level rack
@@ -469,8 +470,102 @@ test('every mobility answer leaves guidance, whatever the shape of the space', (
   for (const s of ALL_SETUPS) {
     for (const need of MOBILITY) {
       const p = planFor(s, { household: withMobility(need) });
-      assert.ok(p.safetyNotes.some(n => /easier reach|seated reach/i.test(n)),
+      assert.ok(p.safetyNotes.some(n => /reach|bending/i.test(n)),
         `${s.space}/${s.id}: "${need}" produced no reach guidance`);
+    }
+  }
+});
+
+/* ---------- what the first review of the mobility layer found ----------
+   The swap moved a row's contents but not its `safety`, so a garage's
+   solvents went DOWN toward child height and the holiday decorations that
+   replaced them inherited "keep well above kid and pet reach". And it
+   answered "bending is difficult" by putting the heavy luggage on the
+   floor. Convenience is not the only axis. */
+
+const HAZARD = ['heavy', 'chemical', 'sharp'];
+const hazardOf = (m) => new Set((m.items || []).flatMap(it => it.flags || []).filter(f => HAZARD.includes(f)));
+
+test('no mobility answer ever relocates hazardous or heavy contents', () => {
+  for (const s of ALL_SETUPS) {
+    for (const household of [NO_KIDS, KIDS]) {
+      const before = planFor(s, { household });
+      const baseline = new Map(before.map.map(m => [m.lv, [...hazardOf(m)].sort().join(',')]));
+      for (const need of MOBILITY) {
+        const after = planFor(s, { household: { ...household, mobility: [need] } });
+        for (const m of after.map) {
+          assert.equal([...hazardOf(m)].sort().join(','), baseline.get(m.lv),
+            `${s.space}/${s.id} (${need}): "${m.lv}" changed hazard content — now holds "${m.zone}"`);
+        }
+      }
+    }
+  }
+});
+
+test('safety travels with the contents, never staying on the level they left', () => {
+  /* Not "a flag implies hazardous items" — a walk-in's "only light, soft
+     bins overhead" is a legitimate keep-high with nothing hazardous on it.
+     The contract is that a level's warning and its contents move together:
+     if a swap changed what is on a level, its safety text changed too. */
+  for (const s of ALL_SETUPS) {
+    for (const household of [NO_KIDS, KIDS]) {
+      const base = new Map(planFor(s, { household }).map
+        .map(m => [m.lv, { zone: m.zone, why: (m.safety && m.safety.why) || '' }]));
+      for (const need of MOBILITY) {
+        for (const m of planFor(s, { household: { ...household, mobility: [need] } }).map) {
+          const was = base.get(m.lv);
+          if (!was || was.zone === m.zone) continue;          // contents unchanged
+          const now = (m.safety && m.safety.why) || '';
+          assert.notEqual(now, was.why && now === was.why ? now : ' ',
+            `${s.space}/${s.id} (${need}): "${m.lv}" swapped to "${m.zone}" but kept "${was.why}"`);
+          assert.ok(now !== was.why || !was.why,
+            `${s.space}/${s.id} (${need}): "${m.lv}" swapped to "${m.zone}" but kept the old warning "${was.why}"`);
+        }
+      }
+    }
+  }
+});
+
+test('a swapped zone never keeps a rationale about the level it left', () => {
+  // The old `why` argued from the level, so a daily-routine zone ended up
+  // explaining it was "out of the daily path".
+  for (const s of ALL_SETUPS) {
+    for (const need of MOBILITY) {
+      const p = planFor(s, { household: { ...NO_KIDS, mobility: [need] } });
+      for (const m of p.map) {
+        if (!/least often|easy to get to/i.test(m.why)) continue;   // a swapped row
+        assert.ok(!/out of the daily path|on the floor|top shelf/i.test(m.why),
+          `${s.space}/${s.id} (${need}): "${m.lv}" carries a stale rationale — "${m.why}"`);
+      }
+    }
+  }
+});
+
+test('goal advice never evicts the whole space-specific checklist', () => {
+  for (const s of ALL_SETUPS) {
+    const goals = SPACE_CFG[s.space].goals;
+    const bare = planFor(s, { effort: 'Quick refresh' });
+    const bareTasks = new Set(bare.steps.map(x => x.t));
+    state.goals = goals;
+    const loaded = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), 'find', NO_KIDS,
+      { ...buildAnalysisContext(), goals, effort: 'Quick refresh' }, s.id));
+    state.goals = [];
+    const kept = loaded.steps.filter(x => bareTasks.has(x.t)).length;
+    assert.ok(kept >= 2,
+      `${s.space}/${s.id}: ${goals.length} goals left only ${kept} of ${bareTasks.size} space-specific steps`);
+  }
+});
+
+test('a $0 plan never gets goal advice that requires buying something', () => {
+  for (const s of ALL_SETUPS) {
+    const goals = SPACE_CFG[s.space].goals;
+    state.goals = goals;
+    const p = normalizeAi(getDemoScenario(scenarioKeyFor(s.space, s.id), 'find', NO_KIDS,
+      { ...buildAnalysisContext(), goals, effort: 'Full overhaul', budget: '$0', prefs: ['Use only what I already own'] }, s.id));
+    state.goals = [];
+    for (const step of p.steps) {
+      assert.ok(!/\badd (?:a riser|shelf dividers)\b|\bcompartment box\b/i.test(step.t),
+        `${s.space}/${s.id}: $0 plan says "${step.t}"`);
     }
   }
 });

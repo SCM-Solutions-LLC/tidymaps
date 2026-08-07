@@ -316,15 +316,39 @@ const GOAL_ADVICE = [
     'A calm space is mostly about how many different things are visible at once, not how much is stored.'],
 ];
 
+/* Advice that only works if you buy something. On a $0 plan the alternative
+   runs instead, so the checklist never contradicts "every step below works
+   with what is already in the space". */
+const NO_BUY_SWAP = {
+  'Measure the empty air above each level and add a riser or a stacking bin to claim it':
+    'Measure the empty air above each level and reuse a sturdy box as a riser to claim it',
+  'Add shelf dividers so each stack is held upright and can be pulled without the rest following':
+    'Split each stack in two and turn the halves front-to-back, so pulling one does not topple the rest',
+  'Sort small parts into a compartment box, one type per compartment, and label the lid':
+    'Sort small parts into jars or cut-down boxes, one type each, and label the lids',
+};
+
 function applyGoals(plan, answers) {
   const goals = (answers.goals || []).filter(g => typeof g === 'string' && g.trim());
+  /* Goal steps are personalized, so effort trimming protects them — which
+     means an unbounded number of them evicts the whole space-specific
+     checklist. A closet with all seven goals on "Quick refresh" came out as
+     seven pieces of generic advice and nothing about closets. Cap them at a
+     third of the plan so the space keeps its own core; the goals beyond the
+     cap still reach the summary and product priorities through applyGoal. */
+  const cap = Math.max(1, Math.floor((EFFORT_STEPS[answers.effort] || 10) / 3));
+  const ownOnly = answers.budget === '$0' || (answers.prefs || []).includes('Use only what I already own');
+  let added = 0;
   for (const goal of goals) {
+    if (added >= cap) break;
     const rule = GOAL_ADVICE.find(([re]) => re.test(goal));
     if (!rule) continue;
-    const [, task, why] = rule;
+    const [, rawTask, why] = rule;
+    const task = (ownOnly && NO_BUY_SWAP[rawTask]) || rawTask;
     // The user's own words, verbatim — the rule of this layer.
     ensureCitedStep(plan, new RegExp(task.split(/[\s,—]+/).slice(0, 3).join('\\s+'), 'i'),
       { task, why }, `You told us: “${goal}”.`);
+    added++;
   }
 }
 
