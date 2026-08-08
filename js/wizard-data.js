@@ -337,6 +337,13 @@ const STYLE_PREF_RULES = [
   [/keep it simple/i, 'Easy to maintain'],
   [/minimal|clear counters/i, 'Minimal look'],
   [/everything on the wall/i, 'Maximize vertical space'],
+  /* First match wins, so these sit below the rules above: "Labeled small
+     parts" is a label answer before it is a workbench answer. */
+  [/divider|a slot for everything/i, 'Use dividers'],
+  [/matching hangers/i, 'Matching hangers'],
+  [/file-folded/i, 'File-fold clothes'],
+  [/pegboard/i, 'Outline tools on a pegboard'],
+  [/a drawer per tool type/i, 'One category per drawer'],
 ];
 export function prefsForStyles(styles) {
   const prefs = new Set();

@@ -103,8 +103,34 @@ test('hazard flags survive the kid scrub — the garage chemical shelf stays kee
 });
 
 test('with pets and no kids, the chemical guidance names the pets', () => {
+  // NO_KIDS_PETS is a dog household, so the guidance names the dog. Asking
+  // only for the word "pets" passed against the version that never read
+  // household.pets.types at all.
   const plan = getDemoScenario('garage', 'find', NO_KIDS_PETS);
-  assert.match(visibleText(plan), /away from pets|pet reach|out of reach of pets/i);
+  assert.match(visibleText(plan), /\bdogs?\b/i);
+  assert.doesNotMatch(visibleText(plan), /\bpets?\b/i,
+    'the household named its animal, so the plan should not fall back to "pets"');
+
+  // "Other", or more than one animal, has no noun to use: stay generic.
+  const vague = getDemoScenario('garage', 'find',
+    { ...NO_KIDS_PETS, pets: { present: 'yes', types: ['Other'] } });
+  assert.match(visibleText(vague), /away from pets|pet reach|out of reach of pets/i);
+});
+
+test('a cat household is never told height keeps the chemicals safe', () => {
+  /* Every hazard rationale in this app is a height argument. That is a
+     control for a dog and none at all for a cat, which will be on the top
+     shelf by dinnertime — the same class of mistake as claiming a safety
+     property the arrangement does not have. */
+  for (const types of [['Cat'], ['Dog', 'Cat']]) {
+    const plan = getDemoScenario('garage', 'find',
+      { ...NO_KIDS_PETS, pets: { present: 'yes', types } });
+    const text = visibleText(plan);
+    assert.doesNotMatch(text, /(?:above|out of) (?:cat|pet)s? reach|out of reach (?:of|for) (?:cat|pet)s\b/i,
+      `types ${JSON.stringify(types)}: still claims height puts it out of the cat's reach`);
+    assert.match(text, /door or latch/i,
+      `types ${JSON.stringify(types)}: never says what actually contains a cat`);
+  }
 });
 
 test('kid households keep the full kid content the scrub would otherwise touch', () => {
