@@ -123,6 +123,10 @@ export function playableClip(man, key){
    The inline SVG stays in the DOM until the clip actually plays, and comes
    back if playback errors — the fallback is never a blank box. */
 export async function hydrateStepMedia(root=document){
+  // The SVG scenes hold still under prefers-reduced-motion (CSS strips their
+  // animations); an autoplaying clip would bring that motion right back, so
+  // the upgrade is skipped entirely and the stilled SVG stays.
+  if(typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const slots=[...root.querySelectorAll('[data-step-media]')];
   if(!slots.length) return;
   const man=await loadStepMedia();

@@ -391,7 +391,10 @@ body[data-flow="1"] .site-footer{display:none}
 .step-art .sa{width:78px;height:78px;overflow:visible}
 /* a produced clip is playing: the inline SVG scene underneath steps aside */
 .step-art.has-clip .sa{visibility:hidden}
-.step-art video{width:100%;height:100%;object-fit:cover}
+/* contain, not cover: clips are wide-format with the band's own surface color
+   baked in, so letterboxing is invisible and nothing gets cropped (matches the
+   inline style the loader sets in js/stepMedia.js) */
+.step-art video{width:100%;height:100%;object-fit:contain}
 @media(max-width:419px){.step-art{height:96px}.step-art .sa{width:68px;height:68px}}
 @media(prefers-reduced-motion:reduce){.step-art .sa *{animation:none!important}}
 

@@ -1,0 +1,24 @@
+{
+  "name": "tidymap-step-clips",
+  "private": true,
+  "description": "Remotion project that renders the plan-checklist motion clips declared in ../data/step-media.json. The inline STEP_ART SVG scenes in ../js/screens/results.js are the spec each composition must match.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio --no-open",
+    "keys": "node enumerate-keys.mjs",
+    "render": "node render-steps.mjs"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.507",
+    "@remotion/cli": "4.0.507",
+    "@remotion/renderer": "4.0.507",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.507",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.5.0"
+  }
+}
