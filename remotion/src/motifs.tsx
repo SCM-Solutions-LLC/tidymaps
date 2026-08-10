@@ -60,7 +60,7 @@ export const MOTIF_GEO: Record<string, MotifGeo> = {
     surfaces: [{ y: 50, x1: 92, x2: 228 }],
     work: 0,
     anchorXs: [124, 160, 196],
-    levels: { high: { x: 160, y: 26 }, low: { x: 160, y: FLOOR_Y } },
+    levels: { high: { x: 160, y: 31 }, low: { x: 160, y: FLOOR_Y } },
     railY: 20, railX: [116, 204], hasRail: true,
     boxSpot: { x: 268, y: FLOOR_Y },
   },

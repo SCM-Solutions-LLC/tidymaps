@@ -73,13 +73,24 @@ art, and four landing screenshots commit 2265978 had replaced with drawn
 explainers. Both were superseded work reading as owed work; see
 `docs/asset-plan.md` for why they went and why they should not come back.
 
-### #4 Step-media pipeline (PR #21)
+### #4 Step-media pipeline (PR #21; produced clips landed 2026-08-10)
 Clips are keyed `{action}-{motif}-{glyph}`: 13 `STEP_ART` scene types × 4
 furniture motifs × 12 item glyphs. `js/stepMedia.js` owns the vocabulary,
-`data/step-media.json` declares produced clips (empty today), and
-`hydrateStepMedia()` lazy-loads `<video>` in-view for `ready` keys only. The
-inline animated SVGs are both the spec each clip must match and the permanent
+`data/step-media.json` declares produced clips, and `hydrateStepMedia()`
+lazy-loads `<video>` in-view for `ready` keys only — and now skips the
+upgrade entirely under `prefers-reduced-motion`, since the CSS stills the
+SVG scenes and a clip would have brought the motion back. The inline
+animated SVGs are both the spec each clip must match and the permanent
 fallback. Guard: `tests/step-media.test.mjs`.
+
+Production lives in `remotion/` (see its README): one parameterized Remotion
+composition ports each scene's CSS keyframes onto a wide stage in the site's
+palette, `enumerate-keys.mjs` derives the producible key list (demo-matrix
+union + each space's default pair × all actions), and `render-steps.mjs`
+renders VP9 WebM to `media/steps/` and rebuilds the manifest. The clips bake
+the `--surface-2` band color and the token palette — a palette change means
+re-rendering (`node render-steps.mjs --force`). Keys outside the produced
+set keep their SVG scene by design.
 
 ### #5 Products — still the one open business item
 Catalog (`data/catalog.json`), dimension-fit matching (`js/catalog.js`),
@@ -465,8 +476,11 @@ said so in each case. Check it before believing the backlog.
    changed on the site. See `docs/asset-plan.md` before re-adding any.
    The single pending key left is `hero-home`, and it already has a working
    declarative `src` (`pantry-after.png`) — an upgrade, not a hole. Step clips
-   are likewise still empty (`data/step-media.json`) with the inline SVGs as
-   the permanent fallback. **Nothing on the site is broken for want of these.**
+   are no longer empty: `remotion/` renders them programmatically from the
+   `STEP_ART` spec (2026-08-10), so this slot moved from design-owned photo
+   work to a re-runnable build step. The inline SVGs remain the permanent
+   fallback for any key outside the produced set.
+   **Nothing on the site is broken for want of these.**
    The reverse guard now exists (`tests/images.test.mjs` fails on a declared
    key nothing references), so this class of drift cannot rebuild silently.
    The same guard then caught a second batch: `plan-map`, `plan-steps`,

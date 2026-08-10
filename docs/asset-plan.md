@@ -105,6 +105,17 @@ whose file already landed.
 Workflow to ship a clip: produce it to match the SVG scene, drop the file at
 its key path, declare `{ file, status: "ready", license }` in the manifest.
 
+Since 2026-08-10 production is programmatic: the Remotion project in
+`remotion/` ports each scene's CSS keyframes onto a wide stage in the site's
+own palette and renders VP9 WebM per key (`node render-steps.mjs`, which also
+rebuilds the manifest — see `remotion/README.md`). The produced set is the
+demo-matrix union plus every space's default `{motif, glyph}` pair across all
+actions; rarer keys keep their SVG scene on purpose. Two consequences to
+remember: the clips bake the token palette, so a `tokens.css` palette change
+means updating `remotion/src/tokens.ts` and re-rendering with `--force`; and
+a new `STEP_ART` scene or vocabulary word needs a matching scene component in
+`remotion/src/scenes/` before its clips can exist.
+
 ## Product screenshots
 
 Only one is still shown: `assets/product/hero-3d.png`, the sample plan in the
