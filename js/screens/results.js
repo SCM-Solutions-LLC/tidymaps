@@ -631,6 +631,7 @@ export function renderSteps(rawList){
       <div>
         <div class="num">Step ${i+1}</div>
         <div class="tname">${escapeHtml(s.t)}</div>
+        ${(s.cite && !state.shareView) ? `<div class="step-cite">${escapeHtml(s.cite)}</div>` : ''}
         <span class="step-art" data-step-media="${mediaKeyFor(s, state.space)}">${art}</span>
         <div class="meta"><span class="time">${SVG.clock} ${escapeHtml(s.m)}</span></div>
         <div class="acts">

@@ -112,3 +112,34 @@ test('a renter can say the walls are off limits, and the plan listens', async ({
   expect(steps).not.toMatch(/\bdrill|wall[- ]mounted|hang hooks/i);
   await expect(page.locator('#res-opps')).toContainText(/freestanding/i);
 });
+
+test('a style answer is readable on the report without opening a disclosure', async ({ page }) => {
+  /* The style step offers 36 cards and most of them funnel into a preference
+     the scenario already satisfies, so the handler annotated an existing step's
+     `why` and changed nothing else. `why` lives behind the "Why?" button, which
+     starts closed — the answer was honoured where nobody could read it. */
+  await page.goto('/index.html');
+  await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  // space → area → setup → measure → capture → household → contents → goals → style
+  for (let i = 0; i < 8; i++) await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-style')).toHaveClass(/active/);
+  const label = await page.locator('#style-cards .wz-style', { hasText: /label/i }).first().innerText();
+  await page.locator('#style-cards .wz-style', { hasText: /label/i }).first().click();
+  await page.locator('#flow-next').click();                               // → effort
+  await page.locator('#flow-next').click();                               // → shopping
+  await page.locator('#shopping-cards .wz-shop', { hasText: 'Use what I have' }).first().click();
+  await page.locator('#flow-next').click();                               // → review
+  await page.locator('#flow-next').click();                               // build
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+
+  // the answer is named where the reader already is
+  const cites = page.locator('#res-steps .step-cite');
+  await expect(cites.first()).toBeVisible();
+  await expect(cites.first()).toContainText(/you asked for/i);
+  // and the Why panel it used to hide in is still closed
+  await expect(page.locator('#res-steps .step-tip').first()).toBeHidden();
+  // plus one line naming the card they clicked, in the open Summary chapter
+  await expect(page.locator('#res-opps')).toContainText(label.split('\n')[0].trim());
+});

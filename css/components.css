@@ -219,6 +219,10 @@ textarea{resize:vertical;min-height:84px}
 .task.done{background:var(--primary-bg);border-color:var(--primary-line)}
 /* Set aside, not finished: dimmed out of the way, and visibly NOT the state a
    completed step is in. Skip used to reuse .done, which said the work was done. */
+/* The user's own answer, on the step it changed. It used to live only inside
+   the "Why?" panel, which starts closed — so the plan honoured the answer
+   somewhere the reader had to go looking for. */
+.step-cite{margin-top:4px;font-size:13px;font-weight:600;color:var(--primary-ink)}
 .task.skipped{opacity:.62;border-style:dashed}
 .task.skipped .tname{text-decoration:line-through;text-decoration-thickness:1px}
 .task .check{width:45px;height:45px;border-radius:50%;border:2px solid var(--line-2);background:var(--surface);display:grid;place-items:center;flex:none;transition:.18s}

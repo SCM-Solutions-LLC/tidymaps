@@ -40,7 +40,10 @@ const PAYLOAD = {
       features: [{ ico: '<svg viewBox="0 0 24 24"></svg>', ttl: 'Multi-level wall shelving', sub: 'Five shelf levels' }],
       safetyNotes: ['Keep heavy jars at mid-shelf height'],
       steps: [
-        { t: 'Pull everything off the shelves and sort into category piles', m: '45 min', w: 'You cannot see what you have until it is all out.' },
+        /* Carries a citation, because the owner's answers travel with the plan.
+           The visitor did not give them, so the report must not tell them they
+           did — see the assertion below. */
+        { t: 'Pull everything off the shelves and sort into category piles', m: '45 min', w: 'You cannot see what you have until it is all out.', cite: 'You asked for labels and categories' },
         { t: 'Toss expired items and donate duplicates', m: '15 min', w: 'Less stuff means less to organize.' },
       ],
       map: [
@@ -149,4 +152,17 @@ test('a revoked link says so rather than showing a blank plan', async ({ page })
   await openShared(page, { error: 'not_found' }, 404);
   await expect(page.locator('#screen-landing')).toBeVisible({ timeout: 20000 });
   await expect(page.locator('#screen-results')).toBeHidden();
+});
+
+test('a shared plan does not tell the visitor what they asked for', async ({ page }) => {
+  /* Steps carry the owner's own answers on their face now. Those travel with
+     the plan, and rendering "You asked for labels and categories" to someone
+     who answered nothing is the same class of lie as the observed-prose
+     scoping: an assertion about a person, made to the wrong person. */
+  await openShared(page);
+  await expect(page.locator('#screen-results')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#res-steps .task').first()).toBeVisible();
+  expect(await page.locator('#res-steps .step-cite').count()).toBe(0);
+  // the step itself is still there — it is the attribution that is dropped
+  await expect(page.locator('#res-steps .tname').first()).toContainText(/pull everything off the shelves/i);
 });
