@@ -7,7 +7,7 @@
    ============================================================ */
 import { applyAnswers, lowestUnflaggedZone } from './personalize.js';
 import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from './layout.js';
-import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones } from './setupStructure.js';
+import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones, scrubSurfaceProse } from './setupStructure.js';
 
 /* ---------- Base scenarios keyed by space id ---------- */
 
@@ -1855,5 +1855,66 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
      scenarios also ship a targetZone their own map never contained. */
   alignTargetZones(plan);
 
+  /* Truly last. Everything above — goals, household, answers, dimensions, the
+     preference handlers — appends prose, and the surface scrub used to run in
+     the middle of projectOntoArchetype, so all of it escaped the one check
+     meant to catch it. Running the scrub here closes that, and closes the
+     second hole too: the projection is skipped whenever a setup's archetype
+     already matches its scenario's, so those setups were never scrubbed at
+     all. A sideboard is the clearest case — same archetype as its scenario, so
+     no projection, and it was still told its shelves were 18″ deep. */
+  const finalArchetype = archetype || scenarioArchetype;
+  if (finalArchetype) scrubSurfaceProse(plan, finalArchetype);
+
+  speakAsTypical(plan);
+
+  return plan;
+}
+
+/* Nothing here has seen the user's space.
+
+   These scenarios are written in the voice of an inspection — "two baskets are
+   underused and one deep bin sits near the bottom", "at least three expired
+   items visible in the back row" — because they were built as stand-ins for a
+   real photo analysis. Rendered without a photo they read as findings about a
+   room nobody looked at, and a tester who owned neither a basket nor a deep bin
+   said it was the moment they stopped trusting the parts of the plan they
+   could not check.
+
+   The guidance is good and stays exactly as specific. Only the claim changes:
+   what IS true becomes what is USUALLY true. This runs on the demo path only —
+   normalizeAi() handles model output, which really is derived from photos and
+   keeps its observational voice. */
+/* Twenty-odd distinct observational sentences live across these scenarios
+   ("shoes are piled on the floor", "heavy power tools are on an upper shelf").
+   Rewriting each by pattern would read worse and still miss the next one, so
+   scope them once instead: the opening sentence is genuinely derived from the
+   user's own measurements and stays a statement of fact; everything after it
+   is introduced as what a space like theirs usually looks like. One clause,
+   nothing else reworded, and no sentence left asserting something unseen. */
+const OWNS_PHRASE = [
+  [/\bYou already have\b/g, 'Spaces like this usually have'],
+  [/\bWe noticed you already have\b/g, 'Spaces like this usually have'],
+];
+
+function speakAsTypical(plan) {
+  if (!plan) return plan;
+
+  /* The report renders the summary as a lede (its first sentence, which is
+     derived from the user's own measurements and true) plus bullets for the
+     rest. So the scoping belongs on the bullets as a heading, not inline in the
+     prose — see js/screens/results.js, which reads the flag below. Leaving the
+     sentences alone also keeps them readable; twenty of them across sixteen
+     scenarios could not be reworded by pattern without reading worse. */
+
+  // The reuse lede claims possession outright; that one is a phrase swap.
+  let lede = plan.existingLede || '';
+  for (const [re, to] of OWNS_PHRASE) lede = lede.replace(re, to);
+  plan.existingLede = lede;
+
+  /* The problems list is observational too, but as list items there is nowhere
+     to put a clause. The report titles that column instead — see
+     js/screens/results.js, which reads this flag. */
+  plan.observed = false;
   return plan;
 }

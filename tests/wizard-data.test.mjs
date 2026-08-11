@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
-  SETUP_GEOM, GEOM_TO_V3D_LAYOUT, SETUP_SCENARIO, scenarioKeyFor,
+  SETUP_SCENARIO, scenarioKeyFor,
   roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, measureSummary, art,
   isKidOption, householdHasKids, optionsForHousehold, MOBILITY_NEEDS, PET_TYPES,
 } from '../js/wizard-data.js';
 import { PREFS, AFTER_MODES, CUSTOMIZE } from '../js/data.js';
+import { SETUP_ARCHETYPE, ARCHETYPE_LABELS } from '../js/layout.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 import { EFFORT_STEPS } from '../js/personalize.js';
 import { EFFORT_STEP_RANGES } from '../supabase/functions/_shared/planSchema.js';
@@ -84,9 +85,15 @@ test('every setup id is globally unique with default dims and a 3D geometry', ()
   for (const id of ids) {
     const dd = SETUP_DIMS[id];
     assert.ok(dd && dd.w > 0 && dd.h > 0 && dd.d > 0, `${id}: missing default dims`);
-    const geom = SETUP_GEOM[id];
-    assert.ok(geom, `${id}: missing geometry family`);
-    assert.ok(GEOM_TO_V3D_LAYOUT[geom], `${id}: geometry "${geom}" has no 3D layout chip`);
+    /* Was asserted against SETUP_GEOM / GEOM_TO_V3D_LAYOUT, a second per-setup
+       3D table with no readers anywhere — the viewer builds its chips from
+       SETUP_ARCHETYPE via chipArchetypesFor(). The two disagreed (an overhead
+       rack was 'reachin' in one and 'overhead-rack' in the other), and the test
+       passing made the dead table look load-bearing. Assert against the table
+       the viewer actually reads. */
+    const archetype = SETUP_ARCHETYPE[id];
+    assert.ok(archetype, `${id}: missing 3D archetype`);
+    assert.ok(ARCHETYPE_LABELS[archetype], `${id}: archetype "${archetype}" has no 3D layout label`);
   }
   for (const roomy of ROOMY) assert.ok(ids.includes(roomy), `ROOMY lists unknown setup ${roomy}`);
 });

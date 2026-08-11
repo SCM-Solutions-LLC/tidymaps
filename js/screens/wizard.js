@@ -396,7 +396,20 @@ function renderHouseholdNotes(){
   const box = document.getElementById('household-notes');
   if(!box) return;
   box.value = state.household.notes || '';
-  box.oninput = () => { state.household.notes = box.value; };
+  const count = document.getElementById('household-notes-count');
+  const MAX = Number(box.getAttribute('maxlength')) || 400;
+  /* The cap used to be silent: typing simply stopped. Say how much room is
+     left, and only get loud about it near the end. */
+  const showCount = () => {
+    if(!count) return;
+    const left = MAX - box.value.length;
+    count.textContent = left === 0
+      ? 'Character limit reached'
+      : `${left} character${left === 1 ? '' : 's'} left`;
+    count.classList.toggle('is-low', left <= 40);
+  };
+  box.oninput = () => { state.household.notes = box.value; showCount(); };
+  showCount();
 }
 
 /* Presence stays the canonical 'yes'/'no' strings the rest of the app expects. */
@@ -611,7 +624,11 @@ function renderReviewSummary(){
       <button type="button" class="wr-edit" data-goto="${target}">Edit</button>
     </div>`).join('');
   wrap.querySelectorAll('.wr-edit').forEach(btn => {
-    btn.onclick = () => window.go(btn.dataset.goto);
+    /* Editing from Review used to drop you into the step and then walk you
+       forward through every remaining one — eleven Continue presses to change
+       a single word. Remember that the trip started at Review so Continue can
+       bring you straight back. */
+    btn.onclick = () => { state.returnToReview = true; window.go(btn.dataset.goto); };
   });
 }
 

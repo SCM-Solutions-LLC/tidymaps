@@ -173,6 +173,8 @@ main{padding:0 var(--pad,18px)}
   padding:12px var(--pad,18px) calc(12px + env(safe-area-inset-bottom));
 }
 .flow-foot-inner{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:12px}
-.flow-foot .back{background:none;border:none;color:var(--ink-2);font-weight:500;padding:12px 4px;display:inline-flex;align-items:center;gap:6px;transition:.16s}
+/* min-height rather than more padding: it landed at 43px against the 44px
+   touch-target guideline, and padding alone would shift the footer's balance */
+.flow-foot .back{background:none;border:none;color:var(--ink-2);font-weight:500;padding:12px 4px;min-height:44px;display:inline-flex;align-items:center;gap:6px;transition:.16s}
 .flow-foot .back:hover{color:var(--ink)}
 .flow-foot .spacer{flex:1}

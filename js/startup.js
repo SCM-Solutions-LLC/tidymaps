@@ -65,6 +65,13 @@ export async function initializeRoute({
       toast('Welcome back — we restored your last plan');
       return { status:'restored-draft' };
     }
+    /* A reload part-way through the wizard keeps every answer but lands here on
+       the landing page, which reads as having lost the session — so people
+       start again from scratch on top of answers that were never gone. Say so. */
+    if(res && res.restored){
+      toast('Your answers are still here — pick up where you left off');
+      return { status:'restored-answers' };
+    }
   }
   return { status:'unchanged' };
 }

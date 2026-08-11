@@ -131,7 +131,10 @@ export function goNext(){
     state.capture = state.uploadedFiles.length ? 'photos'
       : (state.uploadedVideo ? 'video' : 'demo');
   }
-  if(current==='review'){ go('loading'); runLoading(); return; }
+  if(current==='review'){ state.returnToReview=false; go('loading'); runLoading(); return; }
+  // Came here from a Review "Edit" link? Go straight back rather than marching
+  // the user through every remaining step to reach the button they came from.
+  if(state.returnToReview){ state.returnToReview=false; go('review'); return; }
   go(cfg.next);
 }
 export function goBack(){
