@@ -5,7 +5,7 @@
    plan object ready to pass through normalizeAi() in js/plan.js —
    personalized by every wizard answer via js/personalize.js.
    ============================================================ */
-import { applyAnswers, lowestUnflaggedZone } from './personalize.js';
+import { applyAnswers, sizeToEffort, lowestUnflaggedZone } from './personalize.js';
 import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from './layout.js';
 import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones, scrubSurfaceProse } from './setupStructure.js';
 
@@ -1843,7 +1843,9 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   }
   applyGoal(plan, goal);
   applyHousehold(plan, household);
-  if (answers) applyAnswers(plan, answers);
+  // Sizing is held back until after the scrub below: it removes steps, and a
+  // plan sized before that comes out under its own floor.
+  if (answers) applyAnswers(plan, answers, { deferSizing: true });
   // Last: prefs and toggles add steps of their own, and the reach vocabulary
   // has to reach those too.
   rewriteMobilityLanguage(plan, household && household.mobility);
@@ -1865,6 +1867,13 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
      no projection, and it was still told its shelves were 18″ deep. */
   const finalArchetype = archetype || scenarioArchetype;
   if (finalArchetype) scrubSurfaceProse(plan, finalArchetype);
+
+  /* After the scrub, because the scrub is the last thing that can remove a
+     step and sizing has to count the list the user will actually read. It is
+     given the archetype so it can vet its own candidates as it goes: scrubbing
+     again afterwards would put a step-removing pass back after sizing, which is
+     the bug this ordering exists to fix. */
+  if (answers) sizeToEffort(plan, answers, { archetype: finalArchetype });
 
   speakAsTypical(plan);
 
