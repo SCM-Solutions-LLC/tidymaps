@@ -1,9 +1,9 @@
 import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_CATS } from '../data.js';
 import { SVG, ICON } from '../icons.js';
-import { state, persistGuestDraft } from '../state.js';
+import { state, persistGuestDraft, isMetric } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief } from '../plan.js';
-import { areaFor, art, fmtFt, optionsForHousehold } from '../wizard-data.js';
+import { areaFor, art, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -495,7 +495,7 @@ export function renderUpgrades(){
           <summary>Details &amp; other options</summary>
           <div class="pmeta">
             <span>${SVG.mapPin} ${escapeHtml(need.targetZone||'Anywhere')}</span>
-            ${need.maxDims?`<span>${SVG.ruler} Max ${need.maxDims.w_in}″w × ${need.maxDims.h_in}″h × ${need.maxDims.d_in}″d</span>`:''}
+            ${need.maxDims?`<span>${SVG.ruler} Max ${fmtIn(need.maxDims.w_in, isMetric())}w × ${fmtIn(need.maxDims.h_in, isMetric())}h × ${fmtIn(need.maxDims.d_in, isMetric())}d</span>`:''}
           </div>
           ${picker}
           <div class="small muted" style="margin-top:10px">Search instead: ${links}</div>

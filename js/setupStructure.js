@@ -467,8 +467,11 @@ export function mentionsMissingSurface(text, archetype) {
 const COUNT_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six',
   'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 
-/* Local, so this module stays free of wizard imports. */
-function ft(inches) {
+/* Local, so this module stays free of wizard imports. The metric branch is the
+   same rounding choice fmtIn makes — whole centimetres, which is finer than the
+   inch it replaces, rather than a converted-then-rounded imperial value. */
+function ft(inches, metric) {
+  if (metric) return Math.round(inches * 2.54) + ' cm';
   const total = Math.round(inches);
   const f = Math.floor(total / 12), i = total % 12;
   if (!f) return i + '″';
@@ -518,7 +521,7 @@ export const SETUP_NOUN = {
   wallcabW: ['workshop wall cabinets', true],
 };
 
-export function describeSetup({ archetype, setupId, dims, levelCount }) {
+export function describeSetup({ archetype, setupId, dims, levelCount, metric }) {
   const entry = SETUP_NOUN[setupId];
   if (!entry) return '';
   const [name, plural] = entry;
@@ -535,8 +538,8 @@ export function describeSetup({ archetype, setupId, dims, levelCount }) {
   const noun = levelCount === 1 ? (LEVEL_NOUN_ONE[many] || many) : many;
   const count = COUNT_WORDS[levelCount] || String(levelCount);
   const size = ROOMY_ARCHETYPES.has(archetype) && dims.d_in
-    ? `${ft(dims.w_in)} × ${ft(dims.d_in)} and ${ft(dims.h_in)} tall`
-    : `${ft(dims.w_in)} wide and ${ft(dims.h_in)} tall`;
+    ? `${ft(dims.w_in, metric)} × ${ft(dims.d_in, metric)} and ${ft(dims.h_in, metric)} tall`
+    : `${ft(dims.w_in, metric)} wide and ${ft(dims.h_in, metric)} tall`;
   return `Your ${name}, measured at ${size}, ${plural ? 'have' : 'has'} ${count} ${noun} to work with.`;
 }
 
@@ -851,7 +854,7 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
 
   // Prose and product needs that name a surface this setup does not have.
   plan.summary = rewriteForSurfaces(rewriteOpening(plan.summary, describeSetup({
-    archetype, setupId, dims: opts.dims, levelCount: plan.map.length,
+    archetype, setupId, dims: opts.dims, levelCount: plan.map.length, metric: opts.metric,
   })), archetype);
   scrubSurfaceProse(plan, archetype);
 

@@ -20,7 +20,7 @@
    - One trigger per behavior: if two answers ask for the same step (e.g.
      rental=yes and "No drilling"), it's added once, citing the first. */
 
-import { goalIdFor, prefsForStyles } from './wizard-data.js';
+import { goalIdFor, prefsForStyles, fmtIn } from './wizard-data.js';
 import { mentionsMissingSurface } from './setupStructure.js';
 
 /* The server validates a RANGE where the client aims at a point
@@ -676,6 +676,12 @@ function levelNoun(plan, plural) {
 function applyDims(plan, answers) {
   const d = answers.dims;
   if (!d) return;
+  /* Generated prose is written once and stored with the plan, so it is fixed in
+     whichever system the author was reading — unlike the product cards and the
+     3D panel, which format at render time and follow whoever opens the link.
+     That seam is unavoidable for a sentence; what matters is that the person
+     who generated the plan sees one system throughout their own plan. */
+  const measure = (inches) => fmtIn(inches, answers.metric);
   plan.opportunities = plan.opportunities || [];
   /* Depth is only a reach problem where things sit BEHIND other things. On a
      hanging rail nothing is at the back, and "your rails are 18″ deep — a
@@ -686,11 +692,11 @@ function applyDims(plan, answers) {
     // If the scenario already recommends a turntable, cite the measurement on
     // it; otherwise surface the depth advice as an opportunity.
     const tt = (plan.productNeeds || []).find(p => p.type === 'turntable');
-    if (tt) tt.purpose += ` Your ${levelNoun(plan, true)} measure ${d.d_in}″ deep, so items at the back are otherwise out of reach.`;
-    else plan.opportunities.push(`Your ${levelNoun(plan, true)} are ${d.d_in}″ deep — a turntable or pull-out tray stops things from vanishing at the back.`);
+    if (tt) tt.purpose += ` Your ${levelNoun(plan, true)} measure ${measure(d.d_in)} deep, so items at the back are otherwise out of reach.`;
+    else plan.opportunities.push(`Your ${levelNoun(plan, true)} are ${measure(d.d_in)} deep — a turntable or pull-out tray stops things from vanishing at the back.`);
   }
   if (d.w_in && d.w_in <= 24) {
-    plan.opportunities.push(`At ${d.w_in}″ wide, this space works best with one category per ${levelNoun(plan, false)} instead of side-by-side zones.`);
+    plan.opportunities.push(`At ${measure(d.w_in)} wide, this space works best with one category per ${levelNoun(plan, false)} instead of side-by-side zones.`);
   }
 }
 

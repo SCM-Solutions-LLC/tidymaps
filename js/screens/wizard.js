@@ -15,7 +15,7 @@ import {
   roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
-import { state, resetPlanRecord, clearGuestMedia } from '../state.js';
+import { state, resetPlanRecord, clearGuestMedia, isMetric, setUnits, UNITS } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { updateGate } from '../router.js';
 import { renderPhotoTiles } from './capture.js';
@@ -124,7 +124,8 @@ export function wizardContextString(screenId){
   const roomy = ROOMY.includes(state.setup);
   const ctx = [room.label, area.label];
   if(step > 3 && state.setupLabel) ctx.push(state.setupLabel);
-  if(step > 4) ctx.push(roomy ? fmtFt(n.w) + ' × ' + fmtFt(n.d) : fmtFt(n.w) + ' × ' + fmtFt(n.h));
+  const mu = isMetric();
+  if(step > 4) ctx.push(roomy ? fmtFt(n.w, mu) + ' × ' + fmtFt(n.d, mu) : fmtFt(n.w, mu) + ' × ' + fmtFt(n.h, mu));
   const kids = state.household.kidCount || 0;
   if(step > 6 && kids > 0) ctx.push(plural(kids, 'kid'));
   return ctx.join('  ·  ');
@@ -239,11 +240,25 @@ function renderSetup(){
 
 /* ---------- measurements ---------- */
 
+/* Bounds are the same physical space in both systems, converted and rounded to
+   a number a person would actually type: 14 ft is 426.72 cm, and offering that
+   as a maximum reads like a machine talking. The metric step is 5 cm rather
+   than the 7.62 that 0.25 ft converts to, for the same reason. state.dimsFt
+   stays in feet throughout — only what is shown and what is typed changes. */
 const MEASURE_FIELDS = [
-  { k: 'w', label: 'Width', min: 1, max: 14, aria: 'Width in feet' },
-  { k: 'd', label: 'Depth', min: 0.5, max: 10, aria: 'Depth in feet' },
-  { k: 'h', label: 'Height', min: 1, max: 10, aria: 'Height in feet' },
+  { k: 'w', label: 'Width', min: 1, max: 14, cmMin: 30, cmMax: 430, aria: 'Width' },
+  { k: 'd', label: 'Depth', min: 0.5, max: 10, cmMin: 15, cmMax: 300, aria: 'Depth' },
+  { k: 'h', label: 'Height', min: 1, max: 10, cmMin: 30, cmMax: 300, aria: 'Height' },
 ];
+
+/* The input works in whichever unit is showing; these move a field's value
+   across that boundary without ever touching what is stored. */
+const CM_PER_FT = 30.48;
+const toDisplay = (ft, metric) => metric ? Math.round(ft * CM_PER_FT) : ft;
+const fromDisplay = (v, metric) => metric ? v / CM_PER_FT : v;
+const bounds = (f, metric) => metric
+  ? { min: f.cmMin, max: f.cmMax, step: 5 }
+  : { min: f.min, max: f.max, step: 0.25 };
 
 function renderMeasure(){
   const wrap = document.getElementById('measure-fields');
@@ -252,22 +267,29 @@ function renderMeasure(){
   const h = document.querySelector('#screen-measure h2');
   if(h) h.textContent = `How big is your ${area.short}?`;
   const roomy = ROOMY.includes(state.setup);
+  const metric = isMetric();
   const n = dimsFtNums();
   const raw = state.dimsFt || n;
-  wrap.innerHTML = MEASURE_FIELDS.map(f => `
+  renderUnitToggle();
+  wrap.innerHTML = MEASURE_FIELDS.map(f => {
+    const b = bounds(f, metric);
+    const shown = toDisplay(raw[f.k], metric);
+    return `
     <label class="wz-measure">
       <span class="wm-row">
         <span class="wm-name">${f.k === 'd' && roomy ? 'Room depth' : f.label}</span>
         <span class="wm-input">
-          <input type="number" min="${f.min}" max="${f.max}" step="0.25" value="${raw[f.k]}"
-            id="m-num-${f.k}" aria-label="${f.aria}" inputmode="decimal">
-          <span class="wm-unit">ft</span>
-          <span class="wm-val" id="m-val-${f.k}">${fmtFt(n[f.k])}</span>
+          <input type="number" min="${b.min}" max="${b.max}" step="${b.step}" value="${shown}"
+            id="m-num-${f.k}" aria-label="${f.aria} in ${metric ? 'centimetres' : 'feet'}" inputmode="decimal">
+          <span class="wm-unit">${metric ? 'cm' : 'ft'}</span>
+          <span class="wm-val" id="m-val-${f.k}">${fmtFt(n[f.k], metric)}</span>
         </span>
       </span>
-      <input type="range" min="${f.min}" max="${f.max}" step="0.25" value="${n[f.k]}" id="m-range-${f.k}" aria-label="${f.aria}">
+      <input type="range" min="${b.min}" max="${b.max}" step="${b.step}" value="${toDisplay(n[f.k], metric)}"
+        id="m-range-${f.k}" aria-label="${f.aria} in ${metric ? 'centimetres' : 'feet'}">
       <span class="wm-note" id="m-note-${f.k}" role="status" aria-live="polite"></span>
-    </label>`).join('');
+    </label>`;
+  }).join('');
 
   MEASURE_FIELDS.forEach(f => {
     const num = document.getElementById('m-num-' + f.k);
@@ -278,7 +300,7 @@ function renderMeasure(){
          value in force fell back to the SETUP's default, so the last good
          number the user typed was gone before blur could restore it. */
       const typed = parseFloat(num.value);
-      if(Number.isFinite(typed) && typed > 0) state.dimsFt[f.k] = typed;
+      if(Number.isFinite(typed) && typed > 0) state.dimsFt[f.k] = fromDisplay(typed, isMetric());
       syncDims(); refreshMeasure(f.k, false);
     };
     num.onblur = () => {
@@ -292,19 +314,25 @@ function renderMeasure(){
          number the report quotes has to be one the user can recognize, so a
          value we could not use is replaced visibly and the replacement is
          named. */
+      const metric = isMetric();
+      const b = bounds(f, metric);
+      const unit = metric ? 'cm' : 'ft';
       const raw = String(num.value).trim();
       const typed = parseFloat(raw);
       const inForce = dimsFtNums()[f.k];
-      let v = inForce, note = '';
+      /* The comparison happens in the unit the user typed in, so the number
+         quoted back is the number they can see in the field. Only the result
+         crosses back into feet for storage. */
+      let shown = toDisplay(inForce, metric), note = '';
       if(raw === '' || !Number.isFinite(typed) || typed <= 0){
-        note = `We kept ${fmtFt(inForce)} — this needs a number.`;
-      }else if(typed < f.min || typed > f.max){
-        v = Math.min(f.max, Math.max(f.min, typed));
-        note = `${raw} ft is outside what we can plan for, so we used ${fmtFt(v)}.`;
+        note = `We kept ${fmtFt(inForce, metric)} — this needs a number.`;
+      }else if(typed < b.min || typed > b.max){
+        shown = Math.min(b.max, Math.max(b.min, typed));
+        note = `${raw} ${unit} is outside what we can plan for, so we used ${fmtFt(fromDisplay(shown, metric), metric)}.`;
       }else{
-        v = typed;
+        shown = typed;
       }
-      state.dimsFt[f.k] = v; num.value = v;
+      state.dimsFt[f.k] = fromDisplay(shown, metric); num.value = shown;
       syncDims(); refreshMeasure(f.k, true);
       const noteEl = document.getElementById('m-note-' + f.k);
       if(noteEl){
@@ -314,7 +342,7 @@ function renderMeasure(){
     };
     range.oninput = () => {
       state.dimsFt = state.dimsFt || dimsFtNums();
-      state.dimsFt[f.k] = parseFloat(range.value);
+      state.dimsFt[f.k] = fromDisplay(parseFloat(range.value), isMetric());
       num.value = range.value;
       syncDims(); refreshMeasure(f.k, false);
     };
@@ -323,17 +351,33 @@ function renderMeasure(){
 }
 
 function refreshMeasure(k, syncRange){
+  const metric = isMetric();
   const n = dimsFtNums();
   const val = document.getElementById('m-val-' + k);
-  if(val) val.textContent = fmtFt(n[k]);
+  if(val) val.textContent = fmtFt(n[k], metric);
   const range = document.getElementById('m-range-' + k);
-  if(range && (syncRange || Math.abs(parseFloat(range.value) - n[k]) > 0.001)) range.value = n[k];
+  const shown = toDisplay(n[k], metric);
+  if(range && (syncRange || Math.abs(parseFloat(range.value) - shown) > 0.001)) range.value = shown;
   refreshMeasureSummary();
 }
 
 function refreshMeasureSummary(){
   const el = document.getElementById('measure-summary');
-  if(el) el.innerHTML = `About <b>${escapeHtml(measureSummary(state.setup, dimsFtNums()))}</b> — sound right?`;
+  if(el) el.innerHTML = `About <b>${escapeHtml(measureSummary(state.setup, dimsFtNums(), isMetric()))}</b> — sound right?`;
+}
+
+/* The toggle switches what is displayed, never what is stored, so flipping it
+   mid-measure re-renders the same space in the other system rather than
+   resetting anything. */
+function renderUnitToggle(){
+  const wrap = document.getElementById('measure-units');
+  if(!wrap) return;
+  wrap.innerHTML = UNITS.map(u => `
+    <button type="button" class="wz-unit${state.units === u ? ' on' : ''}" data-units="${u}"
+      aria-pressed="${state.units === u}">${u === 'metric' ? 'cm' : 'ft / in'}</button>`).join('');
+  wrap.querySelectorAll('[data-units]').forEach(b => {
+    b.onclick = () => { setUnits(b.dataset.units); renderMeasure(); };
+  });
 }
 
 /* ---------- household ---------- */
@@ -653,7 +697,7 @@ function renderReviewSummary(){
     ['Room', room.label, 'space'],
     ['Spot', area.label, 'area'],
     ['Setup', state.setupLabel, 'setup'],
-    ['Measurements', measureSummary(state.setup, dimsFtNums()), 'measure'],
+    ['Measurements', measureSummary(state.setup, dimsFtNums(), isMetric()), 'measure'],
     ['Photos', plural(state.uploadedFiles.length, 'photo'), 'capture'],
     ['Who uses it', people, 'household'],
     /* Mobility, pet types and the free-text note were all collected, all

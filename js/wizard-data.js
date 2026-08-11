@@ -400,17 +400,40 @@ export function prefsForStyles(styles) {
   return prefs;
 }
 
-/* ---------- Measurement formatting (feet → 3′6″) ---------- */
-export function fmtFt(ft) {
+/* ---------- Measurement formatting ----------
+   Everything the user types and everything stored stays in feet and inches —
+   state.dims is the plan and 3D contract and does not move. Units are a
+   display concern only, applied at the last moment, so a metric reader and an
+   imperial one are looking at the same plan rendered two ways rather than two
+   plans.
+
+   Rounding is chosen per unit rather than converted from the imperial one:
+   3′6″ is 106.68 cm, and a tape measure does not have that on it. Centimetres
+   go to the nearest whole one, which is finer than the ″ they replace. */
+const CM_PER_FT = 30.48;
+
+export function fmtFt(ft, metric) {
+  if (metric) return Math.round(ft * CM_PER_FT) + ' cm';
   const inches = Math.round(ft * 12), f = Math.floor(inches / 12), i = inches % 12;
   if (!f) return i + '″';
   return i ? f + '′' + i + '″' : f + '′';
 }
-export function measureSummary(setupId, dims) {
+
+/* The one place inch measurements become a string. applyDims and the product
+   cards each had their own `${n}″` template, so a metric reader got centimetres
+   in the summary and inches on the shopping list — the half-translated state
+   that is worse than not translating at all. */
+export function fmtIn(inches, metric) {
+  if (metric) return Math.round(inches * 2.54) + ' cm';
+  return Math.round(inches) + '″';
+}
+
+export function measureSummary(setupId, dims, metric) {
   const roomy = ROOMY.includes(setupId);
+  const f = (v) => fmtFt(v, metric);
   return roomy
-    ? fmtFt(dims.w) + ' × ' + fmtFt(dims.d) + ' room, ' + fmtFt(dims.h) + ' tall'
-    : fmtFt(dims.w) + ' wide × ' + fmtFt(dims.h) + ' tall × ' + fmtFt(dims.d) + ' deep';
+    ? f(dims.w) + ' × ' + f(dims.d) + ' room, ' + f(dims.h) + ' tall'
+    : f(dims.w) + ' wide × ' + f(dims.h) + ' tall × ' + f(dims.d) + ' deep';
 }
 
 /* ---------- Line-art card illustrations (design-owned SVG set) ----------

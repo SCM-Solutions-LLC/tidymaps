@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   SETUP_SCENARIO, scenarioKeyFor,
-  roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, measureSummary, art,
+  roomFor, areaFor, goalIdFor, prefsForStyles, fmtFt, fmtIn, measureSummary, art,
   isKidOption, householdHasKids, optionsForHousehold, MOBILITY_NEEDS, PET_TYPES,
 } from '../js/wizard-data.js';
 import { PREFS, AFTER_MODES, CUSTOMIZE } from '../js/data.js';
@@ -335,4 +335,43 @@ test('setSetup keeps user measurements when the same card is re-clicked', async 
   assert.equal(state.dims.w_in, 144, 're-clicking the selected setup reset the width');
   setSetup('wallcab');                    // a REAL change re-applies defaults
   assert.notEqual(state.dims.w_in, 144);
+});
+
+/* ---------- metric ----------
+   The app measured in feet and inches everywhere and offered no way out, which
+   makes it unusable for most of the world: a metric reader has to convert their
+   own tape measure before they can answer the first question. */
+
+test('every measurement string has a metric form', () => {
+  assert.equal(fmtFt(3), '3′');
+  assert.equal(fmtFt(3, true), '91 cm');
+  assert.equal(fmtFt(6.5, true), '198 cm');
+  assert.equal(fmtIn(18), '18″');
+  assert.equal(fmtIn(18, true), '46 cm');
+});
+
+test('centimetres are rounded as centimetres, not as converted inches', () => {
+  /* 3′6″ is 106.68 cm and a tape measure does not have that on it. Rounding to
+     the whole centimetre is also finer than the inch it replaces, so nothing is
+     lost by choosing the unit's own precision. */
+  assert.equal(fmtFt(3.5, true), '107 cm');
+  assert.ok(!/\./.test(fmtFt(3.5, true)), 'a decimal centimetre is more precision than anyone measures');
+  assert.ok(!/[″′]/.test(fmtFt(3.5, true)), 'imperial marks leaked into the metric string');
+});
+
+test('the summary is one system throughout, never half-translated', () => {
+  const dims = { w: 3, h: 6.5, d: 1.5 };
+  const imperial = measureSummary('cabinet', dims, false);
+  const metric = measureSummary('cabinet', dims, true);
+  assert.ok(!/cm/.test(imperial), `imperial summary leaked centimetres: ${imperial}`);
+  assert.ok(!/[″′]/.test(metric), `metric summary leaked feet or inches: ${metric}`);
+  assert.match(metric, /91 cm wide × 198 cm tall × 46 cm deep/);
+});
+
+test('units default to imperial, and only a known value is honoured', async () => {
+  /* A units preference describes the reader, not the space, so it is stored
+     apart from the plan and apart from the guest draft — a shared plan has to
+     render in the units of whoever opened it, not whoever made it. */
+  const { UNITS } = await import('../js/state.js');
+  assert.deepEqual(UNITS, ['imperial', 'metric']);
 });
