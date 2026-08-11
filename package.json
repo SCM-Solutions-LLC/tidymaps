@@ -6,6 +6,7 @@
     "check:links": "node scripts/check-product-links.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "playwright": "^1.61.1",
     "supabase": "^2.109.1"
   },
