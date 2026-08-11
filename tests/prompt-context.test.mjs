@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { sanitizeUntrusted, buildContext, untrustedContextBlock, INJECTION_GUARD } from '../supabase/functions/_shared/promptContext.js';
 
 test('sanitizeUntrusted strips ASCII control characters but keeps tab/newline', () => {
@@ -54,4 +55,32 @@ test('buildContext includes provided answers and omits absent ones', () => {
 test('sanitizeUntrusted caps runaway length', () => {
   const huge = 'x'.repeat(10000);
   assert.equal(sanitizeUntrusted(huge).length, 4000);
+});
+
+/* The archetype the app draws travels with the setup, and it is pinned in the
+   TRUSTED half of the prompt — the enforced-limits block — rather than in the
+   user_context. That is deliberate: a rule the model must follow cannot live
+   inside the section it is told to treat as inert description. */
+const analyzeFn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+
+test('the chosen archetype is pinned only when the user actually picked a card', () => {
+  assert.match(analyzeFn, /ctx\.setup\?\.touched === true/,
+    'a preselected setup is a default, not an answer, and must not pin layout.type');
+  assert.match(analyzeFn, /ARCHETYPES as string\[\]\)\.includes\(ctx\.setup\.archetype\)/,
+    'context is user-supplied, so the value is allow-listed before it reaches the trusted prompt');
+});
+
+test('buildAnalysisContext sends the archetype and whether the choice was real', async () => {
+  const [{ state }, { buildAnalysisContext }, { SETUP_ARCHETYPE }] = await Promise.all([
+    import('../js/state.js'), import('../js/plan.js'), import('../js/layout.js'),
+  ]);
+  state.setup = 'toolchest';
+  state.setupLabel = 'Rolling tool chest';
+  state.setupTouched = true;
+  const sent = buildAnalysisContext().setup;
+  assert.equal(sent.archetype, SETUP_ARCHETYPE.toolchest);
+  assert.equal(sent.touched, true);
+
+  state.setupTouched = false;
+  assert.equal(buildAnalysisContext().setup.touched, false);
 });

@@ -132,6 +132,12 @@ function applyBudget(plan, answers) {
 }
 
 // Each pref maps to a concrete, cited change. Order matters only for text.
+/* Exported so a control that claims to set a preference can be checked against
+   the list of preferences that actually do something. "No drilling or permanent
+   installation" was handled here for as long as the handler has existed, with
+   nothing in the wizard able to reach it. */
+export const PREF_HANDLER_KEYS = [];
+
 const PREF_HANDLERS = {
   'Keep frequent items easy to reach': (plan) => {
     const eye = plan.map.find(m => m.eye);
@@ -162,9 +168,20 @@ const PREF_HANDLERS = {
     if (low) low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
   },
   'No drilling or permanent installation': (plan) => {
-    plan.steps = plan.steps.filter(st => !/drill|mount|screw|install hardware/i.test(stepTask(st)));
+    /* The filter used to look for the word "drill". It missed every phrasing a
+       plan actually uses: "Hang hand tools on the pegboard", "Hang hooks on the
+       wall beside it", and a don't-buy note recommending wall-mounted hooks as
+       safer. Someone whose lease forbids holes was handed a whole zone they
+       cannot build, so the pattern covers the act rather than the verb. */
+    /* Anchored on making a hole, not on nouns. "screw" alone deleted "Sort
+       screws and fasteners into compartments" — the user's screws are a thing
+       to organize, not an installation. A pegboard the bench already came with
+       is likewise fine to use; what this rules out is putting a new one up. */
+    const FIXED = /\bdrill|\bmount(?:ed|ing)?\b|screwed (?:in|into|to)|install(?:ing)? (?:hardware|a pegboard|a rack|a rail)|\bhang(?:ing)? (?:hooks?|rails?|racks?|a rack|shelves)\b|wall[- ]mounted|\banchors?\b|adhesive strip|command strip|\bbrackets?\b/i;
+    plan.steps = plan.steps.filter(st => !FIXED.test(stepTask(st)));
     dropNeeds(plan, p => !['door-rack', 'hook-rack'].includes(p.type));
-    plan.opportunities = plan.opportunities || [];
+    plan.opportunities = (plan.opportunities || []).filter(o => !FIXED.test(String(o || '')));
+    if (FIXED.test(String(plan.dontBuy || ''))) plan.dontBuy = '';
     plan.opportunities.push('Everything in this plan is freestanding — you asked for no drilling or permanent installation.');
   },
   'Minimal look': (plan) => {
@@ -253,6 +270,7 @@ const PREF_HANDLERS = {
   // 'Use only what I already own' is handled in applyBudget (it zeroes purchases)
   'Use only what I already own': () => {},
 };
+PREF_HANDLER_KEYS.push(...Object.keys(PREF_HANDLERS));
 
 /* The "Adjust this plan" options on the results screen. Five of them —
    minimal, kid, capacity, hide, labels — used to fall through applyCustomize
@@ -475,6 +493,12 @@ const OWN_ONLY_WORDS = [
   [/\bbin\b/gi, 'box'],
 ];
 
+/* A line whose whole point is a product cannot be reworded into one that works
+   with what is already there. "A can riser would make every can visible" is
+   advice to buy a can riser; there is no $0 version of it, and the plan two
+   inches above says every step works with what the space already has. */
+const BUY_ONLY_LINE = /\b(?:riser|turntable|lazy susan|pull-out (?:tray|basket)|drawer organizer|door rack|stacking bins?|airtight containers?|label(?:-| )?(?:set|maker))\b/i;
+
 function ownOnlyVocabulary(plan) {
   /* Zone names are places, not purchases, and the checklist references them
      by name — rewriting "Set up the Beach towels bin zone" would point the
@@ -486,6 +510,14 @@ function ownOnlyVocabulary(plan) {
     return OWN_ONLY_WORDS.reduce((acc, [re, to]) => acc.replace(re, to), t);
   };
   plan.steps = (plan.steps || []).map(s => ('t' in s ? { ...s, t: fix(s.t) } : { ...s, task: fix(s.task) }));
+  /* The steps were the half anyone checked. The opportunities went on selling:
+     a $0 pantry promised "every step below works with what is already in the
+     space" and then recommended a can riser, a shelf riser and a turntable, in
+     the section directly above the promise. Reword what can be reworded, and
+     drop what is only an advertisement. */
+  plan.opportunities = (plan.opportunities || [])
+    .filter(o => !BUY_ONLY_LINE.test(String(o || '')))
+    .map(fix);
 }
 
 function applyPrefs(plan, answers) {
@@ -537,19 +569,48 @@ function applyToggles(plan, answers) {
   }
 }
 
+/* What the levels of THIS plan actually are. The depth advice below used to
+   say "your shelves" whatever the plan was built on, so a drawer tower and a
+   hanging closet were both told how deep their shelves were. The number was
+   right and the noun was invented, which is the harder kind of wrong to spot.
+   Read from the map the plan actually has rather than from the setup id, so it
+   stays true through every re-projection. */
+const LEVEL_NOUNS = { drawer: ['drawer', 'drawers'], rod: ['rail', 'rails'], worktop: ['surface', 'surfaces'], floor: ['level', 'levels'], shelf: ['shelf', 'shelves'] };
+
+function dominantSurface(plan) {
+  const counts = new Map();
+  for (const row of plan.map || []) {
+    if (!row.surface) continue;
+    counts.set(row.surface, (counts.get(row.surface) || 0) + 1);
+  }
+  let best = 'shelf', top = 0;
+  for (const [surface, n] of counts) if (n > top) { top = n; best = surface; }
+  return best;
+}
+
+function levelNoun(plan, plural) {
+  const pair = LEVEL_NOUNS[dominantSurface(plan)] || LEVEL_NOUNS.shelf;
+  return plural ? pair[1] : pair[0];
+}
+
 function applyDims(plan, answers) {
   const d = answers.dims;
   if (!d) return;
   plan.opportunities = plan.opportunities || [];
-  if (d.d_in && d.d_in >= 16) {
+  /* Depth is only a reach problem where things sit BEHIND other things. On a
+     hanging rail nothing is at the back, and "your rails are 18″ deep — a
+     turntable stops things vanishing at the back" was advice for furniture the
+     plan does not describe. */
+  const deepMatters = ['shelf', 'drawer', 'floor'].includes(dominantSurface(plan));
+  if (d.d_in && d.d_in >= 16 && deepMatters) {
     // If the scenario already recommends a turntable, cite the measurement on
     // it; otherwise surface the depth advice as an opportunity.
     const tt = (plan.productNeeds || []).find(p => p.type === 'turntable');
-    if (tt) tt.purpose += ` Your shelves measure ${d.d_in}″ deep, so items at the back are otherwise out of reach.`;
-    else plan.opportunities.push(`Your shelves are ${d.d_in}″ deep — a turntable or pull-out tray stops things from vanishing at the back.`);
+    if (tt) tt.purpose += ` Your ${levelNoun(plan, true)} measure ${d.d_in}″ deep, so items at the back are otherwise out of reach.`;
+    else plan.opportunities.push(`Your ${levelNoun(plan, true)} are ${d.d_in}″ deep — a turntable or pull-out tray stops things from vanishing at the back.`);
   }
   if (d.w_in && d.w_in <= 24) {
-    plan.opportunities.push(`At ${d.w_in}″ wide, this space works best with one category per shelf instead of side-by-side zones.`);
+    plan.opportunities.push(`At ${d.w_in}″ wide, this space works best with one category per ${levelNoun(plan, false)} instead of side-by-side zones.`);
   }
 }
 
@@ -603,34 +664,53 @@ function applyEffort(plan, answers) {
    to — see EFFORT_STEPS). The time is then a fact about the steps that
    ended up on the page, not a restatement of the label, so the number the
    user reads always matches the checklist under it. */
-const TIME_BANDS = [
-  [45, '~30 min'], [100, '45–90 min'], [200, '2–3 hours'], [330, '3–5 hours'], [Infinity, '4–8 hours'],
-];
-const BAND_ORDER = TIME_BANDS.map(b => b[1]);
-
-export function planMinutes(steps) {
-  return (steps || []).reduce((sum, st) => {
+/* Each step's own low and high, added up. planMinutes averages them, which is
+   the right number for "how long is this plan" and the wrong one for the label
+   printed over it. */
+export function planMinuteRange(steps) {
+  return (steps || []).reduce((acc, st) => {
     const raw = String((st && (st.time ?? st.m)) || '');
     const m = raw.match(/(\d+)(?:\s*[–-]\s*(\d+))?/);
-    if (!m) return sum;
+    if (!m) return acc;
     // "5 min / week" is a maintenance cadence, not part of the one-off job.
-    if (/\/\s*week/i.test(raw)) return sum;
-    return sum + (m[2] ? (Number(m[1]) + Number(m[2])) / 2 : Number(m[1]));
-  }, 0);
+    if (/\/\s*week/i.test(raw)) return acc;
+    return { lo: acc.lo + Number(m[1]), hi: acc.hi + Number(m[2] || m[1]) };
+  }, { lo: 0, hi: 0 });
+}
+
+export function planMinutes(steps) {
+  const { lo, hi } = planMinuteRange(steps);
+  return (lo + hi) / 2;
+}
+
+const round5 = (n) => Math.max(5, Math.round(n / 5) * 5);
+const halfHours = (n) => {
+  const h = Math.round(n / 30) / 2;
+  return Number.isInteger(h) ? String(h) : String(h);
+};
+
+/* The label is now built from the steps rather than chosen from a table of
+   bands. The bands were the bug: one of them covered up to 100 minutes under
+   the label "45–90 min", so a checklist whose own printed times added to 92–97
+   was announced as 45–90 in the tile directly above it. Every boundary in a
+   fixed table has that failure somewhere in it; a derived range does not. */
+export function planTimeLabel(steps) {
+  const { lo, hi } = planMinuteRange(steps);
+  if (!hi) return null;
+  const low = round5(lo), high = round5(hi);
+  if (high <= 120) return low === high ? `${high} min` : `${low}–${high} min`;
+  const a = halfHours(low), b = halfHours(high);
+  return a === b ? `${b} hours` : `${a}–${b} hours`;
 }
 
 export function capTimeToPlan(label, steps) {
-  const mins = planMinutes(steps);
-  /* Always derived from the steps, never from the label. Gating this on
-     `BAND_ORDER.includes(label)` made the correction depend on whether an
-     effort's canned string happened to collide with a band name: of the four
-     legacy labels, "Quick 30-minute reset" and "Full reorganization" were
-     corrected and "1-hour cleanup" and "Weekend project" were not, so a
-     saved plan could still announce "2–4 hours" over 42 minutes of steps.
-     The only case for keeping the label is a plan whose steps carry no
-     times at all, where there is nothing to derive from. */
-  if (!mins) return label;
-  return TIME_BANDS.find(([max]) => mins < max)[1];
+  /* Always derived from the steps, never from the effort label. Gating this on
+     a band-name match made the correction depend on whether an effort's canned
+     string happened to collide with a band name, so a saved plan could announce
+     "2–4 hours" over 42 minutes of steps. The only case for keeping the label
+     is a plan whose steps carry no times at all, where there is nothing to
+     derive from. */
+  return planTimeLabel(steps) || label;
 }
 
 /* Apply the full wizard answer set to a raw plan. Mutates and returns it. */

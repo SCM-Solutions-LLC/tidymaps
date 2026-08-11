@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { iconFor } from './icons.js';
 import { MAP, DEMO_GEOMETRY, DEMO_SAFETY_NOTES, DEMO_PRODUCT_NEEDS } from './data.js';
-import { normalizeLayout, surfaceFromIcon, SURFACES } from './layout.js';
+import { normalizeLayout, surfaceFromIcon, SURFACES, SETUP_ARCHETYPE } from './layout.js';
 
 /* ============================================================
    Plan contract v2: raw model JSON -> the exact shapes the UI renders.
@@ -172,8 +172,22 @@ export function buildAnalysisContext(){
   return {
     spaceType: state.space || 'pantry',
     room: state.room || null,
-    setup: state.setup ? { id: state.setup, label: state.setupLabel || state.setup } : null,
-    goal: state.goal || null,
+    /* archetype and touched travel with the setup: the archetype is the shape
+       the app will draw, and `touched` says whether the user picked the card or
+       merely left the preselected one, which is the difference between an
+       answer and a default. The edge function pins layout.type to the archetype
+       only when the choice was real. */
+    setup: state.setup ? {
+      id: state.setup,
+      label: state.setupLabel || state.setup,
+      archetype: SETUP_ARCHETYPE[state.setup] || null,
+      touched: !!state.setupTouched,
+    } : null,
+    /* The user's own first answer, not the engine id it was bridged to. The id
+       is a five-way bucket built for the deterministic scenarios; sending it
+       here rendered as "Their main goal: unsure" for most of the wizard's
+       options, which is a claim about the user, and a wrong one. */
+    goal: (state.goals && state.goals[0]) || state.goal || null,
     goals: (state.goals||[]).slice(),      // the user's own words — cite verbatim
     styles: (state.styles||[]).slice(),
     shopping: state.shoppingPref || null,

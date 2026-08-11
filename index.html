@@ -389,6 +389,14 @@
     <p class="wk-h">Anyone who needs things easy to reach? <span class="muted">(pick any)</span></p>
     <div class="chips" id="mobility-chips"></div>
   </div>
+  <!-- The plan engine has always known how to build a freestanding plan; there
+       was no way to ask for one. A renter walked all twelve steps without
+       finding a control for "nothing can be screwed to a wall", and got a
+       pegboard zone. -->
+  <div class="wz-kid-ages" id="constraints-block">
+    <p class="wk-h">Anything you can’t do to the walls? <span class="muted">(pick any)</span></p>
+    <div class="chips" id="constraint-chips"></div>
+  </div>
   <div class="wz-kid-ages" id="household-notes-block">
     <p class="wk-h">Anything else we should know? <span class="muted">(optional)</span></p>
     <!-- Four lines, not two, and the limit is visible. This is where someone
@@ -525,7 +533,7 @@
         <ul class="summary-points" id="res-summary-points"></ul>
         <div class="kpis" id="res-kpis"></div>
         <div style="margin-top:20px">
-          <div class="small" style="font-weight:600;margin-bottom:6px">Detected item categories</div>
+          <div class="small" style="font-weight:600;margin-bottom:6px" id="res-cat-title">Item categories</div>
           <div class="taglist" id="res-cat-tags"></div>
         </div>
         <div class="grid grid-2" style="margin-top:20px">

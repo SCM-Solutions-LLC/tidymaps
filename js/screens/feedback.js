@@ -4,6 +4,7 @@ import { state } from '../state.js';
 import { go } from '../router.js';
 import { submitFeedbackRow } from '../db.js';
 import { track, flush } from '../telemetry.js';
+import { toast } from '../ui.js';
 
 /* ---------- Feedback ----------
 
@@ -105,13 +106,21 @@ export function submitFeedback(){
 function sendFeedback(comments){
   if(state.fbSent) return;
   state.fbSent=true;
-  // best-effort: feedback lands in the DB when the backend is connected
+  /* The write was best-effort and the thank-you was unconditional, so a 500
+     produced "Thanks — that's genuinely useful" over a row that was never
+     written, and the screen went on saying "you already sent this". Someone who
+     took the trouble to answer is owed the truth about whether it arrived. */
   submitFeedbackRow({
     useful: state.fbUseful||null,
     vs: state.fbVs||null,
     comments: comments||null,
     next_space: state.fbNext||null,
-  }).catch(()=>{});
+  }).catch(()=>{
+    state.fbSent=false;
+    toast('That did not reach us — your answers are still here, try again in a moment.');
+    buildRate();
+    buildFeedback();
+  });
   // The pay-for-it signal: fbUseful is a fixed choice ("I would pay for
   // this" among them), joined against step_checked depth per anon_id.
   // Free-text comments deliberately stay out of telemetry.

@@ -321,27 +321,37 @@ test('every level cap actually constrains its archetype', () => {
 
 /* ---------- second-round review findings ---------- */
 
-import { planMinutes, EFFORT_STEPS } from '../js/personalize.js';
+import { planMinuteRange, EFFORT_STEPS } from '../js/personalize.js';
 import { SPACE_CFG, goalIdFor, STYLESETS, prefsForStyles } from '../js/wizard-data.js';
 
-test('the headline time always matches the checklist under it', () => {
-  // The effort label used to set the time on its own, so a two-level rack
-  // announced "Full overhaul · 4–8 hours" over an hour of work, and every
-  // "Quick refresh" promised ~30 min over an hour-long checklist.
-  const BANDS = [[45, '~30 min'], [100, '45–90 min'], [200, '2–3 hours'], [330, '3–5 hours'], [Infinity, '4–8 hours']];
-  /* EVERY label in EFFORT_STEPS, not just the three the wizard offers today.
+test('the headline time always contains the checklist under it', () => {
+  /* The effort label used to set the time on its own, so a two-level rack
+     announced "Full overhaul · 4–8 hours" over an hour of work. Deriving it
+     from the steps fixed that direction and left the other: the label came
+     from a table of bands, and one band covered up to 100 minutes under the
+     name "45–90 min", so a checklist adding up to 92–97 was announced as
+     45–90 in the tile directly above it.
+
+     So this asserts containment rather than a string. A printed range that
+     does not cover the times printed below it is wrong however it was chosen,
+     and no future table of bands can pass this by accident.
+
+     EVERY label in EFFORT_STEPS, not just the three the wizard offers today.
      The legacy names are kept deliberately so saved drafts stay personalized,
-     and two of them ("1-hour cleanup", "Weekend project") went uncorrected
-     because their canned strings are not band names — a saved plan announced
-     "2–4 hours" over 42 minutes of steps. Iterating the real key list is what
-     catches that; a hardcoded trio never can. */
+     and two of them once went uncorrected because their canned strings are not
+     band names. Iterating the real key list is what catches that. */
   for (const s of ALL_SETUPS) {
     for (const effort of Object.keys(EFFORT_STEPS)) {
       const p = planFor(s, { effort });
-      const mins = planMinutes(p.steps);
-      const expected = BANDS.find(([max]) => mins < max)[1];
-      assert.equal(p.time, expected,
-        `${s.space}/${s.id} (${effort}): says "${p.time}" over ${Math.round(mins)} min of steps`);
+      const { lo, hi } = planMinuteRange(p.steps);
+      if (!hi) continue;
+      const m = String(p.time).match(/(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?/);
+      assert.ok(m, `${s.space}/${s.id} (${effort}): "${p.time}" carries no number`);
+      const unit = /hour/i.test(p.time) ? 60 : 1;
+      const low = Number(m[1]) * unit, high = Number(m[2] || m[1]) * unit;
+      // rounding to 5 minutes / half hours may move each end a little
+      assert.ok(low <= lo + 15 && high >= hi - 15,
+        `${s.space}/${s.id} (${effort}): says "${p.time}" over ${lo}–${hi} min of steps`);
     }
   }
 });

@@ -1,7 +1,7 @@
 import { preflight, json } from '../_shared/cors.ts';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
-import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth } from '../_shared/planSchema.js';
+import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth, ARCHETYPES } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -194,6 +194,7 @@ Deno.serve(async (req) => {
     effort?: string;
     dims?: { w_in?: number; h_in?: number; d_in?: number };
     household?: { kids?: { present?: boolean } };
+    setup?: { archetype?: string; touched?: boolean };
   };
   const [minSteps, maxSteps] = EFFORT_STEP_RANGES[ctx.effort as string] ?? DEFAULT_STEP_RANGE;
   const kidsPresent = ctx.household?.kids?.present === true;
@@ -208,9 +209,24 @@ Deno.serve(async (req) => {
     : Math.abs(roomDepth - wallDepth) < 0.5
       ? `- productNeeds: every maxDims.d_in must be at most ${(roomDepth - 0.5).toFixed(1)}in (the ${roomDepth}in depth less 0.5in clearance).`
       : `- productNeeds: every maxDims.d_in must fit the usable SHELF depth, not the room. If you classify this as walkin-u or l-run, that is about ${wallDepth}in of shelving along the walls, so keep maxDims.d_in at or under ${(wallDepth - 0.5).toFixed(1)}in. For any other archetype the ${roomDepth}in measurement is the shelf itself, so the limit is ${(roomDepth - 0.5).toFixed(1)}in.`;
+  /* The archetype the app will DRAW. A setup the user actively picked wins that
+     decision client-side, so a plan classified as anything else is describing a
+     different piece of furniture from the one in the picture beside it. The
+     client scrubs the mismatch afterwards, but scrubbing costs the user prose,
+     and a wholesale disagreement cannot be scrubbed at all. Saying it up front
+     is cheaper than repairing it. Allow-listed rather than interpolated
+     directly: this sits in the trusted half of the prompt, and `context` is
+     user-supplied. */
+  const chosenArchetype = ctx.setup?.touched === true
+    && typeof ctx.setup?.archetype === 'string'
+    && (ARCHETYPES as string[]).includes(ctx.setup.archetype)
+    ? ctx.setup.archetype : null;
   const enforced = [
     '',
     'Enforced limits for this request. A plan that breaks any of these is rejected and the user sees nothing, so check each one before answering:',
+    ...(chosenArchetype ? [
+      `- layout.type: the user picked their own setup from a set of cards, so classify this space as "${chosenArchetype}" and write every level name, step, and product suggestion for that shape. Describe only the surfaces "${chosenArchetype}" actually has. If the photos show something genuinely different, still use "${chosenArchetype}" and say what you see in the summary instead.`,
+    ] : []),
     `- steps: return between ${minSteps} and ${maxSteps} steps, matching the effort level this user chose.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
     kidsPresent

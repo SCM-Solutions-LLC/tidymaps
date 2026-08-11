@@ -2,11 +2,11 @@
    TidyMap — entry point
    ============================================================ */
 import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
-import { state, restoreGuestDraft, applySharedSpace } from './state.js';
+import { state, restoreGuestDraft, applySharedSpace, resetPlanRecord, persistGuestDraft } from './state.js';
 import { fetchSharedSpace } from './api.js';
 import { normalizeAi } from './plan.js';
 import { track, telemetryStatus } from './telemetry.js';
-import { setRail, go, goNext, goBack, restart, getCurrentScreen } from './router.js';
+import { setRail, go, goNext, goBack, restart, getCurrentScreen, initHistory } from './router.js';
 import { getSession } from './auth.js';
 import { fetchSpace, applyLoadedSpace } from './db.js';
 import { buildAll } from './screens/index.js';
@@ -40,6 +40,9 @@ Object.assign(window, {
 
 buildAll();
 initLanding();
+// Before any restore below can navigate, so the session's first history entry
+// names the landing page rather than carrying null state.
+initHistory();
 setRail();
 setAppbarHeightVar();
 setFootHeightVar();
@@ -47,11 +50,18 @@ addEventListener('resize', () => { setAppbarHeightVar(); setFootHeightVar(); });
 
 // TidyMap now runs analysis server-side; scrub any bring-your-own-key
 // remnants from the prototype era.
-if(localStorage.getItem('tidymap_key')){
-  localStorage.removeItem('tidymap_key');
-  localStorage.removeItem('tidymap_model');
-  setTimeout(()=>toast('TidyMap now runs its own AI — your saved API key was removed from this browser.'), 800);
-}
+/* Guarded: reading localStorage THROWS, rather than returning null, when site
+   data is blocked — third-party-cookie blocking, Safari's Lockdown mode, an
+   incognito profile with storage off. An unguarded read here ran before the
+   startup routing below and took the whole module down with it, so a share
+   link showed the marketing page and never made its request. */
+try{
+  if(localStorage.getItem('tidymap_key')){
+    localStorage.removeItem('tidymap_key');
+    localStorage.removeItem('tidymap_model');
+    setTimeout(()=>toast('TidyMap now runs its own AI — your saved API key was removed from this browser.'), 800);
+  }
+}catch(e){ /* no storage available; nothing to clean up */ }
 
 // Session restore + deep links, then guest-draft recovery as the fallback.
 // Route restoration is guarded so delayed account setup cannot interrupt a
@@ -78,4 +88,15 @@ initializeRoute({
     state.planMeta = space.planMeta || null;
     track('shared_plan_viewed', {});
   },
-}).catch((e)=>console.error('startup restore failed', e));
+}).catch((e)=>{
+  /* A stored draft the renderer chokes on used to fail silently here and stay
+     on disk, so every later visit repeated it: the visitor landed on the
+     marketing page with no explanation, forever. Drop the unreadable PLAN and
+     keep the answers, which are what took effort to give. */
+  console.error('startup restore failed', e);
+  try{
+    resetPlanRecord(state);
+    persistGuestDraft();
+    toast('We could not reopen your last plan, so we cleared it. Your answers are still here.');
+  }catch(_){ /* storage unavailable; the message is the most we can do */ }
+});

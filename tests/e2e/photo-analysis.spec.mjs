@@ -144,3 +144,60 @@ test('with no photos the wizard stays offline and never calls the backend', asyn
   expect(calls, 'no photos means nothing to analyze').toHaveLength(0);
   expect(await page.locator('#res-steps .task').count()).toBeGreaterThan(0);
 });
+
+/* What the backend returns is not always a plan. A proxy can answer 200 with an
+   HTML error page, a truncated body parses to null, and a model can return an
+   object with none of its fields filled in. Each of those used to surface as
+   something worse than a failure. */
+
+async function analysisReturns(page, body) {
+  await page.route('**/functions/v1/analyze-space', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body }));
+  await driveToPhotos(page);
+  await page.setInputFiles('#photo-input', [PHOTO]);
+  await finishWizard(page);
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+}
+
+test('a null body fails in plain English, not in JavaScript', async ({ page }) => {
+  /* "Cannot destructure property 'plan' of '(intermediate value)' as it is
+     null" went straight into the banner the user reads, which reads as the app
+     breaking rather than one analysis not working out. */
+  const messages = [];
+  page.on('console', (m) => messages.push(m.text()));
+  await analysisReturns(page, 'null');
+  const banner = await page.locator('#res-fallback-note').textContent();
+  expect(banner).toBeTruthy();
+  expect(banner).not.toMatch(/cannot (read|destructure)|undefined|null|TypeError/i);
+  // and the user still gets a usable plan
+  expect(await page.locator('#res-steps .task').count()).toBeGreaterThan(0);
+});
+
+test('an empty plan object is a failed analysis, not a successful one', async ({ page }) => {
+  /* `{plan:{}}` used to render as a finished report: byline "Analyzed by
+     Claude", no fallback banner, and nothing underneath it. A plan is a map and
+     a list of steps; anything else failed, whatever status code carried it. */
+  await analysisReturns(page, JSON.stringify({ plan: {} }));
+  await expect(page.locator('#res-fallback-note')).toBeVisible();
+  await expect(page.locator('#res-byline')).not.toContainText(/analyzed by/i);
+  expect(await page.locator('#res-steps .task').count()).toBeGreaterThan(0);
+});
+
+test('leaving the loading screen cancels the build instead of being yanked back', async ({ page }) => {
+  /* Analyses run long enough to press Back, and the request cannot be recalled,
+     so the finished plan used to arrive later and throw the user onto the
+     report from wherever they had navigated to. */
+  await page.route('**/functions/v1/analyze-space', async (route) => {
+    await new Promise((r) => setTimeout(r, 3500));
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: PLAN }) });
+  });
+  await driveToPhotos(page);
+  await page.setInputFiles('#photo-input', [PHOTO]);
+  await finishWizard(page);
+  await expect(page.locator('#screen-loading')).toHaveClass(/active/);
+
+  await page.goBack();
+  await expect(page.locator('#screen-review')).toHaveClass(/active/);
+  await page.waitForTimeout(5000);
+  await expect(page.locator('#screen-review'), 'the plan must not arrive and navigate for them').toHaveClass(/active/);
+});

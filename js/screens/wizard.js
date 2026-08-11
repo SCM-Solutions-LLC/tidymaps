@@ -266,6 +266,7 @@ function renderMeasure(){
         </span>
       </span>
       <input type="range" min="${f.min}" max="${f.max}" step="0.25" value="${n[f.k]}" id="m-range-${f.k}" aria-label="${f.aria}">
+      <span class="wm-note" id="m-note-${f.k}" role="status" aria-live="polite"></span>
     </label>`).join('');
 
   MEASURE_FIELDS.forEach(f => {
@@ -273,7 +274,11 @@ function renderMeasure(){
     const range = document.getElementById('m-range-' + f.k);
     num.oninput = () => {
       state.dimsFt = state.dimsFt || dimsFtNums();
-      state.dimsFt[f.k] = num.value === '' ? '' : parseFloat(num.value);
+      /* Only a usable number is written. Storing '' or NaN mid-typing meant the
+         value in force fell back to the SETUP's default, so the last good
+         number the user typed was gone before blur could restore it. */
+      const typed = parseFloat(num.value);
+      if(Number.isFinite(typed) && typed > 0) state.dimsFt[f.k] = typed;
       syncDims(); refreshMeasure(f.k, false);
     };
     num.onblur = () => {
@@ -281,9 +286,31 @@ function renderMeasure(){
       // never measured anything (the sample plan, a restored draft with no
       // dims), and blur fires on a field the user only focused.
       state.dimsFt = state.dimsFt || dimsFtNums();
-      const v = Math.min(f.max, Math.max(f.min, dimsFtNums()[f.k]));
+      /* Typing 0, a negative, or letters used to leave the field reading 3 —
+         the Cabinet default — with no notice, so a 14-inch cabinet was
+         planned, dimensioned and product-fitted as a three-foot one. The
+         number the report quotes has to be one the user can recognize, so a
+         value we could not use is replaced visibly and the replacement is
+         named. */
+      const raw = String(num.value).trim();
+      const typed = parseFloat(raw);
+      const inForce = dimsFtNums()[f.k];
+      let v = inForce, note = '';
+      if(raw === '' || !Number.isFinite(typed) || typed <= 0){
+        note = `We kept ${fmtFt(inForce)} — this needs a number.`;
+      }else if(typed < f.min || typed > f.max){
+        v = Math.min(f.max, Math.max(f.min, typed));
+        note = `${raw} ft is outside what we can plan for, so we used ${fmtFt(v)}.`;
+      }else{
+        v = typed;
+      }
       state.dimsFt[f.k] = v; num.value = v;
       syncDims(); refreshMeasure(f.k, true);
+      const noteEl = document.getElementById('m-note-' + f.k);
+      if(noteEl){
+        noteEl.textContent = note;
+        noteEl.classList.toggle('show', !!note);
+      }
     };
     range.oninput = () => {
       state.dimsFt = state.dimsFt || dimsFtNums();
@@ -347,6 +374,7 @@ function renderHousehold(){
   renderKidAges();
   renderPetTypes();
   renderMobility();
+  renderConstraints();
   renderHouseholdNotes();
 }
 
@@ -388,6 +416,35 @@ function renderMobility(){
   const h = state.household;
   if(!Array.isArray(h.mobility)) h.mobility = [];
   renderChipPicker('mobility-chips', MOBILITY_NEEDS, () => h.mobility);
+}
+
+/* Home constraints. Each chip is a preference the plan engine already handles —
+   the behaviour was live and unreachable, because the questions that used to
+   set it were removed and no style can derive it. Writing straight into
+   state.prefs is what makes it reach both paths: the deterministic engine reads
+   prefs, and buildAnalysisContext forwards them to the model. */
+export const HOME_CONSTRAINTS = [
+  ['Nothing drilled or mounted', 'No drilling or permanent installation'],
+];
+
+function renderConstraints(){
+  const wrap = document.getElementById('constraint-chips');
+  if(!wrap) return;
+  if(!(state.prefs instanceof Set)) state.prefs = new Set(state.prefs || []);
+  wrap.innerHTML = '';
+  for(const [label, pref] of HOME_CONSTRAINTS){
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (state.prefs.has(pref) ? ' sel' : '');
+    chip.textContent = label;
+    chip.setAttribute('aria-pressed', String(state.prefs.has(pref)));
+    chip.onclick = () => {
+      if(state.prefs.has(pref)) state.prefs.delete(pref); else state.prefs.add(pref);
+      chip.classList.toggle('sel', state.prefs.has(pref));
+      chip.setAttribute('aria-pressed', String(state.prefs.has(pref)));
+    };
+    wrap.appendChild(chip);
+  }
 }
 
 /* Free text, already forwarded to the model by buildAnalysisContext and
@@ -611,6 +668,8 @@ function renderReviewSummary(){
       ? [['Reach & mobility', h.mobility.join(', '), 'household']] : []),
     ...((h.notes || '').trim()
       ? [['Your note', h.notes.trim(), 'household']] : []),
+    ...(HOME_CONSTRAINTS.some(([, pref]) => state.prefs && state.prefs.has(pref))
+      ? [['Home limits', HOME_CONSTRAINTS.filter(([, p]) => state.prefs.has(p)).map(([l]) => l).join(', '), 'household']] : []),
     ["What's inside", state.cats.length ? state.cats.join(', ') : 'Nothing selected yet', 'contents'],
     ['What bugs you', state.goals.length ? state.goals.join(', ') : 'Nothing selected yet', 'goals'],
     ['Style', state.styles.length ? state.styles.join(', ') : '—', 'style'],

@@ -7,6 +7,7 @@ import { runLoading } from './screens/loading.js';
 import { buildDashboard } from './screens/dashboard.js';
 import { buildFeedback } from './screens/feedback.js';
 import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
+import { closeAuth } from './screens/account.js';
 
 /* ============================================================
    Flow / routing — the design-contract 12-step wizard:
@@ -37,6 +38,95 @@ export function getCurrentScreen(){
   return current;
 }
 
+/* ============================================================
+   Browser history
+
+   There was none. Twelve steps of answers behind a Back button that left the
+   site, on a phone, where Back is how people move — and the swipe gesture is
+   the same action. Nothing was lost (the guest draft survives), but landing on
+   a marketing page mid-wizard reads as having lost it, which is the same thing
+   from the outside.
+
+   Every screen change pushes an entry, so Back walks the flow in reverse. Two
+   rules keep the stack honest:
+
+   - A transient screen is REPLACED by whatever follows it, never pushed over.
+     The loading screen exists for as long as an analysis takes and cannot be
+     returned to; pushing it would put a dead screen behind the report, and
+     Back from the report would re-enter a spinner that is not spinning.
+   - popstate navigates without pushing, or every Back would append a new
+     entry and the button would stop making progress.
+
+   The URL carries the screen as a fragment so a mid-session reload is at least
+   legible. Restoring a screen from the fragment is deliberately NOT done here:
+   photos live in memory only and are gone after a reload, so a restored capture
+   step would show an empty picker over answers that say otherwise. The reload
+   path keeps its existing behaviour — the landing page, and a toast saying the
+   answers are still there.
+   ============================================================ */
+const TRANSIENT=new Set(['loading']);
+const canHistory=()=>typeof history!=='undefined' && typeof history.pushState==='function';
+let popping=false;
+/* Bumped by Start over. Entries stamped with an older generation describe
+   answers that no longer exist, so returning to one would drop the user into a
+   step that has been reset under them. History entries cannot be deleted, so
+   they are marked dead instead. */
+let generation=0;
+
+const urlFor=(id)=>(id==='landing' ? location.pathname+location.search : '#'+id);
+
+function syncHistory(id, from, replace){
+  if(!canHistory()) return;
+  if(history.state && history.state.screen===id && history.state.gen===generation) return;
+  const entry={ screen:id, gen:generation };
+  if(replace || TRANSIENT.has(from) || !history.state) history.replaceState(entry,'',urlFor(id));
+  else history.pushState(entry,'',urlFor(id));
+}
+
+/* Called once at startup so the session's first entry names a screen. Without
+   it the opening entry has null state, and the first Back would read as "no
+   screen recorded" — indistinguishable from arriving from another site. */
+export function initHistory(){
+  if(!canHistory()) return;
+  history.replaceState({ screen:current },'',location.pathname+location.search);
+  addEventListener('popstate',(e)=>{
+    /* An open modal is what Back should dismiss — on a phone it is the only
+       gesture people use for "get me out of this". Dismiss it and put the entry
+       straight back, so the press spends itself on the modal instead of
+       navigating the screen behind it. pushState does not re-fire popstate, so
+       this cannot loop. */
+    const modal=document.getElementById('auth-modal');
+    if(modal && !modal.classList.contains('hide')){
+      closeAuth();
+      // The entry we just popped off carried the PREVIOUS screen's fragment, so
+      // the URL has to be rebuilt from the screen actually on display.
+      history.pushState({ screen:current, gen:generation },'', urlFor(current));
+      return;
+    }
+    /* An entry with no screen on it is not ours. The report's contents list is
+       six ordinary fragment links, and following one is a same-document
+       navigation that fires popstate with null state — which this handler read
+       as "no screen recorded" and answered with the landing page, so every
+       table-of-contents link threw the finished plan away. Anything we did not
+       stamp is a fragment jump: let the browser scroll and stay out of it. */
+    if(!e.state || !e.state.screen) return;
+    /* An entry from before Start over describes answers that were cleared.
+       Rather than restore a step that no longer means anything, land on the
+       landing page and claim the entry, so a second Back keeps going back. */
+    if(e.state.gen !== generation){
+      go('landing');
+      return;
+    }
+    const id=e.state.screen;
+    if(id===current) return;
+    // An entry for a screen this build does not have (an old tab, a hand-edited
+    // fragment) is left to the browser rather than throwing on a null element.
+    if(!document.getElementById('screen-'+id)) return;
+    popping=true;
+    try{ go(id); } finally { popping=false; }
+  });
+}
+
 export function setRail(){
   const rail=document.getElementById('rail');
   if(!rail) return;
@@ -49,7 +139,8 @@ export function setRail(){
   const pct=Math.round(idx/(FLOW.length-2)*100);
   rail.style.width=Math.min(100,pct)+'%';
 }
-export function go(id){
+export function go(id, opts={}){
+  const from=current;
   if(current==='viewer3d' && id!=='viewer3d'){
     // free WebGL resources when leaving the 3D screen
     import('./screens/viewer3d.js').then(m=>m.disposeViewer3d());
@@ -117,6 +208,7 @@ export function go(id){
   // memory for the analysis, and they're dropped here.
   if(id==='done' && !getSession()) clearGuestMedia();
   if(!getSession()) persistGuestDraft();
+  if(!popping) syncHistory(id, from, opts.replace);
   if(id!=='landing'){
     const heading=el.querySelector('h1,h2');
     if(heading){ heading.tabIndex=-1; heading.focus({preventScroll:true}); }
@@ -174,5 +266,10 @@ export function restart(){
   const custom=document.getElementById('customize-result');
   if(custom) custom.classList.add('hide');
   buildAll();
-  go('landing');
+  /* Every entry already on the stack points at a step whose answers have just
+     been wiped. They cannot be removed, so the generation moves on and they
+     stop resolving to a screen; the current entry is replaced rather than
+     pushed so Start over does not also grow the stack. */
+  generation++;
+  go('landing', { replace:true });
 }

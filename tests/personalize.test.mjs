@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyAnswers, applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision, planMinutes } from '../js/personalize.js';
+import { applyAnswers, applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision, planMinutes, planMinuteRange } from '../js/personalize.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 
 // Every wizard answer must leave a visible, attributable trace in the plan —
@@ -17,11 +17,21 @@ function stepText(plan) {
   return plan.steps.map(s => s.task + ' ' + (s.why || '')).join(' | ');
 }
 
-/* The band the plan's own step times fall into — the headline time must
-   always be this, whichever effort was chosen. */
-const TIME_BANDS = [[45, '~30 min'], [100, '45–90 min'], [200, '2–3 hours'], [330, '3–5 hours'], [Infinity, '4–8 hours']];
-function bandFor(plan) {
-  return TIME_BANDS.find(([max]) => planMinutes(plan.steps) < max)[1];
+/* The headline time must contain the plan's own step times, whichever effort
+   was chosen. Asserting the exact string reproduced whatever the code did; this
+   asserts the property that makes the number worth printing, which is what a
+   table of fixed bands could not hold — one of them covered up to 100 minutes
+   under the label "45–90 min". */
+function assertTimeCoversSteps(plan, label = '') {
+  const { lo, hi } = planMinuteRange(plan.steps);
+  if (!hi) return;
+  const m = String(plan.time).match(/(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?/);
+  assert.ok(m, `${label}: "${plan.time}" carries no number`);
+  const unit = /hour/i.test(plan.time) ? 60 : 1;
+  const low = Number(m[1]) * unit, high = Number(m[2] || m[1]) * unit;
+  // rounding to 5 minutes / half hours is allowed to move each end a little
+  assert.ok(low <= lo + 15 && high >= hi - 15,
+    `${label}: says "${plan.time}" over ${lo}–${hi} min of steps`);
 }
 
 /* ---------- prefs: all 13 leave a trace ---------- */
@@ -124,7 +134,7 @@ test('Quick reset trims to its band; safety and personalized steps survive', () 
      contract: the six surviving steps add up to about an hour, and the
      report printed half that. The effort answer sizes the plan; the time is
      a fact about the steps that ended up on it. */
-  assert.equal(plan.time, bandFor(plan), `"${plan.time}" does not match ${Math.round(planMinutes(plan.steps))} min of steps`);
+  assertTimeCoversSteps(plan, 'Quick 30-minute reset');
 });
 
 test('Full reorganization grows to its band with cited per-zone steps', () => {

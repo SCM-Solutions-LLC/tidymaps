@@ -217,6 +217,10 @@ textarea{resize:vertical;min-height:84px}
 .steps{display:grid;gap:10px}
 .task{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 15px;transition:.2s;display:grid;grid-template-columns:auto 1fr;gap:13px}
 .task.done{background:var(--primary-bg);border-color:var(--primary-line)}
+/* Set aside, not finished: dimmed out of the way, and visibly NOT the state a
+   completed step is in. Skip used to reuse .done, which said the work was done. */
+.task.skipped{opacity:.62;border-style:dashed}
+.task.skipped .tname{text-decoration:line-through;text-decoration-thickness:1px}
 .task .check{width:45px;height:45px;border-radius:50%;border:2px solid var(--line-2);background:var(--surface);display:grid;place-items:center;flex:none;transition:.18s}
 .task .check svg{width:14px;height:14px;color:#fff;opacity:0;transition:.18s}
 .task.done .check{background:var(--primary);border-color:var(--primary)}
@@ -816,6 +820,10 @@ body[data-flow="1"] .site-footer{display:none}
 .wm-unit{font-size:13.5px;color:var(--ink-3);font-weight:600}
 .wm-val{font-size:14.5px;color:var(--ink);font-weight:700;min-width:54px;text-align:right}
 .wz-measure input[type=range]{display:block;width:100%;accent-color:var(--primary);margin-top:10px}
+/* A number we could not use was replaced silently; this says so. Only takes up
+   room when there is something to say. */
+.wm-note{display:none;margin-top:6px;font-size:13.5px;font-weight:600;color:var(--warn-ink)}
+.wm-note.show{display:block}
 .wz-measure-sum{margin:28px 0 0;font-size:15.5px;color:var(--ink-3)}
 .wz-measure-sum b{color:var(--ink)}
 

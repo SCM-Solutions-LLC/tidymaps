@@ -211,6 +211,14 @@ export function applySharedSpace(payload){
   prepareDemoPlanState(state);           // deterministic, media-free reset
   state.shareView=true;
   state.space=null; state.goal=payload.goal||null; state.capture=null;
+  /* The setup goes with it. prepareDemoPlanState leaves the demo's own default
+     behind — 'cabinet' / "Cabinet" — and the report prints that chip as the
+     answer this plan was built from, so a garage shelving plan arrived at the
+     visitor labelled "Cabinet · 3′ × 6′" and the 3D view announced "Shown as
+     your cabinet". Nobody chose it. Cleared, the shared plan's own layout is
+     what the viewer resolves from, which is the only setup information a
+     sanitized payload actually carries. */
+  state.setup=null; state.setupLabel=null; state.setupTouched=false;
   /* space stays null on purpose — it gates the wizard and must not read as the
      visitor's own answer. But the report still needs to know which kind of
      space this plan is for: areaFor(null) falls through to the first kitchen

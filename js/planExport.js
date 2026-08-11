@@ -43,7 +43,21 @@ export function checklistText() {
   const name = spaceName();
   const lines = [`${name} — organizing checklist`, ''];
 
-  if (state.ai && state.ai.summary) lines.push(state.ai.summary, '');
+  /* The screen splits the summary into a lede (built from the user's own
+     measurements, and true) plus bullets scoped by a heading that says these
+     are what a space like this USUALLY looks like. Printed as one paragraph,
+     that scoping vanished and the guesses read as findings — the take-away
+     copy was less honest than the page it came from. */
+  if (state.ai && state.ai.summary) {
+    const sentences = String(state.ai.summary).split(/(?<=[.!?])\s+/).filter(Boolean);
+    const unobserved = state.ai.observed === false && sentences.length > 1;
+    if (unobserved) {
+      lines.push(sentences[0], '', 'What a space like this usually looks like:',
+        ...sentences.slice(1).map((s) => `- ${s}`), '');
+    } else {
+      lines.push(state.ai.summary, '');
+    }
+  }
 
   const steps = planSteps();
   if (steps.length) {

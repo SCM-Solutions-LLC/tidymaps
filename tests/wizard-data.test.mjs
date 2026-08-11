@@ -127,8 +127,31 @@ test('per-space goals map onto plan-engine goal ids', () => {
   assert.equal(goalIdFor("Kids can't reach their things"), 'kid');
   assert.equal(goalIdFor('Always running out of room'), 'capacity');
   assert.equal(goalIdFor('Looks cluttered'), 'clutter');
-  assert.equal(goalIdFor('Hard to keep tidy'), 'unsure');
   assert.equal(goalIdFor(null), null);
+});
+
+/* The bridge recognized five phrasings out of the 28 the wizard offers, and
+   sent the rest to 'unsure' — the branch that does nothing. A step that asks
+   "what bugs you most?" and then discards four answers in five is worse than
+   not asking. */
+test('almost every offered goal reaches the engine, and none is invented', () => {
+  const offered = [...new Set(Object.values(SPACE_CFG).flatMap((c) => c.goals || []))];
+  const unmapped = offered.filter((g) => !goalIdFor(g));
+  assert.ok(offered.length >= 25, 'sanity: the goal vocabulary is still large');
+  assert.ok(unmapped.length <= 3, `too many goals still land as no answer: ${unmapped.join(' | ')}`);
+
+  /* The three that stay unmapped are unmapped on purpose. Each is about method
+     or maintenance, and the engine's remaining ids act on decisions the user did
+     not make: 'minimal' truncates zones, 'own' zeroes the budget, 'shop'
+     promotes every product. They are answered by the step layer instead, which
+     quotes them, so null is the honest answer here rather than 'unsure'. */
+  for (const goal of unmapped) {
+    assert.equal(goalIdFor(goal), null, `${goal} should be null, never a guess`);
+  }
+  for (const destructive of ['minimal', 'own', 'shop']) {
+    const inferred = offered.filter((g) => goalIdFor(g) === destructive && !new RegExp(destructive, 'i').test(g));
+    assert.deepEqual(inferred, [], `${destructive} must be chosen, not inferred`);
+  }
 });
 
 test('styles resolve to real preference strings the personalizer can cite', () => {

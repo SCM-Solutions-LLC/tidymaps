@@ -300,10 +300,16 @@ export function optionsForHousehold(options, household) {
   const list = Array.isArray(options) ? options : [];
   return householdHasKids(household) ? list : list.filter((o) => !isKidOption(o));
 }
+/* These used to promise times: "About 30 minutes", "2–3 hours, no rush". The
+   plan's own Time tile is derived from the steps that end up on it, so the card
+   and the report contradicted each other in the same session — "About 30
+   minutes" produced a plan headed 45–90 min. What this answer actually controls
+   is how much the plan takes on, so that is what it now says. The time is a
+   fact about the finished checklist, and only the checklist gets to state it. */
 export const EFFORT_OPTS = [
-  { label: 'Quick refresh', desc: 'About 30 minutes' },
-  { label: 'Weekend reset', desc: '2–3 hours, no rush' },
-  { label: 'Full overhaul', desc: 'A day or more — do it right' },
+  { label: 'Quick refresh', desc: 'The few changes that matter most' },
+  { label: 'Weekend reset', desc: 'A full pass, no rush' },
+  { label: 'Full overhaul', desc: 'Every zone, done properly' },
 ];
 export const SHOPPING_OPTS = [
   { label: 'Use what I have', desc: 'Build the plan around what’s already in my home.' },
@@ -312,17 +318,39 @@ export const SHOPPING_OPTS = [
 
 /* ---------- Bridges into the existing plan engine ---------- */
 
-/* The plan engine's goal ids predate the per-space goal lists; the first
-   selected goal maps to the closest engine id so applyGoal still works. */
+/* The plan engine's goal ids (js/data.js GOALS) predate the per-space goal
+   lists, and the bridge between them recognized five phrasings out of the 57
+   the wizard offers. The other 52 fell through to 'unsure' — a branch applyGoal
+   handles by doing nothing — so the most specific thing a user could say landed
+   as no answer at all, and every bathroom option but one was silently inert.
+
+   The step layer covers all 57 by matching their own words (GOAL_ADVICE in
+   personalize.js). This is the other half: the summary, the opportunities and
+   the product priorities, which move only through an engine id.
+
+   Two rules kept this honest. Nothing new maps to 'minimal', 'own' or 'shop':
+   those branches truncate zones, zero the budget and promote every product, and
+   inferring them from "Folding never lasts" would act on a decision the user did
+   not make. And an unrecognized answer returns null rather than 'unsure' —
+   "their main goal is unsure" is a claim, and it reaches the model as one. */
+const GOAL_IDS = [
+  // findability: knowing where a thing is, or getting to it in date order
+  [/can'?t find|can’t find|outfits take forever|sets? get separated|lids everywhere|seasonal stuff gets buried|expired|hides in back/i, 'find'],
+  // reach: a child getting their own things without help
+  [/kids can'?t reach|kids can’t reach/i, 'kid'],
+  // capacity: out of room, or too full to close
+  [/running out of room|no room|jam|overflow|avalanche|multiplying/i, 'capacity'],
+  // visual calm: surfaces and floors carrying what should be put away
+  [/cluttered|junk drawer|jumble|counters? (?:is|are) always full|pile (?:up|zone)|is buried|small parts everywhere|cords tangle/i, 'clutter'],
+  [/minimal/i, 'minimal'],
+  [/^i'?m not sure|suggest the best plan/i, 'unsure'],
+];
+
 export function goalIdFor(goalText) {
-  const t = String(goalText || '').toLowerCase();
+  const t = String(goalText || '').trim();
   if (!t) return null;
-  if (/can't find|can’t find/.test(t)) return 'find';
-  if (/kids can't reach|kids can’t reach/.test(t)) return 'kid';
-  if (/running out of room|no room/.test(t)) return 'capacity';
-  if (/cluttered/.test(t)) return 'clutter';
-  if (/minimal/.test(t)) return 'minimal';
-  return 'unsure';
+  for (const [re, id] of GOAL_IDS) if (re.test(t)) return id;
+  return null;
 }
 
 /* Styles that have a matching engine preference get it, so deterministic

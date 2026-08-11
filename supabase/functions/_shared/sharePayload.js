@@ -11,6 +11,12 @@ const PLAN_FIELDS = [
   'spaceType', 'summary', 'problems', 'opportunities',
   'map', 'geometry', 'layout', 'safetyNotes', 'features', 'steps', 'cats',
   'existingLede', 'existing', 'dontBuy', 'cost', 'time',
+  /* Whether anything actually looked at the space. Left off the allowlist, it
+     defaulted to true on the way in (normalizeAi reads `observed !== false`),
+     so a plan the owner sees headed "What usually goes wrong in a space like
+     this" reached the visitor as "Main organization problems" — the scoping
+     stripped by the act of sharing, and the guesses presented as findings. */
+  'observed',
 ];
 
 export function sanitizeSharedPlan(plan) {
