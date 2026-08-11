@@ -39,9 +39,9 @@
 
 <header class="appbar">
   <div class="appbar-inner">
-    <a class="brand" href="#" onclick="go('landing');return false;">
+    <a class="brand" href="#" onclick="go('landing');return false;" aria-label="TidyMap — home">
       <span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
-      TidyMap
+      <span class="brand-word">TidyMap</span>
     </a>
     <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="document.body.classList.toggle('nav-open');this.setAttribute('aria-expanded',document.body.classList.contains('nav-open'))">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -507,7 +507,7 @@
     <div class="report-main">
       <!-- 01. Summary -->
       <section class="chapter" id="ch-summary">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Summary</h3></div></div>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Summary</h3></div></div>
         <p class="summary-lede" id="res-summary"></p>
         <ul class="summary-points" id="res-summary-points"></ul>
         <div class="kpis" id="res-kpis"></div>
@@ -517,7 +517,7 @@
         </div>
         <div class="grid grid-2" style="margin-top:20px">
           <div>
-            <div class="small" style="font-weight:600;margin-bottom:8px;color:var(--clay)">Main organization problems</div>
+            <div class="small" style="font-weight:600;margin-bottom:8px;color:var(--warn-ink)">Main organization problems</div>
             <ul class="problems" id="res-problems"></ul>
           </div>
           <div>
@@ -529,14 +529,14 @@
       </section>
 
       <!-- 02. Organization map -->
-      <section class="chapter" id="ch-map">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Where things go</h3></div></div>
+      <section class="chapter collapsed" id="ch-map">
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Where things go</h3></div></div>
         <div id="res-map"></div>
       </section>
 
       <!-- 03. Use existing first -->
-      <section class="chapter" id="ch-reuse">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Use what you already have first</h3></div></div>
+      <section class="chapter collapsed" id="ch-reuse">
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Use what you already have first</h3></div></div>
         <div class="card pad" style="background:var(--primary-bg);border-color:var(--primary-line)">
           <p style="margin:0 0 14px;font-size:15px;color:var(--ink-2)" id="res-existing-lede"></p>
           <div class="feat-grid" id="res-existing"></div>
@@ -549,7 +549,7 @@
 
       <!-- 04. Move-by-move -->
       <section class="chapter" id="ch-steps">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Step-by-step</h3>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Step-by-step</h3>
           <p class="ch-sub">Work top to bottom. Mark steps complete as you go.</p></div></div>
         <div class="progwrap">
           <div class="lab"><span id="prog-text">Step 0 of 9 complete</span><span id="prog-pct" class="muted">0%</span></div>
@@ -570,8 +570,8 @@
       </section>
 
       <!-- 05. Before/After -->
-      <section class="chapter" id="ch-after">
-        <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>What it could look like</h3>
+      <section class="chapter collapsed" id="ch-after">
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>What it could look like</h3>
           <p class="ch-sub">An illustrated layout of the recommended plan. Each shelf is a labeled zone.</p></div></div>
 
         <!-- Photorealistic preview: the user's own photo, reorganized by AI -->
@@ -615,9 +615,9 @@
       </section>
 
       <!-- 06. Optional upgrades + shopping -->
-      <section class="chapter" id="ch-shop">
+      <section class="chapter collapsed" id="ch-shop">
         <div id="res-upgrades-wrap" class="hide">
-          <div class="ch-head" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',!this.parentElement.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Optional purchases</h3>
+          <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Optional purchases</h3>
             <p class="ch-sub">Only because you said you&rsquo;re open to buying storage products. The $0 plan above works without any of these.</p></div></div>
           <div id="res-upgrades"></div>
           <div class="callout warn" style="margin-top:8px">
@@ -636,7 +636,7 @@
               <button class="btn btn-ghost btn-sm" onclick="downloadShoppingList()">Download list</button>
               <button class="btn btn-ghost btn-sm" onclick="sendShoppingList()">Send list</button>
               <button class="btn btn-ghost btn-sm" onclick="uncheckAllUpgrades()">Remove all upgrades</button>
-              <button class="btn btn-ghost btn-sm" onclick="setUpgrades(false);toast('Switched to the $0 plan')">Use $0 plan instead</button>
+              <button class="btn btn-ghost btn-sm" onclick="useZeroPlan()">Use $0 plan instead</button>
             </div>
           </div>
         </div>
@@ -858,7 +858,9 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- Every confirmation and every error in the app is announced through this one
+     element. Without a live region none of them reached a screen reader. -->
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script type="module" src="js/main.js"></script>
 </body>

@@ -14,6 +14,7 @@ import { runDemo, requestInvite, initLanding, navHome } from './screens/landing.
 import { openProducts } from './screens/products.js';
 import { handleFiles } from './screens/capture.js';
 import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, buildResults, applySavedProgress, pickProduct, generateAfter, retryAnalysis } from './screens/results.js';
+import { useZeroPlan } from './screens/customize.js';
 import { submitFeedback, sendRate } from './screens/feedback.js';
 import { downloadShoppingList, sendShoppingList } from './planExport.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
@@ -25,7 +26,7 @@ import { initializeRoute } from './startup.js';
    (in index.html and in injected template strings) */
 Object.assign(window, {
   go, goBack, goNext, restart,
-  toast, uncheckAllUpgrades, setUpgrades,
+  toast, uncheckAllUpgrades, setUpgrades, useZeroPlan,
   runDemo, requestInvite, submitFeedback, sendRate, navHome, openProducts,
   downloadShoppingList, sendShoppingList,
   handleFiles,

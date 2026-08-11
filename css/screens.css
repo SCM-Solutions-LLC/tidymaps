@@ -97,7 +97,9 @@
 .v3d-shelf-heights{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}
 .v3d-shelf-height{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 .v3d-shelf-height span{font-size:12px;margin-bottom:5px}
-.v3d-fit-note{margin:10px 0 0;padding:9px 10px;border-radius:7px;background:var(--warn-bg);color:var(--warn)}
+.v3d-fit-note{margin:10px 0 0;padding:9px 10px;border-radius:7px;background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line)}
+/* the harder case: selected organizers that cannot be placed at all */
+.v3d-fit-note.danger{background:var(--danger-bg);color:var(--danger-ink);border-color:var(--danger-line)}
 
 .v3d-body{display:grid;gap:24px;margin-top:20px}
 @media(min-width:880px){.v3d-body{grid-template-columns:1fr 280px}}

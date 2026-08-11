@@ -154,7 +154,31 @@ function renderList(){
 /* ---------- Entry ---------- */
 export async function buildProducts(){
   if(built) return;
-  catalog = await loadCatalog();
+  // openProducts() navigates here first and then builds, so the screen is blank
+  // for the length of the catalog fetch. Fill it with the shape of what's coming.
+  const groupsEl = document.getElementById('prod-groups');
+  if(groupsEl){
+    groupsEl.setAttribute('aria-busy','true');
+    groupsEl.innerHTML = `<div class="parea" aria-hidden="true" style="padding:16px">
+        <span class="skeleton skeleton-text short" style="height:16px"></span>
+        <ul class="sk-list" style="margin-top:14px">
+          <li class="sk-prod"><span class="skeleton sk-thumb"></span>
+            <span class="sk-lines"><span class="skeleton skeleton-text long"></span>
+            <span class="skeleton skeleton-text short"></span></span></li>
+        </ul>
+      </div>`.repeat(2);
+  }
+  try{
+    catalog = await loadCatalog();
+  }catch(e){
+    if(groupsEl){
+      groupsEl.removeAttribute('aria-busy');
+      groupsEl.innerHTML = '<p class="load-failed">We could not load the product library just now. '
+        + 'Please try again in a moment.</p>';
+    }
+    return;
+  }
+  if(groupsEl) groupsEl.removeAttribute('aria-busy');
   built = true;
   renderFilters();
   renderList();

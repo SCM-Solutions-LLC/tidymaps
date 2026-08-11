@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { expandChapters } from './helpers.mjs';
 
 /* E2E matrix: drive the real 12-step wizard (room → area → setup → measure →
    photos → household → contents → goals → style → effort → shopping → review)
@@ -237,6 +238,7 @@ test('product links are https and point at known retailers', async ({ page }) =>
   // test used to lean on was the bug), so links only exist when asked for.
   await driveWizard(page, 'pantry', { shopping: 'Open to a few ideas' });
   await expect(page.locator('#res-upgrades-wrap')).not.toHaveClass(/hide/);
+  await expandChapters(page);   // the purchases chapter starts folded
   await expect(page.locator('#res-upgrades a[href]').first()).toBeVisible();
   const hrefs = await page.$$eval('#res-upgrades a[href]', (as) => as.map((a) => a.href));
   const allowed = /^https:\/\/([a-z0-9-]+\.)*(amazon\.com|target\.com|walmart\.com|containerstore\.com|ikea\.com)\//i;

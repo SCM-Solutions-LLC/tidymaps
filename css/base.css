@@ -53,9 +53,15 @@ p{margin:0 0 1em}
 }
 .brand{
   font-weight:800;font-size:21px;letter-spacing:-.025em;min-width:0;color:var(--ink);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  display:inline-flex;align-items:center;gap:8px;
+  display:inline-flex;align-items:center;gap:8px;flex:none;
 }
+/* The wordmark used to be a bare text node inside the flex row, so the
+   ellipsis applied to the whole row and sliced the name mid-word on a phone —
+   "Tidy" plus half a letter. Below the crowding point the name steps aside for
+   the icon, which keeps the mark intact; the link is still named for
+   assistive tech via aria-label. */
+.brand-word{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:430px){ .brand-word{display:none} }
 .brand-icon{
   width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;flex:none;

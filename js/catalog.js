@@ -62,8 +62,10 @@ export function fitBadge(fit){
   const depth=state.dims && state.dims.d_in;
   switch(fit){
     case 'fits':   return {cls:'green', txt: depth ? `Fits your ${depth}" shelf depth` : 'Fits the space we detected'};
-    case 'tight':  return {cls:'warn',  txt:'Tight fit — double-check'};
-    case 'no-fit': return {cls:'warn',  txt:'Too big for this space'};
+    // "check this" and "this will not fit" are different answers and no longer
+    // share a colour — the words carry it too, so the state never rests on hue
+    case 'tight':  return {cls:'warn',   txt:'Tight fit — double-check'};
+    case 'no-fit': return {cls:'danger', txt:'Too big for this space'};
     default:       return {cls:'',      txt:'Add measurements to check fit'};
   }
 }

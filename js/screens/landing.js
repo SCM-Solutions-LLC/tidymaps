@@ -1,6 +1,6 @@
 import { prepareDemoPlanState } from '../state.js';
 import { state } from '../state.js';
-import { toast } from '../ui.js';
+import { toast, scrollIntoViewSafely } from '../ui.js';
 import { go } from '../router.js';
 import { buildResults } from './results.js';
 import { getDemoScenario } from '../demo-scenarios.js';
@@ -87,7 +87,7 @@ export function navHome(hash){
   document.body.classList.remove('nav-open');
   if(document.body.dataset.screen !== 'landing') go('landing');
   const el = document.querySelector(hash);
-  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  scrollIntoViewSafely(el);
   return false;
 }
 

@@ -204,9 +204,16 @@ export function buildResults(){
   });
   renderAfter(state.afterMode);
 
-  // upgrades / shopping — catalog-matched, dimension-aware
+  // upgrades / shopping — catalog-matched, dimension-aware.
+  // The catalog is a separate fetch, so this section is empty until it lands
+  // and then N product rows drop in at once. Reserve the space first, and give
+  // the wait an end: loadCatalog swallows its own errors into an empty list, so
+  // without this the section would sit blank under a visible heading forever.
   setUpgrades(state.upgrades);
-  loadCatalog().then(()=>{ initShopping(); renderUpgrades(); });
+  showUpgradesSkeleton();
+  loadCatalog()
+    .then(()=>{ initShopping(); renderUpgrades(); })
+    .catch(()=>{ showUpgradesFailed(); });
 
   // photorealistic before/after (only when we have the user's photo)
   setupAfterPhoto();
@@ -214,6 +221,54 @@ export function buildResults(){
   // the pay-for-it question, asked here because nobody reaches the screen
   // that used to be its only home
   buildRate();
+
+  initTocSpy();
+}
+
+/* The chapter nav has always had a styled "current chapter" state that nothing
+   ever switched on. Four of the six chapters now start folded, so knowing where
+   you are — and being able to open a chapter straight from the nav — is what
+   makes the folding safe rather than hiding things. */
+let tocSpy=null;
+function initTocSpy(){
+  const nav=document.querySelector('.report-toc');
+  if(!nav) return;
+  const links=[...nav.querySelectorAll('a[href^="#ch-"]')];
+  if(!links.length) return;
+
+  // Opening from the nav also unfolds the chapter, otherwise the link jumps to
+  // a heading with nothing under it.
+  nav.onclick=(e)=>{
+    const a=e.target.closest('a[href^="#ch-"]');
+    if(!a) return;
+    const ch=document.querySelector(a.getAttribute('href'));
+    if(!ch) return;
+    if(ch.classList.contains('collapsed')){
+      ch.classList.remove('collapsed');
+      const head=ch.querySelector('.ch-head');
+      if(head) head.setAttribute('aria-expanded','true');
+    }
+  };
+
+  if(tocSpy) tocSpy.disconnect();
+  if(typeof IntersectionObserver!=='function') return;
+  const mark=(id)=>links.forEach(a=>{
+    const on=a.getAttribute('href')==='#'+id;
+    a.classList.toggle('here', on);
+    if(on) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current');
+  });
+  const seen=new Map();
+  tocSpy=new IntersectionObserver((entries)=>{
+    entries.forEach(en=>seen.set(en.target.id, en));
+    // the topmost chapter currently on screen wins
+    const visible=[...seen.values()].filter(en=>en.isIntersecting)
+      .sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
+    if(visible.length) mark(visible[0].target.id);
+  }, { rootMargin:'-25% 0px -60% 0px', threshold:0 });
+  links.forEach(a=>{
+    const ch=document.querySelector(a.getAttribute('href'));
+    if(ch) tocSpy.observe(ch);
+  });
 }
 
 /* ---------- Photorealistic after-render (Gemini via edge function) ---------- */
@@ -331,8 +386,35 @@ function persistShopping(){
   else persistGuestDraft();
 }
 
+/* Placeholder rows shaped like the product rows that replace them, so the
+   chapter does not grow under the reader while they are looking at it. Lives
+   inside #res-upgrades itself: the shopping chapter's header sits in a wrapper
+   rather than the chapter, so anything placed higher would not collapse with
+   it. */
+function showUpgradesSkeleton(){
+  const wrap=document.getElementById('res-upgrades');
+  if(!wrap) return;
+  wrap.setAttribute('aria-busy','true');
+  const row=`<li class="sk-prod">
+      <span class="skeleton sk-thumb"></span>
+      <span class="sk-lines">
+        <span class="skeleton skeleton-text long"></span>
+        <span class="skeleton skeleton-text short"></span>
+      </span>
+    </li>`;
+  wrap.innerHTML=`<ul class="sk-list" aria-hidden="true">${row.repeat(3)}</ul>`;
+}
+function showUpgradesFailed(){
+  const wrap=document.getElementById('res-upgrades');
+  if(!wrap) return;
+  wrap.removeAttribute('aria-busy');
+  wrap.innerHTML='<p class="load-failed">We could not load the product list just now. '
+    + 'The plan above is complete without it — everything it asks you to do uses what you already own.</p>';
+}
+
 export function renderUpgrades(){
   const needs=activeProductNeeds();
+  document.getElementById('res-upgrades').removeAttribute('aria-busy');
   document.getElementById('res-upgrades').innerHTML=needs.map((need,i)=>{
     const sel=state.shopping[i];
     const options=matchProducts(need).filter(m=>m.fit!=='no-fit').slice(0,4);
