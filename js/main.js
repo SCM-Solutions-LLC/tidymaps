@@ -6,7 +6,7 @@ import { state, restoreGuestDraft, applySharedSpace } from './state.js';
 import { fetchSharedSpace } from './api.js';
 import { normalizeAi } from './plan.js';
 import { track, telemetryStatus } from './telemetry.js';
-import { setRail, go, goNext, goBack, restart, getCurrentScreen } from './router.js';
+import { setRail, go, goNext, goBack, restart, getCurrentScreen, initHistory } from './router.js';
 import { getSession } from './auth.js';
 import { fetchSpace, applyLoadedSpace } from './db.js';
 import { buildAll } from './screens/index.js';
@@ -40,6 +40,9 @@ Object.assign(window, {
 
 buildAll();
 initLanding();
+// Before any restore below can navigate, so the session's first history entry
+// names the landing page rather than carrying null state.
+initHistory();
 setRail();
 setAppbarHeightVar();
 setFootHeightVar();

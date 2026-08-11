@@ -365,6 +365,87 @@ export function scrubSurfaceProse(plan, archetype) {
   return plan;
 }
 
+/* The archetype's own primary surface, and a rationale that is true of it.
+   Used when a line has to be replaced rather than reworded. */
+const NOUN_SURFACE = { shelf: 'shelf', drawer: 'drawer', bench: 'worktop', 'rack deck': 'shelf' };
+const NOUN_ROLE = { shelf: 'mid', drawer: 'drawer', bench: 'surface', 'rack deck': 'deck' };
+const primaryNoun = (archetype) => PRIMARY_NOUN[archetype] || 'shelf';
+
+/* ---------- The same honesty check, for a plan that came from photos ----------
+
+   projectOntoArchetype is only reachable from getDemoScenario, so everything
+   above protected the offline path and nothing at all in production. A model
+   plan could describe a pegboard on a setup drawn without one.
+
+   The check it needs is not the same one, though, and running the projection
+   would be worse than the bug: those map rows are levels somebody photographed,
+   and replacing them with a template deletes what the user can see in their own
+   picture. So the structure is left exactly as the model read it, and only the
+   language is brought into line.
+
+   Into line with WHAT is the load-bearing part. The archetype passed here is
+   whatever resolveLayout settled on — which is the shape the 3D view draws. If
+   the photos won that decision, the model's own words already match and this is
+   very nearly a no-op. If the user's setup card won, the report stops describing
+   a space the picture beside it does not show. Either way the two agree, which
+   is the actual guarantee; picking a winner and applying it in one place only is
+   how they came apart. */
+export function enforceArchetypeHonesty(plan, archetype) {
+  if (!plan || !archetype || !ARCHETYPE_SURFACES[archetype]) return plan;
+  const have = new Set(ARCHETYPE_SURFACES[archetype]);
+  const fix = (t) => rewriteForSurfaces(t, archetype);
+  const noun = primaryNoun(archetype);
+  const fallbackWhy = ROLE_WHY[NOUN_ROLE[noun]] || ROLE_WHY.mid;
+
+  /* Drafted, then committed only if the result is still a plan. A wholesale
+     disagreement — the model read a workbench where the card says drawer bank —
+     scrubs away most of the steps, and a report with two steps left in it is a
+     worse answer than one that describes the wrong furniture. When that
+     happens the model's reading is kept whole and the conflict is recorded
+     rather than resolved by deletion. It should be rare: the edge function is
+     told to classify to the chosen setup when the user picked one. */
+  const draft = structuredClone(plan);
+  const commit = () => {
+    const before = (plan.steps || []).length;
+    const after = (draft.steps || []).length;
+    if (before && after < Math.ceil(before / 2)) {
+      plan.archetypeConflict = archetype;
+      return plan;
+    }
+    Object.assign(plan, draft);
+    delete plan.archetypeConflict;
+    return plan;
+  };
+
+  scrubSurfaceProse(draft, archetype);
+
+  draft.map = (draft.map || []).map((row) => ({
+    ...row,
+    /* Never dropped, only reworded. A level the model saw is a level that
+       exists; the sentence about it can be wrong without the shelf being. */
+    zone: fix(row.zone),
+    why: mentionsMissingSurface(row.why, archetype) ? fallbackWhy : fix(row.why),
+    level: fix(row.level),
+    /* A row's surface decides how its contents are drawn, so 'rod' left on a
+       drawer bank hangs shirts inside a tool chest. Point it at the shape's own
+       surface rather than at nothing: null would fall through to the layout's
+       guess, which is the same answer by a longer route. */
+    surface: (row.surface && !have.has(row.surface))
+      ? (NOUN_SURFACE[noun] || 'shelf') : row.surface,
+    safety: row.safety && row.safety.why
+      ? { ...row.safety, why: fix(row.safety.why) } : row.safety,
+  }));
+
+  draft.productNeeds = (draft.productNeeds || [])
+    .filter((p) => !mentionsMissingSurface(p.purpose, archetype))
+    .filter((p) => !(p.type === 'door-rack' && !have.has('door')))
+    .filter((p) => !(p.type === 'hook-rack' && !have.has('pegboard')))
+    .map((p) => ({ ...p, purpose: fix(p.purpose) }));
+
+  alignTargetZones(draft);
+  return commit();
+}
+
 /* True when the line is unsalvageable for this archetype. */
 export function mentionsMissingSurface(text, archetype) {
   if (!text) return false;

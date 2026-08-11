@@ -312,17 +312,39 @@ export const SHOPPING_OPTS = [
 
 /* ---------- Bridges into the existing plan engine ---------- */
 
-/* The plan engine's goal ids predate the per-space goal lists; the first
-   selected goal maps to the closest engine id so applyGoal still works. */
+/* The plan engine's goal ids (js/data.js GOALS) predate the per-space goal
+   lists, and the bridge between them recognized five phrasings out of the 57
+   the wizard offers. The other 52 fell through to 'unsure' — a branch applyGoal
+   handles by doing nothing — so the most specific thing a user could say landed
+   as no answer at all, and every bathroom option but one was silently inert.
+
+   The step layer covers all 57 by matching their own words (GOAL_ADVICE in
+   personalize.js). This is the other half: the summary, the opportunities and
+   the product priorities, which move only through an engine id.
+
+   Two rules kept this honest. Nothing new maps to 'minimal', 'own' or 'shop':
+   those branches truncate zones, zero the budget and promote every product, and
+   inferring them from "Folding never lasts" would act on a decision the user did
+   not make. And an unrecognized answer returns null rather than 'unsure' —
+   "their main goal is unsure" is a claim, and it reaches the model as one. */
+const GOAL_IDS = [
+  // findability: knowing where a thing is, or getting to it in date order
+  [/can'?t find|can’t find|outfits take forever|sets? get separated|lids everywhere|seasonal stuff gets buried|expired|hides in back/i, 'find'],
+  // reach: a child getting their own things without help
+  [/kids can'?t reach|kids can’t reach/i, 'kid'],
+  // capacity: out of room, or too full to close
+  [/running out of room|no room|jam|overflow|avalanche|multiplying/i, 'capacity'],
+  // visual calm: surfaces and floors carrying what should be put away
+  [/cluttered|junk drawer|jumble|counters? (?:is|are) always full|pile (?:up|zone)|is buried|small parts everywhere|cords tangle/i, 'clutter'],
+  [/minimal/i, 'minimal'],
+  [/^i'?m not sure|suggest the best plan/i, 'unsure'],
+];
+
 export function goalIdFor(goalText) {
-  const t = String(goalText || '').toLowerCase();
+  const t = String(goalText || '').trim();
   if (!t) return null;
-  if (/can't find|can’t find/.test(t)) return 'find';
-  if (/kids can't reach|kids can’t reach/.test(t)) return 'kid';
-  if (/running out of room|no room/.test(t)) return 'capacity';
-  if (/cluttered/.test(t)) return 'clutter';
-  if (/minimal/.test(t)) return 'minimal';
-  return 'unsure';
+  for (const [re, id] of GOAL_IDS) if (re.test(t)) return id;
+  return null;
 }
 
 /* Styles that have a matching engine preference get it, so deterministic

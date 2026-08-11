@@ -12,6 +12,8 @@ import { syncCategoriesToResults } from './results.js';
 import { track } from '../telemetry.js';
 import { getDemoScenario } from '../demo-scenarios.js';
 import { scenarioKeyFor, areaFor } from '../wizard-data.js';
+import { resolveLayout } from '../layout.js';
+import { enforceArchetypeHonesty } from '../setupStructure.js';
 
 function showFrames(frames){
   const fw=document.getElementById('frames-wrap');
@@ -100,6 +102,17 @@ export function runLoading(){
         }
       }
       const { plan, model } = await analyzeSpace(images.slice(0,6), buildAnalysisContext());
+      /* Bring the model's words into line with the shape the viewer will draw,
+         BEFORE normalizing: the honesty pass reads the plan contract's own field
+         names (task/why, title/detail), which normalizeAi renames to the render
+         shape (t/w, ft/fd), so running it afterwards silently skips the steps
+         and the existing-kit cards — the two places the leak was loudest. */
+      const drawn = resolveLayout({
+        ai: plan, setup: state.setup, setupTouched: state.setupTouched,
+        aiFromPhotos: true, scenarioKey: scenarioKeyFor(state.space, state.setup),
+        map: plan && plan.map,
+      });
+      enforceArchetypeHonesty(plan, drawn.type);
       state.ai = normalizeAi(plan);
       state.planMeta = { model, source:'ai', analyzedAt: Date.now() };
     })().catch(e=>{ state.aiError = e.message || 'Analysis failed'; state.ai=null; state.planMeta=null; });
