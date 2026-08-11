@@ -255,6 +255,25 @@ export function scenarioKeyFor(spaceId, setupId) {
 /* ---------- People, effort, shopping ---------- */
 export const KID_AGES = ['Baby', 'Toddler', 'Big kid', 'Teen'];
 
+/* The analysis prompt reasons in numbers — "heavy, chemical, sharp or fragile
+   items must NEVER be placed below 48 inches when kids ages 0-9 are present",
+   "out of reach of your 3-year-old" — while the wizard ships these four words.
+   The model was left to guess the mapping, and "Big kid" is not a guess anyone
+   should have to make. Sent alongside the labels, so the rule has something to
+   match and the plan can still speak in the user's vocabulary. */
+export const KID_AGE_YEARS = {
+  'Baby': [0, 1],
+  'Toddler': [1, 4],
+  'Big kid': [5, 12],
+  'Teen': [13, 17],
+};
+
+export function kidAgeYears(ages) {
+  const spans = (ages || []).map(a => KID_AGE_YEARS[a]).filter(Boolean);
+  if (!spans.length) return null;
+  return { min: Math.min(...spans.map(s => s[0])), max: Math.max(...spans.map(s => s[1])) };
+}
+
 /* Reach needs. state.household.mobility has always been declared, reset,
    forwarded to the model by buildAnalysisContext(), and acted on by both the
    analysis prompt and the demo scenarios — but nothing in the wizard ever

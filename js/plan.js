@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { iconFor } from './icons.js';
 import { MAP, DEMO_GEOMETRY, DEMO_SAFETY_NOTES, DEMO_PRODUCT_NEEDS } from './data.js';
 import { normalizeLayout, surfaceFromIcon, SURFACES, SETUP_ARCHETYPE } from './layout.js';
+import { kidAgeYears } from './wizard-data.js';
 
 /* ============================================================
    Plan contract v2: raw model JSON -> the exact shapes the UI renders.
@@ -171,7 +172,12 @@ export function buildAnalysisContext(){
        six got the same plan, while the header chip dutifully echoed "6 adults"
        back, which is how an answer looks alive while being discarded. */
     adults:Math.max(0, Number(h.adults)||0),
-    kids:{present:h.kids.present==='yes', count:Math.max(0, Number(h.kidCount)||0), ages:h.kids.ages.slice()},
+    /* `ageYears` alongside `ages`: the prompt's hard safety rules are written in
+       numbers ("kids ages 0-9", "your 3-year-old") and the wizard collects four
+       words, so the model was being asked to guess what a "Big kid" is before it
+       could apply a rule that decides where the bleach goes. */
+    kids:{present:h.kids.present==='yes', count:Math.max(0, Number(h.kidCount)||0),
+      ages:h.kids.ages.slice(), ageYears:kidAgeYears(h.kids.ages)},
     pets:{present:h.pets.present==='yes', count:Math.max(0, Number(h.petCount)||0), types:h.pets.types.slice()},
     mobility:h.mobility.slice(),
     notes,
