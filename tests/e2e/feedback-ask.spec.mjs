@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { expandChapters } from './helpers.mjs';
 
 /* The feedback ask on the report.
 
@@ -64,6 +65,7 @@ test('an unanswered report still leaves the full feedback screen working', async
    save screen, one screen earlier. */
 test('the shopping card downloads a real list instead of claiming it saved one', async ({ page }) => {
   await toSamplePlan(page);
+  await expandChapters(page);   // the purchases chapter starts folded
   await page.locator('#res-shopping').scrollIntoViewIfNeeded();
   const download = page.waitForEvent('download');
   await page.click('text=Download list');

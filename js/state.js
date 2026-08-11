@@ -7,6 +7,9 @@ export const state = {
   // true once the user actually picks a setup card; setArea() only preselects
   // one, and a preselection must not outrank what the photos show
   setupTouched:false,
+  // set when a Review "Edit" link sends you back to a step, so Continue can
+  // return you to Review instead of walking the rest of the wizard again
+  returnToReview:false,
   goals:[],        // per-space goal texts ("What bugs you most?")
   styles:[],       // per-space organizing styles ("How do you like things kept?")
   shoppingPref:'Use what I have',   // 'Use what I have' | 'Open to a few ideas'
@@ -208,6 +211,12 @@ export function applySharedSpace(payload){
   prepareDemoPlanState(state);           // deterministic, media-free reset
   state.shareView=true;
   state.space=null; state.goal=payload.goal||null; state.capture=null;
+  /* space stays null on purpose — it gates the wizard and must not read as the
+     visitor's own answer. But the report still needs to know which kind of
+     space this plan is for: areaFor(null) falls through to the first kitchen
+     area, so every shared plan was illustrated with a pantry regardless of what
+     it was actually about. Keep the type separately, for display only. */
+  state.sharedSpaceId=payload.space_type||null;
   state.upgrades=false;                  // sanitized plans carry no product needs
   state.dims=payload.dims||null;
   state.sharedName=payload.name||'A TidyMap plan';

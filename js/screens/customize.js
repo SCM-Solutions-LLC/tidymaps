@@ -36,6 +36,35 @@ function dropProductNeeds(){
   state.shopping=[];
 }
 
+/* A "quick version" is five moves. Kept as a constant so the checklist, the
+   Time KPI and the copy that promises it can never drift apart. */
+const SHORT_PLAN_STEPS = 5;
+function shortPlanTime(steps){
+  // sum the per-step minute ranges the checklist itself shows
+  let lo=0, hi=0;
+  for(const s of steps){
+    const m=String(s.m||s.time||'').match(/(\d+)(?:\s*[–-]\s*(\d+))?/);
+    if(!m) continue;
+    lo+=Number(m[1]); hi+=Number(m[2]||m[1]);
+  }
+  if(!lo) return state.ai.time;
+  return lo===hi ? `${lo} min` : `${lo}–${hi} min`;
+}
+
+/* The report's "Use $0 plan instead" button only hid the panel, so the Cost KPI
+   above it went on quoting a range for products the plan no longer recommended.
+   It now does exactly what the Adjust screen's "Remove storage product
+   recommendations" does. */
+export function useZeroPlan(){
+  dropProductNeeds();
+  setUpgrades(false);
+  buildResults();
+  setUpgrades(false);          // buildResults re-reads state.upgrades
+  if(getSession()) updateSpacePatch({ plan: state.ai, shopping: state.shopping });
+  else persistGuestDraft();
+  toast('Switched to the $0 plan');
+}
+
 /* ---------- Customize ---------- */
 export function buildCustomize(){
   const wrap=document.getElementById('customize-opts'); wrap.innerHTML='';
@@ -85,7 +114,22 @@ export function applyCustomize(id,t,d,b,wrap){
 
   const baseSteps=(state.ai&&state.ai.steps.length)?state.ai.steps:STEPS;
   if(id==='fewer'||id==='faster'){
-    renderSteps(baseSteps.slice(0,5));
+    /* These two used to only re-render the checklist: state.ai was never
+       touched, nothing was saved, and the very next adjustment called
+       buildResults() and silently brought all the steps back. The Time KPI and
+       the effort chip went on quoting the full plan the whole time, directly
+       under a banner promising a 30-minute version. Commit the change instead. */
+    if(state.ai && baseSteps.length>SHORT_PLAN_STEPS){
+      state.ai.steps=baseSteps.slice(0,SHORT_PLAN_STEPS);
+      state.ai.time=shortPlanTime(state.ai.steps);
+      state.ai.revisions=[...(state.ai.revisions||[]), id];
+      buildResults();
+      if(getSession()) updateSpacePatch({ plan: state.ai });
+      else persistGuestDraft();
+    }else{
+      // already short — say so rather than claiming a revision
+      alreadyDone=true;
+    }
   }else if(!revised&&!shoppingChanged){
     renderSteps(baseSteps);
   }

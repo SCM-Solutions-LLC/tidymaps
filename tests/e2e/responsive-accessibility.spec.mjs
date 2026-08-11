@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { expandChapters } from './helpers.mjs';
 
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -15,6 +16,10 @@ test('sample plan fits a narrow phone viewport', async ({ page }) => {
     content: document.documentElement.scrollWidth,
   }));
   expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
+  // Reference chapters start folded, so open them the way a reader would.
+  // A hidden element reports its declared grid tracks rather than the resolved
+  // ones, which would measure the desktop layout instead of the phone one.
+  await expandChapters(page);
   const productColumns = await page.locator('.prod').first().evaluate((card) =>
     getComputedStyle(card).gridTemplateColumns.trim().split(/\s+/).length,
   );

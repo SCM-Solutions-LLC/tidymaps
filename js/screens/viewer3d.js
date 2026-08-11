@@ -162,6 +162,12 @@ function rebuildScene(){
 
 export async function openViewer3d(){
   go('viewer3d');
+  /* A share-link visitor can look but not write. The report already hides its
+     owner-only controls this way; the viewer had no equivalent, so Save
+     arrangement was live for someone whose writes are blocked further down —
+     it reported "Arrangement saved" and stored nothing at all. */
+  document.querySelectorAll('#screen-viewer3d [data-owner-only]')
+    .forEach(b=>b.classList.toggle('hide', !!state.shareView));
   const status=document.getElementById('v3d-status');
   if(view) return;
   restoreArrangementOptions();
@@ -254,7 +260,15 @@ function updateStatus(geometry, resolved, sourceGeometry=geometry){
     scenario:'from the space type.',
     default:'default layout.',
   };
-  note+=' Shown as '+label+' — '+(sourceDesc[resolved.source]||sourceDesc.default);
+  /* When the shape came from the setup the user picked, name their choice.
+     "Shown as Shelves — from your setup choice" printed the archetype instead,
+     so someone who chose "Reach-in" was told it was Shelves, and a Butler's
+     pantry was labelled "Counter + uppers" — the name of a card in a different
+     room they never saw. It reads as though the answer was lost. */
+  const chosen = resolved.source==='setup' && state.setupLabel;
+  note += chosen
+    ? ` Shown as your ${state.setupLabel.toLowerCase()}, drawn as ${label}.`
+    : ' Shown as '+label+' — '+(sourceDesc[resolved.source]||sourceDesc.default);
   if(resolved.type==='under-sink') note+=sourceGeometry.height!==geometry.height
     ?` Vanity shown at ${geometry.height} inches so the fixture stays realistic.`
     :' Vanity height is limited to a realistic 28–42 inches.';
@@ -272,6 +286,10 @@ function markDirty(){
 
 export function saveArrangement(){
   if(!view) return;
+  /* Defence in depth behind the hidden button: persistGuestDraft early-returns
+     in a share view and updateSpacePatch no-ops without an activeSpaceId, so
+     reaching here would have toasted success over two silent no-ops. */
+  if(state.shareView){ toast('This is a shared plan — start your own to save changes.'); return; }
   const {geometry}=currentSceneInput();
   state.arrangement={
     version:2,geometry,placements:view.placements(),
@@ -320,6 +338,16 @@ function populateOrganizers(){
   const section=document.getElementById('v3d-organizers');
   const fitNote=document.getElementById('v3d-fit-note');
   if(!wrap||!section||!view) return;
+  /* Someone who answered "Use what I have" was still shown "12 × Clear bins"
+     under "These match your plan", with an amber warning that nine groups did
+     not fit — products they never asked for and cannot act on. The organizers
+     are derived from the scene regardless of the shopping answer, so gate the
+     panel on the upsell actually being on. */
+  if(!state.upgrades){
+    section.classList.add('hide');
+    if(fitNote) fitNote.classList.add('hide');
+    return;
+  }
   const groups=new Map();
   (view.organizers||[]).forEach(organizer=>{
     const type=organizer.userData.type;

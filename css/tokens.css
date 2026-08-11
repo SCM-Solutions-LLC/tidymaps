@@ -44,6 +44,13 @@
   --primary-2:    oklch(0.495 0.135 55);
   --primary-bg:   oklch(0.960 0.020 60);
   --primary-line: oklch(0.870 0.060 58);
+  /* Text sitting ON --primary-bg. The accent itself measures 4.5:1 against its
+     own tint — exactly the AA threshold, and it rounds under, which failed 23
+     nodes in an axe pass (step badges, the hero badge, zone names, "Mark
+     complete"). The accent is unchanged: it is correct for fills and for white
+     text on solid. Small accent-coloured text uses this darker ink instead,
+     mirroring how --sage-ink already relates to --sage. */
+  --primary-ink:  oklch(0.470 0.150 52);
 
   /* olive/sage green — reserved for safety, reuse, and "good" states */
   --sage:      oklch(0.55 0.065 145);
@@ -56,18 +63,55 @@
   --honey:     oklch(0.885 0.078 90);
   --honey-2:   oklch(0.72 0.105 82);
 
-  /* legacy aliases kept so existing components stay coherent:
-     informational teal resolves to sage, "good" is sage */
-  --teal:      var(--sage);
-  --teal-bg:   var(--sage-bg);
-  --teal-line: var(--sage-line);
-  --teal-ink:  var(--sage-ink);
-  --good:      var(--sage);
+  /* ---- Semantic state roles ----------------------------------------------
+     Four states, four distinct hues. Before this, the palette had three hues
+     covering five jobs: --good and --teal both resolved to sage, so "this
+     succeeded" and "here is some information" were the same colour; --clay and
+     --warn sat 4° apart, two tokens for one amber; and there was no error
+     colour at all, so form validation borrowed the brand terracotta and a
+     failed plan build borrowed the caution amber.
 
-  --clay:      oklch(0.62 0.098 80);
-  --clay-bg:   oklch(0.948 0.030 90);
+     Each role carries a fill (solid), an -ink (small text on its own tint), a
+     -bg (tint) and a -line (border), so text always has a pairing that clears
+     AA. Rule of use: never encode state by hue alone — pair every one of these
+     with an icon or a word, which is what keeps the system working in
+     forced-colors mode and for colour-blind users. */
+
+  /* success — the space is safe / this is already yours to reuse */
+  --success:      var(--sage);
+  --success-ink:  var(--sage-ink);
+  --success-bg:   var(--sage-bg);
+  --success-line: var(--sage-line);
+
+  /* warning — proceed, but check something first */
   --warn:      oklch(0.60 0.108 76);
+  --warn-ink:  oklch(0.455 0.095 74);
   --warn-bg:   oklch(0.950 0.034 86);
+  --warn-line: oklch(0.865 0.070 82);
+
+  /* danger — this failed, or it will not fit. Hue 25 against the brand's 55:
+     cooler and deeper, so an error can never be mistaken for a call to action.
+     Nothing pointed here before; this role is new. */
+  --danger:      oklch(0.505 0.175 25);
+  --danger-ink:  oklch(0.435 0.165 25);
+  --danger-bg:   oklch(0.958 0.028 25);
+  --danger-line: oklch(0.870 0.078 25);
+
+  /* info — neutral notice: read-only view, restored draft, layout shown */
+  --info:      oklch(0.505 0.062 245);
+  --info-ink:  oklch(0.425 0.060 248);
+  --info-bg:   oklch(0.957 0.018 245);
+  --info-line: oklch(0.872 0.040 245);
+
+  /* Legacy names, now pointed at the roles above rather than at each other.
+     --teal used to alias sage, which is why info and success were identical. */
+  --teal:      var(--info);
+  --teal-bg:   var(--info-bg);
+  --teal-line: var(--info-line);
+  --teal-ink:  var(--info-ink);
+  --good:      var(--success);
+  --clay:      var(--warn);
+  --clay-bg:   var(--warn-bg);
 
   --radius: 12px;
   --radius-sm: 9px;

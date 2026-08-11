@@ -161,10 +161,21 @@ export const FB_USEFUL = ['Not useful','Somewhat useful','Very useful','I would 
 export const FB_VS = ['Yes, I want instructions','I mostly want the final image','I want both','I’m not sure'];
 export const FB_NEXT = ['Pantry','Closet','Garage','Attic','Kitchen cabinets','Laundry room','Kids’ room','Bathroom storage','Other'];
 
-export const LOAD_LABELS = [
+/* The first three describe work that only happens when the user actually gave
+   us media. Shown unconditionally they were a lie: a plan built with no photos
+   still ticked off "Reviewing uploaded photos or video" with a green check.
+   loading.js picks the list to match what was supplied. */
+export const LOAD_LABELS_MEDIA = [
   'Reviewing uploaded photos or video','Extracting key frames','Detecting visible item categories',
+];
+export const LOAD_LABELS_COMMON = [
   'Understanding existing space features','Finding unused vertical and shelf space','Grouping similar items',
   'Creating organization zones','Building your move-by-move plan','Preparing optional upgrades'
+];
+export const LOAD_LABELS = [...LOAD_LABELS_MEDIA, ...LOAD_LABELS_COMMON];
+/* Shown instead of the media rows when the plan is built from answers alone. */
+export const LOAD_LABELS_NO_MEDIA = [
+  'Reading the measurements you gave us','Matching your setup to a layout',
 ];
 
 export const AFTER_PALETTE=['oklch(0.70 0.09 90)','oklch(0.74 0.11 70)','oklch(0.64 0.08 150)','oklch(0.62 0.09 235)','oklch(0.66 0.10 300)','oklch(0.68 0.11 110)'];

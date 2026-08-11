@@ -88,8 +88,23 @@ export function renderPhotoTiles(){
 }
 
 export function handleFiles(fileList){
-  const newFiles = [...fileList].filter(f => f.type.startsWith('image/'));
-  if(!newFiles.length) return;
+  const offered = [...fileList];
+  /* A file the browser types as image/* is one we can decode. An iPhone HEIC
+     very often arrives with an empty type, and HEIC is the iPhone camera's
+     default — so this filter quietly ate the most common upload there is. It
+     still has to filter, but it must never do it in silence. */
+  const newFiles = offered.filter(f => f.type.startsWith('image/'));
+  const rejected = offered.length - newFiles.length;
+  if(!newFiles.length){
+    if(rejected){
+      const heic = offered.some(f => /\.(heic|heif)$/i.test(f.name || ''));
+      toast(heic
+        ? 'Those look like iPhone HEIC photos, which we can’t read yet. In Settings › Camera › Formats choose “Most Compatible”, or share them as JPG.'
+        : 'We could only accept image files (JPG, PNG or WebP). Nothing was added.');
+    }
+    return;
+  }
+  if(rejected) toast('Added ' + newFiles.length + '. Skipped ' + rejected + ' file' + (rejected>1?'s':'') + ' we can’t read — JPG, PNG or WebP work best.');
   const room = MAX_PHOTOS - state.uploadedFiles.length;
   if(room <= 0){ toast(MAX_PHOTOS + ' photos is plenty. Remove one to add another.'); return; }
   if(newFiles.length > room) toast('Using the first ' + room + '. ' + MAX_PHOTOS + ' photos is plenty.');

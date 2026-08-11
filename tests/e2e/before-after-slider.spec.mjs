@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { expandChapters } from './helpers.mjs';
 
 /* The photo comparison used to clip the AI render to the LEFT of the divider
    while the tags read "Before" on the left and "After · AI" on the right, so
@@ -26,6 +27,9 @@ async function showSlider(page, pos) {
     document.getElementById('ba-before-img').src = before;
     document.getElementById('ba-after-img').src = after;
   }, [BEFORE, AFTER, pos]);
+  // The before/after chapter starts folded, which would hide the slider this
+  // test screenshots.
+  await expandChapters(page);
   await page.waitForTimeout(400);
 }
 

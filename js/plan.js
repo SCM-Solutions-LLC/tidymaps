@@ -103,6 +103,10 @@ export function normalizeAi(j){
           ? {w_in:num(p.maxDims.w_in,0), h_in:num(p.maxDims.h_in,0), d_in:num(p.maxDims.d_in,0)} : null,
         priority: p.priority==='high'?'high':'nice',
       })),
+    /* Did anything actually look at this space? Demo scenarios set this false;
+       a model plan comes from real photos, so absent means observed. The report
+       uses it to scope prose that would otherwise read as findings. */
+    observed: j.observed !== false,
     existingLede: s(j.existingLede),
     existing: (j.existing||[]).map(e=>({ico:iconFor(pick(e.icon, e.ico)), ft:s(pick(e.title, e.ft)), fd:s(pick(e.detail, e.fd))})),
     dontBuy: s(j.dontBuy),
@@ -154,8 +158,14 @@ export function buildAnalysisContext(){
   const h=state.household;
   const notes=(h.notes||'').trim();
   const household = (h.kids.present!==null || h.pets.present!==null || h.mobility.length || notes) ? {
-    kids:{present:h.kids.present==='yes', ages:h.kids.ages.slice()},
-    pets:{present:h.pets.present==='yes', types:h.pets.types.slice()},
+    /* Counts are forwarded, not just presence. The wizard asks how many adults,
+       kids and pets live here — steppers that go to twelve — and none of it
+       reached the model: only the yes/no. A household of one and a household of
+       six got the same plan, while the header chip dutifully echoed "6 adults"
+       back, which is how an answer looks alive while being discarded. */
+    adults:Math.max(0, Number(h.adults)||0),
+    kids:{present:h.kids.present==='yes', count:Math.max(0, Number(h.kidCount)||0), ages:h.kids.ages.slice()},
+    pets:{present:h.pets.present==='yes', count:Math.max(0, Number(h.petCount)||0), types:h.pets.types.slice()},
     mobility:h.mobility.slice(),
     notes,
   } : null;

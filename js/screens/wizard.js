@@ -18,6 +18,7 @@ import {
 import { state, resetPlanRecord, clearGuestMedia } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { updateGate } from '../router.js';
+import { renderPhotoTiles } from './capture.js';
 
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
 
@@ -181,11 +182,37 @@ function renderArea(){
       <span class="rc-check">${CHECK}</span>
       <div class="rc-label"><h3>${a.label}</h3><p>${a.desc}</p></div>`;
     b.onclick = () => {
-      if(state.space !== a.id) setArea(state.room, a.id);
+      if(state.space !== a.id){
+        /* setArea() clears the uploaded photos and resets the measurements to
+           the new setup's defaults. Both are things the user typed or took, and
+           losing them silently is the worst thing this wizard did — the photo
+           step even went on displaying the old tiles afterwards. Ask first, and
+           only when there is actually something to lose. */
+        if(!confirmAreaChange(a.label)){ markSelected(wrap, wrap.querySelector('.sel')||b); return; }
+        setArea(state.room, a.id);
+      }
       markSelected(wrap, b); updateGate();
     };
     wrap.appendChild(b);
   });
+}
+
+/* True if it is safe to proceed: nothing to lose, or the user said go ahead.
+   Note state.dimsFt is always populated — every setup seeds it with defaults —
+   so "did they measure?" has to mean "does it differ from the default", not
+   "is it set". Otherwise this asks on every single area change. */
+function confirmAreaChange(nextLabel){
+  const photos = state.uploadedFiles.length;
+  const def = SETUP_DIMS[state.setup];
+  const cur = dimsFtNums();
+  const typed = !!def && (cur.w !== def.w || cur.h !== def.h || cur.d !== def.d);
+  if(!photos && !typed) return true;
+  const lost = [];
+  if(photos) lost.push(photos === 1 ? 'your photo' : `your ${photos} photos`);
+  if(typed)  lost.push('the measurements you entered');
+  return confirm(
+    `Switching to ${nextLabel} starts that space fresh, so ${lost.join(' and ')} will be cleared.\n\nSwitch anyway?`
+  );
 }
 
 function renderSetup(){
@@ -369,7 +396,20 @@ function renderHouseholdNotes(){
   const box = document.getElementById('household-notes');
   if(!box) return;
   box.value = state.household.notes || '';
-  box.oninput = () => { state.household.notes = box.value; };
+  const count = document.getElementById('household-notes-count');
+  const MAX = Number(box.getAttribute('maxlength')) || 400;
+  /* The cap used to be silent: typing simply stopped. Say how much room is
+     left, and only get loud about it near the end. */
+  const showCount = () => {
+    if(!count) return;
+    const left = MAX - box.value.length;
+    count.textContent = left === 0
+      ? 'Character limit reached'
+      : `${left} character${left === 1 ? '' : 's'} left`;
+    count.classList.toggle('is-low', left <= 40);
+  };
+  box.oninput = () => { state.household.notes = box.value; showCount(); };
+  showCount();
 }
 
 /* Presence stays the canonical 'yes'/'no' strings the rest of the app expects. */
@@ -510,6 +550,9 @@ function renderEffort(){
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'wz-effort' + (state.effort === o.label ? ' sel' : '');
+    // single-select: expose the choice, the way every other step in the wizard
+    // does. Selection used to be conveyed by the CSS class alone.
+    b.setAttribute('aria-pressed', String(state.effort === o.label));
     b.innerHTML = `
       <span class="we-ico">${EFFORT_ICON}</span>
       <span class="we-txt"><span class="ws-ttl">${o.label}</span><span class="ws-sub">${o.desc}</span></span>
@@ -529,6 +572,7 @@ function renderShopping(){
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'wz-shop' + (state.shoppingPref === o.label ? ' sel' : '');
+    b.setAttribute('aria-pressed', String(state.shoppingPref === o.label));
     b.innerHTML = `
       <span class="wz-check">${CHECK}</span>
       <span class="ws-ttl">${o.label}</span>
@@ -555,6 +599,18 @@ function renderReviewSummary(){
     ['Measurements', measureSummary(state.setup, dimsFtNums()), 'measure'],
     ['Photos', plural(state.uploadedFiles.length, 'photo'), 'capture'],
     ['Who uses it', people, 'household'],
+    /* Mobility, pet types and the free-text note were all collected, all
+       forwarded to the model, and none of them appeared here — on the one
+       screen headed "Here's what we heard". Someone who had just told us they
+       use a wheelchair got a summary that never mentioned it, so there was no
+       way to tell whether the answer had registered. Only shown when answered,
+       so the screen does not grow for households that skipped them. */
+    ...(h.pets.types && h.pets.types.length
+      ? [['Pets', h.pets.types.join(', '), 'household']] : []),
+    ...(h.mobility && h.mobility.length
+      ? [['Reach & mobility', h.mobility.join(', '), 'household']] : []),
+    ...((h.notes || '').trim()
+      ? [['Your note', h.notes.trim(), 'household']] : []),
     ["What's inside", state.cats.length ? state.cats.join(', ') : 'Nothing selected yet', 'contents'],
     ['What bugs you', state.goals.length ? state.goals.join(', ') : 'Nothing selected yet', 'goals'],
     ['Style', state.styles.length ? state.styles.join(', ') : '—', 'style'],
@@ -568,7 +624,11 @@ function renderReviewSummary(){
       <button type="button" class="wr-edit" data-goto="${target}">Edit</button>
     </div>`).join('');
   wrap.querySelectorAll('.wr-edit').forEach(btn => {
-    btn.onclick = () => window.go(btn.dataset.goto);
+    /* Editing from Review used to drop you into the step and then walk you
+       forward through every remaining one — eleven Continue presses to change
+       a single word. Remember that the trip started at Review so Continue can
+       bring you straight back. */
+    btn.onclick = () => { state.returnToReview = true; window.go(btn.dataset.goto); };
   });
 }
 
@@ -579,6 +639,11 @@ const RENDERERS = {
   area: renderArea,
   setup: renderSetup,
   measure: renderMeasure,
+  /* The photo step had no renderer, so its tiles were only ever drawn when a
+     file was added or removed. Changing the area clears the uploaded files, and
+     the step went on showing the old thumbnails — the plan was built without
+     photos the user could still see on screen. Re-draw on entry. */
+  capture: renderPhotoTiles,
   household: renderHousehold,
   contents: renderContents,
   goals: renderGoals,

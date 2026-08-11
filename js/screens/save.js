@@ -1,5 +1,5 @@
 import { SAVE_OPTS } from '../data.js';
-import { toast } from '../ui.js';
+import { toast, scrollIntoViewSafely } from '../ui.js';
 import { downloadChecklist, sendShoppingList } from '../planExport.js';
 import { go, restart } from '../router.js';
 import { backendConfigured } from '../config.js';
@@ -61,7 +61,7 @@ export function buildSave(){
         return;
       }
       if(t==='Start another space'){ restart(); return; }
-      if(t==='Compare before &amp; after'){ go('results'); setTimeout(()=>document.getElementById('after-tabs').scrollIntoView({behavior:'smooth'}),200); return; }
+      if(t==='Compare before &amp; after'){ go('results'); setTimeout(()=>scrollIntoViewSafely(document.getElementById('after-tabs')),200); return; }
       /* These two answered "coming soon" for a plan already sitting complete
          in memory. Everything either one needs is on the client. */
       if(t==='Download checklist'){ downloadChecklist(); return; }

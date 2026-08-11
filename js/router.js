@@ -1,6 +1,6 @@
 import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord } from './state.js';
 import { track } from './telemetry.js';
-import { setFootHeightVar } from './ui.js';
+import { setFootHeightVar, scrollToTop } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll, buildCustomize } from './screens/index.js';
 import { runLoading } from './screens/loading.js';
@@ -121,7 +121,7 @@ export function go(id){
     const heading=el.querySelector('h1,h2');
     if(heading){ heading.tabIndex=-1; heading.focus({preventScroll:true}); }
   }
-  window.scrollTo({top:0,behavior:'smooth'});
+  scrollToTop();
 }
 export function goNext(){
   const cfg=FLOW_SCREENS[current];
@@ -131,7 +131,10 @@ export function goNext(){
     state.capture = state.uploadedFiles.length ? 'photos'
       : (state.uploadedVideo ? 'video' : 'demo');
   }
-  if(current==='review'){ go('loading'); runLoading(); return; }
+  if(current==='review'){ state.returnToReview=false; go('loading'); runLoading(); return; }
+  // Came here from a Review "Edit" link? Go straight back rather than marching
+  // the user through every remaining step to reach the button they came from.
+  if(state.returnToReview){ state.returnToReview=false; go('review'); return; }
   go(cfg.next);
 }
 export function goBack(){
