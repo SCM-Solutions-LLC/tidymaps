@@ -730,3 +730,59 @@ test('every style the wizard offers changes the plan and cites itself', () => {
     }
   }
 });
+
+test('every style leaves a trace a reader can see without opening anything', () => {
+  /* The test above hashes `s.t + '|' + s.w` and accepts a citation in any `w`,
+     so it passes on exactly the case that shipped: 26 of the 36 cards funnel
+     into 5 preferences, most of which a scenario already satisfies, so the
+     handler annotated an existing step's `why` and changed nothing else. `why`
+     renders inside a disclosure that starts closed. The answer was honoured
+     where nobody could read it, which reads the same as being ignored.
+
+     So this measures what the report shows on arrival: the summary, the two
+     lists in the open Summary chapter, the step TASKS, the new step-face
+     citation, the shelf map and the product tags. Never `why`. */
+  const seen = (p) => JSON.stringify([p.summary, p.opportunities, p.problems,
+    p.steps.map(x => `${x.t}|${x.cite || ''}`),
+    p.map.map(m => [m.zone, m.why, (m.safety || {}).flag, (m.safety || {}).why, m.items]),
+    (p.productNeeds || []).map(n => [n.type, n.priority])]);
+  for (const s of ALL_SETUPS) {
+    const bare = seen(planFor(s, { household: NO_KIDS }));
+    for (const style of STYLESETS[s.space] || []) {
+      const p = planFor(s, { household: NO_KIDS, styles: [style.label] });
+      assert.notEqual(seen(p), bare,
+        `${s.space}/${s.id}: "${style.label}" changes nothing a reader sees without opening a disclosure`);
+    }
+  }
+});
+
+test('a style the plan already satisfies says so in the user\'s own words', () => {
+  /* When a scenario already does what the style asked for, the honest answer is
+     not silence and not a duplicate step — it is naming the answer and pointing
+     at the step that serves it. The card they clicked, not the preference we
+     bridged it to. */
+  /* "Use what I have" is the case that makes the style genuinely silent: with
+     no products in the plan, promoting a label set has nothing to promote, so
+     the handler's whole effect is the annotation. With products on, the same
+     style moves a priority — visible — and correctly gets no line, which is the
+     discrimination this mechanism is for. */
+  const p = planFor({ space: 'pantry', id: 'cabinet' },
+    { household: NO_KIDS, styles: ['Labeled everything'], shopping: 'Use what I have' });
+  const line = (p.opportunities || []).find(o => /Labeled everything/.test(o));
+  assert.ok(line, `no visible line naming the answer: ${JSON.stringify(p.opportunities)}`);
+  const cited = p.steps.filter(x => x.cite);
+  assert.ok(cited.length, 'the line promises marked steps, so there must be marked steps');
+  assert.match(cited.map(x => x.cite).join(' '), /You asked for labels/i);
+  // the face is a label, not the whole sentence with its rationale
+  for (const step of cited) assert.ok(step.cite.length <= 60, `citation too long for a step face: "${step.cite}"`);
+});
+
+test('a style that visibly changes the plan gets no "already covered" line', () => {
+  /* The line is for answers the plan silently already satisfied. Printing it
+     for an answer that did move something would be its own small lie, and
+     would put a line on every style in the app. */
+  const p = planFor({ space: 'pantry', id: 'cabinet' },
+    { household: NO_KIDS, styles: ['Labeled everything'], shopping: 'Open to a few ideas' });
+  assert.equal((p.opportunities || []).some(o => /already how this plan works/.test(o)), false,
+    'promoting the label set is a visible change, so there is nothing to explain');
+});

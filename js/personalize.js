@@ -20,7 +20,7 @@
    - One trigger per behavior: if two answers ask for the same step (e.g.
      rental=yes and "No drilling"), it's added once, citing the first. */
 
-import { goalIdFor } from './wizard-data.js';
+import { goalIdFor, prefsForStyles } from './wizard-data.js';
 
 export const EFFORT_STEPS = {
   // design-contract effort labels (the wizard's three options)
@@ -63,16 +63,34 @@ function addStep(plan, step) {
 /* The core promise: the user's answer is VISIBLE in the plan. If a matching
    step already exists in the scenario, cite the answer on it (and protect it
    from effort trimming); only add a new step when nothing covers the need. */
+/* "Visible" was doing a lot of work in that sentence. The citation went into
+   the step's `why`, and `why` renders inside a disclosure that starts closed
+   (js/screens/results.js — the "Why?" button, aria-expanded="false"). Nearly
+   every scenario already ships a label step, so the commonest answer in the
+   wizard landed in a panel nobody opened: the plan changed and said so where it
+   could not be read.
+   `cite` carries the same sentence on the step's face. It survives normalizeAi
+   (js/plan.js) so the report can render it, and the report hides it on a shared
+   plan, because "you asked for this" is false told to a visitor. */
+/* The citation is a whole sentence — the answer plus why it matters — and the
+   reasoning belongs in the `why` where the rest of the reasoning lives. On the
+   step's face it is a label, so it keeps the lead clause only: "You asked for
+   labels and categories", not that sentence plus a clause about households. */
+const citeFace = (cite) => String(cite || '').split(/\s+[—–-]\s+/)[0].trim().replace(/[.,]$/, '');
+
 function ensureCitedStep(plan, re, step, cite) {
   const existing = plan.steps.find(st => re.test(stepText(st)));
   if (existing) {
     const key = 't' in existing ? 'w' : 'why';
     if (!stepWhy(existing).includes(cite)) existing[key] = (stepWhy(existing) + ' ' + cite).trim();
     existing._p = true;
+    existing.cite = citeFace(cite);
     return existing;
   }
   addStep(plan, { ...step, why: ((step.why || '') + ' ' + cite).trim() });
-  return plan.steps[plan.steps.length - 1];
+  const added = plan.steps[plan.steps.length - 1];
+  added.cite = citeFace(cite);
+  return added;
 }
 
 function isProtected(st) {
@@ -520,11 +538,57 @@ function ownOnlyVocabulary(plan) {
     .map(fix);
 }
 
+/* Everything on the report a reader sees without opening anything: the summary,
+   the two lists in the open Summary chapter, the step TASKS (not their whys),
+   the shelf map, and the product tags. Deliberately excludes `why` — that is
+   the whole point of the measurement. */
+function visibleShape(plan) {
+  return JSON.stringify([
+    plan.summary,
+    plan.opportunities || [],
+    plan.problems || [],
+    (plan.steps || []).map(stepTask),
+    (plan.map || []).map(m => [m.zone, m.why, m.safety && m.safety.flag,
+      m.safety && m.safety.why, (m.items || []).map(i => i.name)]),
+    (plan.productNeeds || []).map(p => [p.type, p.priority]),
+  ]);
+}
+
+/* The style step offers 36 cards and 26 of them funnel into 5 preferences, most
+   of which a scenario already satisfies — so `ensureCitedStep` finds a matching
+   step and does nothing but annotate it. The answer is honoured and invisible,
+   which reads exactly like the answer being ignored.
+
+   So measure it rather than guess: run each handler and see whether anything a
+   reader can see actually moved. What did not gets one line, in the user's own
+   words, in the same place and the same voice as the goals that did not fit
+   (applyGoals below). One line for all of them, not one each — trading an
+   invisible answer for a wall of text is not an improvement. */
 function applyPrefs(plan, answers) {
+  const silent = new Set();
   for (const pref of answers.prefs || []) {
     const h = PREF_HANDLERS[pref];
-    if (h) h(plan);
+    if (!h) continue;
+    const before = visibleShape(plan);
+    h(plan);
+    if (visibleShape(plan) === before) silent.add(pref);
   }
+  if (!silent.size) return;
+
+  /* Name the CARD they picked, not the preference it was bridged to: "Labeled
+     everything" is what they clicked, and `Labels and categories` is our word
+     for it. A style whose effect did show is left out of the sentence. */
+  const styles = (answers.styles || []).filter(s => typeof s === 'string' && s.trim());
+  const quiet = styles.filter(s => [...prefsForStyles([s])].some(p => silent.has(p)));
+  if (!quiet.length) return;
+  const quoted = quiet.map(s => `“${s}”`);
+  const list = quoted.length > 1
+    ? quoted.slice(0, -1).join(', ') + ' and ' + quoted[quoted.length - 1]
+    : quoted[0];
+  plan.opportunities = plan.opportunities || [];
+  plan.opportunities.push(
+    `${list} ${quiet.length > 1 ? 'are' : 'is'} already how this plan works — `
+    + `the steps marked below are the ones that answer ${quiet.length > 1 ? 'them' : 'it'}.`);
 }
 
 function applyToggles(plan, answers) {

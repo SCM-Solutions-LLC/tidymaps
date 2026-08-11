@@ -110,7 +110,14 @@ export function normalizeAi(j){
     existingLede: s(j.existingLede),
     existing: (j.existing||[]).map(e=>({ico:iconFor(pick(e.icon, e.ico)), ft:s(pick(e.title, e.ft)), fd:s(pick(e.detail, e.fd))})),
     dontBuy: s(j.dontBuy),
-    steps: (j.steps||[]).map(st=>({t:s(pick(st.task, st.t)), m:s(pick(st.time, st.m))||'—', w:s(pick(st.why, st.w))})),
+    /* `cite` is the user's own answer, carried on the step's face rather than
+       inside the collapsed "Why?" panel. It has to survive this whitelist or
+       the report never sees it — the same way `observed` was dropped here and
+       the honesty scoping vanished with it. */
+    steps: (j.steps||[]).map(st=>({
+      t:s(pick(st.task, st.t)), m:s(pick(st.time, st.m))||'—', w:s(pick(st.why, st.w)),
+      ...(st.cite ? { cite:s(st.cite) } : {}),
+    })),
     time: s(j.time)||'45–90 min',
     cost: s(j.cost)||'$0 / $45–85'
   };
