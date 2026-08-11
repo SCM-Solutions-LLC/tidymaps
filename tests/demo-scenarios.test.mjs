@@ -111,10 +111,41 @@ test('with pets and no kids, the chemical guidance names the pets', () => {
   assert.doesNotMatch(visibleText(plan), /\bpets?\b/i,
     'the household named its animal, so the plan should not fall back to "pets"');
 
-  // "Other", or more than one animal, has no noun to use: stay generic.
+  /* "Other", or more than one animal, has no noun to use, so the wording stays
+     generic — that part was always right. What was wrong is that it stopped
+     there: the plan came out byte-identical to naming no type at all, so a chip
+     the user ticked was worth nothing. The wording is still generic AND the
+     answer now changes the plan. */
   const vague = getDemoScenario('garage', 'find',
     { ...NO_KIDS_PETS, pets: { present: 'yes', types: ['Other'] } });
-  assert.match(visibleText(vague), /away from pets|pet reach|out of reach of pets/i);
+  assert.match(visibleText(vague), /away from pets|pet reach|out of reach of pets|another kind of pet/i);
+});
+
+test('naming the animal changes the plan, whichever animal it is', () => {
+  /* Every pet-type chip is offered, and two of them used to produce a plan
+     identical to answering nothing: "Other" (no noun to swap in) and any
+     mixed household (no single noun to swap in). Different routes, same
+     defect — an answer that looks alive and is discarded. */
+  const shape = (p) => JSON.stringify([p.steps.map(s => s.task), p.safetyNotes, p.summary,
+    p.map.map(m => [m.why, (m.safety || {}).why])]);
+  const unnamed = shape(getDemoScenario('pantry', 'find',
+    { ...NO_KIDS_PETS, pets: { present: 'yes', types: [] } }));
+  for (const types of [['Dog'], ['Cat'], ['Other'], ['Dog', 'Cat'], ['Cat', 'Other']]) {
+    const p = getDemoScenario('pantry', 'find', { ...NO_KIDS_PETS, pets: { present: 'yes', types } });
+    assert.notEqual(shape(p), unnamed,
+      `types ${JSON.stringify(types)}: identical to naming no type at all`);
+  }
+});
+
+test('an unidentifiable animal gets the answer that holds either way', () => {
+  /* We genuinely do not know how high it can get. Height only works on an
+     animal that cannot climb, so an unknown one gets the barrier that does not
+     depend on knowing — and the plan says which answer it gave and why. */
+  const p = getDemoScenario('pantry', 'find',
+    { ...NO_KIDS_PETS, pets: { present: 'yes', types: ['Other'] } });
+  const note = (p.safetyNotes || []).find(n => /another kind of pet/i.test(n));
+  assert.ok(note, `no note about the unnamed animal: ${JSON.stringify(p.safetyNotes)}`);
+  assert.match(note, /door or a latch/i, 'says height, not the barrier that actually holds');
 });
 
 test('a cat household is never told height keeps the chemicals safe', () => {
@@ -206,4 +237,65 @@ test('the clutter goal never doubles a word when rewriting bin purposes', () => 
       assert.ok(!/\b(\w+)\s+and\s+\1\b/i.test(p.purpose), `${space}: "${p.purpose}"`);
     }
   }
+});
+
+/* ---------- kid ages ----------
+   The wizard asks how old the children are and offers four bands. Nothing read
+   the answer: applyHousehold branched on kids.present and no further, so a
+   household with a baby and one with a teenager got byte-identical plans while
+   the Review screen echoed the age back at them. */
+
+const withAges = (ages) => ({
+  adults: 2, kidCount: 1, petCount: 0,
+  kids: { present: 'yes', ages }, pets: { present: 'no', types: [] },
+  mobility: [], notes: '',
+});
+const planShape = (p) => JSON.stringify([p.steps.map(s => s.task), p.safetyNotes]);
+
+test('each kid age band produces a different plan', () => {
+  const noAge = planShape(getDemoScenario('pantry', 'find', withAges([])));
+  const byBand = new Map();
+  for (const band of ['Baby', 'Toddler', 'Big kid', 'Teen']) {
+    const shape = planShape(getDemoScenario('pantry', 'find', withAges([band])));
+    assert.notEqual(shape, noAge, `"${band}" produces the same plan as giving no age`);
+    for (const [other, seen] of byBand) {
+      assert.notEqual(shape, seen, `"${band}" produces the same plan as "${other}"`);
+    }
+    byBand.set(band, shape);
+  }
+});
+
+test('the age advice argues from height, and says whose age it is answering', () => {
+  const toddler = getDemoScenario('pantry', 'find', withAges(['Toddler']));
+  const step = toddler.steps.find(s => /48 inches/.test(s.task));
+  assert.ok(step, `no toddler-specific placement step: ${toddler.steps.map(s => s.task).join(' | ')}`);
+  assert.match(step.why, /toddler/i, 'the step does not say which answer it came from');
+  assert.equal(step.cite, 'You told us there is a toddler at home');
+
+  // and a teenager gets the opposite advice, because it is the opposite problem
+  const teen = getDemoScenario('pantry', 'find', withAges(['Teen']));
+  assert.ok(teen.steps.some(s => /own\b.*zone they control|labelled zone/i.test(s.task)),
+    `no teen-specific step: ${teen.steps.map(s => s.task).join(' | ')}`);
+});
+
+test('three children do not get three copies of the same advice', () => {
+  const p = getDemoScenario('pantry', 'find', withAges(['Toddler', 'Toddler', 'Toddler']));
+  const matches = p.steps.filter(s => /48 inches/.test(s.task));
+  assert.equal(matches.length, 1, 'the rule fired once per selected age rather than once per band');
+});
+
+test('ages reach the model as numbers, because its safety rules are written in numbers', async () => {
+  /* The prompt's hard rule is "kids ages 0-9", and the wizard collects the word
+     "Big kid". The model was being asked to guess the mapping before it could
+     apply a rule that decides where the bleach goes. */
+  const [{ state }, { buildAnalysisContext }] = await Promise.all([
+    import('../js/state.js'), import('../js/plan.js'),
+  ]);
+  state.household = withAges(['Toddler', 'Teen']);
+  const kids = buildAnalysisContext().household.kids;
+  assert.deepEqual(kids.ages, ['Toddler', 'Teen'], 'the words the user picked still travel');
+  assert.deepEqual(kids.ageYears, { min: 1, max: 17 }, 'and the years the prompt reasons in');
+
+  state.household = withAges([]);
+  assert.equal(buildAnalysisContext().household.kids.ageYears, null, 'no age given, nothing claimed');
 });

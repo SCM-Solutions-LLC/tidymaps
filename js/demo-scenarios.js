@@ -1570,6 +1570,20 @@ function applyPets(plan, household) {
     (plan.productNeeds || []).forEach(p => { p.purpose = fix(p.purpose); });
   }
 
+  /* "Other" is the one type that cannot name itself, so the vocabulary swap
+     above skips it and the plan came out byte-identical to giving no type at
+     all — a chip offered, ticked, and worth nothing. We genuinely do not know
+     what the animal is; what we can do is stop relying on the assumption we
+     would otherwise make. Height only works on an animal that cannot climb, so
+     an unknown one gets the answer that holds either way, and the note says
+     which answer it gave and why. */
+  if (types.includes('Other')) {
+    const note = 'You told us about another kind of pet. How high an animal can get depends on the animal, '
+      + 'so anything chewable or toxic here is kept behind a door or a latch rather than just up high.';
+    plan.safetyNotes = plan.safetyNotes || [];
+    if (!plan.safetyNotes.some(n => /another kind of pet/i.test(n))) plan.safetyNotes.push(note);
+  }
+
   if (!types.includes('Cat')) return;
   const decat = (t) => CAT_PHRASES
     .reduce((acc, [re, to]) => String(acc || '').replace(re, to), t)
@@ -1591,6 +1605,16 @@ function applyPets(plan, household) {
       m.safety.why = (m.safety.why + ' ' + caveat).trim();
     }
   });
+
+  /* The rewrites above only fire where the plan happened to make a height claim
+     about the animal, and a household with both a dog and a cat does not even
+     get the vocabulary swap — "pets" is the right word when there are two kinds.
+     So a Dog + Cat plan came out identical to naming no type at all, which is
+     the same defect as "Other", reached by a different route. The one thing
+     that is true of every cat household is worth saying outright. */
+  if (!plan.safetyNotes.some(n => /door or a latch|door or latch/i.test(n))) {
+    plan.safetyNotes.push('A cat can get to any shelf, so anything chewable or toxic here is kept behind a door or a latch rather than just up high.');
+  }
 }
 
 function applyHousehold(plan, household) {
@@ -1693,7 +1717,62 @@ function applyHousehold(plan, household) {
     }
   }
 
+  applyKidAges(plan, household);
   applyMobility(plan, household.mobility);
+}
+
+/* ---------- Kid ages ----------
+   The wizard asks how old the children are and offers four bands. Nothing read
+   the answer: applyHousehold branched on `kids.present` and no further, so a
+   household with a baby and one with a teenager got byte-identical plans while
+   the Review screen echoed the age back. Four options, one behaviour.
+
+   And the ages matter more than presence does. What is safe and what is
+   reachable are the same question asked from two different heights: a toddler
+   climbs and opens things, a big kid should be able to serve themselves, and a
+   teen mostly needs their own stuff not to be in everyone's way. Same shape as
+   MOBILITY_RULES below — one cited step or safety line per band, never per
+   selected age, so a household with three children does not get three copies of
+   the same advice. */
+const KID_AGE_RULES = [
+  {
+    match: /^baby$/i,
+    note: 'With a baby in the house, the zone you use one-handed matters most: keep everyday things at waist height on the side you carry from.',
+    cite: 'You told us there is a baby at home.',
+  },
+  {
+    match: /^toddler$/i,
+    task: 'Move anything breakable or hazardous above 48 inches, and latch what stays low',
+    why: 'A toddler climbs and opens things, so height is the only reliable barrier at this age.',
+    cite: 'You told us there is a toddler at home.',
+  },
+  {
+    match: /^big kid$/i,
+    task: 'Put the things they get for themselves on the lowest safe level, fronts facing out',
+    why: 'What a child can reach unaided is what they will put back without being asked.',
+    cite: 'You told us there is a big kid at home.',
+  },
+  {
+    match: /^teen$/i,
+    task: 'Give their own things one labelled zone they control, and leave it to them',
+    why: 'A shared space works when everyone owns a piece of it outright.',
+    cite: 'You told us there is a teenager at home.',
+  },
+];
+
+function applyKidAges(plan, household) {
+  const ages = (household && household.kids && household.kids.ages) || [];
+  if (!isPresent(household && household.kids && household.kids.present) || !ages.length) return;
+  for (const rule of KID_AGE_RULES) {
+    if (!ages.some(a => rule.match.test(String(a || '').trim()))) continue;
+    if (rule.note) {
+      plan.safetyNotes = plan.safetyNotes || [];
+      if (!plan.safetyNotes.includes(rule.note)) plan.safetyNotes.push(rule.note);
+      continue;
+    }
+    if (plan.steps.some(s => s.task === rule.task)) continue;
+    plan.steps.push({ task: rule.task, time: '10 min', why: `${rule.cite} ${rule.why}`, _p: true, cite: rule.cite.replace(/\.$/, '') });
+  }
 }
 
 /* ---------- Mobility ----------
