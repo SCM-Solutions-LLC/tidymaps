@@ -31,7 +31,29 @@ export function sanitizeUntrusted(str) {
 export function buildContext(ctx = {}) {
   const parts = [];
   if (ctx.spaceType) parts.push(`Space the user selected: ${ctx.spaceType}.`);
+  if (ctx.room) parts.push(`Room it is in: ${ctx.room}.`);
   if (ctx.goal) parts.push(`Their main goal: ${ctx.goal}.`);
+  /* Everything from here to `prefs` was assembled by buildAnalysisContext and
+     then dropped on the floor: this function read eight of the fifteen fields it
+     is sent, and these six fell through it. Two of them carry a comment in the
+     client asserting they matter — `goals` is "the user's own words — cite
+     verbatim" and `categories` is "authoritative when the user edited them" —
+     so the contents step let someone correct what is in their space and the
+     correction never left the browser. Data, never instructions: this whole
+     string is sanitized and fenced inside <user_context> by the caller. */
+  if (Array.isArray(ctx.goals) && ctx.goals.length) {
+    parts.push(`Everything they said bugs them, in their own words: ${ctx.goals.map(g => `"${g}"`).join(', ')}.`);
+  }
+  if (Array.isArray(ctx.categories) && ctx.categories.length) {
+    parts.push(`What they say is in the space: ${ctx.categories.join(', ')}. This is their own edited list.`);
+  }
+  if (Array.isArray(ctx.detected) && ctx.detected.length) {
+    parts.push(`Items detected on their photos: ${ctx.detected.join(', ')}.`);
+  }
+  if (Array.isArray(ctx.styles) && ctx.styles.length) {
+    parts.push(`How they like things kept: ${ctx.styles.join(', ')}.`);
+  }
+  if (ctx.shopping) parts.push(`Their answer on buying storage: ${ctx.shopping}.`);
   if (Array.isArray(ctx.prefs) && ctx.prefs.length) parts.push(`Preferences: ${ctx.prefs.join(', ')}.`);
   if (ctx.budget) parts.push(`Budget: ${ctx.budget}.`);
   if (ctx.effort) parts.push(`Effort level: ${ctx.effort}.`);
