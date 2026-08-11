@@ -21,6 +21,22 @@
      rental=yes and "No drilling"), it's added once, citing the first. */
 
 import { goalIdFor, prefsForStyles } from './wizard-data.js';
+import { mentionsMissingSurface } from './setupStructure.js';
+
+/* The server validates a RANGE where the client aims at a point
+   (supabase/functions/_shared/planSchema.js). Kept here so sizing can tell
+   "shorter than we aimed for" from "shorter than is allowed", and pinned equal
+   to the server's copy by a test — two hand-maintained copies of one contract
+   is the next bug. */
+export const EFFORT_STEP_RANGES = {
+  'Quick refresh': [3, 6],
+  'Weekend reset': [7, 10],
+  'Full overhaul': [9, 14],
+  'Quick 30-minute reset': [3, 6],
+  '1-hour cleanup': [5, 8],
+  'Weekend project': [7, 10],
+  'Full reorganization': [9, 14],
+};
 
 export const EFFORT_STEPS = {
   // design-contract effort labels (the wizard's three options)
@@ -678,10 +694,129 @@ function applyDims(plan, answers) {
   }
 }
 
-function applyEffort(plan, answers) {
+/* ---------- growth: where a deeper plan honestly comes from ----------
+
+   The old growth branch appended `Set up the {zoneWord} zone ({level})`, one per
+   zone, and skipped any zone whose first zone-word appeared anywhere in any
+   step's task OR why. Two problems, and the second one is the reason it read as
+   filler.
+
+   The ceiling: `base + uncoveredZones`. A garage rack's own checklist already
+   says "Separate chemicals…", "Box holiday decorations…", "Move heavy power
+   tools…", which disqualified three of its five zones — so Full overhaul (13)
+   and Weekend reset (10) both collapsed to 9, and the biggest commitment bought
+   nothing. A two-deck overhead rack was capped at 6 whatever the user chose.
+
+   The filler: the step restated the map row above it. "Set up the Frequently
+   used tools zone (Eye level)" tells a reader nothing the shelf map did not.
+
+   So: stop restating the map and start acting on it. Every row carries a
+   category list, named items, and a rationale — the growth passes below use all
+   three, and a rule may only fire when it can prove its sentence true of that
+   row. A step that is true of any garage is not a plan. */
+
+/* Does a step already DO this, judged on what it tells the user to do? Reading
+   the `why` too — as `hasStep` does — meant a zone was disqualified by a
+   passing mention in a sentence about something else, including by the
+   citations this layer adds. */
+function taskCovers(plan, re) {
+  return (plan.steps || []).some(st => re.test(stepTask(st)));
+}
+
+const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const zoneParts = (m) => String(m.zone || '').split(/\s*·\s*|,/).map(s => s.trim()).filter(Boolean);
+const itemNames = (m) => (m.items || []).map(i => i && i.name).filter(Boolean);
+const levelOf = (m) => String(m.level ?? m.lv ?? '').trim();
+
+/* A comma list that reads like a sentence rather than a CSV. */
+function listOf(names) {
+  const lower = names.map(n => n.replace(/^[A-Z](?=[a-z])/, c => c.toLowerCase()));
+  if (lower.length === 1) return lower[0];
+  return lower.slice(0, -1).join(', ') + ' and ' + lower[lower.length - 1];
+}
+
+/* Level names are written as labels for the shelf map — "Rack deck: front
+   half", "Long run: upper shelf" — and a label dropped into a sentence brings
+   its colon and its capital with it. This is the same name said out loud, with
+   the article English wants: "the top shelf", but "eye level", never "the eye
+   level". */
+function levelPhrase(m) {
+  const raw = levelOf(m).replace(/:\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  if (!raw) return '';
+  const said = raw.charAt(0).toLowerCase() + raw.slice(1);
+  return /\blevel$/i.test(said) ? said : `the ${said}`;
+}
+
+/* Pass A — placement, one per zone no step has placed yet. Names the row's own
+   items and reuses the row's own rationale, so the step says something the map
+   did not. "Group" keeps it matched by ART_RULES (js/stepMedia.js), or the card
+   renders visibly blanker than its neighbours. */
+function placementStep(plan, m, cite) {
+  const names = itemNames(m).slice(0, 3);
+  const level = levelOf(m);
+  if (!names.length || !level) return null;
+  /* Matched on the phrase the task actually uses, not the map label it came
+     from. "Rack deck: front half" never matched "the rack deck front half", so
+     a level could be placed twice — invisible while growth walked the rows
+     once, and immediately visible the moment sizing ran again. */
+  const said = levelPhrase(m).replace(/^the /, '');
+  if (taskCovers(plan, new RegExp(esc(said), 'i'))) return null;
+  const firstCat = zoneParts(m)[0];
+  if (firstCat && taskCovers(plan, new RegExp(`${esc(firstCat)}[^.]*\\b(on|onto|to|into)\\b`, 'i'))) return null;
+  return {
+    task: `Group ${listOf(names)} together on ${levelPhrase(m)}`,
+    why: `${m.why || ''} ${cite}`.trim(),
+    time: '10–15 min',
+  };
+}
+
+/* Pass B — one depth rule per row, each gated on a fact of that row. `applies`
+   has to prove the sentence before the sentence may be written. */
+const DEPTH_RULES = [
+  {
+    id: 'boundary',
+    applies: (m) => zoneParts(m).length >= 2,
+    /* Per ROW: each level draws its own line, between its own two categories.
+       The regex is built from this row's categories so a second row still earns
+       its step while a repeat of the same row never does. */
+    dedupe: (m) => new RegExp(`into an? ${esc(zoneParts(m)[0].toLowerCase())} section`, 'i'),
+    build: (m) => {
+      const [a, b] = zoneParts(m);
+      /* Allocation, not labelling. Wording this as "label the line between…"
+         collided with the label step nearly every scenario already ships, which
+         is the duplicate-behaviour failure the goal advice was designed around.
+         It also avoids agreeing a verb with a category that may be plural. */
+      return {
+        task: `Split ${levelPhrase(m)} into a ${a.toLowerCase()} section and a ${b.toLowerCase()} section`,
+        why: 'Two categories sharing one level creep into each other until each has a side of its own.',
+        time: '5–10 min',
+      };
+    },
+  },
+  {
+    id: 'oneDeep',
+    applies: (m, plan, answers) => ['shelf', 'floor'].includes(m.surface)
+      && (itemNames(m).length >= 3 || ((answers.dims && answers.dims.d_in) || 0) >= 16),
+    // Per PLAN: "nothing hidden behind anything" is one habit, not one per shelf.
+    dedupe: () => /one row deep|nothing behind anything|facing out/i,
+    build: (m) => ({
+      task: `Set ${levelPhrase(m)} one row deep, everything facing out`,
+      why: 'Anything behind something else is a thing you will buy again.',
+      time: '10 min',
+    }),
+  },
+];
+
+function applyEffort(plan, answers, archetype) {
   const target = EFFORT_STEPS[answers.effort];
   if (!target) return;
   const cite = `You chose “${answers.effort}”.`;
+  /* Sizing runs after the surface scrub, so its own candidates have to be
+     vetted here — a step added behind the scrub would be exactly the leak the
+     ordering was changed to close. Rejecting the candidate rather than scrubbing
+     afterwards also means a rejected one does not consume the growth budget:
+     scrubbing after the fact cannot give the budget back. */
+  const usable = (task) => !archetype || !mentionsMissingSurface(task, archetype);
 
   if (plan.steps.length > target) {
     // Trim template filler first, from the end; personalized/safety survive.
@@ -699,16 +834,48 @@ function applyEffort(plan, answers) {
     }
     plan.steps = plan.steps.filter((_, i) => !toDrop.has(i));
   } else if (plan.steps.length < target) {
-    // A bigger commitment earns per-zone depth: one setup pass per uncovered zone.
-    for (const m of plan.map) {
+    /* Coverage before depth: every zone gets placed once before any zone gets
+       a second step, so a plan that hits its target mid-growth is not three
+       steps deep on one shelf and silent about the rest. */
+    const rows = plan.map || [];
+    for (const m of rows) {
       if (plan.steps.length >= target) break;
-      const zoneWord = (m.zone || '').split(/\s*·\s*|,/)[0].trim();
-      if (!zoneWord || hasStep(plan, new RegExp(zoneWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'))) continue;
-      addStep(plan, {
-        task: `Set up the ${zoneWord} zone (${m.level ?? m.lv})`,
-        why: `${cite} A full pass gives every zone its own dedicated setup step.`,
-      });
+      const step = placementStep(plan, m, cite);
+      if (step && usable(step.task)) addStep(plan, step);
     }
+    for (const m of rows) {
+      if (plan.steps.length >= target) break;
+      for (const rule of DEPTH_RULES) {
+        if (plan.steps.length >= target) break;
+        if (!rule.applies(m, plan, answers)) continue;
+        if (taskCovers(plan, rule.dedupe(m))) continue;
+        const built = rule.build(m);
+        if (!built.task || !usable(built.task)) continue;
+        addStep(plan, { ...built, why: `${built.why} ${cite}`.trim() });
+      }
+    }
+  }
+
+  /* The ladder can run out. An overhead rack is two decks and six items; there
+     is no honest thirteen-step plan for it, and inventing one is worse than a
+     short plan. The server contract already allows a range where the client
+     insisted on a point (EFFORT_STEP_RANGES), so a short plan is legal — what
+     is not acceptable is a silent one. Same mechanism and same voice as the
+     goals that did not fit, for the same reason: saying nothing was the bug. */
+  /* Below what the contract allows, or materially short of what was asked for.
+     The second half is the one that matters: a two-deck rack reaches nine steps
+     for both "Weekend reset" and "Full overhaul", which is honest — there is no
+     third deck — but identical plans under two different answers, with nothing
+     said, is exactly the complaint. One or two steps short of the aim is inside
+     the noise of how plans vary and is not worth a paragraph. */
+  const floor = (EFFORT_STEP_RANGES[answers.effort] || [])[0];
+  const short = target - plan.steps.length;
+  if ((floor && plan.steps.length < floor) || short >= 3) {
+    plan.opportunities = plan.opportunities || [];
+    const note = `A ${String(answers.effort).toLowerCase()} of this space comes to ${plan.steps.length} steps, not ${target} — `
+      + `there ${rowCount(plan) === 1 ? 'is one level' : `are ${rowCount(plan)} levels`} here and no more to plan. `
+      + 'A longer session will not add to it.';
+    if (!plan.opportunities.some(o => /comes to \d+ steps/.test(o))) plan.opportunities.push(note);
   }
 
   const times = {
@@ -716,6 +883,31 @@ function applyEffort(plan, answers) {
     'Quick 30-minute reset': '~30 min', '1-hour cleanup': '~1 hour', 'Weekend project': '2–4 hours', 'Full reorganization': '4–8 hours',
   };
   if (times[answers.effort]) plan.time = capTimeToPlan(times[answers.effort], plan.steps);
+}
+
+const rowCount = (plan) => (plan.map || []).length;
+
+/* Sizing, split out so it can run LAST. It used to sit inside applyAnswers,
+   which runs before scrubSurfaceProse — and the scrub filters steps, so the
+   garage rack was sized to six and then had its pegboard step removed for
+   naming a surface a garage rack does not have. Five steps against a floor of
+   six, and a headline time computed over a list one step longer than the user
+   sees. Sizing has to see the final list. */
+export function sizeToEffort(plan, answers, opts = {}) {
+  if (!plan || !answers) return plan;
+  plan.steps = plan.steps || [];
+  plan.map = plan.map || [];
+  applyEffort(plan, answers, opts.archetype);
+  /* The $0 vocabulary pass runs inside applyAnswers, so growth that happens
+     after it would sail straight past — and it does name containers, because it
+     names the row's own items: a walk-in closet's "Seasonal bins" became "group
+     the seasonal bins…" in a plan promising no purchases. Re-run it over the
+     finished list; it is idempotent, since every replacement it makes stops
+     matching its own rule. */
+  if (answers.budget === '$0' || (answers.prefs || []).includes('Use only what I already own')) {
+    ownOnlyVocabulary(plan);
+  }
+  return plan;
 }
 
 /* The effort label alone used to set the headline time, and it was wrong in
@@ -762,7 +954,10 @@ export function planTimeLabel(steps) {
   const { lo, hi } = planMinuteRange(steps);
   if (!hi) return null;
   const low = round5(lo), high = round5(hi);
-  if (high <= 120) return low === high ? `${high} min` : `${low}–${high} min`;
+  /* Minutes up to three hours. Rounding to half hours at 105–125 min printed
+     "2 hours", which is outside the range it was summarising — the coarse unit
+     was reintroducing the very bug the bands were removed for. */
+  if (high <= 180) return low === high ? `${high} min` : `${low}–${high} min`;
   const a = halfHours(low), b = halfHours(high);
   return a === b ? `${b} hours` : `${a}–${b} hours`;
 }
@@ -778,7 +973,7 @@ export function capTimeToPlan(label, steps) {
 }
 
 /* Apply the full wizard answer set to a raw plan. Mutates and returns it. */
-export function applyAnswers(plan, answers) {
+export function applyAnswers(plan, answers, opts = {}) {
   if (!plan || !answers) return plan;
   plan.steps = plan.steps || [];
   plan.map = plan.map || [];
@@ -789,7 +984,12 @@ export function applyAnswers(plan, answers) {
   applyDims(plan, answers);
   // after every layer that can add a step, so none of them slips a purchase past it
   if (answers.budget === '$0' || (answers.prefs || []).includes('Use only what I already own')) ownOnlyVocabulary(plan);
-  applyEffort(plan, answers); // last: sizes the final step list
+  /* Sizing is last here, but "last in applyAnswers" was not last in the build:
+     getDemoScenario runs the surface scrub afterwards, and the scrub removes
+     steps. Callers that finish the plan themselves pass deferSizing and call
+     sizeToEffort once nothing else can add or remove a step. Default keeps the
+     old behaviour, so a caller that does not know about ordering is unchanged. */
+  if (!opts.deferSizing) applyEffort(plan, answers, opts.archetype);
   return plan;
 }
 

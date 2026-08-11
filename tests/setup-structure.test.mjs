@@ -321,7 +321,9 @@ test('every level cap actually constrains its archetype', () => {
 
 /* ---------- second-round review findings ---------- */
 
-import { planMinuteRange, EFFORT_STEPS } from '../js/personalize.js';
+import { planMinuteRange, EFFORT_STEPS, EFFORT_STEP_RANGES, sizeToEffort } from '../js/personalize.js';
+import { EFFORT_STEP_RANGES as SERVER_RANGES } from '../supabase/functions/_shared/planSchema.js';
+import { mentionsMissingSurface } from '../js/setupStructure.js';
 import { SPACE_CFG, goalIdFor, STYLESETS, prefsForStyles } from '../js/wizard-data.js';
 
 test('the headline time always contains the checklist under it', () => {
@@ -785,4 +787,113 @@ test('a style that visibly changes the plan gets no "already covered" line', () 
     { household: NO_KIDS, styles: ['Labeled everything'], shopping: 'Open to a few ideas' });
   assert.equal((p.opportunities || []).some(o => /already how this plan works/.test(o)), false,
     'promoting the label set is a visible change, so there is nothing to explain');
+});
+
+/* ---------- effort has to buy something ----------
+
+   The only growth test in the suite ran on pantry, which is the one space where
+   this never showed: its zone words happen not to collide with its own step
+   text, and its archetype loses nothing to the surface scrub. Everywhere else,
+   "Full overhaul" (13) and "Weekend reset" (10) collapsed to the same plan —
+   garage/utility 9 and 9, kitchen counter-up 9 and 9, a two-deck overhead rack
+   6 and 6. The biggest commitment bought nothing.
+
+   So these sweep every setup, and assert the property rather than a number. */
+
+const REAL_EFFORTS = ['Quick refresh', 'Weekend reset', 'Full overhaul'];
+const shortfallNote = (p) => (p.opportunities || []).some(o => /comes to \d+ steps/.test(o));
+
+test('a bigger effort answer buys more plan, or says why it cannot', () => {
+  for (const s of ALL_SETUPS) {
+    const counts = REAL_EFFORTS.map(effort => {
+      const p = planFor(s, { effort });
+      return { effort, n: p.steps.length, explained: shortfallNote(p) };
+    });
+    for (let i = 1; i < counts.length; i++) {
+      const prev = counts[i - 1], cur = counts[i];
+      if (cur.n > prev.n) continue;
+      assert.ok(cur.explained,
+        `${s.space}/${s.id}: "${cur.effort}" gives ${cur.n} steps, same as or fewer than "${prev.effort}" (${prev.n}), and says nothing about it`);
+    }
+  }
+});
+
+test('sizing saw the list the reader will see', () => {
+  /* The guard on the call order. The scrub removes steps, so a plan sized
+     before it ran came out one short of its own aim: garage/utility trimmed to
+     six and then lost its pegboard step, leaving five, with the headline time
+     still computed over the six.
+
+     Counting alone cannot catch that, and it is worth saying why. "Within the
+     range the server accepts" passes on five (Quick refresh is [3,6]
+     server-side). "Exactly the target" fails on setups whose zones genuinely
+     run out one step early, which is not a bug. What separates the two is
+     WHEN sizing ran — so this asserts the invariant directly: run sizing again
+     over the finished plan and nothing may move. It is a no-op when sizing
+     already saw the final list, and it grows the plan back when it did not. */
+  for (const s of ALL_SETUPS) {
+    for (const effort of Object.keys(EFFORT_STEPS)) {
+      const p = planFor(s, { effort });          // leaves `state` set for this plan
+      const [, hi] = EFFORT_STEP_RANGES[effort];
+      assert.ok(p.steps.length <= hi,
+        `${s.space}/${s.id} (${effort}): ${p.steps.length} steps, over the server maximum of ${hi}`);
+      const before = p.steps.length;
+      sizeToEffort(p, buildAnalysisContext());
+      assert.equal(p.steps.length, before,
+        `${s.space}/${s.id} (${effort}): sizing was run before something else changed the step list — re-running it moves ${before} to ${p.steps.length}`);
+    }
+  }
+});
+
+test('nothing sizing adds escapes the surface scrub', () => {
+  /* Sizing runs after the scrub now, which is the whole fix — so its own output
+     has to be scrubbed too, or the ordering that fixed one leak opens another.
+     This is the guard that would have caught the pegboard step. */
+  for (const s of ALL_SETUPS) {
+    const archetype = SETUP_ARCHETYPE[s.id];
+    for (const effort of REAL_EFFORTS) {
+      const p = planFor(s, { effort });
+      for (const st of p.steps) {
+        assert.equal(mentionsMissingSurface(st.t, archetype), false,
+          `${s.space}/${s.id} (${effort}): "${st.t}" names a surface a ${archetype} does not have`);
+      }
+      for (const opp of p.opportunities || []) {
+        assert.equal(mentionsMissingSurface(opp, archetype), false,
+          `${s.space}/${s.id} (${effort}): "${opp}" names a surface a ${archetype} does not have`);
+      }
+    }
+  }
+});
+
+test('a deeper plan does not restate itself', () => {
+  /* The old growth step was "Set up the {zone} zone ({level})" — which told the
+     reader nothing the shelf map above it had not already said. That is what
+     made it read as padding, more than the count did. */
+  for (const s of ALL_SETUPS) {
+    const p = planFor(s, { effort: 'Full overhaul' });
+    const tasks = p.steps.map(x => x.t);
+    assert.equal(new Set(tasks).size, tasks.length, `${s.space}/${s.id}: a step is repeated verbatim`);
+    for (const a of tasks) {
+      for (const b of tasks) {
+        if (a === b) continue;
+        assert.ok(!b.includes(a), `${s.space}/${s.id}: "${a}" is contained in "${b}"`);
+      }
+    }
+  }
+});
+
+test('every step carries a time the headline can add up', () => {
+  /* planMinuteRange silently contributes zero for an unparseable time, so a
+     step with none would let the bracket test above pass over a plan whose
+     printed total is short by that step. */
+  for (const s of ALL_SETUPS) {
+    for (const st of planFor(s, { effort: 'Full overhaul' }).steps) {
+      assert.match(String(st.m || ''), /\d/, `${s.space}/${s.id}: "${st.t}" has no time`);
+    }
+  }
+});
+
+test('the client and the server agree on what a plan may run to', () => {
+  assert.deepEqual(EFFORT_STEP_RANGES, SERVER_RANGES,
+    'the client copy of the step ranges has drifted from the one the server validates against');
 });
