@@ -57,7 +57,11 @@ export const PREFS = [
      dividers", "Matching hangers", "File-folded drawers", "Shelf dividers",
      "A slot for everything", "Shadow-board pegboard", "A drawer per tool
      type". The style step read as a taste question the plan never answered. */
-  'Use dividers','Matching hangers','File-fold clothes','Outline tools on a pegboard','One category per drawer'
+  'Use dividers','Matching hangers','File-fold clothes','Outline tools on a pegboard','One category per drawer',
+  /* "Everything on the wall" used to bridge to 'Maximize vertical space', whose
+     handler adds risers — which sit ON shelves, the opposite of clearing the
+     floor. The garage card promises hooks and racks, so it needs its own. */
+  'Wall-mounted storage'
 ];
 export const BUDGETS = ['$0','Under $50','Under $100','Under $250','No budget selected'];
 export const EFFORT = [

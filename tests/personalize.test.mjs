@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyAnswers, applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision, planMinutes, planMinuteRange } from '../js/personalize.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
+import { STYLESETS, prefsForStyles } from '../js/wizard-data.js';
 
 // Every wizard answer must leave a visible, attributable trace in the plan —
 // otherwise the plan reads as a template. These tests run the deterministic
@@ -372,4 +373,106 @@ test('a goal-cited step survives effort trimming', () => {
     { goals: ['Expired food hides in back'], effort: 'Quick refresh' });
   assert.ok(stepText(plan).includes('Expired food hides in back'),
     'the trim removed the step that cites the user\'s stated problem');
+});
+
+/* ---------- style answers must be answered, not merely matched ----------
+   36 cards bridge to 17 preferences, which is fine — "Labeled drawers" and
+   "Labeled shelves" are one intent in two nouns. What was not fine is what the
+   bridge did on the way through. */
+
+const STYLE_HOUSEHOLD = {
+  adults: 2, kidCount: 0, petCount: 0,
+  kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] },
+  mobility: [], notes: '',
+};
+const STYLE_SETUP = {
+  pantry: 'cabinet', cabinet: 'cabinet', drawers: 'drawers', closet: 'reachin',
+  dresser: 'dresser', bathroom: 'undersink', linen: 'linen', garage: 'utility',
+  workbench: 'workbench',
+};
+const styleAnswers = (label) => ({
+  prefs: [...prefsForStyles([label])], styles: [label],
+  budget: null, effort: 'Weekend reset', toggles: {}, dims: null, metric: false,
+});
+
+test('every style card leaves a trace a reader can find', () => {
+  const missing = [];
+  for (const [space, cards] of Object.entries(STYLESETS)) {
+    for (const card of cards) {
+      const plan = getDemoScenario(space, 'find', STYLE_HOUSEHOLD,
+        styleAnswers(card.label), STYLE_SETUP[space]);
+      const cited = plan.steps.some(s => s.cite);
+      const inProse = /minimal look/i.test(plan.summary)
+        || (plan.opportunities || []).some(o => o.includes(card.label));
+      if (!cited && !inProse) missing.push(`${space}/${card.label}`);
+    }
+  }
+  assert.deepEqual(missing, [], `style cards with no trace in the plan:\n${missing.join('\n')}`);
+});
+
+test('a citation never lands on a step the surface scrub is about to delete', () => {
+  /* The garage projection adds "Hang hand tools on the pegboard", /hang/ matched
+     it, and the scrub then removed it — a garage rack has no pegboard — so the
+     answer that cited it vanished between the two. The user picked a card, the
+     plan agreed with them, and then deleted the agreement. */
+  const plan = getDemoScenario('garage', 'find', STYLE_HOUSEHOLD,
+    styleAnswers('Everything on the wall'), 'utility');
+  const cited = plan.steps.find(s => s.cite);
+  assert.ok(cited, `no cited step survived: ${plan.steps.map(s => s.task).join(' | ')}`);
+  assert.match(cited.task, /hook|wall rack/i,
+    'cited a step that is not about wall storage');
+  assert.doesNotMatch(cited.task, /pegboard/i, 'cited the pegboard step the scrub removes');
+});
+
+test('"everything on the wall" is not answered with shelf risers', () => {
+  /* It bridged to "Maximize vertical space", whose handler adds risers — which
+     sit ON shelves, the opposite of clearing the floor. */
+  const plan = getDemoScenario('garage', 'find', STYLE_HOUSEHOLD,
+    styleAnswers('Everything on the wall'), 'utility');
+  const cited = plan.steps.find(s => s.cite);
+  assert.doesNotMatch(cited.task, /riser/i);
+});
+
+test('a mention is not a fulfilment', () => {
+  /* "Box holiday decorations into labeled bins" is a boxing step. Crediting it
+     as the garage's "Big readable labels" answer left a user who asked for
+     labels findable from the doorway with no labelling step and their answer
+     stapled to a holiday-decorations task. */
+  const plan = getDemoScenario('garage', 'find', STYLE_HOUSEHOLD,
+    styleAnswers('Big readable labels'), 'utility');
+  const cited = plan.steps.find(s => s.cite);
+  assert.match(cited.task, /^Label\b/i,
+    `cited a step that only mentions labels: "${cited.task}"`);
+});
+
+test('a styling answer is never served by a safety step', () => {
+  /* "Put all chemicals in one caddy, up high" exists because bleach is
+     dangerous, not because anyone likes caddies. It carries the word the
+     container preferences match on, and citing it told a user who asked for
+     trays and caddies that the chemical-storage rule answered their taste. */
+  const plan = getDemoScenario('bathroom', 'find', STYLE_HOUSEHOLD,
+    styleAnswers('Trays & caddies'), 'undersink');
+  const cited = plan.steps.find(s => s.cite);
+  assert.doesNotMatch(cited.task, /chemical|bleach|medicine/i,
+    `styling answer cited a safety step: "${cited.task}"`);
+});
+
+test('the plan uses the container word the user picked', () => {
+  /* Five spaces bridge to one basket preference, but nobody picked a bridge.
+     Being told to corral things into baskets when you asked for caddies is the
+     plan answering a question you did not ask. */
+  const cases = [
+    ['drawers', 'Trays & caddies', 'drawers', /trays and caddies/i],
+    ['linen', 'Woven baskets', 'linen', /woven baskets/i],
+    ['garage', 'Clear latching totes', 'utility', /latching totes/i],
+    ['bathroom', 'Clear acrylic', 'undersink', /clear acrylic/i],
+  ];
+  for (const [space, label, setup, want] of cases) {
+    const plan = getDemoScenario(space, 'find', STYLE_HOUSEHOLD, styleAnswers(label), setup);
+    const cited = plan.steps.find(s => s.cite);
+    assert.match(cited.task, want, `${space}/${label}: plan used its word, not theirs`);
+    // and the substitution left a sentence, not a splice
+    assert.doesNotMatch(cited.task, /per (?:trays|woven|latching|clear)/i,
+      `${space}/${label}: noun substitution broke the sentence — "${cited.task}"`);
+  }
 });
