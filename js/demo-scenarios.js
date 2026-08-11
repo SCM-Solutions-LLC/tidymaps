@@ -1897,6 +1897,19 @@ const OWNS_PHRASE = [
   [/\bWe noticed you already have\b/g, 'Spaces like this usually have'],
 ];
 
+/* "2 baskets" -> "Baskets", "Two shallow drawers" -> "Shallow drawers". The
+   leading count is the part that could only come from looking. */
+const COUNT_PREFIX = /^(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+/i;
+function dropCount(title) {
+  const raw = String(title || '');
+  const prefix = raw.startsWith('Reuse: ') ? 'Reuse: ' : '';
+  const body = raw.slice(prefix.length);
+  if (!COUNT_PREFIX.test(body)) return raw;
+  const stripped = body.replace(COUNT_PREFIX, '');
+  if (!stripped) return raw;
+  return prefix + (prefix ? stripped : stripped.charAt(0).toUpperCase() + stripped.slice(1));
+}
+
 function speakAsTypical(plan) {
   if (!plan) return plan;
 
@@ -1911,6 +1924,15 @@ function speakAsTypical(plan) {
   let lede = plan.existingLede || '';
   for (const [re, to] of OWNS_PHRASE) lede = lede.replace(re, to);
   plan.existingLede = lede;
+
+  /* The cards under that lede kept counting things nobody counted: "Reuse: 2
+     baskets", "3 cardboard boxes", "5 heavy-duty shelves". A softened lede
+     over a hard inventory is not softened — the number is the claim. Drop the
+     count and keep the thing, so the card still says what to look for. */
+  plan.existing = (plan.existing || []).map(e => ({
+    ...e,
+    title: dropCount(e.title),
+  }));
 
   /* The problems list is observational too, but as list items there is nowhere
      to put a clause. The report titles that column instead — see

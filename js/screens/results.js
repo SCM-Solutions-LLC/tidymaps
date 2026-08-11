@@ -144,11 +144,18 @@ export function buildResults(){
   }
   // kpis
   const kpis=[
-    ['Space type', A?A.spaceType:'Pantry'],['Categories',state.cats.length+' found'],
-    ['Time', A?A.time:'45–90 min'],['Cost', A?A.cost:'$0 / $45–85']
+    /* "2 found" and "Detected item categories" describe a photo being read.
+       With no photo those two categories are the user's own answers from step 7
+       being read back to them as a discovery, which is the same lie the summary
+       scoping fixed one section up. */
+    ['Space type', A?A.spaceType:'Pantry'],
+    ['Categories', state.cats.length + (unobserved ? ' listed' : ' found')],
+    ['Time', A?A.time:'45–90 min'],['Cost', costLabel()]
   ];
-  document.getElementById('res-kpis').innerHTML=kpis.map(([k,v])=>`<div class="kpi"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`).join('');
+  document.getElementById('res-kpis').innerHTML=kpis.map(([k,v])=>`<div class="kpi"><div class="k">${escapeHtml(k)}</div><div class="v"${k==='Cost'?' id="kpi-cost"':''}>${escapeHtml(v)}</div></div>`).join('');
   document.getElementById('res-cat-tags').innerHTML=state.cats.map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('');
+  const catTitle=document.getElementById('res-cat-title');
+  if(catTitle) catTitle.textContent = unobserved ? 'Item categories you told us about' : 'Detected item categories';
   const problems = (A&&A.problems.length)?A.problems:[
     'Similar items are spread across multiple shelves','Frequently used snacks are too high',
     'Canned goods are hard to see','Loose packets are creating clutter',
@@ -526,7 +533,27 @@ export function uncheckAllUpgrades(){
   persistShopping();
   toast('All upgrades removed — you\'re on the $0 plan');
 }
+/* The Cost tile used to print the scenario's own constant — "$0 / $45–85" —
+   over a shopping list the app had pre-selected and pre-ticked to $153, on the
+   same screen, and adjusting the plan did not move it. The two numbers now come
+   from the same place: the products actually ticked. */
+export function costLabel(){
+  const picked=(state.upgrades ? (state.shopping||[]) : []).filter(s=>s.checked);
+  if(!picked.length) return '$0';
+  const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
+  const unpriced=picked.some(s=>s.price_usd==null);
+  // Both options stay visible: the plan works at $0, and this is what the
+  // selected products add to it.
+  return '$0 / $'+Math.round(total)+(unpriced?'+':'');
+}
+
+function syncCostKpi(){
+  const el=document.getElementById('kpi-cost');
+  if(el) el.textContent=costLabel();
+}
+
 export function renderShopping(){
+  syncCostKpi();
   const picked=(state.shopping||[]).filter(s=>s.checked);
   const list=document.getElementById('res-shopping');
   list.innerHTML=picked.length?picked.map(s=>
@@ -595,6 +622,7 @@ export function renderSteps(rawList){
   const list=(rawList||[]).map(s=>(s && s.t!==undefined) ? s
     : {t:(s&&s.task)||'', m:((s&&s.time)||'—'), w:(s&&s.why)||''}).filter(s=>s.t);
   state.stepDone=new Array(list.length).fill(false);
+  state.stepSkipped=new Array(list.length).fill(false);
   list.forEach((s,i)=>{
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;
     const art=STEP_ART[classifyAction(s)]||STEP_ART.done;
@@ -695,15 +723,29 @@ export function applySavedProgress(saved){
     if(v && state.stepDone && i<state.stepDone.length && !state.stepDone[i]) toggleStep(i);
   });
 }
+/* Skipping is not doing. Skip used to call toggleStep, so the card flipped to
+   "Completed", the progress bar moved, and the toast said "Step skipped" — the
+   app recording work that was explicitly declined, in a checklist whose whole
+   value is knowing what is left. The step is set aside instead: out of the way,
+   still open, and not counted. */
 export function skipStep(i){
-  if(!state.stepDone[i]) toggleStep(i);
-  toast('Step skipped');
+  if(state.stepDone[i]) toggleStep(i);          // un-complete before setting aside
+  state.stepSkipped=state.stepSkipped||[];
+  state.stepSkipped[i]=!state.stepSkipped[i];
+  const card=document.getElementById('task-'+i);
+  if(card) card.classList.toggle('skipped', !!state.stepSkipped[i]);
+  const btn=card && card.querySelector('.acts button:nth-of-type(2)');
+  if(btn) btn.textContent=state.stepSkipped[i]?'Unskip':'Skip';
+  updateProgress();
+  toast(state.stepSkipped[i]?'Step set aside — it is still on the list':'Step back on the list');
 }
 export function updateProgress(){
   const done=state.stepDone.filter(Boolean).length;
+  const skipped=(state.stepSkipped||[]).filter(Boolean).length;
   const n=state.stepCount;
   const pct=Math.round(done/n*100);
-  document.getElementById('prog-text').textContent=`Step ${done} of ${n} complete`;
+  document.getElementById('prog-text').textContent=
+    `Step ${done} of ${n} complete`+(skipped?` · ${skipped} set aside`:'');
   document.getElementById('prog-pct').textContent=pct+'%';
   document.getElementById('prog-bar').style.width=pct+'%';
 }
@@ -747,6 +789,8 @@ export function setUpgrades(on){
   document.getElementById('res-upgrades-wrap').classList.toggle('hide',!on);
   const tocShop=document.getElementById('toc-shop');
   if(tocShop) tocShop.classList.toggle('hide',!on);
+  // Turning the section off zeroes what the plan costs; the tile has to hear it.
+  syncCostKpi();
 }
 
 /* Called after analysis (see loading.js). The contents step's category list

@@ -141,7 +141,12 @@ export const CUSTOMIZE = [
   ['hide','Hide more clutter','Shifts loose items into bins and baskets.'],
   ['labels','Add more labels','Every zone gets a labelled home.'],
   ['fewer','Reduce the number of steps','Condenses the plan into a quick 5-step reset.'],
-  ['faster','Make it faster','Targets a 30-minute version of the plan.'],
+  /* It used to say "targets a 30-minute version" and produce a 50-minute plan,
+     because it did exactly what "Reduce the number of steps" does — take the
+     first five. Two buttons, one behaviour, and only one of them described it
+     honestly. This one now keeps the five QUICKEST steps, which is a different
+     answer to a different question, and the promise is what it actually does. */
+  ['faster','Make it faster','Keeps the five quickest steps.'],
   ['addprod','Add storage product recommendations','Turns on the optional upgrade plan.'],
   ['rmprod','Remove storage product recommendations','Turns off the optional upgrade plan.']
 ];

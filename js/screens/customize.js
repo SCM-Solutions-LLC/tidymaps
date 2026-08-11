@@ -39,6 +39,11 @@ function dropProductNeeds(){
 /* A "quick version" is five moves. Kept as a constant so the checklist, the
    Time KPI and the copy that promises it can never drift apart. */
 const SHORT_PLAN_STEPS = 5;
+// A step's own upper estimate, so "quickest" means quickest at worst.
+function stepMinutes(s){
+  const m=String((s&&(s.m||s.time))||'').match(/(\d+)(?:\s*[–-]\s*(\d+))?/);
+  return m ? Number(m[2]||m[1]) : 0;
+}
 function shortPlanTime(steps){
   // sum the per-step minute ranges the checklist itself shows
   let lo=0, hi=0;
@@ -85,9 +90,19 @@ export function applyCustomize(id,t,d,b,wrap){
   /* The four shopping options change the plan's own productNeeds and cost,
      so the report has to be rebuilt for the Cost KPI and the upgrade list to
      agree with the panel that just appeared or vanished. */
-  let shoppingChanged=false;
-  if(id==='addprod'){ restoreProductNeeds(); setUpgrades(true); shoppingChanged=true; }
-  if(id==='rmprod'||id==='own'||id==='budget'){ dropProductNeeds(); setUpgrades(false); shoppingChanged=true; }
+  /* "Already on" is not a revision. Turning the upgrade plan on when it is
+     already on rebuilt an identical report under the banner "Plan revised:
+     Add storage product recommendations" — the screen has an "Already applied"
+     state for exactly this and this path never reached it. */
+  let shoppingChanged=false, shoppingNoop=false;
+  if(id==='addprod'){
+    if(state.upgrades && (state.ai&&(state.ai.productNeeds||[]).length)) shoppingNoop=true;
+    else { restoreProductNeeds(); setUpgrades(true); shoppingChanged=true; }
+  }
+  if(id==='rmprod'||id==='own'||id==='budget'){
+    if(id==='rmprod' && !state.upgrades) shoppingNoop=true;
+    else { dropProductNeeds(); setUpgrades(false); shoppingChanged=true; }
+  }
   if(shoppingChanged){
     buildResults();
     setUpgrades(id==='addprod');   // buildResults re-reads state.upgrades
@@ -99,7 +114,7 @@ export function applyCustomize(id,t,d,b,wrap){
   /* minimal / kid / capacity / hide / labels each have a preference handler
      that does the thing their copy describes. They used to skip it entirely
      and re-render the same steps under a "Plan revised" banner. */
-  let revised=false, alreadyDone=false;
+  let revised=false, alreadyDone=shoppingNoop;
   if(id in REVISIONS){
     revised=applyRevision(state.ai, id);
     alreadyDone=!revised;
@@ -120,7 +135,16 @@ export function applyCustomize(id,t,d,b,wrap){
        the effort chip went on quoting the full plan the whole time, directly
        under a banner promising a 30-minute version. Commit the change instead. */
     if(state.ai && baseSteps.length>SHORT_PLAN_STEPS){
-      state.ai.steps=baseSteps.slice(0,SHORT_PLAN_STEPS);
+      /* "Reduce the number of steps" keeps the first five, which are ordered by
+         effect. "Make it faster" keeps the five quickest, in their original
+         order — otherwise the two buttons do the same thing and only one of
+         them says so. */
+      state.ai.steps = id==='faster'
+        ? baseSteps.map((s,i)=>({s,i}))
+            .sort((a,b)=>stepMinutes(a.s)-stepMinutes(b.s)||a.i-b.i)
+            .slice(0,SHORT_PLAN_STEPS)
+            .sort((a,b)=>a.i-b.i).map(x=>x.s)
+        : baseSteps.slice(0,SHORT_PLAN_STEPS);
       state.ai.time=shortPlanTime(state.ai.steps);
       state.ai.revisions=[...(state.ai.revisions||[]), id];
       buildResults();
