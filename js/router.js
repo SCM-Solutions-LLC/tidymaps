@@ -67,14 +67,20 @@ export function getCurrentScreen(){
 const TRANSIENT=new Set(['loading']);
 const canHistory=()=>typeof history!=='undefined' && typeof history.pushState==='function';
 let popping=false;
+/* Bumped by Start over. Entries stamped with an older generation describe
+   answers that no longer exist, so returning to one would drop the user into a
+   step that has been reset under them. History entries cannot be deleted, so
+   they are marked dead instead. */
+let generation=0;
+
+const urlFor=(id)=>(id==='landing' ? location.pathname+location.search : '#'+id);
 
 function syncHistory(id, from, replace){
   if(!canHistory()) return;
-  if(history.state && history.state.screen===id) return;
-  const url=id==='landing' ? location.pathname+location.search : '#'+id;
-  const entry={ screen:id };
-  if(replace || TRANSIENT.has(from) || !history.state) history.replaceState(entry,'',url);
-  else history.pushState(entry,'',url);
+  if(history.state && history.state.screen===id && history.state.gen===generation) return;
+  const entry={ screen:id, gen:generation };
+  if(replace || TRANSIENT.has(from) || !history.state) history.replaceState(entry,'',urlFor(id));
+  else history.pushState(entry,'',urlFor(id));
 }
 
 /* Called once at startup so the session's first entry names a screen. Without
@@ -92,10 +98,26 @@ export function initHistory(){
     const modal=document.getElementById('auth-modal');
     if(modal && !modal.classList.contains('hide')){
       closeAuth();
-      history.pushState({ screen:current },'', location.hash || location.pathname+location.search);
+      // The entry we just popped off carried the PREVIOUS screen's fragment, so
+      // the URL has to be rebuilt from the screen actually on display.
+      history.pushState({ screen:current, gen:generation },'', urlFor(current));
       return;
     }
-    const id=(e.state && e.state.screen) || 'landing';
+    /* An entry with no screen on it is not ours. The report's contents list is
+       six ordinary fragment links, and following one is a same-document
+       navigation that fires popstate with null state — which this handler read
+       as "no screen recorded" and answered with the landing page, so every
+       table-of-contents link threw the finished plan away. Anything we did not
+       stamp is a fragment jump: let the browser scroll and stay out of it. */
+    if(!e.state || !e.state.screen) return;
+    /* An entry from before Start over describes answers that were cleared.
+       Rather than restore a step that no longer means anything, land on the
+       landing page and claim the entry, so a second Back keeps going back. */
+    if(e.state.gen !== generation){
+      go('landing');
+      return;
+    }
+    const id=e.state.screen;
     if(id===current) return;
     // An entry for a screen this build does not have (an old tab, a hand-edited
     // fragment) is left to the browser rather than throwing on a null element.
@@ -244,8 +266,10 @@ export function restart(){
   const custom=document.getElementById('customize-result');
   if(custom) custom.classList.add('hide');
   buildAll();
-  /* Replaces rather than pushes: the answers behind that entry no longer exist,
-     so an entry pointing back into the wizard would return the user to a step
-     that has been reset under them. */
+  /* Every entry already on the stack points at a step whose answers have just
+     been wiped. They cannot be removed, so the generation moves on and they
+     stop resolving to a screen; the current entry is replaced rather than
+     pushed so Start over does not also grow the stack. */
+  generation++;
   go('landing', { replace:true });
 }

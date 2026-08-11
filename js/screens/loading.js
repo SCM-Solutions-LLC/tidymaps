@@ -6,7 +6,7 @@ import { backendConfigured } from '../config.js';
 import { analyzeSpace } from '../api.js';
 import { fileToScaledB64, extractVideoFrames, formatTime } from '../media.js';
 import { normalizeAi, buildAnalysisContext } from '../plan.js';
-import { go } from '../router.js';
+import { go, getCurrentScreen } from '../router.js';
 import { autoSaveSpace } from '../db.js';
 import { syncCategoriesToResults } from './results.js';
 import { track } from '../telemetry.js';
@@ -31,6 +31,18 @@ function showFrames(frames){
     f.appendChild(d);
     setTimeout(()=>d.classList.add('in'), k*150);
   });
+}
+
+/* Anything thrown between here and the network can end up in the banner the
+   user reads, and a JS runtime message there is worse than no message: it
+   reads as the app breaking rather than one analysis not working out. Our own
+   thrown text is written for that banner and passes through; a runtime
+   exception is replaced with the plain version. */
+const RUNTIME_ERROR=/cannot (?:read|destructure|access)|undefined is not|is not a function|null \(reading|JSON|unexpected token|\bNaN\b/i;
+export function readableError(e){
+  const message=(e && e.message) ? String(e.message) : '';
+  if(!message || RUNTIME_ERROR.test(message)) return 'We could not read the plan that came back.';
+  return message;
 }
 
 /* ---------- Loading ---------- */
@@ -101,7 +113,21 @@ export function runLoading(){
           throw new Error('We could not read those photos. JPG or PNG versions usually work.');
         }
       }
-      const { plan, model } = await analyzeSpace(images.slice(0,6), buildAnalysisContext());
+      const answer = await analyzeSpace(images.slice(0,6), buildAnalysisContext());
+      /* Checked before it is destructured, and checked for CONTENT rather than
+         truthiness. A null body used to throw "Cannot destructure property
+         'plan' of '(intermediate value)' as it is null" — straight into the
+         banner the user reads — and `{plan:{}}` passed as a successful analysis,
+         so an empty report shipped under the byline "Analyzed by Claude". A
+         plan is a map and a list of steps; anything else is a failed analysis,
+         whatever status code carried it. */
+      const plan = answer && answer.plan;
+      const model = answer && answer.model;
+      if(!plan || typeof plan!=='object'
+        || !Array.isArray(plan.map) || !plan.map.length
+        || !Array.isArray(plan.steps) || !plan.steps.length){
+        throw new Error('The analysis came back incomplete.');
+      }
       /* Bring the model's words into line with the shape the viewer will draw,
          BEFORE normalizing: the honesty pass reads the plan contract's own field
          names (task/why, title/detail), which normalizeAi renames to the render
@@ -115,7 +141,7 @@ export function runLoading(){
       enforceArchetypeHonesty(plan, drawn.type);
       state.ai = normalizeAi(plan);
       state.planMeta = { model, source:'ai', analyzedAt: Date.now() };
-    })().catch(e=>{ state.aiError = e.message || 'Analysis failed'; state.ai=null; state.planMeta=null; });
+    })().catch(e=>{ state.aiError = readableError(e); state.ai=null; state.planMeta=null; });
   }else{
     // Space-specific demo data, personalized by the full wizard answer set
     // (prefs, budget, effort, toggles, dims) — never a bare template. The
@@ -146,6 +172,13 @@ export function finishLoading(aiPromise){
   const fin=document.getElementById('ls-final');
   if(fin) fin.classList.add('doing');
   const proceed=()=>{
+    /* Leaving the loading screen cancels the build. Back is reachable during an
+       analysis — they run long enough to press it — and the request cannot be
+       recalled, so the finished plan used to arrive later and throw the user
+       onto the report from wherever they had navigated to, mid-edit. Someone
+       who pressed Back wanted to change an answer; the plan they get should be
+       the one built from the answer they changed. */
+    if(getCurrentScreen()!=='loading') return;
     track('plan_created', {
       space: state.space || 'unknown',
       source: (state.planMeta && state.planMeta.source) || (state.aiError ? 'demo-fallback' : 'demo'),

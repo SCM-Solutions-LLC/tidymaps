@@ -105,14 +105,39 @@ test('Back closes the sign-in modal rather than the screen behind it', async ({ 
   expect(await screen(page)).toBe('landing');
 });
 
-test('Start over does not leave an entry pointing back into cleared answers', async ({ page }) => {
+test('Start over puts every cleared step out of Back\'s reach', async ({ page }) => {
+  /* History entries cannot be deleted, so the ones below Start over survive.
+     Returning to one drops the user into a step whose answers were wiped —
+     a Garage run reappearing as the Pantry default, under "Step 7 of 12". */
   await enterWizard(page);
-  await page.locator('#flow-next').click();
-  await page.locator('#flow-next').click();
+  for (let i = 0; i < 5; i++) await page.locator('#flow-next').click();
   page.once('dialog', (d) => d.accept());
   await page.evaluate(() => window.restart());
   await expect(page.locator('#screen-landing')).toHaveClass(/active/);
+
+  for (let i = 0; i < 4; i++) {
+    await page.goBack();
+    expect(await screen(page), `Back press ${i + 1} after Start over`).toBe('landing');
+  }
+});
+
+test('a table-of-contents link scrolls the report instead of leaving it', async ({ page }) => {
+  /* The report's contents list is six ordinary fragment links. Following one is
+     a same-document navigation that fires popstate with null state — which a
+     handler that treats "no screen" as "go home" answers by throwing the
+     finished plan away. */
+  await page.goto('/index.html');
+  await page.getByRole('button', { name: 'View a sample plan' }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+
+  const links = page.locator('.report-toc a[href^="#"]:visible');
+  const count = await links.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    await links.nth(i).click();
+    expect(await screen(page), `contents link ${i + 1}`).toBe('results');
+  }
+  // and Back still works afterwards, rather than walking out through the jumps
   await page.goBack();
-  // the entry restart replaced was 'setup', so Back lands one step earlier
-  expect(await screen(page)).not.toBe('setup');
+  expect(await screen(page)).toBe('results');
 });
