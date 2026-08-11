@@ -308,6 +308,63 @@ export function rewriteForSurfaces(text, archetype) {
   return out.replace(/\s{2,}/g, ' ').trim();
 }
 
+/* Every prose field on a plan, reworded or dropped so nothing describes a
+   fitting this setup does not have.
+
+   This used to live inline inside projectOntoArchetype, which meant it ran in
+   the middle of building a plan — and everything added afterwards (applyGoal,
+   applyHousehold, applyAnswers, applyDims, the preference handlers) sailed
+   straight past it. That is how a rolling tool chest with no wall behind it
+   was told to "outline each tool on the pegboard", and how drawer setups were
+   told "your shelves are 18″ deep". It also never ran at all for the setups
+   whose archetype already matches their scenario's, since the projection is
+   skipped there entirely.
+
+   As a named pass it can run last, over the finished plan, where nothing can
+   get added behind it. Patching the four known injection sites would have held
+   only until someone added a fifth. */
+export function scrubSurfaceProse(plan, archetype) {
+  if (!plan || !archetype) return plan;
+  const fix = (t) => rewriteForSurfaces(t, archetype);
+  const drop = (t) => mentionsMissingSurface(t, archetype);
+
+  /* The summary is a paragraph, so it gets sentence-level treatment: the whole
+     thing can't be dropped for one bad clause, and rewording alone was not
+     enough. Its opening is already rebuilt honestly by rewriteOpening, but the
+     sentences after it come from the scenario and can describe another setup
+     entirely — bathroom wall shelves were introduced correctly and then
+     described as "an under-sink vanity cabinet plus two shallow drawers". */
+  if (plan.summary) {
+    const kept = String(plan.summary)
+      .split(/(?<=[.!?])\s+/)
+      .filter(sentence => !drop(sentence))
+      .map(fix);
+    plan.summary = kept.join(' ').replace(/\s{2,}/g, ' ').trim();
+  }
+  plan.problems = (plan.problems || []).filter(p => !drop(p)).map(fix);
+  plan.opportunities = (plan.opportunities || []).filter(o => !drop(o)).map(fix);
+  plan.safetyNotes = (plan.safetyNotes || []).filter(n => !drop(n)).map(fix);
+  plan.steps = (plan.steps || []).filter(s => !drop(s.task))
+    .map(s => ({ ...s, task: fix(s.task), why: fix(s.why) }));
+  // Titles need the rewrite too, not just the bodies: "Cabinet height" on a
+  // wall shelf and "5 metal shelves" on a two-deck rack are both title text.
+  plan.features = (plan.features || []).filter(f => !drop(f.title + ' ' + f.sub))
+    .map(f => ({ ...f, title: fix(f.title), sub: fix(f.sub) }));
+  plan.existing = (plan.existing || []).filter(e => !drop(e.title + ' ' + e.detail))
+    .map(e => ({ ...e, title: fix(e.title), detail: fix(e.detail) }));
+  /* A sentence that ENUMERATES surfaces cannot be reworded into a true one —
+     "The pegboard, shelf, and drawers already cover every zone" rewrites to
+     "The shelf, shelf, and drawers…" whatever the replacement noun is. Gate
+     these the same way steps and safety notes already are; the report shows a
+     space-neutral line when the lede is empty and hides the callout when the
+     don't-buy note is. */
+  plan.existingLede = drop(plan.existingLede) ? '' : fix(plan.existingLede);
+  plan.dontBuy = drop(plan.dontBuy) ? '' : fix(plan.dontBuy);
+  // Product purposes name surfaces too ("sort screws into the drawer").
+  plan.productNeeds = (plan.productNeeds || []).map(n => ({ ...n, purpose: fix(n.purpose) }));
+  return plan;
+}
+
 /* True when the line is unsalvageable for this archetype. */
 export function mentionsMissingSurface(text, archetype) {
   if (!text) return false;
@@ -712,28 +769,10 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
   plan.layout = { type: archetype };
 
   // Prose and product needs that name a surface this setup does not have.
-  const fix = (t) => rewriteForSurfaces(t, archetype);
-  plan.summary = fix(rewriteOpening(plan.summary, describeSetup({
+  plan.summary = rewriteForSurfaces(rewriteOpening(plan.summary, describeSetup({
     archetype, setupId, dims: opts.dims, levelCount: plan.map.length,
-  })));
-  plan.problems = (plan.problems || []).filter(p => !mentionsMissingSurface(p, archetype)).map(fix);
-  plan.opportunities = (plan.opportunities || []).filter(o => !mentionsMissingSurface(o, archetype)).map(fix);
-  plan.safetyNotes = (plan.safetyNotes || []).filter(n => !mentionsMissingSurface(n, archetype)).map(fix);
-  plan.steps = (plan.steps || []).filter(s => !mentionsMissingSurface(s.task, archetype))
-    .map(s => ({ ...s, task: fix(s.task), why: fix(s.why) }));
-  // Titles need the rewrite too, not just the bodies: "Cabinet height" on a
-  // wall shelf and "5 metal shelves" on a two-deck rack are both title text.
-  plan.features = (plan.features || []).filter(f => !mentionsMissingSurface(f.title + ' ' + f.sub, archetype))
-    .map(f => ({ ...f, title: fix(f.title), sub: fix(f.sub) }));
-  plan.existing = (plan.existing || []).filter(e => !mentionsMissingSurface(e.title + ' ' + e.detail, archetype))
-    .map(e => ({ ...e, title: fix(e.title), detail: fix(e.detail) }));
-  /* A sentence that ENUMERATES surfaces cannot be reworded into a true one —
-     "The pegboard, shelf, and drawers already cover every zone" rewrites to
-     "The shelf, shelf, and drawers…" whatever the replacement noun is. Gate
-     these the same way steps and safety notes already are; the report has a
-     fallback for both. */
-  plan.existingLede = mentionsMissingSurface(plan.existingLede, archetype) ? '' : fix(plan.existingLede);
-  plan.dontBuy = mentionsMissingSurface(plan.dontBuy, archetype) ? '' : fix(plan.dontBuy);
+  })), archetype);
+  scrubSurfaceProse(plan, archetype);
 
   // Order matters: the height-argument sweep would otherwise delete the very
   // note applyContentRules adds, since that note names a height on purpose.
@@ -744,7 +783,7 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
     .filter(p => !mentionsMissingSurface(p.purpose, archetype))
     .filter(p => !(p.type === 'door-rack' && !(ARCHETYPE_SURFACES[archetype] || []).includes('door')))
     .filter(p => !(p.type === 'hook-rack' && !(ARCHETYPE_SURFACES[archetype] || []).includes('pegboard')))
-    .map(p => ({ ...p, purpose: fix(p.purpose) }));
+    .map(p => ({ ...p, purpose: rewriteForSurfaces(p.purpose, archetype) }));
   alignTargetZones(plan);
 
   return plan;

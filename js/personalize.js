@@ -231,9 +231,15 @@ const PREF_HANDLERS = {
   },
   'Outline tools on a pegboard': (plan) => {
     raisePriority(plan, ['hook-rack']);
-    ensureCitedStep(plan, /pegboard|shadow.?board/i,
-      { task: 'Outline each tool on the pegboard so the gap shows what has not come back' },
-      'You asked for a shadow board — the outline is what makes a missing tool obvious.');
+    /* Worded for the idea rather than the fixture. "Outline each tool on the
+       pegboard" was true on a workbench and false on a rolling tool chest,
+       which has no wall behind it — and the surface scrub then deleted the
+       step, so choosing this style did nothing at all on that setup. A marked
+       spot per tool is what a shadow board actually is, and it is as real in a
+       drawer with cut foam as it is on a wall. */
+    ensureCitedStep(plan, /pegboard|shadow.?board|marked spot/i,
+      { task: 'Give every tool one marked spot, so an empty outline shows what has not come back' },
+      'You asked for a shadow board — the marked spot is what makes a missing tool obvious.');
   },
   'One category per drawer': (plan) => {
     ensureCitedStep(plan, /one (?:category|type) per drawer|a drawer per/i,

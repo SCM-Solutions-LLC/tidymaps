@@ -16,10 +16,22 @@ export async function buildDashboard(){
   if(!user){ go('landing'); return; }
   document.getElementById('dash-email').textContent=user.email||'';
   const grid=document.getElementById('dash-grid');
-  grid.innerHTML='<div class="dash-empty">Loading your spaces…</div>';
+  // Cards in the shape they will arrive in, rather than one line of text that
+  // the whole grid then displaces.
+  grid.setAttribute('aria-busy','true');
+  grid.innerHTML=`<div class="dash-card sk-card" aria-hidden="true">
+      <span class="skeleton sk-cover"></span>
+      <span class="skeleton skeleton-text long"></span>
+      <span class="skeleton skeleton-text short"></span>
+    </div>`.repeat(3)
+    + '<div class="dash-empty" style="grid-column:1/-1">Loading your spaces…</div>';
   let spaces=[];
   try{ spaces=await listSpaces(); }
-  catch(e){ grid.innerHTML=`<div class="dash-empty">${escapeHtml(e.message)}</div>`; return; }
+  catch(e){
+    grid.removeAttribute('aria-busy');
+    grid.innerHTML=`<div class="dash-empty">${escapeHtml(e.message)}</div>`; return;
+  }
+  grid.removeAttribute('aria-busy');
   document.getElementById('dash-count').textContent=spaces.length===1?'1 space':spaces.length+' spaces';
 
   grid.innerHTML='';

@@ -245,8 +245,6 @@ export const SETUP_DIMS = {
 export const ROOMY = ['walkin', 'lshape', 'walkinC', 'lshapeC', 'walkinL', 'lshapeL', 'lshapeK'];
 
 /* Setup → 3D geometry family, and the matching 3D-viewer layout chip. */
-export const SETUP_GEOM = { cabinet: 'cabinet', reachin: 'reachin', walkin: 'walkin', lshape: 'lshape', butler: 'butler', counterup: 'butler', lshapeK: 'lshape', tallcabK: 'cabinet', openshelf: 'reachin', incounter: 'butler', tower: 'cabinet', sideboard: 'reachin', wardrobe: 'cabinet', reachinC: 'reachin', walkinC: 'walkin', lshapeC: 'lshape', builtin: 'butler', dresser: 'reachin', chest: 'cabinet', underbed: 'reachin', undersink: 'reachin', vanitydr: 'butler', wallshelf: 'reachin', cabinetL: 'cabinet', reachinL: 'reachin', walkinL: 'walkin', lshapeL: 'lshape', utility: 'reachin', wallcab: 'reachin', overhead: 'reachin', bench: 'butler', toolchest: 'cabinet', wallcabW: 'reachin' };
-export const GEOM_TO_V3D_LAYOUT = { cabinet: 'cabinet', reachin: 'reach-in', walkin: 'walk-in', lshape: 'l-shaped', butler: 'butlers' };
 
 /* A few setups have a richer demo scenario than their area's default. */
 export const SETUP_SCENARIO = { walkinC: 'walkin' };

@@ -87,6 +87,12 @@ test('3D viewer names the organizers shown in the scene',async({page})=>{
     ]);
     state.space='pantry'; state.setup='cabinet'; state.setupLabel='Cabinet';
     state.styles=[]; state.prefs=new Set(); state.dims={w_in:36,h_in:78,d_in:18,shelves:5};
+    /* The organizer panel is only shown to someone who opted into buying
+       storage. It used to render regardless, so a "Use what I have" plan was
+       shown twelve clear bins and a warning that nine of them would not fit —
+       products the user had explicitly declined. This test is about the panel
+       naming its contents correctly, so put it in the state where it appears. */
+    state.upgrades=true;
     state.ai=normalizeAi(getDemoScenario('pantry',null,state.household,null));
     await window.openViewer3d();
   });

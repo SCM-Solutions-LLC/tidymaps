@@ -67,7 +67,12 @@
   display:block;position:sticky;top:var(--appbar-h,57px);z-index:10;
   background:var(--bg);border-bottom:1px solid var(--line);
   margin:0 calc(-1 * var(--pad,18px));padding:0 var(--pad,18px);
+  /* The six links neither wrapped nor scrolled inside their own box, so on a
+     320px screen they pushed the whole report sideways. Contain the scroll. */
+  max-width:100vw;overflow-x:auto;overscroll-behavior-x:contain;
+  scrollbar-width:none;
 }
+.report-toc::-webkit-scrollbar{display:none}
 .report-toc .toc-h{display:none}
 .report-toc ol{
   list-style:none;margin:0;padding:0;display:flex;gap:0;
@@ -191,3 +196,13 @@
 .chapter .ch-head::after{content:"";position:absolute;right:6px;top:50%;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:translateY(-70%) rotate(45deg);transition:transform .18s}
 .chapter.collapsed .ch-head::after{transform:translateY(-30%) rotate(-135deg)}
 .chapter.collapsed > *:not(.ch-head){display:none}
+/* The shopping chapter keeps its head inside #res-upgrades-wrap (the element
+   that shows/hides the whole section), so the rule above would fold the wrapper
+   away and take the head with it. Keep the wrapper, hide its contents instead.
+   Higher specificity than the rule above; .hide still wins over both because it
+   is !important, so an off-plan section stays hidden either way. */
+#ch-shop.collapsed > #res-upgrades-wrap{display:block}
+#ch-shop.collapsed > #res-upgrades-wrap > *:not(.ch-head){display:none}
+/* A folded chapter should still say what is inside it. */
+.chapter.collapsed .ch-sub{display:none}
+.chapter.collapsed .ch-head{margin-bottom:0}

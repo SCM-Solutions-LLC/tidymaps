@@ -1,4 +1,4 @@
-import { LOAD_LABELS } from '../data.js';
+import { LOAD_LABELS, LOAD_LABELS_MEDIA, LOAD_LABELS_COMMON, LOAD_LABELS_NO_MEDIA } from '../data.js';
 import { ICON } from '../icons.js';
 import { state } from '../state.js';
 import { escapeHtml } from '../ui.js';
@@ -38,7 +38,12 @@ export function runLoading(){
   fw.classList.add('hide');
   const title=document.getElementById('load-title');
   if(title) title.textContent=`Building your ${areaFor(state.space).short} plan…`;
-  LOAD_LABELS.forEach((l,i)=>{
+  // Only claim the photo work when photos (or a video) were actually given.
+  const hasMedia = state.uploadedFiles.length > 0 || !!state.uploadedVideo;
+  const labels = hasMedia
+    ? [...LOAD_LABELS_MEDIA, ...LOAD_LABELS_COMMON]
+    : [...LOAD_LABELS_NO_MEDIA, ...LOAD_LABELS_COMMON];
+  labels.forEach((l,i)=>{
     const row=document.createElement('div'); row.className='load-step'; row.id='ls-'+i;
     row.innerHTML=`<span class="dot">${ICON.check}</span><span>${l}</span>`;
     wrap.appendChild(row);
@@ -114,7 +119,10 @@ export function runLoading(){
   let i=0;
   const tick=()=>{
     if(i>0) document.getElementById('ls-'+(i-1)).classList.replace('doing','done');
-    if(i>=LOAD_LABELS.length){ finishLoading(aiPromise); return; }
+    /* Count the numbered rows actually rendered — the media rows are
+       conditional now. #ls-final is appended separately and is not part of the
+       ticker's sequence, so it must not be counted. */
+    if(i>=document.querySelectorAll('#load-steps .load-step:not(#ls-final)').length){ finishLoading(aiPromise); return; }
     const row=document.getElementById('ls-'+i); row.classList.add('doing');
     i++;
     setTimeout(tick, i===2?780:430);
@@ -132,7 +140,7 @@ export function finishLoading(aiPromise){
     });
     if(state.aiError){
       document.getElementById('load-sub').innerHTML =
-        '<span style="color:var(--clay)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';
+        '<span style="color:var(--danger-ink)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';
       if(fin){ fin.classList.remove('doing'); fin.classList.add('err'); }
       // Fallback to demo scenario on AI failure too — same personalization
       const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
