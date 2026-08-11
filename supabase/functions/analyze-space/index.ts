@@ -195,6 +195,7 @@ Deno.serve(async (req) => {
     dims?: { w_in?: number; h_in?: number; d_in?: number };
     household?: { kids?: { present?: boolean } };
     setup?: { archetype?: string; touched?: boolean };
+    shopping?: string;
   };
   const [minSteps, maxSteps] = EFFORT_STEP_RANGES[ctx.effort as string] ?? DEFAULT_STEP_RANGE;
   const kidsPresent = ctx.household?.kids?.present === true;
@@ -221,9 +222,21 @@ Deno.serve(async (req) => {
     && typeof ctx.setup?.archetype === 'string'
     && (ARCHETYPES as string[]).includes(ctx.setup.archetype)
     ? ctx.setup.archetype : null;
+  /* "Use what I have" is a constraint, not a description, so it belongs here
+     rather than in the untrusted block with the rest of the answers. It never
+     reached the model at all: this function had no reference to `shopping`, and
+     productNeeds is optional in the schema with no rule requiring it to be
+     empty — so the promise the report makes ("every step below works with what
+     is already in the space") was enforced only by scrubbing the answer
+     afterwards on the client. Compared against the wizard's own constant rather
+     than interpolated, since `context` is user-supplied. */
+  const usesWhatTheyHave = ctx.shopping === 'Use what I have';
   const enforced = [
     '',
     'Enforced limits for this request. A plan that breaks any of these is rejected and the user sees nothing, so check each one before answering:',
+    ...(usesWhatTheyHave ? [
+      '- productNeeds: this user chose to use only what they already have, so return an EMPTY productNeeds array and write every step to work with containers, boxes and jars already in the space. Do not name a product to buy anywhere in the plan, including in summary, problems, opportunities and dontBuy.',
+    ] : []),
     ...(chosenArchetype ? [
       `- layout.type: the user picked their own setup from a set of cards, so classify this space as "${chosenArchetype}" and write every level name, step, and product suggestion for that shape. Describe only the surfaces "${chosenArchetype}" actually has. If the photos show something genuinely different, still use "${chosenArchetype}" and say what you see in the summary instead.`,
     ] : []),
