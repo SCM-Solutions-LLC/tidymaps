@@ -95,3 +95,43 @@ test('the sanitizer still refuses everything it refused before', () => {
     assert.equal(leak in shared, false, `${leak} must not travel with a shared plan`);
   }
 });
+
+/* A renter walked all twelve steps looking for a way to say "nothing can be
+   screwed to a wall" and found none — while the plan engine had handled exactly
+   that for as long as the handler has existed. The questions that once set it
+   were removed and no style derives it, so the behaviour was live and
+   unreachable, and the plan she got named a pegboard zone. */
+test('the no-drilling constraint is reachable from the wizard', async () => {
+  const { HOME_CONSTRAINTS } = await import('../js/screens/wizard.js');
+  const { PREF_HANDLER_KEYS } = await import('../js/personalize.js');
+  assert.ok(HOME_CONSTRAINTS.length, 'the household step offers at least one home limit');
+  for (const [label, pref] of HOME_CONSTRAINTS) {
+    assert.ok(label && label.trim(), 'every constraint chip has a label');
+    assert.ok(PREF_HANDLER_KEYS.includes(pref),
+      `"${pref}" has no handler, so the chip would do nothing`);
+  }
+});
+
+test('a no-drilling plan stops telling the user to make holes', () => {
+  const HOLE = /\bdrill|wall[- ]mounted|\bhang(?:ing)? hooks?\b|\bbrackets?\b|\banchors?\b/i;
+  for (const [space, setup] of [['workbench', 'bench'], ['closet', 'reachinC'], ['garage', 'utility']]) {
+    const p = getDemoScenario(space, 'find', NO_KIDS,
+      { prefs: ['No drilling or permanent installation'], effort: 'Full overhaul' }, setup);
+    const said = [...p.steps.map(s => s.task), ...(p.opportunities || []).filter(o => !/freestanding/.test(o)), p.dontBuy || ''];
+    for (const line of said) {
+      assert.doesNotMatch(String(line), HOLE, `${space}: "${line}"`);
+    }
+    assert.equal(p.productNeeds.some(n => ['hook-rack', 'door-rack'].includes(n.type)), false,
+      `${space}: recommends hardware that has to be fixed to something`);
+    assert.ok((p.opportunities || []).some(o => /freestanding/i.test(o)), `${space}: the answer is not cited`);
+  }
+});
+
+test('it does not delete the screws the user is trying to organize', () => {
+  /* The filter used to look for "screw", which took out "Sort screws and
+     fasteners into compartments by size" — a step about the contents of the
+     space, not about attaching anything to it. */
+  const p = getDemoScenario('workbench', 'find', NO_KIDS,
+    { prefs: ['No drilling or permanent installation'], effort: 'Full overhaul' }, 'bench');
+  assert.match(p.steps.map(s => s.task).join(' | '), /screws and fasteners/i);
+});

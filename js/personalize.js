@@ -132,6 +132,12 @@ function applyBudget(plan, answers) {
 }
 
 // Each pref maps to a concrete, cited change. Order matters only for text.
+/* Exported so a control that claims to set a preference can be checked against
+   the list of preferences that actually do something. "No drilling or permanent
+   installation" was handled here for as long as the handler has existed, with
+   nothing in the wizard able to reach it. */
+export const PREF_HANDLER_KEYS = [];
+
 const PREF_HANDLERS = {
   'Keep frequent items easy to reach': (plan) => {
     const eye = plan.map.find(m => m.eye);
@@ -162,9 +168,20 @@ const PREF_HANDLERS = {
     if (low) low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
   },
   'No drilling or permanent installation': (plan) => {
-    plan.steps = plan.steps.filter(st => !/drill|mount|screw|install hardware/i.test(stepTask(st)));
+    /* The filter used to look for the word "drill". It missed every phrasing a
+       plan actually uses: "Hang hand tools on the pegboard", "Hang hooks on the
+       wall beside it", and a don't-buy note recommending wall-mounted hooks as
+       safer. Someone whose lease forbids holes was handed a whole zone they
+       cannot build, so the pattern covers the act rather than the verb. */
+    /* Anchored on making a hole, not on nouns. "screw" alone deleted "Sort
+       screws and fasteners into compartments" — the user's screws are a thing
+       to organize, not an installation. A pegboard the bench already came with
+       is likewise fine to use; what this rules out is putting a new one up. */
+    const FIXED = /\bdrill|\bmount(?:ed|ing)?\b|screwed (?:in|into|to)|install(?:ing)? (?:hardware|a pegboard|a rack|a rail)|\bhang(?:ing)? (?:hooks?|rails?|racks?|a rack|shelves)\b|wall[- ]mounted|\banchors?\b|adhesive strip|command strip|\bbrackets?\b/i;
+    plan.steps = plan.steps.filter(st => !FIXED.test(stepTask(st)));
     dropNeeds(plan, p => !['door-rack', 'hook-rack'].includes(p.type));
-    plan.opportunities = plan.opportunities || [];
+    plan.opportunities = (plan.opportunities || []).filter(o => !FIXED.test(String(o || '')));
+    if (FIXED.test(String(plan.dontBuy || ''))) plan.dontBuy = '';
     plan.opportunities.push('Everything in this plan is freestanding — you asked for no drilling or permanent installation.');
   },
   'Minimal look': (plan) => {
@@ -253,6 +270,7 @@ const PREF_HANDLERS = {
   // 'Use only what I already own' is handled in applyBudget (it zeroes purchases)
   'Use only what I already own': () => {},
 };
+PREF_HANDLER_KEYS.push(...Object.keys(PREF_HANDLERS));
 
 /* The "Adjust this plan" options on the results screen. Five of them —
    minimal, kid, capacity, hide, labels — used to fall through applyCustomize

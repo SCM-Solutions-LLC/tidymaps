@@ -58,3 +58,57 @@ test('a plan built from no photos does not call the answers a detection', async 
   await expect(kpi(page, 'Categories')).toContainText('listed');
   await expect(kpi(page, 'Categories')).not.toContainText('found');
 });
+
+test('a number we cannot use is replaced visibly, not silently', async ({ page }) => {
+  /* Typing 0 left the field reading 3 — the Cabinet default — with no notice,
+     so a 14-inch cabinet was planned, dimensioned and product-fitted as a
+     three-foot one, and the report quoted a measurement nobody entered. */
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  for (let i = 0; i < 3; i++) await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-measure')).toHaveClass(/active/);
+
+  await page.fill('#m-num-w', '4');
+  await page.locator('#m-num-w').blur();
+  await page.fill('#m-num-w', '0');
+  await page.locator('#m-num-w').blur();
+  await expect(page.locator('#m-note-w')).toBeVisible();
+  // the last usable answer stands, rather than the setup's default
+  await expect(page.locator('#m-num-w')).toHaveValue('4');
+
+  await page.fill('#m-num-w', '900');
+  await page.locator('#m-num-w').blur();
+  await expect(page.locator('#m-note-w')).toContainText(/outside what we can plan for/i);
+  await expect(page.locator('#m-num-w')).toHaveValue('14');
+
+  // a good number clears the message
+  await page.fill('#m-num-w', '5');
+  await page.locator('#m-num-w').blur();
+  await expect(page.locator('#m-note-w')).toBeHidden();
+});
+
+test('a renter can say the walls are off limits, and the plan listens', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#room-cards .room-card', { hasText: 'Garage' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#area-cards .room-card', { hasText: 'Workbench' }).first().click();
+  for (let i = 0; i < 4; i++) await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-household')).toHaveClass(/active/);
+
+  const chip = page.locator('#constraint-chips .chip').first();
+  await expect(chip).toBeVisible();
+  await chip.click();
+  await expect(chip).toHaveAttribute('aria-pressed', 'true');
+
+  // it is echoed back on the screen headed "here's what we heard"
+  await page.evaluate(() => window.go('review'));
+  await expect(page.locator('#review-rows')).toContainText(/home limits/i);
+
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  await expandChapters(page);
+  const steps = (await page.locator('#res-steps .tname').allTextContents()).join(' | ');
+  expect(steps).not.toMatch(/\bdrill|wall[- ]mounted|hang hooks/i);
+  await expect(page.locator('#res-opps')).toContainText(/freestanding/i);
+});

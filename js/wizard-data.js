@@ -300,10 +300,16 @@ export function optionsForHousehold(options, household) {
   const list = Array.isArray(options) ? options : [];
   return householdHasKids(household) ? list : list.filter((o) => !isKidOption(o));
 }
+/* These used to promise times: "About 30 minutes", "2–3 hours, no rush". The
+   plan's own Time tile is derived from the steps that end up on it, so the card
+   and the report contradicted each other in the same session — "About 30
+   minutes" produced a plan headed 45–90 min. What this answer actually controls
+   is how much the plan takes on, so that is what it now says. The time is a
+   fact about the finished checklist, and only the checklist gets to state it. */
 export const EFFORT_OPTS = [
-  { label: 'Quick refresh', desc: 'About 30 minutes' },
-  { label: 'Weekend reset', desc: '2–3 hours, no rush' },
-  { label: 'Full overhaul', desc: 'A day or more — do it right' },
+  { label: 'Quick refresh', desc: 'The few changes that matter most' },
+  { label: 'Weekend reset', desc: 'A full pass, no rush' },
+  { label: 'Full overhaul', desc: 'Every zone, done properly' },
 ];
 export const SHOPPING_OPTS = [
   { label: 'Use what I have', desc: 'Build the plan around what’s already in my home.' },

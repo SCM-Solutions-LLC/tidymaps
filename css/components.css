@@ -820,6 +820,10 @@ body[data-flow="1"] .site-footer{display:none}
 .wm-unit{font-size:13.5px;color:var(--ink-3);font-weight:600}
 .wm-val{font-size:14.5px;color:var(--ink);font-weight:700;min-width:54px;text-align:right}
 .wz-measure input[type=range]{display:block;width:100%;accent-color:var(--primary);margin-top:10px}
+/* A number we could not use was replaced silently; this says so. Only takes up
+   room when there is something to say. */
+.wm-note{display:none;margin-top:6px;font-size:13.5px;font-weight:600;color:var(--warn-ink)}
+.wm-note.show{display:block}
 .wz-measure-sum{margin:28px 0 0;font-size:15.5px;color:var(--ink-3)}
 .wz-measure-sum b{color:var(--ink)}
 
