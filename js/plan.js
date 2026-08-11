@@ -211,6 +211,11 @@ export function buildAnalysisContext(){
     effort: state.effort || null,
     toggles,
     dims: state.dims,
+    /* Display preference, not a measurement — state.dims stays in inches for
+       the plan and 3D contract. It travels here only so the offline engine's
+       generated sentences quote the same system the person who generated them
+       is reading, rather than inches regardless. */
+    metric: state.units === 'metric',
     household,
   };
 }

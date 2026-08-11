@@ -828,6 +828,15 @@ body[data-flow="1"] .site-footer{display:none}
    room when there is something to say. */
 .wm-note{display:none;margin-top:6px;font-size:13.5px;font-weight:600;color:var(--warn-ink)}
 .wm-note.show{display:block}
+/* Units toggle: a preference about the reader, so it sits above the fields it
+   governs rather than inside them, and reads as a segmented control rather
+   than another thing to answer. */
+.wz-units{display:flex;gap:2px;margin:0 0 18px;padding:3px;border-radius:10px;background:var(--surface-2);width:fit-content}
+.wz-unit{padding:6px 14px;border:0;border-radius:8px;background:none;font:inherit;font-size:14px;
+  color:var(--ink-3);cursor:pointer;transition:background .15s,color .15s}
+.wz-unit:hover{color:var(--ink)}
+.wz-unit.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.wz-unit:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .wz-measure-sum{margin:28px 0 0;font-size:15.5px;color:var(--ink-3)}
 .wz-measure-sum b{color:var(--ink)}
 

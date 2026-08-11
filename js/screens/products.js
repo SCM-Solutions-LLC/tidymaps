@@ -1,4 +1,5 @@
-import { ROOMS, AREAS, SETUP_TYPES } from '../wizard-data.js';
+import { ROOMS, AREAS, SETUP_TYPES, fmtIn } from '../wizard-data.js';
+import { isMetric } from '../state.js';
 import { loadCatalog, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { getDemoScenario } from '../demo-scenarios.js';
@@ -43,7 +44,8 @@ function needsFor(spaceId){
 const num = n => (Math.round(n * 10) / 10).toString().replace(/\.0$/, '');
 function dimStr(d){
   if(!d) return '';
-  return `${num(d.w)}″ W × ${num(d.h)}″ H × ${num(d.d)}″ D`;
+  const m = isMetric();
+  return `${fmtIn(num(d.w), m)} W × ${fmtIn(num(d.h), m)} H × ${fmtIn(num(d.d), m)} D`;
 }
 function priceStr(p){
   return p == null ? 'Price varies' : '$' + (Number.isInteger(p) ? p : p.toFixed(2));

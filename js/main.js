@@ -2,7 +2,7 @@
    TidyMap — entry point
    ============================================================ */
 import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
-import { state, restoreGuestDraft, applySharedSpace, resetPlanRecord, persistGuestDraft } from './state.js';
+import { state, restoreGuestDraft, applySharedSpace, resetPlanRecord, persistGuestDraft, getUnits } from './state.js';
 import { fetchSharedSpace } from './api.js';
 import { normalizeAi } from './plan.js';
 import { track, telemetryStatus } from './telemetry.js';
@@ -37,6 +37,12 @@ Object.assign(window, {
   // telemetryStatus() for why this exists.
   telemetryStatus,
 });
+
+/* Before the first render: units are a display choice, and reading them after
+   the wizard has drawn itself would show feet for a moment to someone who
+   chose centimetres last visit. Its own read is guarded internally, so blocked
+   site data falls back to imperial rather than failing the boot. */
+state.units = getUnits();
 
 buildAll();
 initLanding();

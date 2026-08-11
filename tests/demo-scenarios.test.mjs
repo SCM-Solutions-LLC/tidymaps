@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getDemoScenario } from '../js/demo-scenarios.js';
+import { SETUP_TYPES } from '../js/wizard-data.js';
 
 // Safety content must fire ONLY when the household actually has kids.
 // Regression coverage for two real bugs the E2E matrix surfaced: base
@@ -298,4 +299,56 @@ test('ages reach the model as numbers, because its safety rules are written in n
 
   state.household = withAges([]);
   assert.equal(buildAnalysisContext().household.kids.ageYears, null, 'no age given, nothing claimed');
+});
+
+/* ---------- metric ----------
+   A units choice is only worth having if it reaches every measurement. Half a
+   translation — centimetres in the summary, inches on the shopping list — is
+   worse than none, because the reader cannot tell which number to trust. */
+
+test('a metric plan quotes no imperial measurement, in any setup', () => {
+  const household = {
+    adults: 2, kidCount: 0, petCount: 0,
+    kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] },
+    mobility: [], notes: '',
+  };
+  const answers = {
+    prefs: [], budget: null, effort: 'Full overhaul', toggles: {},
+    dims: { w_in: 22, h_in: 78, d_in: 18, shelves: null }, metric: true,
+  };
+  const leaks = [];
+  for (const [space, types] of Object.entries(SETUP_TYPES)) {
+    for (const t of types) {
+      const plan = getDemoScenario(space, 'find', household, answers, t.id);
+      const hits = visibleText(plan).match(/[0-9]\s*(?:″|′|-inch| inch| inches| foot| feet)/g);
+      if (hits) leaks.push(`${space}/${t.id}: ${[...new Set(hits)].join(', ')}`);
+    }
+  }
+  assert.deepEqual(leaks, [], `imperial measurements survived in a metric plan:\n${leaks.join('\n')}`);
+});
+
+test('the same plan in the other system differs only in its measurements', () => {
+  /* state.dims stays in inches — it is the plan and 3D contract. Units are a
+     display choice applied last, so the two readers are looking at one plan
+     rendered two ways, not at two different plans. */
+  const household = {
+    adults: 2, kidCount: 0, petCount: 0,
+    kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] },
+    mobility: [], notes: '',
+  };
+  const answers = (metric) => ({
+    prefs: [], budget: null, effort: 'Weekend reset', toggles: {},
+    dims: { w_in: 22, h_in: 78, d_in: 18, shelves: null }, metric,
+  });
+  const imperial = getDemoScenario('pantry', 'find', household, answers(false), 'cabinet');
+  const metric = getDemoScenario('pantry', 'find', household, answers(true), 'cabinet');
+
+  assert.deepEqual(metric.steps.map(s => s.task), imperial.steps.map(s => s.task),
+    'the plan itself changed, not just how it is written');
+  assert.equal(metric.map.length, imperial.map.length);
+  assert.deepEqual(metric.productNeeds.map(p => p.type), imperial.productNeeds.map(p => p.type));
+
+  // and the measurements really did change
+  assert.match(metric.summary, /56 cm wide and 198 cm tall/);
+  assert.match(imperial.summary, /1′10″ wide and 6′6″ tall/);
 });

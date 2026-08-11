@@ -16,6 +16,10 @@ export const state = {
   detected:[],     // item labels surfaced on the photos step
   catsTouched:false, // user edited the contents step → their list is authoritative
   prefs:new Set(), budget:null, effort:'Weekend reset',
+  /* Reader preference, not plan data — see getUnits() below. Seeded from
+     localStorage at startup so it is right on the first render rather than
+     after a toggle. */
+  units:'imperial',
   upgrades:false,
   cats:[], features:[],
   afterMode:'Use existing containers',
@@ -116,6 +120,38 @@ export function householdAnswered(){
   const h=state.household;
   return h.kids.present!==null || h.pets.present!==null || h.mobility.length>0 || !!(h.notes||'').trim();
 }
+
+/* ---------- Units ----------
+   The app measures in feet and inches everywhere and offers no way out, which
+   makes it unusable for most of the world — a metric reader has to convert
+   their own tape measure before they can answer the first question.
+
+   This is deliberately NOT part of the plan or the guest draft. A plan
+   describes a space; units describe the person reading it. Storing the choice
+   on the plan would mean a shared link renders in the author's units on the
+   recipient's screen, which is the same bug the other way round. It lives in
+   its own key so it survives clearing a draft, and so a shared plan is read in
+   the units of whoever opened it. */
+const UNITS_KEY = 'tidymap_units';
+export const UNITS = ['imperial', 'metric'];
+
+export function getUnits(){
+  /* Same guard as the draft reader below: localStorage THROWS rather than
+     returning null when site data is blocked, and units are not worth failing
+     a page load over. */
+  try{
+    const v = localStorage.getItem(UNITS_KEY);
+    return UNITS.includes(v) ? v : 'imperial';
+  }catch{ return 'imperial'; }
+}
+
+export function setUnits(u){
+  if(!UNITS.includes(u)) return;
+  state.units = u;
+  try{ localStorage.setItem(UNITS_KEY, u); }catch{ /* private mode: session-only */ }
+}
+
+export function isMetric(){ return state.units === 'metric'; }
 
 /* ---------- Guest persistence ----------
    Signed-out visitors keep their last plan in localStorage so a reload

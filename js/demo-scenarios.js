@@ -1911,6 +1911,7 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   if (archetype && archetype !== scenarioArchetype) {
     projectOntoArchetype(plan, archetype, setupId, {
       dims: answers && answers.dims,
+      metric: !!(answers && answers.metric),
       sourceArchetype: scenarioArchetype,
     });
   } else if (archetype) {
@@ -1918,6 +1919,7 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
     // the furniture's size with what the user actually measured.
     plan.summary = rewriteOpening(plan.summary, describeSetup({
       archetype, setupId, dims: answers && answers.dims, levelCount: plan.map.length,
+      metric: !!(answers && answers.metric),
     }));
   }
   applyGoal(plan, goal);

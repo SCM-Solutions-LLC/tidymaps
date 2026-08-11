@@ -1,4 +1,5 @@
-import { state, persistGuestDraft } from '../state.js';
+import { state, persistGuestDraft, isMetric } from '../state.js';
+import { fmtIn } from '../wizard-data.js';
 import { toast, escapeHtml } from '../ui.js';
 import { go } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
@@ -252,7 +253,7 @@ function updateStatus(geometry, resolved, sourceGeometry=geometry){
   const label=ARCHETYPE_LABELS[resolved.type]||resolved.type;
   let note=geometry.estimated
     ? 'Dimensions are estimated from your photos. Add measurements in the wizard for exact scale.'
-    : `Built from your measurements: ${sourceGeometry.width}″w × ${sourceGeometry.height}″h × ${sourceGeometry.depth}″d.`;
+    : `Built from your measurements: ${fmtIn(sourceGeometry.width, isMetric())}w × ${fmtIn(sourceGeometry.height, isMetric())}h × ${fmtIn(sourceGeometry.depth, isMetric())}d.`;
   const sourceDesc={
     override:'your selection.',
     ai:'matched from your photos.',
