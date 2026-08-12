@@ -94,8 +94,85 @@ function addStep(plan, step) {
    labels and categories", not that sentence plus a clause about households. */
 const citeFace = (cite) => String(cite || '').split(/\s+[—–-]\s+/)[0].trim().replace(/[.,]$/, '');
 
-function ensureCitedStep(plan, re, step, cite) {
-  const existing = plan.steps.find(st => re.test(stepText(st)));
+/* Does this step INSTRUCT the thing, or merely mention it?
+
+   Two ways a passing mention used to count as fulfilment, both of which pinned
+   a style answer onto a step that does something else:
+
+   - Matching stepText (task + why) meant a step could qualify on its rationale
+     alone, so "Box seasonal items — labels help you find them later" answered
+     "Labeled shelves & bins". The same read-the-why mistake as the effort
+     layer's skip test.
+   - A past participle before a noun describes a container being used, not an
+     action being taken: "Box holiday decorations into labeled bins" was
+     credited as the garage's "Big readable labels" answer, so a user who asked
+     for labels findable from the doorway got a holiday-decorations step with
+     their answer stapled to it and no labelling step at all.
+
+   Only the task is read, and an adjectival participle does not count. A step
+   that genuinely labels — "Label every shelf edge", "Bin the backstock and
+   label the bins" — still matches, so this narrows what counts without
+   inventing duplicate steps where a real one exists. */
+const ADJECTIVAL = /\b\w+ed\s+(?:\w+\s+)?(?:bins?|containers?|boxes|totes?|jars?|baskets?|sections?|drawers?|shelves|shelf)\b/gi;
+
+/* The archetype in force while applyAnswers runs. A citation is only worth
+   attaching to a step that will still be there: the garage projection adds
+   "Hang hand tools on the pegboard", /hang/ matched it, and then the surface
+   scrub deleted it — a garage rack has no pegboard — so the answer that cited
+   it disappeared silently. Module-scoped because the handler map's signature is
+   (plan) and threading a second argument through fourteen call sites to say one
+   thing is worse than saying it once here; applyAnswers is synchronous and
+   clears it on the way out. */
+let activeArchetype = null;
+
+/* The card labels in force, for the same reason and by the same mechanism.
+   Five spaces bridge to "Use baskets / hidden storage", but the user did not
+   pick a bridge — they picked "Trays & caddies", or "Woven baskets", and being
+   told to "corral things into baskets" when you asked for caddies is the plan
+   answering someone else's question. Same defect the pet nouns had. */
+let activeStyles = [];
+
+/* A step that exists because something is dangerous, not because of how anyone
+   likes their things kept. */
+const HAZARD_STEP = /chemical|solvent|paint|medicine|bleach|hazard|sharp/i;
+
+const NOUN_ECHO = [
+  [/trays? & caddies|caddies/i, 'trays and caddies'],
+  [/woven baskets/i, 'woven baskets'],
+  [/clear latching totes/i, 'latching totes'],
+  [/clear acrylic/i, 'clear acrylic containers'],
+];
+
+/* Rewrites a generated step so it names the thing the user named. Only the
+   container noun moves; the instruction is unchanged. */
+function echoNoun(text, generic) {
+  for (const [re, noun] of NOUN_ECHO) {
+    if (activeStyles.some(s => re.test(s))) {
+      return String(text).replace(generic, noun);
+    }
+  }
+  return text;
+}
+
+function instructs(st, re) {
+  const task = stepTask(st);
+  if (!re.test(task)) return false;
+  // Never cite a step the scrub is about to remove.
+  if (activeArchetype && mentionsMissingSurface(task, activeArchetype)) return false;
+  // Re-test with adjectival phrases removed: if the only match lived inside
+  // one, the step was describing its props rather than instructing the work.
+  return re.test(task.replace(ADJECTIVAL, ' '));
+}
+
+/* `avoid` excludes steps that exist for another reason entirely. A styling
+   answer must not be pinned to a safety step: "Put all chemicals in one caddy,
+   up high" contains the word the container prefs match on, and citing it told a
+   user who asked for trays and caddies that their answer was served by the
+   chemical-storage rule. The heavy-items handler deliberately has no `avoid` —
+   that pref IS the safety instruction, so citing it is correct. */
+function ensureCitedStep(plan, re, step, cite, opts = {}) {
+  const ok = (st) => instructs(st, re) && !(opts.avoid && opts.avoid.test(stepTask(st)));
+  const existing = plan.steps.find(ok);
   if (existing) {
     const key = 't' in existing ? 'w' : 'why';
     if (!stepWhy(existing).includes(cite)) existing[key] = (stepWhy(existing) + ' ' + cite).trim();
@@ -232,6 +309,12 @@ const PREF_HANDLERS = {
       { task: 'Label every zone and container' },
       'You asked for labels and categories — labels are what make the system stick for the whole household.');
   },
+  'Wall-mounted storage': (plan) => {
+    raisePriority(plan, ['hook-rack', 'door-rack']);
+    ensureCitedStep(plan, /hook|wall|rack|hang/i,
+      { task: 'Hang what you can on hooks and wall racks, so the floor stays a walkway' },
+      'You asked to get everything on the wall.');
+  },
   'Maximize vertical space': (plan) => {
     raisePriority(plan, ['shelf-riser', 'can-riser']);
     ensureCitedStep(plan, /riser|vertical|stack/i,
@@ -245,15 +328,23 @@ const PREF_HANDLERS = {
   },
   'Use clear containers': (plan) => {
     raisePriority(plan, ['clear-bin', 'airtight-container']);
-    ensureCitedStep(plan, /clear (bin|container)|decant/i,
-      { task: 'Decant loose items into clear containers so contents are visible at a glance' },
-      'You asked for clear containers.');
+    ensureCitedStep(plan, /\bclear (?:bins?|containers?)\b|\bdecant\b|\btotes?\b/i,
+      { task: echoNoun('Decant loose items into clear containers so contents are visible at a glance', /clear containers/) },
+      'You asked for clear containers.', { avoid: HAZARD_STEP });
   },
   'Use baskets / hidden storage': (plan) => {
     raisePriority(plan, ['basket']);
-    ensureCitedStep(plan, /basket/i,
-      { task: 'Corral small loose items into baskets, one category per basket' },
-      'You asked for baskets and hidden storage.');
+    /* Word-bounded: /tray/ matched "strays" and pinned this answer to a
+       lid-matching step, and an unbounded /caddy/ took over the bathroom's
+       "Put all chemicals in one caddy, up high" — a safety step, co-opted to
+       answer a styling question. */
+    ensureCitedStep(plan, /\b(?:baskets?|trays?|caddy|caddies)\b/i,
+      /* "one category each" rather than "one category per basket": the noun is
+         substituted, and repeating it produced "one category per trays and
+         caddies". Saying it once keeps the sentence grammatical whatever the
+         user called their container. */
+      { task: echoNoun('Corral small loose items into baskets, one category each', /baskets/) },
+      'You asked for baskets and hidden storage.', { avoid: HAZARD_STEP });
   },
   'Easy to maintain': (plan) => {
     // deliberately narrow: a "group by weekly use" step is NOT a maintenance step
@@ -983,6 +1074,9 @@ export function applyAnswers(plan, answers, opts = {}) {
   if (!plan || !answers) return plan;
   plan.steps = plan.steps || [];
   plan.map = plan.map || [];
+  activeArchetype = opts.archetype || null;
+  activeStyles = (answers.styles || []).filter(x => typeof x === 'string');
+  try {
   applyBudget(plan, answers);
   applyGoals(plan, answers);   // before prefs, so a pref can cite a goal's step
   applyPrefs(plan, answers);
@@ -997,6 +1091,7 @@ export function applyAnswers(plan, answers, opts = {}) {
      old behaviour, so a caller that does not know about ordering is unchanged. */
   if (!opts.deferSizing) applyEffort(plan, answers, opts.archetype);
   return plan;
+  } finally { activeArchetype = null; activeStyles = []; }
 }
 
 /* ---------- review-screen category edits (normalized plan, both paths) ----------

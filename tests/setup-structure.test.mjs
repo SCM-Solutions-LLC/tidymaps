@@ -677,6 +677,15 @@ test('goal advice never repeats a behavior the checklist already has', () => {
      every item stands upright". */
   const BEHAVIORS = [[/\blabell?(?:s|ed|ing)?\b/i, 'labelling'], [/file[- ]?fold/i, 'file-folding'],
     [/coil (?:each cable|cords)/i, 'coiling cords'], [/\briser\b/i, 'adding a riser']];
+  /* A past participle before a noun names the props, not the work: "Box holiday
+     decorations into labeled bins" is a boxing step that happens to mention
+     labels. Counting it as a labelling step made this test demand that a plan
+     which boxes things into labeled bins must never also instruct labelling —
+     which is how the garage's "Can't find anything" goal ended up with no
+     labelling step at all. The behaviour under test is instructing something
+     twice, so the detector reads instructions only. */
+  const instructionText = (task) => String(task)
+    .replace(/\b\w+ed\s+(?:\w+\s+)?(?:bins?|containers?|boxes|totes?|jars?|baskets?|sections?|drawers?|shelves|shelf)\b/gi, ' ');
   for (const s of ALL_SETUPS) {
     for (const goal of SPACE_CFG[s.space].goals) {
       state.goals = [goal];
@@ -684,7 +693,7 @@ test('goal advice never repeats a behavior the checklist already has', () => {
         { ...buildAnalysisContext(), goals: [goal], effort: 'Full overhaul' }, s.id));
       state.goals = [];
       for (const [re, name] of BEHAVIORS) {
-        const hits = p.steps.filter(x => re.test(x.t));
+        const hits = p.steps.filter(x => re.test(instructionText(x.t)));
         // small parts get their own compartment step; that is not a label step
         const real = name === 'labelling' ? hits.filter(x => !/small parts into/i.test(x.t)) : hits;
         assert.ok(real.length <= 1,

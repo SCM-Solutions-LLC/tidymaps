@@ -381,7 +381,11 @@ const STYLE_PREF_RULES = [
   [/basket|trays & caddies/i, 'Use baskets / hidden storage'],
   [/keep it simple/i, 'Easy to maintain'],
   [/minimal|clear counters/i, 'Minimal look'],
-  [/everything on the wall/i, 'Maximize vertical space'],
+  /* "Everything on the wall" is not "use the empty air above each shelf". The
+     garage card promises hooks and racks with the floor left as a path, and
+     routing it to the riser handler answered a question nobody asked — risers
+     sit ON shelves, which is the opposite of getting things off the floor. */
+  [/everything on the wall/i, 'Wall-mounted storage'],
   /* First match wins, so these sit below the rules above: "Labeled small
      parts" is a label answer before it is a workbench answer. */
   [/divider|a slot for everything/i, 'Use dividers'],

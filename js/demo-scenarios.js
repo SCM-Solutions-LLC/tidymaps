@@ -1922,11 +1922,14 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
       metric: !!(answers && answers.metric),
     }));
   }
+  /* Hoisted above applyAnswers: the citation layer needs it to avoid pinning an
+     answer to a step the scrub below is about to delete. */
+  const finalArchetype = archetype || scenarioArchetype;
   applyGoal(plan, goal);
   applyHousehold(plan, household);
   // Sizing is held back until after the scrub below: it removes steps, and a
   // plan sized before that comes out under its own floor.
-  if (answers) applyAnswers(plan, answers, { deferSizing: true });
+  if (answers) applyAnswers(plan, answers, { deferSizing: true, archetype: finalArchetype });
   // Last: prefs and toggles add steps of their own, and the reach vocabulary
   // has to reach those too.
   rewriteMobilityLanguage(plan, household && household.mobility);
@@ -1946,7 +1949,6 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
      already matches its scenario's, so those setups were never scrubbed at
      all. A sideboard is the clearest case — same archetype as its scenario, so
      no projection, and it was still told its shelves were 18″ deep. */
-  const finalArchetype = archetype || scenarioArchetype;
   if (finalArchetype) scrubSurfaceProse(plan, finalArchetype);
 
   /* After the scrub, because the scrub is the last thing that can remove a
