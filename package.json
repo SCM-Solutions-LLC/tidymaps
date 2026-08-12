@@ -3,7 +3,8 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:e2e": "playwright test",
-    "check:links": "node scripts/check-product-links.mjs"
+    "check:links": "node scripts/check-product-links.mjs",
+    "deploy:functions": "supabase functions deploy --project-ref jwubrtaacveavbkosgtf --use-api"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
