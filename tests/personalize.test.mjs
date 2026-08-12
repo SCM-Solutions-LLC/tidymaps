@@ -476,3 +476,24 @@ test('the plan uses the container word the user picked', () => {
       `${space}/${label}: noun substitution broke the sentence — "${cited.task}"`);
   }
 });
+
+test('a fallback plan owns up to the note it could not read', () => {
+  /* The free-text note is the one place someone can say something no question
+     asked about. It reaches the model, but a fallback plan has no model, and
+     silently dropping it leaves the user believing it was considered. */
+  const household = { ...STYLE_HOUSEHOLD, notes: 'the bottom shelf is warped and wobbles' };
+  const plan = getDemoScenario('pantry', 'find', household,
+    { ...styleAnswers('Keep it simple'), household }, 'cabinet');
+  const line = (plan.opportunities || []).find(o => /You told us/.test(o));
+  assert.ok(line, `no acknowledgement of the note: ${JSON.stringify(plan.opportunities)}`);
+  assert.match(line, /warped/, 'did not quote the note back');
+  /* It must not claim to have used it. Saying "we applied your note" when
+     nothing did is worse than saying nothing. */
+  assert.match(line, /nothing here accounts for it/i);
+});
+
+test('no note, no line', () => {
+  const plan = getDemoScenario('pantry', 'find', STYLE_HOUSEHOLD,
+    styleAnswers('Keep it simple'), 'cabinet');
+  assert.equal((plan.opportunities || []).some(o => /You told us/.test(o)), false);
+});

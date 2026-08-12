@@ -598,6 +598,30 @@ function applyGoals(plan, answers) {
   }
 }
 
+/* The free-text note is the one place someone can tell us something no
+   question asked about, and offline it goes nowhere. Parsing a sentence into
+   plan changes without a model works in a demo and fails on a real answer, so
+   this does NOT pretend to have read it — claiming "we applied your note" when
+   nothing did would be worse than silence. It says the true thing instead, in
+   the same voice and the same place as the goals that did not fit and the
+   styles that were already how the plan works. A fallback plan is exactly when
+   this matters: the model never saw the note, and without this line the user
+   has no way to know their sentence went nowhere. */
+function applyNote(plan, answers) {
+  const note = String((answers.household && answers.household.notes) || '').trim();
+  if (!note) return;
+  /* No guard for the AI path: applyAnswers is reached only through
+     getDemoScenario, so everything here is already a demo or fallback plan. A
+     check against `observed` would read like the AI path passes through this
+     function, and it does not. */
+  const short = note.length > 90 ? `${note.slice(0, 87)}…` : note;
+  plan.opportunities = plan.opportunities || [];
+  if (plan.opportunities.some(o => o.includes(short))) return;
+  plan.opportunities.push(
+    `You told us: “${short}”. This plan was built offline from your other answers, `
+    + `so nothing here accounts for it yet — worth a second look once you start.`);
+}
+
 /* A $0 plan promises "every step below works with what is already in the
    space", and then the space's own checklist said "Bin the backstock and
    label the bins", "Put all chemicals in one caddy" and "Stand baking sheets
@@ -1082,6 +1106,7 @@ export function applyAnswers(plan, answers, opts = {}) {
   applyPrefs(plan, answers);
   applyToggles(plan, answers);
   applyDims(plan, answers);
+  applyNote(plan, answers);
   // after every layer that can add a step, so none of them slips a purchase past it
   if (answers.budget === '$0' || (answers.prefs || []).includes('Use only what I already own')) ownOnlyVocabulary(plan);
   /* Sizing is last here, but "last in applyAnswers" was not last in the build:
