@@ -92,6 +92,19 @@ export function buildResults(){
 
   // product-click intent, delegated so it survives re-renders of the list
   // (property assignment keeps this idempotent across buildResults calls)
+  /* A user who said they are open to buying, given a plan with $118 of
+     recommendations, reported seeing "no product options to purchase" — the
+     chapter renders collapsed, so the whole list sits behind a click nobody
+     knows to make. A section with nothing in it stays folded; a section with
+     something to buy opens itself. */
+  const shopCh=document.getElementById('ch-shop');
+  if(shopCh){
+    const hasNeeds=(activeProductNeeds()||[]).length>0 && state.upgrades;
+    shopCh.classList.toggle('collapsed', !hasNeeds);
+    const head=shopCh.querySelector('.ch-head');
+    if(head) head.setAttribute('aria-expanded', hasNeeds?'true':'false');
+  }
+
   const upWrap=document.getElementById('res-upgrades');
   if(upWrap) upWrap.onclick=(e)=>{
     const a=e.target.closest('a[href]');
@@ -201,7 +214,7 @@ export function buildResults(){
         ${wall?`<span class="lv-wall">${escapeHtml(wall)}</span>`:''}
         <span class="lv">${escapeHtml(lvl)}</span><span class="ic">${m.ic}</span></div>
       <div class="body"><div class="zone">${escapeHtml(m.zone)}${badge}</div>
-        <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div>${safetyWhy}</div>
+        <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div>${safetyWhy}${itemsRow(m)}</div>
     </div>`;
   }).join('');
 
@@ -594,6 +607,27 @@ function tipFor(s){
   const hay=(s.t+' '+(s.w||''));
   for(const [re,tip] of TIP_RULES){ if(re.test(hay)) return tip; }
   return 'Finish one shelf completely before starting the next. Small finished wins keep you going.';
+}
+
+/* The things the plan says it saw on this level.
+
+   Every map row already carries items[] with a name, a size and flags; the 3D
+   view builds from them and normalizeAi preserves them, but the report
+   referenced m.items exactly zero times. So the one place the app could show
+   "here is what I identified in your photo" showed nine category chips
+   instead, and the actual contents were carried all the way to the browser and
+   never drawn. Hazard flags come along, because a row listing bleach should
+   say so where the bleach is named. */
+const ITEM_FLAG_LABEL={heavy:'heavy',chemical:'chemical',sharp:'sharp',fragile:'fragile'};
+function itemsRow(m){
+  const items=(m.items||[]).filter(it=>it&&it.name);
+  if(!items.length) return '';
+  const chips=items.map(it=>{
+    const flags=(it.flags||[]).filter(f=>ITEM_FLAG_LABEL[f]);
+    const title=flags.length?` title="${escapeHtml(flags.map(f=>ITEM_FLAG_LABEL[f]).join(', '))}"`:'';
+    return `<span class="mi${flags.length?' mi-flag':''}"${title}>${escapeHtml(it.name)}</span>`;
+  }).join('');
+  return `<div class="map-items" aria-label="Items identified here">${chips}</div>`;
 }
 
 /* ---------- Animated step illustrations ----------

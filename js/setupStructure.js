@@ -480,7 +480,10 @@ function ft(inches, metric) {
 
 const ROOMY_ARCHETYPES = new Set(['walkin-u', 'l-run']);
 
-const LEVEL_NOUN = {
+/* Exported so the 3D viewer can name a level control after the thing the user
+   is actually adjusting: "Shelves" on a cabinet, "Drawers" on a drawer bank,
+   "Zones" in a walk-in. */
+export const LEVEL_NOUN = {
   'drawer-bank': 'drawers', 'under-bed': 'bays', 'under-sink': 'zones',
   'closet-rod': 'zones', 'closet-system': 'zones', 'workbench': 'zones',
   'counter': 'zones', 'walkin-u': 'zones', 'l-run': 'zones',

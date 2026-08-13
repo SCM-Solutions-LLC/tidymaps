@@ -772,7 +772,11 @@
       </div>
     </div>
     <div class="v3d-structure hide" id="v3d-structure">
-      <span class="v3d-label">Structure</span>
+      <!-- Named for the levels of the CHOSEN layout ("Shelves", "Drawers",
+           "Zones"). "Shelves" used to appear only in the layout-type row above,
+           which read as though a shelf were a peer of a walk-in rather than
+           something a walk-in has. -->
+      <span class="v3d-label" id="v3d-structure-label">Shelves</span>
       <div class="v3d-option-row hide" id="v3d-l-side-control">
         <span class="v3d-option-name">L extension</span>
         <div class="v3d-layout-chips" id="v3d-l-side">
@@ -782,7 +786,7 @@
         </div>
       </div>
       <div class="v3d-shelf-controls hide" id="v3d-shelf-controls">
-        <label class="v3d-dim"><span>Number of shelves <strong id="v3d-shelf-count-val">4</strong></span><input type="range" id="v3d-shelf-count" min="1" max="12" value="4"></label>
+        <label class="v3d-dim"><span id="v3d-shelf-count-label">Number of shelves <strong id="v3d-shelf-count-val">4</strong></span><input type="range" id="v3d-shelf-count" min="1" max="12" value="4"></label>
         <div class="v3d-option-row hide" id="v3d-shelf-placement-control">
           <span class="v3d-option-name">Wall position</span>
           <div class="v3d-layout-chips" id="v3d-shelf-placement">
@@ -791,7 +795,7 @@
             <button class="v3d-chip" type="button" data-placement="right">Right</button>
           </div>
         </div>
-        <div class="v3d-shelf-height-head"><span class="v3d-option-name">Shelf heights</span><button class="btn btn-ghost btn-sm" type="button" id="v3d-even-shelves">Space evenly</button></div>
+        <div class="v3d-shelf-height-head"><span class="v3d-option-name" id="v3d-heights-label">Shelf heights</span><button class="btn btn-ghost btn-sm" type="button" id="v3d-even-shelves">Space evenly</button></div>
         <div class="v3d-shelf-heights" id="v3d-shelf-heights"></div>
       </div>
     </div>
