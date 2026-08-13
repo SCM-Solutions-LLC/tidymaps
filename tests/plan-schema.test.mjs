@@ -420,7 +420,7 @@ test('the enforced-limits block is derived from the validator constants', () => 
    writes state.ai), and the share-link path (js/main.js loadSharedPlan) runs
    it through normalizeAi again. Reading only the raw names blanked every
    step title, zone level and category for every visitor on a shared plan. */
-import { normalizeAi as _normalizeAi } from '../js/plan.js';
+import { normalizeAi as _normalizeAi, modelLabel } from '../js/plan.js';
 import { getDemoScenario as _getDemoScenario } from '../js/demo-scenarios.js';
 import { state as _state } from '../js/state.js';
 
@@ -503,4 +503,36 @@ test('a $0 household is judged by the other rule, not this one', () => {
     'Place turntables and load spices', 'Sort items', 'Label bins',
   ], []), { shopping: 'Use what I have', effort: 'Quick refresh' });
   assert.equal(r.ok, true, r.errors.join(' | '));
+});
+
+/* ---------- the model byline ----------
+   A live plan read "Analyzed by Claude · sonnet 4 6". The byline built that
+   with .replace('claude-','').replace(/-/g,' '), which is lowercase and turns a
+   version number's decimal point into a space. Hyphens do two jobs in a model
+   id — separating words and standing in for the dot — and replacing both with
+   the same character loses the difference. */
+test('a model id reads the way a person would write it', () => {
+  assert.equal(modelLabel('claude-sonnet-4-6'), 'Sonnet 4.6');
+  assert.equal(modelLabel('claude-opus-5'), 'Opus 5');
+  // a dated build is not something a reader needs in a byline
+  assert.equal(modelLabel('claude-haiku-4-5-20251001'), 'Haiku 4.5');
+  assert.equal(modelLabel('claude-sonnet-4-6-latest'), 'Sonnet 4.6');
+  // the older order, where the version came first
+  assert.equal(modelLabel('claude-3-5-sonnet-20241022'), '3.5 Sonnet');
+});
+
+test('an unfamiliar or missing id degrades quietly', () => {
+  /* This is a byline, not a contract. An id shape nobody anticipated should
+     read a little plainly rather than render nothing, throw, or print the word
+     "undefined" on the finished plan. */
+  assert.equal(modelLabel(''), '');
+  assert.equal(modelLabel('   '), '');
+  assert.equal(modelLabel(null), '');
+  assert.equal(modelLabel(undefined), '');
+  assert.equal(modelLabel('claude-'), '');
+  assert.equal(modelLabel('sonnet-4-6'), 'Sonnet 4.6');   // no claude- prefix
+  assert.equal(modelLabel('some_future_model'), 'Some_future_model');
+  for (const weird of ['-', '--', 'claude-latest', 42, {}]) {
+    assert.doesNotThrow(() => modelLabel(weird), `threw on ${JSON.stringify(weird)}`);
+  }
 });

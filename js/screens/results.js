@@ -2,7 +2,7 @@ import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_C
 import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft, isMetric } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
-import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief } from '../plan.js';
+import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief, modelLabel } from '../plan.js';
 import { areaFor, art, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
@@ -58,7 +58,7 @@ export function buildResults(){
   const byline=document.getElementById('res-byline');
   const model=(state.planMeta&&state.planMeta.model)||'';
   if(byline) byline.textContent = isRealAi
-    ? 'Analyzed by Claude'+(model?' · '+model.replace('claude-','').replace(/-/g,' '):'')
+    ? 'Analyzed by Claude'+(modelLabel(model)?' · '+modelLabel(model):'')
     : 'Personalized plan · based on your selections';
 
   // masthead answer chips: setup + measurements, household, effort — the
