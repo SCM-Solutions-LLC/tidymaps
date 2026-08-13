@@ -90,9 +90,29 @@
   background:var(--primary);box-shadow:0 1px 4px oklch(0.3 0.05 55 / .25);cursor:grab;
 }
 .v3d-structure{padding-top:18px;border-top:1px solid var(--line)}
+
+/* The second tier: everything numeric, behind one click. */
+.v3d-advanced{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.v3d-advanced>summary{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 14px;cursor:pointer;list-style:none;
+  font-size:14px;font-weight:700;color:var(--ink-2);
+}
+.v3d-advanced>summary::-webkit-details-marker{display:none}
+.v3d-advanced>summary::after{
+  content:'▾';margin-left:auto;color:var(--ink-3);font-weight:400;transition:transform .15s;
+}
+.v3d-advanced[open]>summary::after{transform:rotate(180deg)}
+.v3d-advanced>summary:hover{color:var(--ink)}
+.v3d-advanced>summary:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.v3d-adv-size{font-weight:600;color:var(--ink-3)}
+.v3d-adv-body{display:grid;gap:18px;padding:4px 14px 16px}
+.v3d-heights-section{display:grid;gap:11px}
 .v3d-option-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .v3d-option-name{font-size:14px;font-weight:700;color:var(--ink-2)}
-.v3d-shelf-controls{display:grid;gap:18px}
+/* Capped so the count and its number stay in the same glance — full-width, the
+   "5" sat a thousand pixels from the words it belonged to. */
+.v3d-shelf-controls{display:grid;gap:18px;max-width:420px}
 .v3d-shelf-height-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .v3d-shelf-heights{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}
 .v3d-shelf-height{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}

@@ -22,8 +22,16 @@ async function openViewer(page) {
   await expect(page.locator('#v3d-layouts .v3d-chip').first()).toBeVisible({ timeout: 20_000 });
 }
 
+/* The exact sizes now sit behind a disclosure — ten sliders on arrival read as
+   a CAD panel rather than a preview. Everything below still asserts they work;
+   it just has to open the drawer first, the way a user does. */
+async function openAdvanced(page) {
+  await page.evaluate(() => { document.getElementById('v3d-advanced').open = true; });
+}
+
 test('every layout type offers its level count and heights', async ({ page }) => {
   await openViewer(page);
+  await openAdvanced(page);
   const layouts = await page.$$eval('#v3d-layouts .v3d-chip', els => els.map(e => e.dataset.layout));
   expect(layouts.length, 'no layout chips rendered').toBeGreaterThan(1);
 
@@ -56,6 +64,15 @@ test('the controls are named for the levels of the chosen layout', async ({ page
   }
   // a shelved layout says shelves; a walk-in's levels are zones
   expect(seen.shelves || '').toMatch(/shelves/i);
+
+  /* And the singular has to be a word. Stripping the trailing s off "Shelves"
+     gave "Shelve heights", and every per-level slider read "Shelve 3". */
+  await openAdvanced(page);
+  const headingAndRows = [
+    (await page.locator('#v3d-heights-label').textContent()),
+    ...(await page.locator('#v3d-shelf-heights .v3d-shelf-height span').allTextContents()),
+  ].join(' ');
+  expect(headingAndRows).not.toMatch(/shelve\b/i);
   if (seen['walkin-u']) expect(seen['walkin-u']).toMatch(/zones/i);
   if (seen['drawer-bank']) expect(seen['drawer-bank']).toMatch(/drawers/i);
 });
@@ -66,6 +83,7 @@ test('"Space evenly" actually changes the shelf positions', async ({ page }) => 
   await openViewer(page);
   await page.locator('#v3d-layouts [data-layout="shelves"]').click();
   await page.waitForTimeout(600);
+  await openAdvanced(page);
 
   const sliders = page.locator('#v3d-shelf-heights [data-shelf-height]');
   await expect(sliders.first()).toBeVisible();
