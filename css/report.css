@@ -203,6 +203,35 @@
    is !important, so an off-plan section stays hidden either way. */
 #ch-shop.collapsed > #res-upgrades-wrap{display:block}
 #ch-shop.collapsed > #res-upgrades-wrap > *:not(.ch-head){display:none}
+/* The items the plan identified on a level. Quiet by design: this is evidence
+   the plan is about the user's own space, not another list to read. */
+.map-items{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.map-items .mi{font-size:12.5px;line-height:1.5;padding:1px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--ink-3);border:1px solid var(--line)}
+.map-items .mi-flag{border-color:var(--warn-line,var(--line));color:var(--ink-2)}
+
 /* A folded chapter should still say what is inside it. */
 .chapter.collapsed .ch-sub{display:none}
 .chapter.collapsed .ch-head{margin-bottom:0}
+
+
+/* ---------- Print / Save as PDF ----------
+   A folded chapter is display:none, and nothing overrode that for print — so
+   the exported PDF of a plan silently dropped the shelf map, the reuse
+   section, the after images, and the product list, keeping only the two
+   chapters that happen to start open. A printed plan is the copy someone
+   carries into the room; it should contain the plan.
+
+   Everything unfolds, and the fold affordance itself goes, because a
+   disclosure arrow on paper is a control nobody can press. */
+@media print {
+  .chapter.collapsed > *:not(.ch-head),
+  #ch-shop.collapsed > #res-upgrades-wrap > *:not(.ch-head) { display: revert; }
+  .chapter.collapsed .ch-sub { display: revert; }
+  .chapter .ch-head::after { display: none; }
+  .chapter .ch-head { cursor: auto; padding-right: 0 }
+  /* Screen-only controls that mean nothing on paper. */
+  #res-actions, #res-rate, .v3d-cta, .ch-head[role="button"] { break-inside: avoid }
+  .chapter { break-inside: auto; page-break-inside: auto }
+  .step, .shelf, .feat { break-inside: avoid; page-break-inside: avoid }
+}

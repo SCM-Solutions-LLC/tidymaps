@@ -3,6 +3,7 @@ import { fmtIn } from '../wizard-data.js';
 import { toast, escapeHtml } from '../ui.js';
 import { go } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
+import { LEVEL_NOUN } from '../setupStructure.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { resolveLayout, chipArchetypesFor, ARCHETYPE_LABELS } from '../layout.js';
@@ -484,10 +485,24 @@ function initStructureControls(geometry,resolved){
   const shelfControls=document.getElementById('v3d-shelf-controls');
   if(!structure||!lControl||!shelfControls) return;
   const isL=resolved.type==='l-run';
-  const isShelves=resolved.type==='shelves';
-  structure.classList.toggle('hide',!isL&&!isShelves);
+  /* Every archetype in js/three/layouts builds from the same `rows`, so every
+     one of them has levels whose count and height a user can reasonably want to
+     change. Gating these on type==='shelves' meant a CABINET — a box whose
+     whole content is shelves — offered no shelf count, no heights, and a
+     "Space evenly" button with no handler attached, because the listener
+     bindings sat below an early return. Four of the five layouts a pantry can
+     take were in that state. */
+  const levelNoun=LEVEL_NOUN[resolved.type]||'shelves';
+  const Noun=levelNoun.charAt(0).toUpperCase()+levelNoun.slice(1);
+  structure.classList.toggle('hide',false);
   lControl.classList.toggle('hide',!isL);
-  shelfControls.classList.toggle('hide',!isShelves);
+  shelfControls.classList.toggle('hide',false);
+  const structureLabel=document.getElementById('v3d-structure-label');
+  if(structureLabel) structureLabel.textContent=Noun;
+  const countLabel=document.getElementById('v3d-shelf-count-label');
+  if(countLabel) countLabel.innerHTML=`Number of ${escapeHtml(levelNoun)} <strong id="v3d-shelf-count-val">${geometry.shelfCount}</strong>`;
+  const heightsLabel=document.getElementById('v3d-heights-label');
+  if(heightsLabel) heightsLabel.textContent=`${Noun.replace(/s$/,'')} heights`;
 
   if(isL){
     const wrap=document.getElementById('v3d-l-side');
@@ -501,7 +516,6 @@ function initStructureControls(geometry,resolved){
     });
   }
 
-  if(!isShelves) return;
   const count=document.getElementById('v3d-shelf-count');
   const countValue=document.getElementById('v3d-shelf-count-val');
   count.value=geometry.shelfCount;
