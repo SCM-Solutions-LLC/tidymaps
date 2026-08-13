@@ -38,6 +38,8 @@ test('wall shelf editor saves count, placement, and uneven heights',async({page}
   await page.locator('[data-placement="right"]').click();
   await page.locator('#v3d-shelf-count').fill('3');
   await page.waitForTimeout(300);
+  // per-shelf heights are the fine adjustment, behind the "Set exact sizes" fold
+  await page.evaluate(()=>{ document.getElementById('v3d-advanced').open=true; });
   await page.locator('[data-shelf-height="1"]').fill('41');
   await page.waitForTimeout(300);
   await page.locator('#v3d-save').click();

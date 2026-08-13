@@ -445,7 +445,7 @@ function populateOrganizers(){
        them at a problem they do not have. Say what happened, and offer the two
        moves that actually change it. */
     fitNote.textContent=unplaced
-      ?`${unplaced} organizer${unplaced===1?'' : 's'} from your list ${unplaced===1?'has':'have'} no spot in this view yet — the levels they were meant for are full. Adjust the level count or heights above, or untick ${unplaced===1?'it':'them'} on the plan.`
+      ?`${unplaced} organizer${unplaced===1?'' : 's'} from your list ${unplaced===1?'has':'have'} no spot in this view yet — the levels they were meant for are full. Add a level above, adjust the heights under “Set exact sizes”, or untick ${unplaced===1?'it':'them'} on the plan.`
       :issueCount?`${issueCount} selected organizer group${issueCount===1?' does':'s do'} not fully fit. Check shelf depth and height.`:'';
   }
 }
@@ -509,6 +509,35 @@ function initLayoutChips(resolved){
   }
 }
 
+/* The viewer had its own feet-and-inches formatter, so a reader who chose
+   metric in the wizard got "6′6″" on every slider in the 3D view — the one
+   screen that never asked which units they wanted. */
+/* "Shelves" minus its s is "Shelve", and the heights heading has been saying
+   so. Plural level nouns here are shelves/drawers/zones/baskets, so one rule
+   for the -ves case and one for the rest covers the vocabulary. */
+function singularLevel(noun){
+  if(/ves$/i.test(noun)) return noun.replace(/ves$/i,'f');
+  return noun.replace(/s$/i,'');
+}
+
+function fmtDim(inches){
+  const value=Math.round(Number(inches)||0);
+  if(isMetric()) return Math.round(value*2.54)+' cm';
+  const feet=Math.floor(value/12);
+  const rest=value%12;
+  if(!feet) return rest+'″';
+  return feet+'′'+(rest?rest+'″':'');
+}
+
+/* What the closed disclosure says. Hiding the sliders should not hide the
+   answer they hold: someone who opens the viewer to check the scale can read
+   it here without opening anything. */
+function updateAdvancedSummary(geometry){
+  const el=document.getElementById('v3d-adv-size');
+  if(!el||!geometry) return;
+  el.textContent=`${fmtDim(geometry.width)} w × ${fmtDim(geometry.depth)} d × ${fmtDim(geometry.height)} h`;
+}
+
 function initDimSliders(geometry, resolved){
   const roomLike=resolved&&['l-run','walkin-u'].includes(resolved.type);
   const vanity=resolved&&resolved.type==='under-sink';
@@ -518,16 +547,12 @@ function initDimSliders(geometry, resolved){
   if(width){ width.min=roomLike?'36':vanity?'18':'12'; width.max=roomLike?'180':vanity?'72':'120'; }
   if(depth){ depth.min=roomLike?'36':vanity?'12':'6'; depth.max=roomLike?'144':vanity?'30':'48'; }
   if(height){ height.min=roomLike?'60':vanity?'28':'12'; height.max=vanity?'42':'120'; }
-  const fmt=v=>{
-    const ft=Math.floor(v/12);
-    const inches=v%12;
-    return ft+'′'+(inches?inches+'″':'');
-  };
   function onSliderInput(){
     const w=parseInt(document.getElementById('v3d-w').value,10)||geometry.width;
     const d=parseInt(document.getElementById('v3d-d').value,10)||geometry.depth;
     const h=parseInt(document.getElementById('v3d-h').value,10)||geometry.height;
     dimsPreview={...geometry, width:w, depth:d, height:h, estimated:false};
+    updateAdvancedSummary({...geometry, width:w, depth:d, height:h});
     markDirty();
     queueRebuild();
   }
@@ -536,7 +561,7 @@ function initDimSliders(geometry, resolved){
     const label=document.getElementById(valId);
     if(!input||!label) return;
     input.oninput=()=>{
-      label.textContent=fmt(parseInt(input.value,10));
+      label.textContent=fmtDim(parseInt(input.value,10));
       onSliderInput();
     };
   });
@@ -544,11 +569,12 @@ function initDimSliders(geometry, resolved){
     const setSlider=(id,valId,val)=>{
       const input=document.getElementById(id);
       const label=document.getElementById(valId);
-      if(input&&label&&val){ input.value=val; label.textContent=fmt(val); }
+      if(input&&label&&val){ input.value=val; label.textContent=fmtDim(val); }
     };
     setSlider('v3d-w','v3d-w-val',geometry.width);
     setSlider('v3d-d','v3d-d-val',geometry.depth);
     setSlider('v3d-h','v3d-h-val',geometry.height);
+    updateAdvancedSummary(geometry);
   }
 }
 
@@ -575,7 +601,7 @@ function initStructureControls(geometry,resolved){
   const countLabel=document.getElementById('v3d-shelf-count-label');
   if(countLabel) countLabel.innerHTML=`Number of ${escapeHtml(levelNoun)} <strong id="v3d-shelf-count-val">${geometry.shelfCount}</strong>`;
   const heightsLabel=document.getElementById('v3d-heights-label');
-  if(heightsLabel) heightsLabel.textContent=`${Noun.replace(/s$/,'')} heights`;
+  if(heightsLabel) heightsLabel.textContent=`${singularLevel(Noun)} heights`;
 
   if(isL){
     const wrap=document.getElementById('v3d-l-side');
@@ -616,14 +642,15 @@ function initStructureControls(geometry,resolved){
   }
 
   const heights=document.getElementById('v3d-shelf-heights');
+  const One=singularLevel(Noun);
   heights.innerHTML=geometry.shelfYFracs.map((_,index)=>{
     const value=shelfHeightInches(geometry,index);
-    return `<label class="v3d-dim v3d-shelf-height"><span>Shelf ${index+1} <strong>${value}″ high</strong></span><input type="range" data-shelf-height="${index}" min="3" max="${Math.max(3,geometry.height-3)}" value="${value}"></label>`;
+    return `<label class="v3d-dim v3d-shelf-height"><span>${escapeHtml(One)} ${index+1} <strong>${fmtDim(value)} high</strong></span><input type="range" data-shelf-height="${index}" min="3" max="${Math.max(3,geometry.height-3)}" value="${value}"></label>`;
   }).join('');
   heights.querySelectorAll('[data-shelf-height]').forEach(input=>{
     input.oninput=()=>{
       const label=input.closest('label').querySelector('strong');
-      label.textContent=input.value+'″ high';
+      label.textContent=fmtDim(input.value)+' high';
       dimsPreview=geometryWithShelfHeight(dimsPreview||geometry,Number(input.dataset.shelfHeight),Number(input.value));
       markDirty();
       queueRebuild();
