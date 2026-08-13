@@ -158,6 +158,45 @@ function checkInvariants(plan, context) {
     errors.push(`steps: expected ${minSteps}-${maxSteps} steps for effort "${(context && context.effort) || 'unspecified'}", got ${plan.steps.length}`);
   }
 
+  /* A plan that tells you to buy something must say WHAT to buy.
+
+     A live plan instructed turntables, can risers and airtight containers
+     across four steps and returned productNeeds: [] — so the shopping list was
+     empty and the Cost tile read "$0" over a checklist that cannot be done for
+     $0. The user had said they were open to buying; they were told to buy and
+     handed no list. Nothing in the schema made those two halves agree.
+
+     Deliberately narrow. This rejects a plan and costs the user a retry, so it
+     only fires on nouns you cannot improvise: a turntable is a purchase, while
+     a "bin", a "basket" or a label is something a household may well already
+     own, and demanding a product entry for those would reject good plans. A
+     step that names the thing as already present is not a purchase either. */
+  const BUYABLE = [
+    [/\bturntables?\b|\blazy susans?\b/i, 'turntable'],
+    [/\bcan risers?\b|\bshelf risers?\b|\brisers?\b/i, 'can-riser or shelf-riser'],
+    [/\bairtight containers?\b/i, 'airtight-container'],
+    [/\bdoor racks?\b/i, 'door-rack'],
+    [/\bhook racks?\b/i, 'hook-rack'],
+    [/\bdrawer (?:organizer|divider)s?\b/i, 'drawer-organizer'],
+  ];
+  const ALREADY_OWNED = /\bexisting\b|\balready\b|\byou (?:have|own)\b|\byour own\b/i;
+  const buysAllowed = !context || context.shopping !== 'Use what I have';
+  if (buysAllowed && !(plan.productNeeds || []).length) {
+    const named = [];
+    for (const step of plan.steps) {
+      const text = `${step.task || ''}`;
+      if (ALREADY_OWNED.test(text)) continue;
+      for (const [re, type] of BUYABLE) {
+        if (re.test(text) && !named.some(n => n.type === type)) named.push({ type, task: step.task });
+      }
+    }
+    if (named.length) {
+      errors.push(`productNeeds is empty, but ${named.length === 1 ? 'a step tells' : 'steps tell'} the user to buy things: `
+        + named.map(n => `"${n.task}" needs ${n.type}`).join('; ')
+        + '. Add an entry to productNeeds for each, or rewrite the step to work with what is already in the space.');
+    }
+  }
+
   const shelfDepth = usableShelfDepth(plan.layout && plan.layout.type, context && context.dims);
   if (shelfDepth) {
     (plan.productNeeds || []).forEach((need, i) => {
