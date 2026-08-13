@@ -817,6 +817,20 @@
         <p class="small muted" style="margin:4px 0 10px">These match your plan. Quantity and spacing adjust to the measured space.</p>
         <div class="v3d-organizer-list" id="v3d-organizer-list"></div>
         <p class="small v3d-fit-note hide" id="v3d-fit-note"></p>
+        <!-- Adding here is a PURCHASE, not a sketch: it goes on the shopping
+             list and into the cost, so the control says so rather than letting
+             someone discover it on the bill. -->
+        <div class="v3d-add-organizer hide" id="v3d-add-organizer">
+          <span class="v3d-option-name">Add one to your list</span>
+          <div class="v3d-add-row">
+            <label class="sr-only" for="v3d-add-type">Organizer type</label>
+            <select id="v3d-add-type"></select>
+            <label class="sr-only" for="v3d-add-level">Which level</label>
+            <select id="v3d-add-level"></select>
+            <button class="btn btn-ghost btn-sm" type="button" id="v3d-add-btn">Add</button>
+          </div>
+          <p class="small muted" id="v3d-add-note" style="margin:6px 0 0">Adds it to your shopping list and cost. Nothing is bought here.</p>
+        </div>
       </section>
     </aside>
   </div>

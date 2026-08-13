@@ -4,6 +4,9 @@ import { toast, escapeHtml } from '../ui.js';
 import { go } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
 import { LEVEL_NOUN } from '../setupStructure.js';
+import { PRODUCT_TYPES } from '../plan.js';
+import { TYPE_LABEL } from '../catalog.js';
+import { addProductNeed } from './results.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { resolveLayout, chipArchetypesFor, ARCHETYPE_LABELS } from '../layout.js';
@@ -157,6 +160,7 @@ function rebuildScene(){
   view.setSize();
   populateZones(map);
   populateOrganizers();
+  populateAddOrganizer();
   initDimSliders(geometry, resolved);
   initStructureControls(geometry,resolved);
   updateStatus(geometry, resolved, sourceGeometry);
@@ -222,6 +226,7 @@ export async function openViewer3d(){
 
     populateZones(map);
     populateOrganizers();
+  populateAddOrganizer();
     initLayoutChips(resolved);
     initDimSliders(geometry, resolved);
     initStructureControls(geometry,resolved);
@@ -334,6 +339,64 @@ const ORGANIZER_LABELS={
   'clear-bin':'Clear bins','basket':'Woven baskets','divider':'Drawer dividers',
   'turntable':'Turntables','riser':'Shelf risers','door-rack':'Door racks','hook-rack':'Hook racks',
 };
+
+/* Adding an organizer here is a PURCHASE. It appends a productNeed to the
+   plan, so it shows up on the shopping list and in the cost, and it is marked
+   addedByUser so the report can say who asked for it — the rest of that list is
+   what the model recommended from the photos, and a plan that quietly mixes the
+   two is claiming credit for the user's own idea.
+
+   maxDims comes from the level it is going on, so the fit badge and the
+   "does not fit" warning mean the same thing for an added item as for a
+   recommended one. */
+function shelfMaxDims(geometry, levelIndex){
+  const rows=Math.max(1,geometry.shelfCount||1);
+  const usableDepth=Math.max(4,(geometry.depth||14)-0.5);
+  const usableWidth=Math.max(4,(geometry.width||30)-1);
+  const fracs=Array.isArray(geometry.shelfYFracs)?geometry.shelfYFracs:[];
+  // the gap to the level above is the headroom an organizer has to fit under
+  let gap=(geometry.height||60)/rows;
+  if(fracs.length>levelIndex+1) gap=Math.abs(fracs[levelIndex+1]-fracs[levelIndex])*(geometry.height||60);
+  return { w_in:Math.round(usableWidth), h_in:Math.max(3,Math.round(gap-1)), d_in:Math.round(usableDepth) };
+}
+
+function populateAddOrganizer(){
+  const wrap=document.getElementById('v3d-add-organizer');
+  if(!wrap) return;
+  // Same gate as the panel above: someone using only what they own is not shown
+  // a way to add a purchase.
+  wrap.classList.toggle('hide',!state.upgrades||!!state.shareView);
+  if(!state.upgrades||state.shareView) return;
+  const typeSel=document.getElementById('v3d-add-type');
+  const levelSel=document.getElementById('v3d-add-level');
+  const btn=document.getElementById('v3d-add-btn');
+  if(!typeSel||!levelSel||!btn) return;
+  if(!typeSel.options.length){
+    typeSel.innerHTML=PRODUCT_TYPES.map(t=>`<option value="${t}">${escapeHtml(TYPE_LABEL[t]||t)}</option>`).join('');
+  }
+  const rows=activeMapV2();
+  levelSel.innerHTML=rows.map((m,i)=>`<option value="${i}">${escapeHtml(m.lv||('Level '+(i+1)))}</option>`).join('');
+  btn.onclick=()=>{
+    const type=typeSel.value;
+    const idx=Math.max(0,Math.min(rows.length-1,Number(levelSel.value)||0));
+    const level=rows[idx];
+    const {geometry}=currentSceneInput();
+    const need={
+      type, qty:1,
+      purpose:`You added this from the 3D view for the ${(level.lv||'shelf').toLowerCase()}.`,
+      targetZone:level.lv||`Level ${idx+1}`,
+      maxDims:shelfMaxDims(geometry,idx),
+      priority:'nice',
+      addedByUser:true,
+    };
+    if(addProductNeed(need)){
+      markDirty();
+      queueRebuild();
+      populateAddOrganizer();
+      toast(`${TYPE_LABEL[type]||type} added to your shopping list.`);
+    }
+  };
+}
 
 function populateOrganizers(){
   const wrap=document.getElementById('v3d-organizer-list');

@@ -103,6 +103,10 @@ export function normalizeAi(j){
         maxDims: (p.maxDims && num(p.maxDims.w_in,0) && num(p.maxDims.h_in,0) && num(p.maxDims.d_in,0))
           ? {w_in:num(p.maxDims.w_in,0), h_in:num(p.maxDims.h_in,0), d_in:num(p.maxDims.d_in,0)} : null,
         priority: p.priority==='high'?'high':'nice',
+        /* Survives normalizeAi so a saved or reloaded plan still knows which
+           products the user asked for. Dropping it here is how `observed` and
+           `cite` were lost before — this whitelist is the whole contract. */
+        ...(p.addedByUser ? { addedByUser:true } : {}),
       })),
     /* Did anything actually look at this space? Demo scenarios set this false;
        a model plan comes from real photos, so absent means observed. The report
