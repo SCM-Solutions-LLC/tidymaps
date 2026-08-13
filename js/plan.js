@@ -124,6 +124,38 @@ export function normalizeAi(j){
   };
 }
 
+/* The model id, as a person would write it.
+
+   The byline built this with `.replace('claude-','').replace(/-/g,' ')`, which
+   turned claude-sonnet-4-6 into "sonnet 4 6" — lowercase, and a version number
+   with its decimal point spread into a space. Hyphens do two different jobs in
+   these ids: they separate words, and they stand in for the dot in a version.
+   Replacing both with the same character loses that.
+
+   Deliberately tolerant of ids it has never seen. This is a byline, not a
+   contract: an unrecognised shape should read a little plainly rather than
+   render nothing or throw. A trailing build date is dropped because it is not
+   something a reader needs. */
+export function modelLabel(id){
+  const raw = String(id || '').trim();
+  if (!raw) return '';
+  const parts = raw.replace(/^claude-/, '').split('-')
+    // a dated build (20251001) or a moving alias is noise in a byline
+    .filter(p => p && !/^\d{6,}$/.test(p) && p !== 'latest');
+  if (!parts.length) return '';
+  const out = [];
+  for (const p of parts) {
+    const isNum = /^\d+$/.test(p);
+    // consecutive numbers are one version: 4, 6 -> 4.6
+    if (isNum && out.length && /^[\d.]+$/.test(out[out.length - 1])) {
+      out[out.length - 1] += '.' + p;
+    } else {
+      out.push(isNum ? p : p.charAt(0).toUpperCase() + p.slice(1));
+    }
+  }
+  return out.join(' ');
+}
+
 /* ---------- Active-plan getters: AI result or demo fallback ---------- */
 export function activeMapV2(){ return (state.ai && state.ai.map && state.ai.map.length) ? state.ai.map : MAP; }
 export function activeGeometry(){
