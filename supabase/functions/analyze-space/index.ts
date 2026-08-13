@@ -241,6 +241,9 @@ Deno.serve(async (req) => {
     ...(chosenArchetype ? [
       `- layout.type: the user picked their own setup from a set of cards, so classify this space as "${chosenArchetype}" and write every level name, step, and product suggestion for that shape. Describe only the surfaces "${chosenArchetype}" actually has. If the photos show something genuinely different, still use "${chosenArchetype}" and say what you see in the summary instead.`,
     ] : []),
+    ...(!usesWhatTheyHave ? [
+      '- productNeeds vs steps: if any step tells the user to use a turntable, riser, airtight container, door rack, hook rack or drawer organizer, that item MUST also appear in productNeeds. A plan that instructs a purchase and returns an empty productNeeds gives the user a shopping list with nothing on it and a cost of $0 over steps they cannot do for $0. Either list what they need to buy, or write the step to work with what is already in the space.',
+    ] : []),
     `- steps: return between ${minSteps} and ${maxSteps} steps, matching the effort level this user chose.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
     kidsPresent

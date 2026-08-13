@@ -439,3 +439,68 @@ test('normalizing an already-normalized plan is a no-op, not a wipe', () => {
   assert.deepEqual(twice.features, once.features, 'features blanked');
   for (const s of twice.steps) assert.ok(s.t && s.m !== '—' || s.m === once.steps[0].m, 'step time lost');
 });
+
+/* ---------- steps and the shopping list have to agree ----------
+   A live plan instructed turntables, can risers and airtight containers across
+   four steps and returned productNeeds: [], so the report showed an empty
+   shopping list and a Cost tile reading "$0" over a checklist that cannot be
+   done for $0. The user had said they were open to buying. They were told to
+   buy, and handed no list. */
+
+const coherencePlan = (tasks, productNeeds) => ({
+  spaceType: 'Pantry',
+  summary: 'A pantry.',
+  map: [{ level: 'Top shelf', icon: 'up', zone: 'Baking', why: 'Rarely used', shelfIndex: 0, safety: { flag: null, why: null } }],
+  geometry: { unit: 'in', width: 30, height: 60, depth: 14, shelfCount: 1, shelfYFracs: [0.1], estimated: true },
+  steps: tasks.map(task => ({ task, time: '10 min', why: 'Because it helps.' })),
+  productNeeds,
+});
+const OPEN_TO_BUYING = { shopping: 'Open to a few ideas', effort: 'Quick refresh' };
+
+test('a plan that instructs a purchase and lists nothing to buy is rejected', () => {
+  const r = validatePlan(coherencePlan([
+    'Transfer dry goods into airtight containers',
+    'Place turntables and load spices',
+    'Set up can risers and stock canned goods',
+  ], []), OPEN_TO_BUYING);
+  assert.equal(r.ok, false);
+  const err = r.errors.find(e => /productNeeds is empty/.test(e));
+  assert.ok(err, `no coherence error raised: ${r.errors.join(' | ')}`);
+  // The message has to name the step and the product, or the retry cannot act on it.
+  assert.match(err, /turntable/);
+  assert.match(err, /airtight-container/);
+  assert.match(err, /Place turntables/);
+});
+
+test('the same plan passes once it says what to buy', () => {
+  const r = validatePlan(coherencePlan([
+    'Place turntables and load spices', 'Sort items by category', 'Label the shelf edges',
+  ], [{ type: 'turntable', qty: 2, purpose: 'Rotate spices', targetZone: 'Top shelf', maxDims: null, priority: 'high' }]),
+  OPEN_TO_BUYING);
+  assert.equal(r.ok, true, r.errors.join(' | '));
+});
+
+test('the rule never fires on things a household already owns', () => {
+  /* This is the half that decides whether the rule is safe to ship: it rejects
+     a plan and costs a retry, so a false positive is expensive. Bins, baskets
+     and labels are improvisable, and a step naming an item as already present
+     is not a purchase. */
+  for (const tasks of [
+    ['Corral snacks into bins', 'Label every shelf edge', 'Sort by category'],
+    ['Use your existing turntable for spices', 'Group cans by type', 'Wipe the shelves'],
+    ['Reuse the baskets you already have', 'Pull the oldest forward', 'Check dates'],
+  ]) {
+    const r = validatePlan(coherencePlan(tasks, []), OPEN_TO_BUYING);
+    assert.equal(r.ok, true, `rejected a plan needing no purchase: ${tasks[0]} — ${r.errors.join(' | ')}`);
+  }
+});
+
+test('a $0 household is judged by the other rule, not this one', () => {
+  /* "Use what I have" is handled by the prompt telling the model to name no
+     product at all. Applying the coherence rule there too would demand a
+     shopping list from the one user who asked not to have one. */
+  const r = validatePlan(coherencePlan([
+    'Place turntables and load spices', 'Sort items', 'Label bins',
+  ], []), { shopping: 'Use what I have', effort: 'Quick refresh' });
+  assert.equal(r.ok, true, r.errors.join(' | '));
+});

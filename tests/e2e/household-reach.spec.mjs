@@ -113,3 +113,26 @@ test('an Adjust option that claims to revise the plan visibly changes it', async
   await page.locator('#customize-opts .opt', { hasText: 'Add more labels' }).click();
   await expect(page.locator('#customize-result')).toContainText('Already applied');
 });
+
+test('the plan shows the reach answer it was built from', async ({ page }) => {
+  /* A live plan carried three safety notes arguing from limited reach, while
+     the household chip read "2 adults" — the answer that shaped the plan most
+     was the one answer the plan did not show. From the outside that is
+     indistinguishable from the model inventing a constraint about someone's
+     body, which is the worst thing this report could be caught doing. */
+  await driveToHousehold(page);
+  await page.locator('#mobility-chips .chip').filter({ hasText: 'Limited reach' }).first().click();
+  await finishFromHousehold(page);
+
+  const chip = page.locator('#chip-household');
+  await expect(chip).toBeVisible();
+  await expect(chip).toContainText('Limited reach');
+  await expect(chip).toContainText('adult');   // the counts still travel with it
+});
+
+test('no reach answer, no reach chip', async ({ page }) => {
+  await driveToHousehold(page);
+  await finishFromHousehold(page);
+  const chip = page.locator('#chip-household');
+  expect(await chip.textContent()).not.toMatch(/Limited reach|Avoid bending|Wheelchair/i);
+});

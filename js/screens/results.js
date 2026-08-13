@@ -74,6 +74,13 @@ export function buildResults(){
     if(h.adults) parts.push(h.adults+(h.adults===1?' adult':' adults'));
     if(h.kidCount) parts.push(h.kidCount+(h.kidCount===1?' kid':' kids'));
     if(h.petCount) parts.push(h.petCount+(h.petCount===1?' pet':' pets'));
+    /* Mobility belongs here more than the counts do. A plan for a household
+       with a reach limitation is built around it — the safety notes argue from
+       it, the zones are placed for it — and the chip row listed "2 adults"
+       while three safety notes cited reach the user had told us about. The
+       answer that shaped the plan most was the one answer it did not show, so
+       the plan read as though it had invented the constraint. */
+    (h.mobility||[]).forEach(m=>parts.push(m));
     chipHh.textContent=parts.join(' · ');
     chipHh.style.display=parts.length?'':'none';
   }
