@@ -15,26 +15,52 @@
 /* ---------- Vocabulary ---------- */
 // Actions mirror the STEP_ART scene set in results.js: the placeholder SVG
 // scenes define the spec the produced clips must match.
-export const ACTIONS = ['purge','unload','wipe','label','hang','fold','photo','contain','group','moveUp','moveDown','zones','done'];
+/* `stock` was the gap. A real pantry plan spends most of its steps putting
+   things back — "Load back wall shelves first", "Set up can risers and stock
+   canned goods" — and the vocabulary had no word for it, so those steps fell
+   through every rule to `done`. One live plan of twelve steps used `done` five
+   times, which is what "the animations are all the same" looks like from the
+   outside. */
+export const ACTIONS = ['purge','unload','wipe','label','hang','fold','photo','contain','group','moveUp','moveDown','zones','stock','done'];
 export const MOTIFS = ['shelves','drawers','rail','bench'];
 export const GLYPHS = ['shoe','hanger','foldedclothes','towel','jar','can','bottle','utensil','tool','tote','plate','bag'];
 
 /* ---------- Classification (shared with the SVG fallback) ---------- */
 // Moved verbatim from results.js so the media key and the fallback scene can
 // never disagree about what a step is showing.
+/* Order is load-bearing: first match wins, so the more specific rule goes
+   above the more general one it would otherwise be swallowed by. */
 const ART_RULES=[
-  [/expired|duplicate|donate|toss|purge|trash|declutter|retire/i,'purge'],
+  // "expiration dates" is how a plan actually phrases this; /expired/ alone
+  // missed it and sent the step to `done`.
+  [/expir(?:ed|ation|y)|duplicate|donate|toss|purge|trash|declutter|retire/i,'purge'],
   [/empty|pull everything|dump|unload|take everything|one wall at a time|one zone at a time/i,'unload'],
   [/wipe|clean|dust/i,'wipe'],
   [/label/i,'label'],
   [/hang|rod/i,'hang'],
   [/fold/i,'fold'],
   [/photo/i,'photo'],
-  [/basket|bin|caddy|tray|corral|file .*upright|containers? with|stand tools/i,'contain'],
-  [/group|sort|similar|together|categor|match|split|separate/i,'group'],
+  /* Above moveDown: "on the floor" is where bulk items GO, and /bulk/ used to
+     win first, so "Arrange appliances and bulk items on floor" animated things
+     travelling upward while the step said put them down. A clip that
+     contradicts its own instruction is worse than a repeated one. */
+  /* A bare \bfloor\b is safe here only because this rule now sits ABOVE
+     moveUp: any step naming the floor is about floor level, whatever else it
+     mentions. Matching "on the floor" alone missed "to the floor". */
+  [/heavy|lowest shelf|lower shelf|bottom|\bfloor\b|raw meat/i,'moveDown'],
   [/top shelf|up high|overhead|bulk|backup|rarely|lift/i,'moveUp'],
-  [/heavy|lowest shelf|lower shelf|bottom|floor|raw meat/i,'moveDown'],
-  [/zone|assign|home|section|crisper|door/i,'zones'],
+  /* A turntable, riser or airtight container is a thing you add to hold other
+     things. `containers? with` only matched one phrasing, so "Transfer dry
+     goods into airtight containers" was not recognised as containing. */
+  [/basket|bin|caddy|tray|corral|turntable|riser|lazy susan|airtight|file .*upright|containers?\b|stand tools/i,'contain'],
+  /* Above `group`: "Assign each category to its wall zone" is a zoning step
+     that happens to contain the word "category", and `group` was reading that
+     word first. */
+  [/zone|assign|home|section|crisper|door rack/i,'zones'],
+  [/group|sort|similar|together|categor|match|split|separate/i,'group'],
+  // Last before the fallback: the generic "put it away" verbs, so anything
+  // more specific above has already claimed its steps.
+  [/load|stock|shelve|put (?:it |them )?away|restock|fill the/i,'stock'],
 ];
 export function classifyAction(step){
   const hay=(step.t||'')+' '+(step.w||'');
@@ -66,7 +92,10 @@ const GLYPH_RULES=[
   [/tool|drill|hammer|wrench|hardware/i,'tool'],
   [/tote|storage box|overflow|bulk/i,'tote'],
   [/plate|dish|bowl/i,'plate'],
-  [/bag|packet|snack|pouch/i,'bag'],
+  /* Dry goods are what you decant: flour, rice, pasta, cereal. Defaulting them
+     to the pantry's `can` made "Transfer dry goods into airtight containers"
+     and "Set up can risers and stock canned goods" the same picture. */
+  [/bag|packet|snack|pouch|dry goods|grain|flour|rice|pasta|cereal/i,'bag'],
 ];
 const SPACE_GLYPH={
   pantry:'can', cabinet:'plate', drawers:'utensil', junk:'utensil',
