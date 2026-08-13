@@ -4,7 +4,7 @@ import { makeLabelSprite } from './labels.js';
 import { LAYOUT_BUILDERS } from './layouts/index.js';
 import { COLORS, ITEM_PALETTE, slug, createMaterials } from './layouts/helpers.js';
 import { semanticItemHeight, semanticItemKind } from './itemKinds.js';
-import { organizerSpecFor } from './organizerKinds.js';
+import { organizerSpecFor, needKeyFor, isVisualNeed } from './organizerKinds.js';
 import { measuredCapacityProfile, naturalItemWidth, naturalOrganizerWidth, visualUnitCount } from './capacity.js';
 import { ITEM_NORMAL_OFFSET, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
@@ -273,8 +273,28 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   const items=[];
   const organizers=[];
   const claimedPlanOrganizers=new Set();
+  /* Every plan organizer starts owing its full quantity, whether or not any row
+     ever asks for it.
+
+     matchingNeed returns the single best-scoring need for a row, so when three
+     needs share a targetZone — "Middle shelf" for a turntable, a can riser and
+     two airtight containers — the first one encountered won every tie on every
+     row and the other two could never be placed anywhere. Not on a wider shelf,
+     not with a smaller product. They were simply invisible.
+
+     Worse, the "does not fit" warning counted only needs some row had claimed,
+     so the products that failed hardest were the ones it stayed quiet about: a
+     sample plan with 10 purchased units showed 4 and admitted to 2.
+
+     Seeding remaining here, and hiding a need from the matcher once it is fully
+     assigned, lets the runners-up win the rows the winner no longer wants — and
+     makes the leftover count the truth about everything on the list. */
   const planOrganizerRemaining=new Map();
-  const matchedPlanOrganizers=new Set();
+  (organizerPlan.productNeeds||[]).forEach(need=>{
+    if(!isVisualNeed(need)) return;   // a label set is bought, not placed
+    const key=needKeyFor(need);
+    if(key&&!planOrganizerRemaining.has(key)) planOrganizerRemaining.set(key,Math.max(1,Number(need.qty)||1));
+  });
   let colorI=0;
   map.forEach(row=>{
     (row.items||[]).forEach((it,idx)=>{
@@ -291,12 +311,16 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         shelfIndex: placed?placed.shelfIndex:row.shelfIndex,
         slot: placed?placed.slot:idx,
         baseColor:color, baseH:h, displayCopies:[], visualUnitCount:1 };
+      /* Only needs that still owe something are offered to the matcher, so a
+         satisfied need stops shadowing the ones behind it. */
+      const availableNeeds=(organizerPlan.productNeeds||[])
+        .filter(need=>(planOrganizerRemaining.get(needKeyFor(need))||0)>0);
       let organizerSpec=organizerSpecFor({
         surface:surfaceKind,row,itemKind:kind,
         space:organizerPlan.space,
         styles:organizerPlan.styles,
         prefs:organizerPlan.prefs,
-        productNeeds:organizerPlan.productNeeds,
+        productNeeds:availableNeeds,
         existingText:organizerPlan.existingText,
       });
       if(organizerSpec&&organizerSpec.source==='plan'){
@@ -305,7 +329,6 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         if(claimedPlanOrganizers.has(claim)) organizerSpec=null;
         else{
           claimedPlanOrganizers.add(claim);
-          matchedPlanOrganizers.add(key);
           if(!planOrganizerRemaining.has(key)) planOrganizerRemaining.set(key,Math.max(1,Number(organizerSpec.qty)||1));
           const surface=surfaces.find(entry=>entry.index===row.shelfIndex);
           const dims=organizerSpec.productDims||{};
@@ -489,9 +512,11 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
     });
   }
   reflow();
-  const unplacedOrganizerQty=[...planOrganizerRemaining.entries()]
-    .filter(([key])=>matchedPlanOrganizers.has(key))
-    .reduce((sum,[,remaining])=>sum+Math.max(0,remaining),0);
+  /* Everything still owed, not just what some row got partway through. A need
+     no row ever matched used to be excluded here, which is how the warning
+     under-reported the exact products that failed completely. */
+  const unplacedOrganizerQty=[...planOrganizerRemaining.values()]
+    .reduce((sum,remaining)=>sum+Math.max(0,remaining),0);
   scene.userData.unplacedOrganizerQty=unplacedOrganizerQty;
 
   function setSize(){

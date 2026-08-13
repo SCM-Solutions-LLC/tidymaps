@@ -29,6 +29,21 @@ function targetScore(target,row){
   return tokens.reduce((score,word)=>score+(rowText.includes(word)?1:0),0);
 }
 
+/* Some products have no shelf presence at all: a label set and a safety latch
+   are real purchases with nothing to draw. They are not "unplaced" — they are
+   not placeable, which is a different sentence, and reporting them as a fit
+   failure would tell someone their labels are too big for the shelf. */
+export function isVisualNeed(need){
+  return !!TYPE_MAP[need&&need.type];
+}
+
+/* One stable identity for a need, shared by the matcher and the scene so both
+   sides agree on what "the same organizer" means. */
+export function needKeyFor(need){
+  if(!need) return '';
+  return need.productId||`${need.type}:${norm(need.targetZone)}:${norm(need.purpose)}`;
+}
+
 function matchingNeed(productNeeds,row){
   let best=null,bestScore=0;
   for(const need of productNeeds||[]){
@@ -73,7 +88,7 @@ export function organizerSpecFor({surface,row,itemKind,space,styles,prefs,produc
       productId:need.productId||null,productName:need.productName||null,
       productDims:need.productDims||null,fit:need.fit||'unknown',
       targetZone:need.targetZone||'',
-      needKey:need.productId||`${need.type}:${norm(need.targetZone)}:${norm(need.purpose)}`,
+      needKey:needKeyFor(need),
     };
   }
 

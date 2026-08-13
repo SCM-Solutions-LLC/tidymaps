@@ -451,6 +451,44 @@ function initShopping(){
   });
 }
 
+/* Append a product need the user asked for, keeping state.shopping in step.
+
+   initShopping treats a length mismatch between needs and selections as "this
+   is stale, rebuild it", and a rebuild discards every product the user picked.
+   So the selection for the new need is built here, the same way initShopping
+   builds the rest, rather than left for the next render to notice. */
+export function addProductNeed(need){
+  if(!state.ai) return false;
+  const needs=state.ai.productNeeds=state.ai.productNeeds||[];
+  /* normalizeAi caps productNeeds at 10, and a saved plan is re-normalized on
+     load — so an eleventh item would appear, persist, and then quietly vanish
+     the next time the plan was opened. Refuse it out loud instead. */
+  if(needs.length>=10){
+    toast('Your shopping list is full at 10 items. Remove one to add another.');
+    return false;
+  }
+  needs.push(need);
+  const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
+  state.shopping=state.shopping||[];
+  state.shopping.push({
+    needIdx: needs.length-1, checked:true, qty:need.qty,
+    type:need.type,
+    productId: top?top.product.id:null,
+    name: top?top.product.name:TYPE_LABEL[need.type],
+    price_usd: top?top.product.price_usd:null,
+    url: top?top.product.url:null,
+    retailer: top?top.product.retailer:null,
+    img: top?(top.product.img||null):null,
+    fit: top?top.fit:'unknown',
+    dims_in: top?{...top.product.dims_in}:null,
+  });
+  if(getSession()) updateSpacePatch({ plan: state.ai, shopping: state.shopping });
+  else persistGuestDraft();
+  // the cost tile and the list are both downstream of what just changed
+  buildResults();
+  return true;
+}
+
 function persistShopping(){
   if(getSession()) updateSpacePatch({shopping:state.shopping});
   else persistGuestDraft();
@@ -508,7 +546,13 @@ export function renderUpgrades(){
       <input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list">
       <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${SVG[TYPE_ICON[need.type]]||SVG.box}</span></span>
       <div>
-        <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${need.priority==='high'?'<span class="tag green">recommended</span>':''}</h4>
+        <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${
+          /* Everything else in this list is what the model recommended from the
+             photos. An item the user added in the 3D view must not wear the
+             same badge — the plan would be taking credit for their idea, and
+             they would have no way to tell the two apart later. */
+          need.addedByUser?'<span class="tag">you added this</span>'
+            :(need.priority==='high'?'<span class="tag green">recommended</span>':'')}</h4>
         <div class="pwhy">${escapeHtml(need.purpose)}</div>
         ${main}
         <details class="pmore">

@@ -1068,3 +1068,11 @@ body[data-flow="1"] .site-footer{display:none}
 
 .prod-foot{margin-top:34px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .prod-foot > div{flex:1;min-width:220px}
+
+
+/* Add-an-organizer control in the 3D viewer. */
+.v3d-add-organizer{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.v3d-add-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.v3d-add-row select{flex:1 1 128px;min-width:0;padding:6px 8px;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px}
+.v3d-add-row .btn{flex:0 0 auto}
