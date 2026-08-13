@@ -610,6 +610,11 @@ const STEP_ART={
   moveUp:A_WRAP('up',`<path d="M8 12h32M8 38h32"/><rect class="m-box" x="19" y="27" width="10" height="10" rx="1.5"/><path class="m-arrow" d="M38 32v-12M34 24l4-4 4 4"/>`),
   moveDown:A_WRAP('down',`<path d="M8 12h32M8 38h32"/><rect class="m-box2" x="19" y="13" width="10" height="10" rx="1.5"/><path class="m-arrow" d="M38 18v12M34 26l4 4 4-4"/>`),
   zones:A_WRAP('zones',`<rect x="8" y="8" width="32" height="32" rx="3"/><rect class="z1" x="12" y="12" width="24" height="7" rx="1.5"/><rect class="z2" x="12" y="21" width="24" height="7" rx="1.5"/><rect class="z3" x="12" y="30" width="24" height="7" rx="1.5"/>`),
+  /* Items arriving ON the shelf and staying there. Deliberately the inverse of
+     `unload`, which lifts them off it: those two are the bookends of the plan
+     and a reader should be able to tell them apart at a glance. */
+  stock:A_WRAP('stock',`<path d="M6 34h36"/><path d="M8 34v8M40 34v8"/>
+    <rect class="s1" x="12" y="24" width="9" height="9" rx="1.5"/><rect class="s2" x="27" y="24" width="9" height="9" rx="1.5"/>`),
   group:A_WRAP('group',`<circle class="g1" cx="12" cy="14" r="4.5"/><circle class="g2" cx="36" cy="12" r="4.5"/><circle class="g3" cx="10" cy="36" r="4.5"/><circle class="g4" cx="38" cy="34" r="4.5"/>`),
   done:A_WRAP('done',`<circle cx="24" cy="24" r="17"/><path class="dn-check" d="M15 24.5l6.5 6.5L33 18"/>`),
 };
