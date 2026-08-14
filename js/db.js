@@ -14,7 +14,10 @@ function requireClient(){
   return { c, u };
 }
 
-function rowFromState(name){
+/* Exported so a test can drive the full round trip — rowFromState() out,
+   applyLoadedSpace() back in. Two hand-maintained halves of one contract is
+   how the shopping answer came to be written by neither. */
+export function rowFromState(name){
   return {
     name: name || defaultSpaceName(),
     space_type: state.space,
@@ -29,6 +32,14 @@ function rowFromState(name){
     // for signed-in spaces.
     prefs: { prefs:[...(state.prefs||[])], budget:state.budget, effort:state.effort,
              setup:state.setup, setupLabel:state.setupLabel, setupTouched:!!state.setupTouched,
+             /* The shopping answer was never saved at all — a signed-in user
+                who chose "Open to a few ideas" got "Use what I have" back on
+                reopening, which is the answer that empties the product list.
+                The touched flags ride along for the same reason setupTouched
+                does: without them a reopened space labels the user's own
+                answers "(our default)". */
+             shoppingPref:state.shoppingPref,
+             effortTouched:!!state.effortTouched, shoppingTouched:!!state.shoppingTouched,
              toggles:Object.fromEntries(Object.keys(state).filter(k=>k.startsWith('detail_')).map(k=>[k.slice(7),state[k]])) },
     plan: state.ai,
     plan_meta: state.planMeta,
@@ -177,6 +188,9 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
     state.prefs = new Set(data.prefs.prefs||[]);
     state.budget = data.prefs.budget||null;
     state.effort = data.prefs.effort||null;
+    if(data.prefs.shoppingPref) state.shoppingPref = data.prefs.shoppingPref;
+    state.effortTouched = !!data.prefs.effortTouched;
+    state.shoppingTouched = !!data.prefs.shoppingTouched;
     if(data.prefs.setup){
       state.setup = data.prefs.setup;
       state.setupLabel = data.prefs.setupLabel || state.setupLabel;

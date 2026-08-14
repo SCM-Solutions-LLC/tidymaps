@@ -27,7 +27,7 @@ export const FPS = 30;
 export const LOOP_SECONDS: Record<string, number> = {
   purge: 3.58, unload: 3.58, wipe: 3.07, label: 3.33, hang: 3.58,
   fold: 3.58, photo: 3.07, contain: 3.33, group: 3.0,
-  moveUp: 3.58, moveDown: 3.58, zones: 3.84, done: 3.33,
+  moveUp: 3.58, moveDown: 3.58, zones: 3.84, stock: 3.58, done: 3.33,
 };
 export const loopFrames = (action: string) =>
   Math.round((LOOP_SECONDS[action] ?? 3.33) * FPS);

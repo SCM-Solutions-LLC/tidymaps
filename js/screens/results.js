@@ -11,7 +11,7 @@ import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.j
 import { fileToScaledB64 } from '../media.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
-import { classifyAction, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
+import { classifyAction, motifForSpace, glyphForStep, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { track } from '../telemetry.js';
 import { applyCategoryEdits } from '../personalize.js';
 import { go } from '../router.js';
@@ -675,34 +675,105 @@ function itemsRow(m){
 }
 
 /* ---------- Animated step illustrations ----------
-   Each step gets a small looping motion graphic matched to what the
-   step asks for, so the checklist reads at a glance. Classification lives in
+   Each step gets a small looping motion graphic matched to what the step asks
+   for, so the checklist reads at a glance. Classification lives in
    stepMedia.js so the produced-clip pipeline and these fallback scenes can
    never disagree; these inline SVGs are the spec the real clips must match,
-   and the runtime fallback whenever a clip isn't produced yet. */
+   and the runtime fallback whenever a clip isn't produced yet.
+
+   A scene is three things, and it used to be one. stepMedia already derives a
+   MOTIF from the space (shelves, drawers, a closet rail, a garage bench) and a
+   GLYPH from the step's own words (a can, a jar, a hanger, a tool) — that
+   triple is the media key the produced clips are named for. The SVG fallback
+   threw two thirds of it away and keyed on the action alone, so "Sort items
+   into categories" was the same four circles in a pantry and in a garage, and
+   the two steps either side of it in one plan were the same picture with a
+   different caption. The furniture and the item are what make a step look like
+   YOUR step, and both were already computed.
+
+   So: a motif backdrop, drawn quiet, and the moving pieces built from the
+   step's glyph. Same 48-unit box, same class names on the animated parts, so
+   the keyframes in components.css keep working. */
 const A_WRAP=(cls,inner)=>`<svg class="sa sa-${cls}" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
-const STEP_ART={
-  purge:A_WRAP('purge',`<rect x="4" y="31" width="11" height="11" rx="2"/><rect x="18.5" y="31" width="11" height="11" rx="2"/><rect x="33" y="31" width="11" height="11" rx="2"/>
-    <rect class="d1" x="6.5" y="8" width="7" height="7" rx="1.5"/><rect class="d2" x="20.5" y="6" width="7" height="7" rx="1.5"/><rect class="d3" x="35" y="9" width="7" height="7" rx="1.5"/>`),
-  unload:A_WRAP('unload',`<path d="M8 30v10a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2V30"/><path d="M6 30h36"/>
-    <rect class="u1" x="13" y="20" width="8" height="8" rx="1.5"/><rect class="u2" x="27" y="20" width="8" height="8" rx="1.5"/>`),
-  wipe:A_WRAP('wipe',`<path d="M6 36h36"/><rect class="w-dust" x="8" y="28" width="32" height="6" rx="2"/><circle class="w-pad" cx="12" cy="24" r="6"/>`),
-  label:A_WRAP('label',`<rect x="9" y="16" width="30" height="24" rx="3"/><rect class="l-tag" x="16" y="24" width="16" height="8" rx="1.5"/><path class="l-line" d="M19 28h10"/>`),
-  hang:A_WRAP('hang',`<path d="M4 12h40"/><g class="h1"><path d="M18 12v4"/><path d="M12 20l6-4 6 4"/><path d="M12 20v14h12V20"/></g><g class="h2"><path d="M34 12v4"/><path d="M29 20l5-4 5 4"/><path d="M29 20v8h10v-8"/></g>`),
-  fold:A_WRAP('fold',`<path d="M8 40h32"/><rect x="12" y="28" width="24" height="12" rx="2"/><rect class="f-flap" x="12" y="16" width="24" height="12" rx="2"/>`),
-  photo:A_WRAP('photo',`<rect x="8" y="14" width="32" height="24" rx="4"/><circle cx="24" cy="26" r="6"/><path d="M18 14l2.5-4h7L30 14"/><circle class="p-flash" cx="24" cy="26" r="3"/>`),
-  contain:A_WRAP('contain',`<path d="M10 26h28l-3 14a3 3 0 0 1-3 2.4H16a3 3 0 0 1-3-2.4z"/><rect class="c1" x="14" y="8" width="8" height="8" rx="1.5"/><rect class="c2" x="27" y="8" width="8" height="8" rx="1.5"/>`),
-  moveUp:A_WRAP('up',`<path d="M8 12h32M8 38h32"/><rect class="m-box" x="19" y="27" width="10" height="10" rx="1.5"/><path class="m-arrow" d="M38 32v-12M34 24l4-4 4 4"/>`),
-  moveDown:A_WRAP('down',`<path d="M8 12h32M8 38h32"/><rect class="m-box2" x="19" y="13" width="10" height="10" rx="1.5"/><path class="m-arrow" d="M38 18v12M34 26l4 4 4-4"/>`),
-  zones:A_WRAP('zones',`<rect x="8" y="8" width="32" height="32" rx="3"/><rect class="z1" x="12" y="12" width="24" height="7" rx="1.5"/><rect class="z2" x="12" y="21" width="24" height="7" rx="1.5"/><rect class="z3" x="12" y="30" width="24" height="7" rx="1.5"/>`),
-  /* Items arriving ON the shelf and staying there. Deliberately the inverse of
-     `unload`, which lifts them off it: those two are the bookends of the plan
-     and a reader should be able to tell them apart at a glance. */
-  stock:A_WRAP('stock',`<path d="M6 34h36"/><path d="M8 34v8M40 34v8"/>
-    <rect class="s1" x="12" y="24" width="9" height="9" rx="1.5"/><rect class="s2" x="27" y="24" width="9" height="9" rx="1.5"/>`),
-  group:A_WRAP('group',`<circle class="g1" cx="12" cy="14" r="4.5"/><circle class="g2" cx="36" cy="12" r="4.5"/><circle class="g3" cx="10" cy="36" r="4.5"/><circle class="g4" cx="38" cy="34" r="4.5"/>`),
-  done:A_WRAP('done',`<circle cx="24" cy="24" r="17"/><path class="dn-check" d="M15 24.5l6.5 6.5L33 18"/>`),
+
+/* Each glyph is drawn around its own bottom-centre so a scene can stand one on
+   a surface by translating alone. 10 units tall: legible at 78px, still legible
+   at the 68px the phone breakpoint uses. */
+const GLYPH_ART={
+  can:`<rect x="-4" y="-10" width="8" height="10" rx="1.5"/><path d="M-4 -7.2h8"/>`,
+  jar:`<path d="M-4 -8v5.5a2.5 2.5 0 0 0 2.5 2.5h3a2.5 2.5 0 0 0 2.5-2.5V-8z"/><rect x="-3" y="-11" width="6" height="3" rx="1"/>`,
+  bottle:`<path d="M-3 -7.5v5a2.5 2.5 0 0 0 2.5 2.5h1a2.5 2.5 0 0 0 2.5-2.5v-5z"/><path d="M-1.2 -7.5v-3.5h2.4v3.5"/>`,
+  bag:`<path d="M-4.5 0l1.2-8h6.6l1.2 8z"/><path d="M-2 -8a2 2 0 0 1 4 0"/>`,
+  plate:`<circle cx="0" cy="-5" r="5"/><circle cx="0" cy="-5" r="1.8"/>`,
+  utensil:`<path d="M-2.5 0v-6.5"/><path d="M-2.5 -6.5v-4M-4.5 -10.5v3M-0.5 -10.5v3"/><path d="M2.5 0v-4"/><path d="M2.5 -4a2.2 2.2 0 0 0 0-6.5 2.2 2.2 0 0 0 0 6.5z"/>`,
+  tool:`<path d="M0 0v-6"/><path d="M-4.5 -10.5h9v4h-9z"/>`,
+  tote:`<rect x="-5" y="-8" width="10" height="8" rx="1.5"/><path d="M-2 -8v-2.5h4V-8"/>`,
+  towel:`<rect x="-4" y="-9.5" width="8" height="9.5" rx="1.5"/><path d="M-4 -6h8"/>`,
+  foldedclothes:`<rect x="-5" y="-4.5" width="10" height="4.5" rx="1.5"/><rect x="-5" y="-10" width="10" height="5" rx="1.5"/>`,
+  shoe:`<path d="M-5.5 0v-2.5l3.5-1.5 2-3.5h1.6l.9 4 3 1.5V0z"/>`,
+  hanger:`<path d="M0 -11.5v1.6"/><path d="M-5.5 -6l5.5-4.4 5.5 4.4z"/><rect x="-5" y="-5.5" width="10" height="5.5" rx="1.2"/>`,
 };
+/* Position and animation are separate elements on purpose: a CSS `transform`
+   in a keyframe REPLACES the transform attribute, so animating the same node
+   that carries translate(x y) would fling it to the origin mid-loop. */
+const G=(glyph,x,y,cls='')=>`<g transform="translate(${x} ${y})"><g class="sa-it${cls?' '+cls:''}">${GLYPH_ART[glyph]||GLYPH_ART.tote}</g></g>`;
+const GS=(glyph,x,y,scale)=>`<g transform="translate(${x} ${y}) scale(${scale})"><g class="sa-it">${GLYPH_ART[glyph]||GLYPH_ART.tote}</g></g>`;
+
+/* The furniture. Every motif puts its working surface at y=41 so the scenes
+   below can place an item the same way whatever space they are staged in;
+   what differs is what stands above and behind it. */
+/* A hanger drawn downward from the rod it hangs on, rather than upward from a
+   surface it stands on — the one glyph whose anchor is its top. */
+const HANGER_DOWN=`<path d="M0 3v2.2"/><path class="hg-bar" d="M-6.5 10l6.5-4.8 6.5 4.8z"/><rect class="hg-body" x="-5" y="11.5" width="10" height="11" rx="1.5"/>`;
+
+const MOTIF_ART={
+  shelves:`<g class="sa-fx"><path d="M5 41h38M5 22h38"/><path d="M7.5 41V12M40.5 41V12"/></g>`,
+  drawers:`<g class="sa-fx"><path d="M5 41h38"/><rect x="9" y="7" width="30" height="9" rx="2"/><rect x="9" y="19" width="30" height="9" rx="2"/><path d="M20 11.5h8M20 23.5h8"/></g>`,
+  rail:`<g class="sa-fx"><path d="M5 41h38"/><path d="M7 13h34"/><path d="M9 13V9.5M39 13V9.5"/></g>`,
+  bench:`<g class="sa-fx"><path d="M5 41h38"/><path d="M9 41v5M39 41v5"/><rect x="11" y="7" width="26" height="12" rx="1.5"/><path d="M16 11h1M22 11h1M28 11h1M34 11h1M16 15.5h1M22 15.5h1M28 15.5h1M34 15.5h1"/></g>`,
+};
+
+/* One entry per action in stepMedia's ACTIONS. Each returns the moving layer
+   for that action, built from this step's glyph. */
+const SCENES={
+  // items leave the shelf and are gone — the inverse of `stock`
+  purge:(g)=>`${G(g,13,40,'d1')}${G(g,24,40,'d2')}${G(g,35,40,'d3')}`,
+  // everything comes off, all at once, before the work starts
+  unload:(g)=>`${G(g,16,40,'u1')}${G(g,32,40,'u2')}`,
+  wipe:()=>`<rect class="w-dust" x="9" y="34.5" width="30" height="6" rx="2"/><g class="w-pad"><rect x="7" y="26" width="12" height="7.5" rx="3"/></g>`,
+  label:(g)=>`${G(g,24,40)}<g class="l-tag"><rect x="16" y="18" width="16" height="9.5" rx="2"/><path class="l-line" d="M20 22.8h8"/></g>`,
+  // hang draws its own rod: a hanging step is about the rail even in a room
+  // whose motif is shelves.
+  hang:()=>`<g class="sa-fx"><path d="M5 12h38"/></g>
+    <g transform="translate(17 12)"><g class="h1">${HANGER_DOWN}</g></g>
+    <g transform="translate(32 12)"><g class="h2">${HANGER_DOWN}</g></g>`,
+  fold:()=>`<rect x="14" y="30" width="20" height="10" rx="2"/><rect class="f-flap" x="14" y="19" width="20" height="11" rx="2"/>`,
+  photo:()=>`<rect x="10" y="15" width="28" height="21" rx="4"/><circle cx="24" cy="26" r="6"/><path d="M19 15l2.2-3.5h5.6L29 15"/><circle class="p-flash" cx="24" cy="26" r="3"/>`,
+  // things going INTO something that holds them
+  contain:(g)=>`<path class="cn-bin" d="M12.5 28h23l-2.4 12.2a2.5 2.5 0 0 1-2.5 2H17.4a2.5 2.5 0 0 1-2.5-2z"/>${G(g,19,24,'c1')}${G(g,30,22,'c2')}`,
+  moveUp:(g)=>`${G(g,20,40,'m-box')}<path class="m-arrow" d="M36 36V24M32 28l4-4 4 4"/>`,
+  moveDown:(g)=>`${G(g,20,21,'m-box2')}<path class="m-arrow" d="M36 24v12M32 32l4 4 4-4"/>`,
+  // one shelf, divided — each zone lights in turn with its own contents
+  zones:(g)=>`<g class="z1"><rect x="7" y="29" width="11" height="11" rx="2"/></g>${GS(g,12.5,39,0.62)}
+    <g class="z2"><rect x="18.5" y="29" width="11" height="11" rx="2"/></g>${GS(g,24,39,0.62)}
+    <g class="z3"><rect x="30" y="29" width="11" height="11" rx="2"/></g>${GS(g,35.5,39,0.62)}`,
+  group:(g)=>`${G(g,12,20,'g1')}${G(g,36,18,'g2')}${G(g,11,40,'g3')}${G(g,37,40,'g4')}`,
+  // items arriving on the shelf and staying there
+  stock:(g)=>`${G(g,16,40,'s1')}${G(g,32,40,'s2')}`,
+  // the shelf as it will look when this is over, and a tick over it
+  done:(g)=>`${G(g,12,40)}${G(g,22,40)}${G(g,32,40)}
+    <circle class="dn-ring" cx="36" cy="14" r="9.5"/><path class="dn-check" d="M31.5 14.4l3.2 3.2 6.3-6.8"/>`,
+};
+
+/* The scene for one step: its action, staged on its space, holding its item. */
+export function stepScene(step, spaceId){
+  const action=classifyAction(step);
+  const motif=motifForSpace(spaceId);
+  const glyph=glyphForStep(step, spaceId);
+  const build=SCENES[action]||SCENES.done;
+  return A_WRAP(`${action} sa-m-${motif} sa-g-${glyph}`,
+    `${MOTIF_ART[motif]||MOTIF_ART.shelves}${build(glyph)}`);
+}
 
 export function renderSteps(rawList){
   const wrap=document.getElementById('res-steps'); wrap.innerHTML='';
@@ -715,7 +786,7 @@ export function renderSteps(rawList){
   state.stepSkipped=new Array(list.length).fill(false);
   list.forEach((s,i)=>{
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;
-    const art=STEP_ART[classifyAction(s)]||STEP_ART.done;
+    const art=stepScene(s, state.space);
     t.innerHTML=`
       <button type="button" class="check" onclick="toggleStep(${i})" aria-label="Mark step ${i+1} complete" aria-pressed="false">${ICON.check}</button>
       <div>

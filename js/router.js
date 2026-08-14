@@ -252,6 +252,12 @@ export function restart(){
   state.goals=[]; state.styles=[]; state.detected=[]; state.catsTouched=false;
   state.shoppingPref='Use what I have';
   state.effort='Weekend reset';
+  /* Reset the "did they actually say this?" flags with the answers they
+     belong to. Without these, Start over left the two defaults pre-ticked and
+     Review went back to calling them the user's — the whole bug, restored by
+     the button meant to clear everything. */
+  state.effortTouched=false;
+  state.shoppingTouched=false;
   state.uploadedFiles=[]; state.uploadedVideo=null; state.frames=[];
   state.dims=null; state.dimsFt=null;
   state.household={ adults:2, kidCount:0, petCount:0, kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' };

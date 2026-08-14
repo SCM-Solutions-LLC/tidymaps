@@ -138,8 +138,13 @@ export const STEPS = [
 export const AFTER_MODES = ['Use existing containers','Minimal look','More bins','More labels','Kid-friendly setup','Hidden storage'];
 export const CUSTOMIZE = [
   ['minimal','Make it more minimal','Fewer visible items, more hidden storage, calmer shelves.'],
-  ['budget','Make it more budget-friendly','Drops to the $0 plan using only what you own.'],
-  ['own','Use only what I already own','Removes all product recommendations.'],
+  /* There used to be three cards here and all three ran the same two lines:
+     'Make it more budget-friendly', 'Use only what I already own' and
+     'Remove storage product recommendations' each dropped productNeeds and
+     turned the upsell off. Same defect the fewer/faster pair had below — two
+     buttons, one behaviour, and only one of them describing it — except this
+     time there were three. One card, saying what it does. */
+  ['own','Use only what I already own','Removes the product recommendations and drops the plan to $0.'],
   ['kid','Make it more kid-friendly','Moves snacks lower and adds clear, reachable zones.'],
   ['capacity','Maximize storage capacity','Adds risers and stacking to reclaim vertical space.'],
   ['hide','Hide more clutter','Shifts loose items into bins and baskets.'],
@@ -151,8 +156,7 @@ export const CUSTOMIZE = [
      honestly. This one now keeps the five QUICKEST steps, which is a different
      answer to a different question, and the promise is what it actually does. */
   ['faster','Make it faster','Keeps the five quickest steps.'],
-  ['addprod','Add storage product recommendations','Turns on the optional upgrade plan.'],
-  ['rmprod','Remove storage product recommendations','Turns off the optional upgrade plan.']
+  ['addprod','Add storage product recommendations','Turns on the optional upgrade plan.']
 ];
 /* Every entry here has to do something. "Schedule a session" used to sit in
    this list and answer "coming soon" — there is no booking flow behind it and

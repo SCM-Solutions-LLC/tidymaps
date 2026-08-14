@@ -13,6 +13,16 @@ export const state = {
   goals:[],        // per-space goal texts ("What bugs you most?")
   styles:[],       // per-space organizing styles ("How do you like things kept?")
   shoppingPref:'Use what I have',   // 'Use what I have' | 'Open to a few ideas'
+  /* Two steps ship an answer already filled in: effort defaults to a weekend
+     reset and products to "Use what I have". Both are reasonable defaults and
+     both were indistinguishable from something the user chose — the card
+     arrived pre-ticked and Review listed it under "Here's what we heard".
+     The products one is the consequential half: it is the answer that empties
+     productNeeds and pins the budget to $0, so a plan could end up with no
+     recommendations on the strength of an answer nobody gave.
+     Same shape as setupTouched/catsTouched: keep the default, remember that
+     it is ours. */
+  effortTouched:false, shoppingTouched:false,
   detected:[],     // item labels surfaced on the photos step
   catsTouched:false, // user edited the contents step → their list is authoritative
   prefs:new Set(), budget:null, effort:'Weekend reset',
@@ -97,6 +107,8 @@ export function prepareDemoPlanState(target=state){
   target.goals=[];
   target.styles=[];
   target.shoppingPref='Use what I have';
+  target.effortTouched=false;
+  target.shoppingTouched=false;
   target.detected=[];
   target.catsTouched=false;
   target.upgrades=true;
@@ -179,6 +191,7 @@ export function persistGuestDraft(){
       setupTouched:!!state.setupTouched,
       goals:state.goals, styles:state.styles, shoppingPref:state.shoppingPref,
       catsTouched:state.catsTouched,
+      effortTouched:!!state.effortTouched, shoppingTouched:!!state.shoppingTouched,
       prefs:[...state.prefs], budget:state.budget, effort:state.effort,
       upgrades:state.upgrades, cats:state.cats, afterMode:state.afterMode,
       dims:state.dims, household:state.household, toggles,
@@ -202,6 +215,8 @@ export function restoreGuestDraft(){
     state.goals=d.goals||[]; state.styles=d.styles||[];
     if(d.shoppingPref) state.shoppingPref=d.shoppingPref;
     state.catsTouched=!!d.catsTouched;
+    state.effortTouched=!!d.effortTouched;
+    state.shoppingTouched=!!d.shoppingTouched;
     state.prefs=new Set(d.prefs||[]); state.budget=d.budget; state.effort=d.effort;
     state.upgrades=!!d.upgrades; state.cats=d.cats||[]; state.afterMode=d.afterMode||state.afterMode;
     state.dims=d.dims||null;

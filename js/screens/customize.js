@@ -99,8 +99,11 @@ export function applyCustomize(id,t,d,b,wrap){
     if(state.upgrades && (state.ai&&(state.ai.productNeeds||[]).length)) shoppingNoop=true;
     else { restoreProductNeeds(); setUpgrades(true); shoppingChanged=true; }
   }
-  if(id==='rmprod'||id==='own'||id==='budget'){
-    if(id==='rmprod' && !state.upgrades) shoppingNoop=true;
+  if(id==='own'){
+    // the mirror of addprod's check: a plan already down to what you own has
+    // nothing to remove, and saying "Plan revised" over an unchanged report is
+    // the thing this screen keeps being caught doing
+    if(!state.upgrades && !(state.ai&&(state.ai.productNeeds||[]).length)) shoppingNoop=true;
     else { dropProductNeeds(); setUpgrades(false); shoppingChanged=true; }
   }
   if(shoppingChanged){
