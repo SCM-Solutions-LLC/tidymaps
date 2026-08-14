@@ -8,7 +8,7 @@ import { expandChapters } from './helpers.mjs';
    from 23 violations to zero; without a scan in the repo, the next token edit
    puts them back silently. So the whole reachable surface is scanned once —
    every wizard step, the report, the screens past it, the auth modal and the
-   privacy page.
+   five legal documents.
 
    Violations do not change with viewport, so each screen is scanned once at one
    width, and the effort saved goes into the checks axe cannot make: the toast's
@@ -103,9 +103,14 @@ test('the screens past the report pass WCAG 2 A/AA', async ({ page }) => {
   expect(await axeScan(page), 'auth modal').toEqual([]);
   await page.keyboard.press('Escape');
 
-  // Privacy is a separate document with its own head and styles.
-  await page.goto('/privacy.html');
-  expect(await axeScan(page), 'privacy.html').toEqual([]);
+  /* The legal documents are separate pages with their own head and shell, so
+     nothing above covers them. They are also the pages a reader is most likely
+     to arrive at with a screen reader — an accessibility statement that fails
+     an accessibility scan is the worst version of this. */
+  for (const doc of ['privacy', 'terms', 'security', 'cookies', 'accessibility']) {
+    await page.goto(`/${doc}.html`);
+    expect(await axeScan(page), `${doc}.html`).toEqual([]);
+  }
 });
 
 test('confirmations announce, and single-select cards expose their state', async ({ page }) => {
