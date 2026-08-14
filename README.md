@@ -20,6 +20,33 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000.
 
+## Legal pages
+
+Five standalone documents at the repo root, linked from every footer and from
+each other: `privacy.html`, `terms.html`, `security.html`, `cookies.html`,
+`accessibility.html`. They share `css/legal.css` and the site's header and
+footer, so a change to one page's chrome should go in the stylesheet, not the
+page.
+
+`tests/legal-pages.test.mjs` holds the set together — it fails if a document
+loses its canonical URL, drops a sibling from its nav, links to a file that
+does not exist, goes undated, or grows its own `<style>` block. The axe suite
+scans all five for WCAG 2 A/AA.
+
+`terms.html` is governed by Virginia law, with venue in Virginia's state and
+federal courts and an explicit carve-out for consumers whose own state law lets
+them sue closer to home.
+
+Still worth a lawyer's read before launch. These are written to be accurate
+about what the code actually does, which is the hard part, but they have not
+been reviewed by counsel. The liability cap, the warranty disclaimer, the venue
+clause, and the age limit are the ones worth a professional eye.
+
+Keep them honest: every factual claim in them is checkable against this repo,
+and the privacy policy already had to be corrected once (it credited Google
+Fonts long after the fonts moved into `vendor/fonts/`). If you change what the
+app collects or where it sends it, these pages are part of the change.
+
 ## Affiliate links
 
 Product links can earn a commission once you join each retailer's program

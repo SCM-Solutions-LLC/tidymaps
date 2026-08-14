@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Accessibility · TidyMap</title>
+<meta name="description" content="TidyMap's accessibility commitment, what we test automatically on every change, the gaps we know about, and how to tell us about one." />
+<link rel="canonical" href="https://scmsolutions.org/tidymaps/accessibility.html" />
+<meta name="theme-color" content="#c94a2e" />
+<link rel="icon" href="assets/favicon.svg" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/legal.css" />
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-inner">
+    <a class="brand" href="index.html">TidyMap</a>
+  </div>
+</header>
+
+<main class="legal">
+  <a class="back" href="index.html">&larr; Back to TidyMap</a>
+  <h1>Accessibility</h1>
+  <p class="updated">Last reviewed August 14, 2026 &middot; TidyMap is built by SCM Solutions LLC</p>
+
+  <nav aria-label="Legal documents">
+    <ul class="legal-nav">
+      <li><a href="privacy.html">Privacy</a></li>
+      <li><a href="terms.html">Terms</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="cookies.html">Cookies</a></li>
+      <li><a href="accessibility.html" aria-current="page">Accessibility</a></li>
+    </ul>
+  </nav>
+
+  <p class="legal-lede">TidyMap aims to meet <strong>WCAG 2.1 Level AA</strong>. This page says how we hold ourselves to that, and names the places we currently fall short.</p>
+
+  <h2>What we check on every change</h2>
+  <p>Accessibility here is a test that fails the build, not a promise in a document. Every change to TidyMap runs an automated WCAG 2.0 and 2.1 A/AA scan across the whole reachable surface — every step of the planner, the finished report, the screens past it, the sign-in dialog, and these legal pages. <strong>That scan currently reports zero violations, and a change that introduces one does not ship.</strong></p>
+  <p>Automated scanning catches perhaps a third of real accessibility problems, so a few things a scanner cannot see are tested separately: that every confirmation and error is announced through a live region rather than appearing silently, and that a selected card reports its state to a screen reader instead of only looking chosen.</p>
+
+  <h2>What that means in practice</h2>
+  <ul>
+    <li><strong>Keyboard.</strong> The planner runs end to end without a mouse, and focus is always visible — a consistent outline on every focusable thing, never removed for looks.</li>
+    <li><strong>Screen readers.</strong> Headings are ordered, controls are labelled, the sign-in dialog is a real dialog, and toasts announce politely without stealing focus.</li>
+    <li><strong>Contrast.</strong> Text and interface colors are checked against AA contrast on every change. The colour system was rebuilt once already to get there.</li>
+    <li><strong>Motion.</strong> If your system asks for reduced motion, the illustrations hold still, the step animations stop, and smooth scrolling becomes an ordinary jump. This is honored in both the stylesheets and the scripted scrolling.</li>
+    <li><strong>Zoom and small screens.</strong> Type scales with the viewport, layouts reflow rather than requiring horizontal scrolling, and the phone layout is tested at real phone widths.</li>
+    <li><strong>Touch targets.</strong> Buttons and cards are sized to be hit reliably, not just seen.</li>
+  </ul>
+
+  <h2>Where we fall short</h2>
+  <p>An accessibility statement that lists only successes is not much use to the person it is written for.</p>
+  <ul>
+    <li><strong>There is no skip-to-content link.</strong> The header is short, so the cost is small, but it is a standard affordance and we do not have it yet.</li>
+    <li><strong>The 3D layout view is a rendered canvas</strong> and is not usable with a screen reader. Nothing in it is exclusive: every zone, product, and move it depicts is also in the written plan and the checklist, which is the accessible path through the same information.</li>
+    <li><strong>Photo upload is central to the product.</strong> Getting a useful plan requires taking photographs of a space, and we have not built a route through that does not — describing a room in text instead is not yet supported.</li>
+    <li><strong>No independent audit.</strong> Our testing is automated plus our own manual checks. TidyMap has not been reviewed by an accessibility specialist or tested with disabled users, and we do not publish a VPAT. We would like to change this.</li>
+    <li><strong>AI-written text is not style-checked for reading level.</strong> Plans are generated, so their wording varies, and we cannot promise a consistent plain-language grade across every plan.</li>
+  </ul>
+
+  <h2>Tell us when something does not work</h2>
+  <div class="legal-note">
+    <p>Email <a href="mailto:contact@scmsolutions.org">contact@scmsolutions.org</a> with &ldquo;accessibility&rdquo; in the subject. Tell us the page, what you were using — screen reader, browser, keyboard only — and what happened. We aim to reply within 5 business days.</p>
+    <p><strong>If a barrier stops you finishing something, say so and we will get you the result another way</strong> while we fix the underlying problem. You should not have to wait on our release schedule to get your plan.</p>
+  </div>
+
+  <div class="legal-foot">
+    <p>Related reading: the <a href="privacy.html">privacy policy</a>, the <a href="terms.html">terms of use</a>, and the <a href="security.html">security page</a>.</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span>TidyMap</span>
+    </div>
+    <div class="footer-links">
+      <span>Built by <a href="https://scmsolutions.org">SCM Solutions</a> &middot; <a href="mailto:contact@scmsolutions.org">contact@scmsolutions.org</a></span>
+    </div>
+    <div class="footer-legal">
+      <span>&copy; 2026 SCM Solutions LLC</span>
+      <span><a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="security.html">Security</a> &middot; <a href="cookies.html">Cookies</a> &middot; <a href="accessibility.html">Accessibility</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

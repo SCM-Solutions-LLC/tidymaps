@@ -33,7 +33,15 @@ function appSource() {
   };
   walk('js/');
   walk('css/');
-  out.push(html, readFileSync(new URL('privacy.html', root), 'utf8'));
+  /* Every standalone page at the root: index plus the legal documents. Found by
+     enumeration rather than named one by one, because the list used to be
+     hand-written and a page added later would have silently stopped counting as
+     a place an image key can be referenced from. */
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.endsWith('.html')) {
+      out.push(readFileSync(new URL(entry.name, root), 'utf8'));
+    }
+  }
   return out.join('\n');
 }
 

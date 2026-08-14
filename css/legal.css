@@ -1,0 +1,54 @@
+/* Shell for the standalone legal documents — privacy, terms, security, cookies,
+   accessibility. These live outside the app shell (no wizard, no screens), so
+   each one loads tokens + base + components for the site chrome, and this file
+   for the reading column.
+
+   It exists because the prose styles started as a <style> block inside
+   privacy.html. One document can carry its own styles; five cannot, because the
+   moment they diverge the set stops reading as one company's paperwork. */
+
+.legal{max-width:680px;margin:0 auto;padding:40px 18px 90px}
+.legal h1{font-size:clamp(30px,5vw,42px);margin-bottom:8px}
+.legal .updated{color:var(--ink-3);font-size:14px;margin-bottom:14px}
+.legal h2{font-size:21px;margin:36px 0 10px}
+.legal h3{font-size:16.5px;margin:22px 0 6px}
+.legal p,.legal li{font-size:15.5px;line-height:1.7;color:var(--ink-2)}
+.legal ul{padding-left:22px;margin:10px 0}
+.legal li{margin-bottom:8px}
+.legal strong{color:var(--ink)}
+.legal a{color:var(--primary-2);text-decoration:underline;text-underline-offset:3px}
+
+.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:30px;font-size:14px;font-weight:600;color:var(--ink-2);text-decoration:none}
+.back:hover{color:var(--ink)}
+
+/* The lede under the title: what this document is for, before the clauses. */
+.legal-lede{font-size:17px;line-height:1.6;color:var(--ink-2);margin-bottom:8px}
+
+/* Sibling navigation. Someone who lands on the terms from a footer link has no
+   other way to reach the security page, so every legal document carries the
+   whole set. The current page stays in the list rather than dropping out —
+   a row whose items move between pages is harder to scan than a static one. */
+.legal-nav{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 34px;padding:0;list-style:none}
+.legal-nav a{
+  display:block;padding:5px 11px;border:1px solid var(--line);border-radius:100px;
+  font-size:13px;font-weight:600;color:var(--ink-2);text-decoration:none;background:var(--bg);
+}
+.legal-nav a:hover{color:var(--ink);border-color:var(--line-2)}
+.legal-nav a[aria-current="page"]{
+  background:var(--primary-bg);border-color:var(--primary-line);color:var(--primary-ink);
+}
+
+/* Callout for the one or two things on a page that carry real consequence —
+   the safety disclaimer on the terms, the "what to do first" on security.
+   Not decoration: these are the lines a reader skimming past would regret. */
+.legal-note{
+  margin:20px 0;padding:15px 17px;border:1px solid var(--primary-line);
+  border-radius:var(--radius);background:var(--primary-bg);
+}
+.legal-note p{margin:0;color:var(--ink)}
+.legal-note p + p{margin-top:9px}
+.legal-note strong{color:var(--ink)}
+
+/* Contact / effective-date block that closes each document. */
+.legal-foot{margin-top:44px;padding-top:22px;border-top:1px solid var(--line)}
+.legal-foot p{font-size:14px;color:var(--ink-3)}
