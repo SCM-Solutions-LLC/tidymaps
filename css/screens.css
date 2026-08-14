@@ -130,6 +130,33 @@
 .v3d-wrap canvas:active{cursor:grabbing}
 
 .v3d-zones{align-self:start}
+
+/* Two columns of very different lengths. The canvas is a fixed height and the
+   sidebar is as long as the plan happens to be — five zones, the organizer
+   chips, the fit note and the add control ran ~1115px against the canvas
+   column's ~640, and the 475px difference was blank page under the model.
+
+   The sidebar's content is taken out of the grid row's height calculation
+   (absolute, so it contributes nothing) and the row is therefore sized by the
+   canvas column alone; the sidebar then fills exactly that and scrolls inside
+   it. No overscroll-behavior on purpose: reaching the end of the list should
+   carry on scrolling the page, the way an unnested column does.
+
+   Only above the two-column breakpoint. On a phone the sections are stacked
+   and each one wants its own full height. */
+@media(min-width:880px){
+  .v3d-wrap canvas{height:min(72vh,640px)}
+  .v3d-zones{align-self:stretch;position:relative;min-height:0;overflow:hidden}
+  .v3d-zones-inner{position:absolute;inset:0;overflow-y:auto;scrollbar-gutter:stable;padding-right:4px}
+  /* Content clipped flat at the panel's edge reads as broken rather than as
+     "there is more" — the chips were being sliced through the middle. The
+     fade says the list continues; it is drawn over the scroller and must not
+     eat the clicks underneath it. */
+  .v3d-zones::after{
+    content:'';position:absolute;left:0;right:0;bottom:0;height:34px;pointer-events:none;
+    background:linear-gradient(to bottom,transparent,var(--bg,var(--surface-2)));
+  }
+}
 .v3d-zones-h{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em}
 .v3d-zone-list{display:grid;gap:0}
 .v3d-zone-item{
