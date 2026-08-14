@@ -273,8 +273,14 @@ function updateStatus(geometry, resolved, sourceGeometry=geometry){
      pantry was labelled "Counter + uppers" — the name of a card in a different
      room they never saw. It reads as though the answer was lost. */
   const chosen = resolved.source==='setup' && state.setupLabel;
+  /* When the setup the user picked and the archetype it draws as are the same
+     word, naming both produced "Shown as your cabinet, drawn as Cabinet" — a
+     sentence that says one thing twice and reads like a bug. */
+  const sameWord = chosen && state.setupLabel.toLowerCase()===String(label).toLowerCase();
   note += chosen
-    ? ` Shown as your ${state.setupLabel.toLowerCase()}, drawn as ${label}.`
+    ? (sameWord
+        ? ` Shown as your ${state.setupLabel.toLowerCase()}.`
+        : ` Shown as your ${state.setupLabel.toLowerCase()}, drawn as ${label}.`)
     : ' Shown as '+label+' — '+(sourceDesc[resolved.source]||sourceDesc.default);
   if(resolved.type==='under-sink') note+=sourceGeometry.height!==geometry.height
     ?` Vanity shown at ${geometry.height} inches so the fixture stays realistic.`

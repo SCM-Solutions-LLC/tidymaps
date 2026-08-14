@@ -299,15 +299,6 @@
         "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
       }
     },
-    "group-drawers-tool": {
-      "file": "media/steps/group-drawers-tool.webm",
-      "status": "ready",
-      "license": {
-        "type": "first-party",
-        "owner": "TidyMap",
-        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
-      }
-    },
     "group-drawers-towel": {
       "file": "media/steps/group-drawers-towel.webm",
       "status": "ready",
@@ -328,15 +319,6 @@
     },
     "group-rail-hanger": {
       "file": "media/steps/group-rail-hanger.webm",
-      "status": "ready",
-      "license": {
-        "type": "first-party",
-        "owner": "TidyMap",
-        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
-      }
-    },
-    "group-rail-shoe": {
-      "file": "media/steps/group-rail-shoe.webm",
       "status": "ready",
       "license": {
         "type": "first-party",
@@ -614,6 +596,15 @@
         "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
       }
     },
+    "moveDown-rail-shoe": {
+      "file": "media/steps/moveDown-rail-shoe.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
     "moveDown-shelves-bottle": {
       "file": "media/steps/moveDown-shelves-bottle.webm",
       "status": "ready",
@@ -632,6 +623,15 @@
         "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
       }
     },
+    "moveDown-shelves-foldedclothes": {
+      "file": "media/steps/moveDown-shelves-foldedclothes.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
     "moveDown-shelves-jar": {
       "file": "media/steps/moveDown-shelves-jar.webm",
       "status": "ready",
@@ -643,6 +643,15 @@
     },
     "moveDown-shelves-plate": {
       "file": "media/steps/moveDown-shelves-plate.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "moveDown-shelves-tool": {
+      "file": "media/steps/moveDown-shelves-tool.webm",
       "status": "ready",
       "license": {
         "type": "first-party",
@@ -713,15 +722,6 @@
         "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
       }
     },
-    "moveUp-shelves-foldedclothes": {
-      "file": "media/steps/moveUp-shelves-foldedclothes.webm",
-      "status": "ready",
-      "license": {
-        "type": "first-party",
-        "owner": "TidyMap",
-        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
-      }
-    },
     "moveUp-shelves-jar": {
       "file": "media/steps/moveUp-shelves-jar.webm",
       "status": "ready",
@@ -733,15 +733,6 @@
     },
     "moveUp-shelves-plate": {
       "file": "media/steps/moveUp-shelves-plate.webm",
-      "status": "ready",
-      "license": {
-        "type": "first-party",
-        "owner": "TidyMap",
-        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
-      }
-    },
-    "moveUp-shelves-tool": {
-      "file": "media/steps/moveUp-shelves-tool.webm",
       "status": "ready",
       "license": {
         "type": "first-party",
@@ -956,6 +947,87 @@
         "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
       }
     },
+    "stock-bench-tool": {
+      "file": "media/steps/stock-bench-tool.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-drawers-utensil": {
+      "file": "media/steps/stock-drawers-utensil.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-rail-hanger": {
+      "file": "media/steps/stock-rail-hanger.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-shelves-bottle": {
+      "file": "media/steps/stock-shelves-bottle.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-shelves-can": {
+      "file": "media/steps/stock-shelves-can.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-shelves-jar": {
+      "file": "media/steps/stock-shelves-jar.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-shelves-plate": {
+      "file": "media/steps/stock-shelves-plate.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-shelves-tote": {
+      "file": "media/steps/stock-shelves-tote.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "stock-shelves-towel": {
+      "file": "media/steps/stock-shelves-towel.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
     "unload-bench-tool": {
       "file": "media/steps/unload-bench-tool.webm",
       "status": "ready",
@@ -1129,6 +1201,15 @@
     },
     "zones-bench-tool": {
       "file": "media/steps/zones-bench-tool.webm",
+      "status": "ready",
+      "license": {
+        "type": "first-party",
+        "owner": "TidyMap",
+        "note": "Rendered from remotion/ — the STEP_ART scenes in js/screens/results.js are the spec"
+      }
+    },
+    "zones-drawers-tool": {
+      "file": "media/steps/zones-drawers-tool.webm",
       "status": "ready",
       "license": {
         "type": "first-party",

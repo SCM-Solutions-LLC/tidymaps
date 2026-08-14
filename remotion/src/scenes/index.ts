@@ -12,9 +12,10 @@ import { Scene as group } from './group';
 import { Scene as moveUp } from './moveUp';
 import { Scene as moveDown } from './moveDown';
 import { Scene as zones } from './zones';
+import { Scene as stock } from './stock';
 import { Scene as done } from './done';
 
 export const SCENES: Record<string, React.FC<SceneProps>> = {
   purge, unload, wipe, label, hang, fold, photo, contain, group,
-  moveUp, moveDown, zones, done,
+  moveUp, moveDown, zones, stock, done,
 };

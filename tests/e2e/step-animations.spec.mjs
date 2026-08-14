@@ -20,30 +20,95 @@ async function openSamplePlan(page) {
 }
 
 test('every action in the vocabulary has a scene of its own', async ({ page }) => {
-  /* results.js falls back with STEP_ART[action] || STEP_ART.done, so an action
-     with no scene is invisible: it classifies correctly and still draws the
+  /* stepScene falls back with SCENES[action] || SCENES.done, so an action with
+     no scene is invisible: it classifies correctly and still draws the
      fallback. That failure is silent, which is how five steps stayed identical
-     without anything failing. */
+     without anything failing.
+
+     Asserted on the rendered output rather than the source text, so it holds
+     however the scene table is written. */
   await page.goto('/index.html');
-  const missing = await page.evaluate(async () => {
+  const collisions = await page.evaluate(async () => {
     const { ACTIONS } = await import('/js/stepMedia.js');
-    const html = await (await fetch('/js/screens/results.js')).text();
-    const block = html.match(/const STEP_ART\s*=\s*\{[\s\S]*?\n\};/)[0];
-    const scenes = [...block.matchAll(/^\s{2}([a-zA-Z]+):A_WRAP/gm)].map((m) => m[1]);
-    return ACTIONS.filter((a) => !scenes.includes(a));
+    const { stepScene } = await import('/js/screens/results.js');
+    /* One step text per action, chosen to classify as that action. The scene a
+       real `done` step draws is the yardstick: any other action drawing the
+       same markup is silently falling through to it. */
+    const SAMPLE = {
+      purge: 'Check every item for expiration dates',
+      unload: 'Pull everything out, wall by wall',
+      wipe: 'Wipe down every shelf',
+      label: 'Label every bin and shelf edge',
+      hang: 'Hang coats on the rod',
+      fold: 'Fold the sweaters',
+      photo: 'Take a photo of the finished shelf',
+      contain: 'Transfer dry goods into airtight containers',
+      group: 'Sort items into the nine categories',
+      moveUp: 'Move backup items to the top shelf',
+      moveDown: 'Put heavy items on the lowest shelf',
+      zones: 'Assign each category to its wall zone',
+      stock: 'Load the back wall shelves first',
+      done: 'Add a running low list inside the front edge',
+    };
+    const missing = ACTIONS.filter((a) => !SAMPLE[a]);
+    const doneScene = stepScene({ t: SAMPLE.done, w: '' }, 'pantry');
+    const shadowed = ACTIONS.filter((a) => a !== 'done' && SAMPLE[a]
+      && stepScene({ t: SAMPLE[a], w: '' }, 'pantry') === doneScene);
+    return { missing, shadowed };
   });
-  expect(missing, `these actions silently render the "done" scene`).toEqual([]);
+  expect(collisions.missing, 'this test has no sample step for these actions').toEqual([]);
+  expect(collisions.shadowed, 'these actions silently render the "done" scene').toEqual([]);
+});
+
+test('the same instruction is drawn differently in a different space', async ({ page }) => {
+  /* The point of the scene is that it looks like YOUR space. stepMedia already
+     derives the furniture from the space and the item from the step's words —
+     the SVG keyed on the verb alone, so "Sort items into categories" was the
+     same four circles in a pantry and in a garage. */
+  await page.goto('/index.html');
+  const { bySpace, byItem } = await page.evaluate(async () => {
+    const { stepScene } = await import('/js/screens/results.js');
+    const one = 'Sort everything into the nine categories';
+    const spaces = ['pantry', 'garage', 'closet', 'drawers'];
+    return {
+      bySpace: new Set(spaces.map((s) => stepScene({ t: one, w: '' }, s))).size,
+      byItem: new Set([
+        'Load the shelves with canned goods',
+        'Load the shelves with spice jars',
+        'Load the shelves with dry goods and pasta',
+      ].map((t) => stepScene({ t, w: '' }, 'pantry'))).size,
+    };
+  });
+  expect(bySpace, 'one instruction draws the same scene in every space').toBe(4);
+  expect(byItem, 'three different items in one space draw the same scene').toBe(3);
+});
+
+test('a scene names its motif and its item where CSS and tests can see them', async ({ page }) => {
+  await page.goto('/index.html');
+  const cls = await page.evaluate(async () => {
+    const { stepScene } = await import('/js/screens/results.js');
+    const svg = stepScene({ t: 'Load the shelves with canned goods', w: '' }, 'pantry');
+    return (svg.match(/class="([^"]+)"/) || [])[1];
+  });
+  expect(cls).toContain('sa-stock');
+  expect(cls).toContain('sa-m-shelves');
+  expect(cls).toContain('sa-g-can');
 });
 
 test('the plan renders more than a couple of distinct animations', async ({ page }) => {
   await openSamplePlan(page);
   const classes = await page.$$eval('#res-steps .sa', els => els.map(e => e.getAttribute('class')));
   expect(classes.length, 'no step animations rendered at all').toBeGreaterThan(3);
-  const distinct = new Set(classes);
+  /* Measured on the ACTION alone. The class also carries the motif and the
+     glyph now, and counting the whole string would let a plan pass on twelve
+     copies of one motion holding twelve different jars — which is the bug this
+     file exists for, wearing a costume. */
+  const actions = classes.map(c => (c.match(/\bsa-([a-zA-Z]+)\b(?!-)/) || [])[1]);
+  const distinct = new Set(actions);
   /* Not a demand for uniqueness — two similar steps may honestly share a
      picture. The bar is that the checklist does not read as one image copied
      down the page. */
-  expect(distinct.size, `${classes.length} steps drew only ${distinct.size} different scenes: ${[...distinct].join(', ')}`)
+  expect(distinct.size, `${classes.length} steps drew only ${distinct.size} different motions: ${[...distinct].join(', ')}`)
     .toBeGreaterThan(Math.min(4, classes.length - 1));
 });
 

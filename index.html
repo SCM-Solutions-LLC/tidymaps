@@ -703,6 +703,9 @@
   <p class="muted small" style="margin-top:6px">Pick a change and we&rsquo;ll revise the plan.</p>
   <div class="grid grid-2" id="customize-opts" style="margin-top:18px"></div>
   <div id="customize-result" class="hide" style="margin-top:20px"></div>
+  <!-- Someone who opens Adjust and changes their mind had no way out: the only
+       route back to the report was to apply a revision they did not want. -->
+  <div style="margin-top:20px"><button class="btn btn-ghost" onclick="go('results')">&larr; Back to plan</button></div>
 </section>
 
 <!-- ============================================================ 10. SAVE / SHARE -->
@@ -715,7 +718,8 @@
     <p class="muted small" style="max-width:34ch;margin:8px auto 0">Save it, share it with the household, or start organizing your next space.</p>
   </div>
   <div class="grid grid-2" id="save-opts" style="margin-top:24px"></div>
-  <div style="text-align:center;margin-top:22px">
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px">
+    <button class="btn btn-ghost" onclick="go('results')">&larr; Back to plan</button>
     <button class="btn btn-ghost" onclick="go('feedback')">Give feedback &rarr;</button>
   </div>
 </section>
@@ -738,6 +742,9 @@
 
     <div style="margin-top:26px">
       <button class="btn btn-primary btn-block" onclick="submitFeedback()">Submit feedback</button>
+    </div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" onclick="go('results')">&larr; Back to plan</button>
     </div>
   </div>
 

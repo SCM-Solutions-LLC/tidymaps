@@ -446,16 +446,31 @@ body[data-flow="1"] .site-footer{display:none}
 .step-art{display:grid;place-items:center;width:100%;height:98px;margin:11px 0 3px;
   border-radius:12px;background:var(--surface-2);color:var(--ink-3);
   pointer-events:none;overflow:hidden}
-.step-art .sa{width:78px;height:78px;overflow:visible}
+/* The scenes carry furniture and item detail now, so they are drawn to be read
+   rather than glanced at — and at the size and weight of the produced clips,
+   which play in the same band. A plan renders both (a clip where one exists,
+   this scene where one does not), so a checklist that mixed a small pale
+   drawing with a large dark one read as two different products. */
+.step-art .sa{width:96px;height:96px;overflow:visible}
 /* a produced clip is playing: the inline SVG scene underneath steps aside */
 .step-art.has-clip .sa{visibility:hidden}
 /* contain, not cover: clips are wide-format with the band's own surface color
    baked in, so letterboxing is invisible and nothing gets cropped (matches the
    inline style the loader sets in js/stepMedia.js) */
 .step-art video{width:100%;height:100%;object-fit:contain}
-@media(max-width:419px){.step-art{height:96px}.step-art .sa{width:68px;height:68px}}
+@media(max-width:419px){.step-art{height:96px}.step-art .sa{width:88px;height:88px}}
 @media(prefers-reduced-motion:reduce){.step-art .sa *{animation:none!important}}
 
+/* The furniture the scene stands on: present, but never louder than the thing
+   that is moving. */
+.sa .sa-fx{stroke:var(--ink-3);opacity:.8}
+/* Every item glyph. Thinner than the furniture on purpose — a 10-unit object
+   drawn at the 2px scene weight reads as a blob at 78px. */
+.sa .sa-it{fill:var(--surface);stroke:currentColor;stroke-width:1.55}
+.sa .cn-bin{fill:var(--sage-bg);stroke:var(--sage)}
+.sa .dn-ring{fill:var(--surface-2);stroke:var(--primary)}
+.sa .hg-bar{fill:var(--surface);stroke:currentColor}
+.sa .hg-body{fill:var(--primary-bg);stroke:var(--primary)}
 .sa .d1,.sa .u1,.sa .c1,.sa .s1{fill:var(--primary-bg);stroke:var(--primary)}
 .sa .d2,.sa .u2,.sa .c2,.sa .s2{fill:var(--honey);stroke:var(--honey-2)}
 .sa .d3{fill:var(--sage-bg);stroke:var(--sage)}
@@ -472,11 +487,11 @@ body[data-flow="1"] .site-footer{display:none}
 .sa .f-flap{fill:var(--primary-bg);stroke:var(--primary)}
 .sa .c1{animation:sa-slide-in 3.33s var(--ease) infinite}
 .sa .c2{animation:sa-slide-in 3.33s var(--ease) .5s infinite}
-@keyframes sa-slide-in{0%,15%{transform:translateY(0);opacity:1}55%,70%{transform:translateY(16px);opacity:1}85%,100%{transform:translateY(16px);opacity:0}}
+@keyframes sa-slide-in{0%,15%{transform:translateY(0);opacity:1}55%,72%{transform:translateY(15px);opacity:1}86%,100%{transform:translateY(15px);opacity:0}}
 .sa .d1{animation:sa-drop 3.58s ease-in infinite}
 .sa .d2{animation:sa-drop 3.58s ease-in .45s infinite}
 .sa .d3{animation:sa-drop 3.58s ease-in .9s infinite}
-@keyframes sa-drop{0%,20%{transform:translateY(0);opacity:1}55%{transform:translateY(19px);opacity:1}70%,100%{transform:translateY(19px);opacity:0}}
+@keyframes sa-drop{0%,20%{transform:translateY(0);opacity:1}55%{transform:translateY(14px);opacity:1}72%,100%{transform:translateY(14px);opacity:0}}
 .sa .s1{animation:sa-land 3.58s ease-out infinite}
 .sa .s2{animation:sa-land 3.58s ease-out .55s infinite}
 /* Lands and stays: the shelf ends the loop full, where sa-rise ends it empty. */
@@ -485,8 +500,8 @@ body[data-flow="1"] .site-footer{display:none}
 .sa .u2{animation:sa-rise 3.58s ease-out .5s infinite}
 @keyframes sa-rise{0%,20%{transform:translateY(8px);opacity:0}35%{opacity:1}60%,75%{transform:translateY(-8px);opacity:1}90%,100%{transform:translateY(-8px);opacity:0}}
 .sa-wipe .w-pad{animation:sa-sweep 3.07s var(--ease) infinite}
-@keyframes sa-sweep{0%,10%{transform:translateX(0)}55%,65%{transform:translateX(24px)}100%{transform:translateX(0)}}
-.sa-wipe .w-dust{transform-origin:40px 31px;animation:sa-fade-dust 3.07s var(--ease) infinite}
+@keyframes sa-sweep{0%,10%{transform:translateX(0)}55%,65%{transform:translateX(22px)}100%{transform:translateX(0)}}
+.sa-wipe .w-dust{transform-origin:39px 37px;animation:sa-fade-dust 3.07s var(--ease) infinite}
 @keyframes sa-fade-dust{0%,10%{transform:scaleX(1);opacity:.9}55%,100%{transform:scaleX(0);opacity:0}}
 .sa-label .l-tag{animation:sa-tag 3.33s var(--ease) infinite}
 @keyframes sa-tag{0%,12%{transform:translateY(-14px);opacity:0}35%,80%{transform:translateY(0);opacity:1}95%,100%{transform:translateY(0);opacity:1}}
@@ -501,9 +516,10 @@ body[data-flow="1"] .site-footer{display:none}
 .sa-photo .p-flash{animation:sa-flash 3.07s ease-out infinite}
 @keyframes sa-flash{0%,42%{opacity:0;transform:scale(1)}50%{opacity:.9;transform:scale(2.6)}62%,100%{opacity:0;transform:scale(1)}}
 .sa-up .m-box{animation:sa-move-up 3.58s var(--ease) infinite}
-@keyframes sa-move-up{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(-14px)}100%{transform:translateY(0)}}
+/* lower shelf (y=40) to upper shelf (y=22) — the distance the motif draws */
+@keyframes sa-move-up{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(-18px)}100%{transform:translateY(0)}}
 .sa-down .m-box2{animation:sa-move-down 3.58s var(--ease) infinite}
-@keyframes sa-move-down{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(14px)}100%{transform:translateY(0)}}
+@keyframes sa-move-down{0%,18%{transform:translateY(0)}55%,85%{transform:translateY(18px)}100%{transform:translateY(0)}}
 .sa-zones .z1{animation:sa-fade 3.84s var(--ease) infinite}
 .sa-zones .z2{animation:sa-fade 3.84s var(--ease) .35s infinite}
 .sa-zones .z3{animation:sa-fade 3.84s var(--ease) .7s infinite}
@@ -511,12 +527,14 @@ body[data-flow="1"] .site-footer{display:none}
 .sa-group .g2{animation:sa-g2 3s var(--ease) infinite}
 .sa-group .g3{animation:sa-g3 3s var(--ease) infinite}
 .sa-group .g4{animation:sa-g4 3s var(--ease) infinite}
-@keyframes sa-g1{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(7px,7px)}100%{transform:translate(0,0)}}
-@keyframes sa-g2{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-7px,9px)}100%{transform:translate(0,0)}}
-@keyframes sa-g3{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(9px,-7px)}100%{transform:translate(0,0)}}
-@keyframes sa-g4{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-9px,-5px)}100%{transform:translate(0,0)}}
-.sa-done .dn-check{stroke-dasharray:30;animation:sa-draw 3.33s var(--ease) infinite}
-@keyframes sa-draw{0%,15%{stroke-dashoffset:30}50%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:30}}
+/* four corners closing on one place: with two colours it reads as two
+   categories being brought together, not four things drifting. */
+@keyframes sa-g1{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(9px,9px)}100%{transform:translate(0,0)}}
+@keyframes sa-g2{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-10px,11px)}100%{transform:translate(0,0)}}
+@keyframes sa-g3{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(10px,-7px)}100%{transform:translate(0,0)}}
+@keyframes sa-g4{0%,15%{transform:translate(0,0)}55%,85%{transform:translate(-11px,-7px)}100%{transform:translate(0,0)}}
+.sa-done .dn-check{stroke-dasharray:14;animation:sa-draw 3.33s var(--ease) infinite}
+@keyframes sa-draw{0%,15%{stroke-dashoffset:14}50%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:14}}
 
 @media (prefers-reduced-motion: reduce){
   .step-art *{animation:none !important}
@@ -986,7 +1004,10 @@ body[data-flow="1"] .site-footer{display:none}
 .wz-rev-row:last-child{border-bottom:none}
 .wr-label{width:150px;flex:none;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-top:3px}
 .wr-value{flex:1;font-size:16px;color:var(--ink)}
-.wr-edit{border:none;background:none;color:var(--primary-2);font-family:var(--serif);font-weight:700;font-size:14px;padding:0}
+/* 26×16 was the whole hit area on a phone, on the one screen made of nothing
+   but these. Padding buys a comfortable target without moving the text. */
+.wr-edit{border:none;background:none;color:var(--primary-2);font-family:var(--serif);font-weight:700;font-size:14px;
+  padding:8px 10px;margin:-8px -10px;min-height:32px}
 .wr-edit:hover{color:var(--primary)}
 @media(max-width:519px){
   .wz-rev-row{flex-wrap:wrap;gap:6px 16px}

@@ -650,15 +650,19 @@ function renderEffort(){
   EFFORT_OPTS.forEach(o => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'wz-effort' + (state.effort === o.label ? ' sel' : '');
+    /* Untouched, the default is not drawn as a choice — see state.js. It is
+       still the value the plan is built from; it just does not claim to be
+       the user's answer until they give one. */
+    const chosen = state.effortTouched && state.effort === o.label;
+    b.className = 'wz-effort' + (chosen ? ' sel' : '');
     // single-select: expose the choice, the way every other step in the wizard
     // does. Selection used to be conveyed by the CSS class alone.
-    b.setAttribute('aria-pressed', String(state.effort === o.label));
+    b.setAttribute('aria-pressed', String(chosen));
     b.innerHTML = `
       <span class="we-ico">${EFFORT_ICON}</span>
       <span class="we-txt"><span class="ws-ttl">${o.label}</span><span class="ws-sub">${o.desc}</span></span>
       <span class="wz-check">${CHECK}</span>`;
-    b.onclick = () => { state.effort = o.label; renderEffort(); };
+    b.onclick = () => { state.effort = o.label; state.effortTouched = true; renderEffort(); };
     wrap.appendChild(b);
   });
 }
@@ -672,18 +676,23 @@ function renderShopping(){
   SHOPPING_OPTS.forEach(o => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'wz-shop' + (state.shoppingPref === o.label ? ' sel' : '');
-    b.setAttribute('aria-pressed', String(state.shoppingPref === o.label));
+    const chosen = state.shoppingTouched && state.shoppingPref === o.label;
+    b.className = 'wz-shop' + (chosen ? ' sel' : '');
+    b.setAttribute('aria-pressed', String(chosen));
     b.innerHTML = `
       <span class="wz-check">${CHECK}</span>
       <span class="ws-ttl">${o.label}</span>
       <span class="ws-sub">${o.desc}</span>`;
-    b.onclick = () => { state.shoppingPref = o.label; recomputePrefs(); renderShopping(); };
+    b.onclick = () => { state.shoppingPref = o.label; state.shoppingTouched = true; recomputePrefs(); renderShopping(); };
     wrap.appendChild(b);
   });
 }
 
 /* ---------- review ---------- */
+
+/* An answer we filled in, said so. Review is headed "Here's what we heard",
+   and a default the user never gave is not something we heard. */
+const dflt = (value) => `${value} (our default — tap Edit to change)`;
 
 function renderReviewSummary(){
   const wrap = document.getElementById('review-rows');
@@ -716,9 +725,11 @@ function renderReviewSummary(){
       ? [['Home limits', HOME_CONSTRAINTS.filter(([, p]) => state.prefs.has(p)).map(([l]) => l).join(', '), 'household']] : []),
     ["What's inside", state.cats.length ? state.cats.join(', ') : 'Nothing selected yet', 'contents'],
     ['What bugs you', state.goals.length ? state.goals.join(', ') : 'Nothing selected yet', 'goals'],
-    ['Style', state.styles.length ? state.styles.join(', ') : '—', 'style'],
-    ['Effort', state.effort, 'effort'],
-    ['Products', state.shoppingPref, 'shopping'],
+    /* "—" here and "Nothing selected yet" two rows up were the same state
+       written two ways, on the screen headed "Here's what we heard". */
+    ['Style', state.styles.length ? state.styles.join(', ') : 'Nothing selected yet', 'style'],
+    ['Effort', state.effortTouched ? state.effort : dflt(state.effort), 'effort'],
+    ['Products', state.shoppingTouched ? state.shoppingPref : dflt(state.shoppingPref), 'shopping'],
   ];
   wrap.innerHTML = rows.map(([label, value, target]) => `
     <div class="wz-rev-row">

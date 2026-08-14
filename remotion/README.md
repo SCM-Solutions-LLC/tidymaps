@@ -15,7 +15,13 @@ holding the item glyph of its media key.
 - `src/Stage.tsx` / `src/motifs.tsx` / `src/glyphs.tsx` — the shared visual
   language: 320×80 stage on the `.step-art` band's surface color, four
   furniture motifs with a geometry API, twelve item glyphs.
-- `src/scenes/*.tsx` — one choreography per action, all frame-driven
+- `src/Ambience.tsx` — the contents the story is NOT about: a pale pair of
+  items at the far ends of every surface, so a scene is staged in a space
+  rather than on empty furniture. Sits outside the x-band the choreographies
+  work in; read its header before moving anything.
+- `src/scenes/*.tsx` — one choreography per action (all fourteen, `stock`
+  included — it was the missing one, and it is the commonest instruction a
+  real plan gives), all frame-driven
   (`useCurrentFrame` + `interpolate`; no CSS animation, which Remotion cannot
   render).
 - `enumerate-keys.mjs` — which keys to produce: the demo-matrix union plus
@@ -35,6 +41,9 @@ node render-steps.mjs --force            # re-render everything (design change)
 node render-steps.mjs --only purge-shelves-can,wipe-shelves-bottle
 npm run studio         # live-preview compositions while editing scenes
 ```
+
+A design change to `Stage`, `Ambience`, `motifs` or `glyphs` touches every
+clip, so it needs `--force` and a full ~25-minute re-render.
 
 Rendering uses the pre-installed Playwright Chromium
 (`/opt/pw-browsers/chromium`, override with `REMOTION_BROWSER`) because the
