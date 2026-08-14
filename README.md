@@ -33,15 +33,14 @@ loses its canonical URL, drops a sibling from its nav, links to a file that
 does not exist, goes undated, or grows its own `<style>` block. The axe suite
 scans all five for WCAG 2 A/AA.
 
-Two things need a human before launch:
+`terms.html` is governed by Virginia law, with venue in Virginia's state and
+federal courts and an explicit carve-out for consumers whose own state law lets
+them sue closer to home.
 
-- **Governing law.** `terms.html` says the laws of "the state in which SCM
-  Solutions LLC is organized" because the repo does not record which state that
-  is. Name it explicitly once you know.
-- **A lawyer's read.** These are written to be accurate about what the code
-  actually does, which is the hard part, but they have not been reviewed by
-  counsel. The liability cap, the warranty disclaimer, and the age limit are
-  the clauses worth a professional eye.
+Still worth a lawyer's read before launch. These are written to be accurate
+about what the code actually does, which is the hard part, but they have not
+been reviewed by counsel. The liability cap, the warranty disclaimer, the venue
+clause, and the age limit are the ones worth a professional eye.
 
 Keep them honest: every factual claim in them is checkable against this repo,
 and the privacy policy already had to be corrected once (it credited Google
