@@ -83,3 +83,20 @@ test('every screen past the plan offers a way back to it', async ({ page }) => {
     await expect(page.locator('#screen-results')).toHaveClass(/active/);
   }
 });
+
+test('the feedback screen has a way back on both of its branches', async ({ page }) => {
+  /* Feedback renders one of two panels — the form, or "you already sent this"
+     for a plan that has been rated. The way back was added to the form only,
+     so the branch a returning user actually lands on was still a dead end. */
+  await openSample(page);
+  await page.evaluate(() => window.go('feedback'));
+  for (const branch of ['fb-form', 'fb-sent']) {
+    await page.evaluate((show) => {
+      document.getElementById('fb-form').classList.toggle('hide', show !== 'fb-form');
+      document.getElementById('fb-sent').classList.toggle('hide', show !== 'fb-sent');
+    }, branch);
+    const back = page.locator(`#${branch}`).getByRole('button', { name: /Back to plan/ });
+    await expect(back, `#${branch} has no way back to the plan`).toHaveCount(1);
+    await expect(back).toBeVisible();
+  }
+});

@@ -60,6 +60,53 @@ test('every action in the vocabulary has a scene of its own', async ({ page }) =
   expect(collisions.shadowed, 'these actions silently render the "done" scene').toEqual([]);
 });
 
+test('every scene actually moves', async ({ page }) => {
+  /* The scenes are CSS-animated, and the CSS selects on a class the scene
+     builder writes. Rename one without the other and the step renders a
+     perfectly good still picture: nothing throws, nothing looks broken, and
+     the animation is simply gone. That is exactly what happened to moveUp and
+     moveDown — .sa-up / .sa-down against a wrapper that had started emitting
+     the action verbatim — and a round of keyframe tuning went into rules that
+     could no longer match anything.
+
+     Checked through the browser's own computed styles, so it holds for any
+     class name either side chooses. */
+  await page.goto('/index.html');
+  const still = await page.evaluate(async () => {
+    const { ACTIONS } = await import('/js/stepMedia.js');
+    const { stepScene } = await import('/js/screens/results.js');
+    const SAMPLE = {
+      purge: 'Check every item for expiration dates',
+      unload: 'Pull everything out, wall by wall',
+      wipe: 'Wipe down every shelf',
+      label: 'Label every bin and shelf edge',
+      hang: 'Hang coats on the rod',
+      fold: 'Fold the sweaters',
+      photo: 'Take a photo of the finished shelf',
+      contain: 'Transfer dry goods into airtight containers',
+      group: 'Sort items into the nine categories',
+      moveUp: 'Move backup items to the top shelf',
+      moveDown: 'Put heavy items on the lowest shelf',
+      zones: 'Assign each category to its wall zone',
+      stock: 'Load the back wall shelves first',
+      done: 'Add a running low list inside the front edge',
+    };
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(host);
+    const dead = [];
+    for (const action of ACTIONS) {
+      host.innerHTML = stepScene({ t: SAMPLE[action], w: '' }, 'pantry');
+      const animated = [...host.querySelectorAll('*')]
+        .some((el) => getComputedStyle(el).animationName !== 'none');
+      if (!animated) dead.push(action);
+    }
+    host.remove();
+    return dead;
+  });
+  expect(still, 'these scenes render a still picture — their keyframes match nothing').toEqual([]);
+});
+
 test('the same instruction is drawn differently in a different space', async ({ page }) => {
   /* The point of the scene is that it looks like YOUR space. stepMedia already
      derives the furniture from the space and the item from the step's words —

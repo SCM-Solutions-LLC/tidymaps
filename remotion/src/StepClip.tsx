@@ -22,7 +22,7 @@ export const StepClip: React.FC<StepClipProps> = ({ action, motif, glyph }) => {
   return (
     <Stage>
       <Motif kind={motif} />
-      <Ambience motif={motif} glyph={glyph} />
+      <Ambience motif={motif} glyph={glyph} action={action} />
       <Scene motif={motif} glyph={glyph} />
     </Stage>
   );

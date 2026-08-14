@@ -73,6 +73,67 @@ test('an empty answer reads the same way everywhere on Review', async ({ page })
   expect(dashes.map((r) => r.label), 'a row says nothing at all instead of saying nothing is chosen').toEqual([]);
 });
 
+test('Start over clears the answers AND the record of who gave them', async ({ page }) => {
+  /* restart() reset state.effort and state.shoppingPref but not the flags that
+     say whether the user chose them, so after Start over the two defaults were
+     pre-ticked again and Review went back to claiming them — the whole bug,
+     reinstated by the button meant to clear everything. */
+  await openWizard(page);
+  await gotoStep(page, 'shopping');
+  await page.locator('#shopping-cards .wz-shop', { hasText: 'Open to a few ideas' }).click();
+  await expect(page.locator('#shopping-cards .wz-shop.sel')).toHaveCount(1);
+
+  // restart() asks first, and Playwright dismisses dialogs by default —
+  // without this the click does nothing and the test passes on a no-op
+  page.once('dialog', (d) => d.accept());
+  await page.evaluate(() => window.restart());
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.go('shopping'));
+  await expect(page.locator('#shopping-cards .wz-shop').first()).toBeVisible();
+  expect(await page.locator('#shopping-cards .wz-shop.sel').count(),
+    'Start over left an answer ticked').toBe(0);
+  await gotoStep(page, 'review');
+  await expect(page.locator('.wz-rev-row', { hasText: 'PRODUCTS' }).first()).toContainText('our default');
+});
+
+test('a saved space comes back with the answers it was saved with', async ({ page }) => {
+  /* The signed-in snapshot carried effort but never shoppingPref, so reopening
+     a space handed back "Use what I have" — the answer that empties the
+     product list — whatever the user had chosen. And the two touched flags
+     went the same way, so a reopened space labelled the user's own answers
+     "(our default)".
+
+     Driven as a real round trip through both halves of the contract, because
+     the bug was that one half wrote what the other half never read. */
+  await page.goto('/index.html');
+  const back = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const { rowFromState, applyLoadedSpace } = await import('/js/db.js');
+
+    state.shoppingPref = 'Open to a few ideas';
+    state.shoppingTouched = true;
+    state.effort = 'Full overhaul';
+    state.effortTouched = true;
+    const row = JSON.parse(JSON.stringify(rowFromState('test space')));
+
+    // whatever was in memory must not be what we read back
+    state.shoppingPref = 'Use what I have';
+    state.shoppingTouched = false;
+    state.effort = 'Weekend reset';
+    state.effortTouched = false;
+
+    applyLoadedSpace({ data: { ...row, id: 'x' }, beforePhotoUrl: null, afterRenderUrl: null });
+    return {
+      pref: state.shoppingPref, effort: state.effort,
+      shoppingTouched: state.shoppingTouched, effortTouched: state.effortTouched,
+    };
+  });
+  expect(back.pref, 'a reopened space lost the shopping answer').toBe('Open to a few ideas');
+  expect(back.effort).toBe('Full overhaul');
+  expect(back.shoppingTouched, 'a reopened space calls the user\'s answer our default').toBe(true);
+  expect(back.effortTouched).toBe(true);
+});
+
 test('the Edit links are big enough to hit on a phone', async ({ page, browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const p = await ctx.newPage();
