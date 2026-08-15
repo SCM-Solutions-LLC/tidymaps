@@ -62,13 +62,29 @@ export function readableError(e){
 let analysisRun=0;
 let activeAnalysis=null;   // AbortController for the run in flight
 
-export function currentAnalysisRun(){ return analysisRun; }
+/* Leaving the loading screen abandons the build, and abandoning it has to
+   retire the run — not just the navigation it would have caused.
+
+   Starting a NEW analysis is not the only way to walk away from one. "Start
+   over" and "My spaces" both sit in the appbar, which the loading screen keeps
+   (it has no step counter, so nothing hides them), and Back is always there.
+   A run abandoned that way was still the current run 60 seconds later, so it
+   wrote its plan into state on top of whatever the user had moved on to: over
+   the answers Start over had just cleared — which the guest-draft writer then
+   put back on disk, so the next visit "restored" the plan they deleted — or
+   over the saved space they had opened in the meantime.
+
+   Called by the router on every departure from the loading screen. */
+export function cancelAnalysis(){
+  analysisRun++;
+  if(activeAnalysis){ activeAnalysis.abort(); activeAnalysis=null; }
+}
 
 export function runLoading(){
-  const runId=++analysisRun;
-  /* Stop the previous request rather than merely ignoring it: it is billed for
-     70-90 seconds of model time whether or not anyone reads the answer. */
-  if(activeAnalysis) activeAnalysis.abort();
+  /* Retire the previous run before claiming a token, so the old run's
+     isCurrent() is already false by the time its aborted request rejects. */
+  cancelAnalysis();
+  const runId=analysisRun;
   const controller=(typeof AbortController==='function') ? new AbortController() : null;
   activeAnalysis=controller;
   const isCurrent=()=>analysisRun===runId;

@@ -3,7 +3,7 @@ import { track } from './telemetry.js';
 import { setFootHeightVar, scrollToTop } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll, buildCustomize } from './screens/index.js';
-import { runLoading } from './screens/loading.js';
+import { runLoading, cancelAnalysis } from './screens/loading.js';
 import { buildDashboard } from './screens/dashboard.js';
 import { buildFeedback } from './screens/feedback.js';
 import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
@@ -154,6 +154,11 @@ export function setRail(){
 }
 export function go(id, opts={}){
   const from=current;
+  /* Leaving the loading screen abandons the analysis, whichever way they left
+     — Back, Start over, My spaces. The run is retired here rather than only
+     where a new one begins, because those three exits start no new run and the
+     abandoned one would otherwise still be current when its answer lands. */
+  if(from==='loading' && id!=='loading') cancelAnalysis();
   if(current==='viewer3d' && id!=='viewer3d'){
     // free WebGL resources when leaving the 3D screen
     import('./screens/viewer3d.js').then(m=>m.disposeViewer3d());

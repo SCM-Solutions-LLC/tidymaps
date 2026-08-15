@@ -102,6 +102,17 @@ test('a guest draft round-trips every answer', () => {
     'the measure screen renders from dimsFt, so it must be rehydrated too');
 });
 
+/* `upgrades` is deliberately re-derived from the saved shopping list rather
+   than read back, because nothing keeps the row's copy of it fresh — see the
+   comment in applyLoadedSpace. It is the single documented exception, and the
+   tests below pin it in both directions so it stays deliberate. */
+const ROW_DERIVES = ['upgrades'];
+const exceptRowDerived = (a) => {
+  const out = { ...a };
+  ROW_DERIVES.forEach((k) => { delete out[k]; });
+  return out;
+};
+
 test('a signed-in saved space round-trips every answer', () => {
   fillEveryAnswer();
   const before = wizardAnswers(state);
@@ -111,9 +122,25 @@ test('a signed-in saved space round-trips every answer', () => {
   resetWizardAnswers(state);
   applyLoadedSpace({ data: { ...row, id: 'space-a' }, beforePhotoUrl: null, afterRenderUrl: null });
 
-  assert.deepEqual(wizardAnswers(state), before);
+  assert.deepEqual(exceptRowDerived(wizardAnswers(state)), exceptRowDerived(before));
   assert.equal(state.activeSpaceId, 'space-a');
   assert.deepEqual(state.dimsFt, { w: 12, h: 6.5, d: 2 });
+});
+
+/* The products section is switched on from the report and from Adjust, and
+   both persist through updateSpacePatch, which never rewrites the prefs blob.
+   Reading the stale answer back hid the section — and zeroed the cost tile —
+   for a plan that plainly had products in it. */
+test('a saved shopping list turns the products section back on', () => {
+  fillEveryAnswer();
+  state.upgrades = false;                 // what the last full save happened to store
+  const row = JSON.parse(JSON.stringify(rowFromState('x')));
+  row.shopping = [{ name: 'Turntable', checked: true }];
+
+  resetWizardAnswers(state);
+  applyLoadedSpace({ data: { ...row, id: 'x' }, beforePhotoUrl: null, afterRenderUrl: null });
+  assert.equal(state.upgrades, true,
+    'a row with a shopping list must not come back with products hidden');
 });
 
 /* The gap that made this worth fixing: whichever backend you used decided
@@ -135,8 +162,69 @@ test('both backends carry the same answers', () => {
     return wizardAnswers(state);
   })();
 
-  assert.deepEqual(viaRow, viaDraft,
+  assert.deepEqual(exceptRowDerived(viaRow), exceptRowDerived(viaDraft),
     'the signed-in row and the guest draft must preserve the same answer set');
+});
+
+/* A stored null is an answer somebody gave; an absent field is a payload that
+   predates it. Treating the two the same put a "Weekend reset" chip on the
+   demo plan, which deliberately leaves effort unset — a claim about an answer
+   nobody made, which is the exact class of bug the touched flags exist for. */
+test('a stored null survives, an absent field falls back to the default', () => {
+  fillEveryAnswer();
+  applyWizardAnswers({ ...wizardAnswers(state), effort: null, budget: null }, state);
+  assert.equal(state.effort, null, 'a deliberately unset answer must stay unset');
+  assert.equal(state.budget, null);
+
+  fillEveryAnswer();
+  const partial = wizardAnswers(state);
+  delete partial.effort;
+  applyWizardAnswers(partial, state);
+  assert.equal(state.effort, 'Weekend reset', 'an absent field takes the default');
+});
+
+test('a null in a list or flag field still normalizes', () => {
+  fillEveryAnswer();
+  applyWizardAnswers({ ...wizardAnswers(state), goals: null, catsTouched: null }, state);
+  assert.deepEqual(state.goals, [], 'list readers must never see null');
+  assert.equal(state.catsTouched, false);
+});
+
+/* The wizard heading reads "Where in the <room>?", so a room that does not
+   match the area is a self-contradiction on one screen: a garage workbench
+   asked which part of the kitchen it was, over a list that does not contain
+   it. No row written before this change carries a room, so it is derived. */
+test('a legacy row without a room derives it from the area', () => {
+  const legacy = {
+    id: 'legacy', name: 'old space', space_type: 'workbench', goal: null,
+    dims: null, household: null, prefs: { prefs: [], toggles: {} },
+    plan: null, plan_meta: null, shopping: null,
+    progress: { stepsDone: [] }, arrangement: null,
+  };
+  fillEveryAnswer();
+  state.room = 'bedroom';   // whatever the previously viewed space left behind
+  applyLoadedSpace({ data: legacy, beforePhotoUrl: null, afterRenderUrl: null });
+  assert.equal(state.space, 'workbench');
+  assert.equal(state.room, 'garage', 'the room must match the area, not the default');
+});
+
+/* fbSent is what holds "one submission per plan". Reopening the space you are
+   already on is the same plan, so clearing it there re-asks someone who has
+   already answered and takes a second row for it. */
+test('reopening the same space keeps its feedback answers', () => {
+  resetWizardAnswers(state);
+  const row = JSON.parse(JSON.stringify(rowFromState('mine')));
+  applyLoadedSpace({ data: { ...row, id: 'same' }, beforePhotoUrl: null, afterRenderUrl: null });
+  state.fbUseful = 'yes'; state.fbRated = true; state.fbSent = true;
+
+  applyLoadedSpace({ data: { ...row, id: 'same' }, beforePhotoUrl: null, afterRenderUrl: null });
+  assert.equal(state.fbSent, true, 'the same plan must not ask for feedback twice');
+  assert.equal(state.fbRated, true);
+  assert.equal(state.fbUseful, 'yes');
+
+  applyLoadedSpace({ data: { ...row, id: 'other' }, beforePhotoUrl: null, afterRenderUrl: null });
+  assert.equal(state.fbSent, false, 'a different plan gets a fresh ask');
+  assert.equal(state.fbUseful, null);
 });
 
 /* The data-integrity half of the bug. Opening a second space kept the first

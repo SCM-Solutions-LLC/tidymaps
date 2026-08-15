@@ -118,6 +118,55 @@ test('a superseded analysis cannot overwrite the plan the user is waiting for', 
   await expect(page.locator('#res-steps .task').first()).not.toContainText(STALE);
 });
 
+/* Starting another analysis is not the only way to walk away from one. Start
+   over and My spaces both sit in the appbar, which the loading screen keeps,
+   and Back is always there. A run abandoned that way started no replacement,
+   so a token that only advanced on a NEW run left it current: sixty seconds
+   later it wrote its plan over the answers Start over had just cleared, and
+   the guest-draft writer put that plan back on disk — so the next visit
+   offered to restore the plan the user had explicitly deleted. */
+test('an analysis abandoned by Start over does not come back', async ({ page }) => {
+  let release;
+  await page.route('**/functions/v1/analyze-space', async (route) => {
+    await new Promise((res) => { release = res; });
+    try {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ plan: planNamed(STALE), model: 'test-model', requestId: 'r' }),
+      });
+    } catch (_) { /* aborted, which is the point */ }
+  });
+
+  await driveToReview(page);
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-loading')).toHaveClass(/active/);
+  await expect(page.locator('#ls-final')).toHaveClass(/doing/, { timeout: 20_000 });
+
+  page.once('dialog', (d) => d.accept());
+  await page.evaluate(() => window.restart());
+  await expect(page.locator('#screen-landing')).toHaveClass(/active/);
+
+  release();
+  await page.waitForTimeout(2000);
+
+  const planInMemory = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return !!state.ai;
+  });
+  expect(planInMemory, 'the abandoned analysis wrote its plan over cleared answers').toBe(false);
+
+  // And the next screen change must not write it back to disk: the guest-draft
+  // writer runs on every go(), which is how the deleted plan came back.
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  const draft = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('tidymap_draft_v2') || 'null'); } catch (_) { return null; }
+  });
+  expect(draft && draft.ai, 'the deleted plan was written back to localStorage').toBeFalsy();
+  expect(draft && draft.planReady, 'the next visit would offer to restore it').toBeFalsy();
+});
+
 test('leaving the loading screen during the hand-off delay does not drag the user back', async ({ page }) => {
   /* Navigation to the report is delayed so the last checklist row can be seen
      ticking over. The screen was checked BEFORE that delay and not again

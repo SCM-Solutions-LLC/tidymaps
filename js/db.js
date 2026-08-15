@@ -2,7 +2,7 @@ import { supa, getUser } from './auth.js';
 import { submitForm } from './api.js';
 import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord } from './state.js';
 import { toast } from './ui.js';
-import { areaFor } from './wizard-data.js';
+import { areaFor, roomFor } from './wizard-data.js';
 import { track } from './telemetry.js';
 
 /* Saved spaces: one row per organized area, media in the private
@@ -183,15 +183,34 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
      while a re-analysis was built from another's answers. resetPlanRecord
      covers the same hole on the plan side: shareView in particular survived
      into an owned space and made it unsaveable. */
+  /* Feedback is about a specific plan, and resetPlanRecord clears it so a
+     different space asks fresh rather than showing the previous space's rating
+     back. Reopening the space you are already on is not a different plan
+     though, and fbSent is what holds "one submission per plan" — losing it
+     there re-asks someone who already answered, and takes a second row. */
+  const sameSpace = data.id && data.id===state.activeSpaceId;
+  const feedback = sameSpace
+    ? { fbUseful:state.fbUseful, fbVs:state.fbVs, fbNext:state.fbNext,
+        fbRated:state.fbRated, fbSent:state.fbSent }
+    : null;
   resetPlanRecord(state);
+  if(feedback) Object.assign(state, feedback);
   const prefs = data.prefs || {};
-  // `prefs.answers` is canonical; a row written before it existed carries the
-  // same answers flattened across prefs and the named columns.
-  applyWizardAnswers(prefs.answers || {
+  /* `prefs.answers` is canonical; a row written before it existed carries the
+     same answers flattened across prefs and the named columns. `room` is the
+     one answer no older row carries in any form, and it cannot be left to the
+     default: the wizard's own heading reads "Where in the <room>?", so a
+     reopened garage workbench asked the user where in the kitchen it was, over
+     a list of kitchen areas that does not contain it. The area implies the
+     room, so it is derived rather than guessed. */
+  const legacy = {
     ...prefs,
     space: data.space_type, goal: data.goal,
     dims: data.dims, household: data.household,
-  }, state);
+  };
+  // roomFor returns the room record; state.room holds its id.
+  if(!prefs.answers && data.space_type) legacy.room = roomFor(data.space_type).id;
+  applyWizardAnswers(prefs.answers || legacy, state);
   // The named columns are the source of truth for the answers they duplicate:
   // the dashboard and share payload read them, so a row edited elsewhere lands
   // here rather than in the blob.
@@ -210,15 +229,23 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   state.shopping = data.shopping;
   state.stepDone = (data.progress && data.progress.stepsDone) || [];
   state.arrangement = data.arrangement;
-  /* `upgrades` is an answer, not a derivation: recomputePrefs() sets it from
-     the shopping step and the report's own switch overrides it, so someone who
-     turned the products section on without ticking anything yet had it turned
-     back off for them on reopening. A row that carries the answer is trusted.
-     Rows written before it was serialized carry none, and for those a saved
-     shopping list remains the best evidence the section was on. */
-  if(!(data.prefs && data.prefs.answers && 'upgrades' in data.prefs.answers)){
-    state.upgrades = !!(data.shopping && data.shopping.length);
-  }
+  /* `upgrades` is the one answer this row does NOT trust, and the reason is
+     freshness rather than principle. The report's own products switch and the
+     Adjust screen both change it long after the plan was saved, and both
+     persist through updateSpacePatch, which only ever writes plan, shopping,
+     progress and arrangement — never the prefs blob. So the stored copy is
+     whatever it happened to be at the last full save, and trusting it hid the
+     products section (and zeroed the cost tile) for anyone who turned products
+     on from Adjust and then reopened the space. The shopping list is written
+     by those same incremental patches, so it is the only signal in the row
+     that is actually current.
+
+     The guest draft has no such problem — it is rewritten on every screen
+     change — so it keeps the answer, which is why this exception lives here
+     and not in the shared deserializer. Making the row's copy trustworthy
+     means persisting the answers blob when the switch moves; until then, this
+     is the honest reading. */
+  state.upgrades = !!(data.shopping && data.shopping.length);
   state.beforePhotoUrl = beforePhotoUrl;
   state.afterRenderUrl = afterRenderUrl;
   return data;

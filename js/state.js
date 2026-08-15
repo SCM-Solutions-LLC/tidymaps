@@ -166,12 +166,15 @@ export function applyWizardAnswers(a, target=state){
   if(!a || typeof a!=='object') return target;
   Object.entries(ANSWER_DEFAULTS).forEach(([k,def])=>{
     const v=a[k];
-    if(v===undefined || v===null){
-      // null is a legitimate stored value for the nullable answers (goal,
-      // budget, dims, capture); for the rest it means "absent", not "empty".
-      if(v===null && def===null) target[k]=null;
-      return;
-    }
+    /* Absent and null are different answers, and conflating them lost one.
+       `undefined` means the payload never carried this field — an older draft
+       or row — so the default stands. `null` is a value somebody stored: the
+       demo deliberately leaves effort unset, and reading that back as the
+       "Weekend reset" default put a chip on the report claiming an answer the
+       demo had never given. Arrays and booleans still normalize, because
+       null there is how the previous readers spelled "empty" (`d.goals||[]`,
+       `!!d.setupTouched`) and a null in a list field would break its readers. */
+    if(v===undefined) return;
     if(Array.isArray(def)){ target[k]=Array.isArray(v)?v.slice():def.slice(); return; }
     if(typeof def==='boolean'){ target[k]=!!v; return; }
     target[k]=v;
