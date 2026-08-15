@@ -24,8 +24,10 @@ async function doSave(){
 async function doShare(){
   try{
     toast('Creating your share link…');
-    await saveSpace(defaultSpaceName());
-    const shareId=await setShareEnabled(true);
+    // The id this save wrote, handed straight to the link — not read back out
+    // of state, which may by then describe a different plan.
+    const spaceId=await saveSpace(defaultSpaceName());
+    const shareId=await setShareEnabled(true, spaceId);
     track('share_link_created', {});
     const url=shareUrlFor(shareId);
     try{

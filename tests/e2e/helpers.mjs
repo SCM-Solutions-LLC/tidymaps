@@ -19,6 +19,38 @@ export async function expandChapters(page) {
   });
 }
 
+/* ---------- a signed-in visitor, offline ----------
+   supabase-js reads its session straight out of localStorage, so a plausible
+   JWT put there before the app boots is a signed-in user for every purpose a
+   test has — with the project's own calls intercepted, nothing leaves the
+   browser. Shared because more than one spec needs an account now, and a
+   second hand-rolled JWT is a second thing to keep in step with the client. */
+export const REF = 'jwubrtaacveavbkosgtf';
+export const USER_ID = '00000000-0000-4000-8000-000000000001';
+
+function b64url(obj) {
+  return Buffer.from(JSON.stringify(obj)).toString('base64')
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+export function fakeSession() {
+  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365;
+  const token = [
+    b64url({ alg: 'HS256', typ: 'JWT' }),
+    b64url({ sub: USER_ID, role: 'authenticated', aud: 'authenticated', exp }),
+    'signature',
+  ].join('.');
+  return {
+    access_token: token, token_type: 'bearer', expires_in: 31536000, expires_at: exp,
+    refresh_token: 'fake-refresh',
+    user: {
+      id: USER_ID, aud: 'authenticated', role: 'authenticated',
+      email: 'tester@example.com', app_metadata: {}, user_metadata: {},
+      created_at: '2026-01-01T00:00:00Z',
+    },
+  };
+}
+
 /* ---------- results fingerprint ----------
    Canonical text of everything the results screen renders, so a test can ask
    "did this answer change the plan at all?" in one comparison.

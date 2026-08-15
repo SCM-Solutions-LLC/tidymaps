@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { fakeSession, REF, USER_ID } from './helpers.mjs';
 
 /* Two promises this suite pins down:
 
@@ -13,34 +14,9 @@ import { test, expect } from 'playwright/test';
    The Supabase session is faked in localStorage and every call to the
    project is intercepted, so this runs offline and touches no real data. */
 
-const REF = 'jwubrtaacveavbkosgtf';
-const USER_ID = '00000000-0000-4000-8000-000000000001';
 const NEW_SPACE_ID = '11111111-2222-4333-8444-555555555555';
 // A second id so a test can tell "inserted a new row" from "overwrote the old one".
 const SECOND_SPACE_ID = '99999999-8888-4777-8666-555555555555';
-
-function b64url(obj) {
-  return Buffer.from(JSON.stringify(obj)).toString('base64')
-    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-function fakeSession() {
-  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365;
-  const token = [
-    b64url({ alg: 'HS256', typ: 'JWT' }),
-    b64url({ sub: USER_ID, role: 'authenticated', aud: 'authenticated', exp }),
-    'signature',
-  ].join('.');
-  return {
-    access_token: token, token_type: 'bearer', expires_in: 31536000, expires_at: exp,
-    refresh_token: 'fake-refresh',
-    user: {
-      id: USER_ID, aud: 'authenticated', role: 'authenticated',
-      email: 'tester@example.com', app_metadata: {}, user_metadata: {},
-      created_at: '2026-01-01T00:00:00Z',
-    },
-  };
-}
 
 // Records every Supabase call and answers it locally.
 async function stubBackend(page, { signedIn }) {

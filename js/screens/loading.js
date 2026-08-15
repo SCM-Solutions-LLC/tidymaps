@@ -1,6 +1,6 @@
 import { LOAD_LABELS, LOAD_LABELS_MEDIA, LOAD_LABELS_COMMON, LOAD_LABELS_NO_MEDIA } from '../data.js';
 import { ICON } from '../icons.js';
-import { state } from '../state.js';
+import { state, currentPlanInstance, planInstanceIsCurrent } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { backendConfigured } from '../config.js';
 import { analyzeSpace } from '../api.js';
@@ -58,7 +58,24 @@ export function readableError(e){
    it expected and overwrite run B. Every run now carries a token, and a run
    that is no longer the current one writes nothing and navigates nowhere. The
    token is checked again inside the delayed navigation, which is its own race:
-   the user has 550ms (or 1400ms on the fallback path) to leave. */
+   the user has 550ms (or 1400ms on the fallback path) to leave.
+
+   The token stopped the wrong plan from being SHOWN, but the plan was still
+   written into state the moment it arrived, one guarded handoff earlier than
+   the navigation. That gap was reachable: the user has the whole handoff
+   delay to press Back, and if they did, they correctly stayed on Review with
+   an AI plan already sitting in state.ai — which the guest-draft writer then
+   serialized on the next screen change, so the next visit offered to restore
+   a plan they had walked away from. On the signed-in side autoSaveSpace() had
+   already started, creating the row too.
+
+   So the run keeps its answer to itself. `run.result` holds the plan; nothing
+   in `state` moves until enterResults(), which runs behind the same guard that
+   decides the navigation and is the ONLY place this file writes plan state.
+   Committing and entering the report are now one operation, not two.
+
+   A run also belongs to a plan instance (js/state.js), so a run abandoned by
+   opening a saved space is retired by that switch as well as by the router. */
 let analysisRun=0;
 let activeAnalysis=null;   // AbortController for the run in flight
 
@@ -90,9 +107,13 @@ export function runLoading(){
      isCurrent() is already false by the time its aborted request rejects. */
   cancelAnalysis();
   const runId=analysisRun;
+  const planInstance=currentPlanInstance();
   const controller=(typeof AbortController==='function') ? new AbortController() : null;
   activeAnalysis=controller;
-  const isCurrent=()=>analysisRun===runId;
+  const isCurrent=()=>analysisRun===runId && planInstanceIsCurrent(planInstance);
+  /* This run's answer, held here rather than in `state` until the handoff.
+     `{ ai, meta }` on success, `{ error }` on failure. */
+  const run={ result:null };
 
   const wrap=document.getElementById('load-steps'); wrap.innerHTML='';
   const fw=document.getElementById('frames-wrap');
@@ -110,6 +131,9 @@ export function runLoading(){
     wrap.appendChild(row);
   });
 
+  /* Clearing the plan the build replaces, which is not the same act as
+     committing the one it produces — that happens once, in enterResults(),
+     behind the handoff guard. */
   state.ai=null; state.aiError=null; state.planMeta=null; state.frames=[];
   state.afterRenderB64=null; state.afterRenderUrl=null;
 
@@ -193,11 +217,10 @@ export function runLoading(){
       });
       enforceArchetypeHonesty(plan, drawn.type);
       if(!isCurrent()) return;   // superseded mid-flight: this plan is for answers that changed
-      state.ai = normalizeAi(plan);
-      state.planMeta = { model, source:'ai', analyzedAt: Date.now() };
+      run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() } };
     })().catch(e=>{
       if(!isCurrent()) return;
-      state.aiError = readableError(e); state.ai=null; state.planMeta=null;
+      run.result = { error: readableError(e) };
     });
     /* A last resort, because finishLoading hands the whole screen to this one
        promise: if it never settles, the spinner runs forever with no banner and
@@ -209,8 +232,8 @@ export function runLoading(){
     aiPromise = Promise.race([
       aiPromise,
       new Promise(res=>setTimeout(()=>{
-        if(isCurrent() && !state.ai && !state.aiError){
-          state.aiError = 'That took longer than expected.';
+        if(isCurrent() && !run.result){
+          run.result = { error:'That took longer than expected.' };
         }
         res();
       }, ANALYSIS_WATCHDOG_MS)),
@@ -221,8 +244,10 @@ export function runLoading(){
     // chosen setup can refine the scenario (a walk-in closet gets the
     // walk-in plan, not the reach-in one).
     const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
-    state.ai = normalizeAi(scenario);
-    state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
+    // Held like the AI plan is, and committed at the same handoff. A demo plan
+    // written straight into state was the same abandoned-plan-on-disk problem
+    // with a shorter fuse.
+    run.result = { ai: normalizeAi(scenario), meta:{ model:'demo', source:'demo', analyzedAt: Date.now() } };
     document.getElementById('load-sub').textContent =
       backendConfigured() ? 'Building your personalized plan.'
                           : 'Generating a sample plan from your selections.';
@@ -239,7 +264,7 @@ export function runLoading(){
     /* Count the numbered rows actually rendered — the media rows are
        conditional now. #ls-final is appended separately and is not part of the
        ticker's sequence, so it must not be counted. */
-    if(i>=document.querySelectorAll('#load-steps .load-step:not(#ls-final)').length){ finishLoading(aiPromise, isCurrent); return; }
+    if(i>=document.querySelectorAll('#load-steps .load-step:not(#ls-final)').length){ finishLoading(aiPromise, isCurrent, run); return; }
     const row=document.getElementById('ls-'+i);
     if(row) row.classList.add('doing');
     i++;
@@ -247,9 +272,35 @@ export function runLoading(){
   };
   setTimeout(tick,400);
 }
-export function finishLoading(aiPromise, isCurrent=()=>true){
+export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }){
   const fin=document.getElementById('ls-final');
   if(fin) fin.classList.add('doing');
+
+  /* The one place this file writes the plan. Everything that makes the plan
+     the user's — state.ai, the categories folded into it, the saved row, the
+     telemetry — happens here, together, after the last guard and immediately
+     before the report opens. Split across the handoff delay, as it used to be,
+     any of it could survive a Back press that correctly cancelled the
+     navigation: the plan stayed in memory and went to disk with the next
+     screen change, and for a signed-in user the row was already created.
+
+     `plan_created` moved in here with the rest, so it counts plans that
+     actually reached a reader rather than ones that were merely built. */
+  const enterResults=(payload)=>{
+    if(!isCurrent() || getCurrentScreen()!=='loading') return;
+    state.ai = payload.ai;
+    state.planMeta = payload.meta;
+    state.aiError = payload.error || null;
+    track('plan_created', {
+      space: state.space || 'unknown',
+      source: payload.meta.source,
+      steps: (payload.ai && payload.ai.steps) ? payload.ai.steps.length : 0,
+    });
+    syncCategoriesToResults();
+    autoSaveSpace();
+    go('results');
+  };
+
   const proceed=()=>{
     /* Leaving the loading screen cancels the build. Back is reachable during an
        analysis — they run long enough to press it — and the request cannot be
@@ -262,35 +313,27 @@ export function finishLoading(aiPromise, isCurrent=()=>true){
        loading screen back up, and the older one would find exactly what it
        expected — so the run token is checked with it. */
     if(!isCurrent() || getCurrentScreen()!=='loading') return;
-    track('plan_created', {
-      space: state.space || 'unknown',
-      source: (state.planMeta && state.planMeta.source) || (state.aiError ? 'demo-fallback' : 'demo'),
-      steps: (state.ai && state.ai.steps) ? state.ai.steps.length : 0,
-    });
-    if(state.aiError){
+    const result=run.result || { error:'We could not read the plan that came back.' };
+    if(result.error){
       document.getElementById('load-sub').innerHTML =
-        '<span style="color:var(--danger-ink)">'+escapeHtml(state.aiError)+' &mdash; showing the demo plan instead.</span>';
+        '<span style="color:var(--danger-ink)">'+escapeHtml(result.error)+' &mdash; showing the demo plan instead.</span>';
       if(fin){ fin.classList.remove('doing'); fin.classList.add('err'); }
-      // Fallback to demo scenario on AI failure too — same personalization
-      const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
-      state.ai = normalizeAi(scenario);
-      state.planMeta = { model: 'demo', source: 'demo-fallback', analyzedAt: Date.now() };
       /* Re-checked inside the delay, not only before it. The user has the full
          1400ms to press Back, and the timer used to fire regardless — landing
          them on the report they had just left, or saving a plan they had
-         walked away from. */
+         walked away from. The fallback plan is built inside the timer too, so
+         a build that is never delivered is never built from state that has
+         moved on. */
       setTimeout(()=>{
         if(!isCurrent() || getCurrentScreen()!=='loading') return;
-        syncCategoriesToResults(); autoSaveSpace(); go('results');
+        // Fallback to demo scenario on AI failure too — same personalization
+        const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
+        enterResults({ ai: normalizeAi(scenario), error: result.error,
+                       meta:{ model:'demo', source:'demo-fallback', analyzedAt: Date.now() } });
       }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');
-      syncCategoriesToResults();
-      autoSaveSpace();
-      setTimeout(()=>{
-        if(!isCurrent() || getCurrentScreen()!=='loading') return;
-        go('results');
-      }, 550);
+      setTimeout(()=>enterResults(result), 550);
     }
   };
   if(aiPromise){ aiPromise.then(proceed); }

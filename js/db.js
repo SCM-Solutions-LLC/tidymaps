@@ -1,6 +1,7 @@
 import { supa, getUser } from './auth.js';
 import { submitForm } from './api.js';
-import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord } from './state.js';
+import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord,
+         currentPlanInstance, planInstanceIsCurrent } from './state.js';
 import { toast } from './ui.js';
 import { areaFor, roomFor } from './wizard-data.js';
 import { track } from './telemetry.js';
@@ -63,25 +64,56 @@ export function defaultSpaceName(){
   return state.space ? areaFor(state.space).label : 'My space';
 }
 
-export async function saveSpace(name, { media=true, auto=false }={}){
-  const { c, u } = requireClient();
-  const row = rowFromState(name);
-  let spaceId = state.activeSpaceId;
+/* Everything a save needs, read out of `state` in one synchronous pass before
+   any of it is awaited: the row, which space it is for, which photos belong
+   to it, and which plan asked. A save takes as long as an upload takes, and
+   the user can start another plan inside that window — see the plan instance
+   note in js/state.js. Reading any of this back out of `state` afterwards is
+   how plan B ended up owning plan A's row and A's space ended up holding B's
+   photos. */
+export function snapshotSave(name, { media=true }={}){
+  return {
+    row: rowFromState(name),
+    spaceId: state.activeSpaceId,
+    uploads: media ? pendingMedia() : [],
+    space: String(state.space||''),
+    planInstance: currentPlanInstance(),
+  };
+}
+
+/* Takes its client the way deleteSpaceData and uploadMissingMedia do, so a
+   test can drive the ownership rules without a live project. */
+export async function persistSpace(c, userId, snapshot, { auto=false }={}){
+  let spaceId = snapshot.spaceId;
   if(spaceId){
-    const { error } = await c.from('spaces').update(row).eq('id', spaceId);
+    const { error } = await c.from('spaces').update(snapshot.row).eq('id', spaceId);
     if(error) throw new Error('Saving failed — please try again.');
   }else{
-    const { data, error } = await c.from('spaces').insert({ ...row, user_id:u.id }).select('id').single();
+    const { data, error } = await c.from('spaces').insert({ ...snapshot.row, user_id:userId }).select('id').single();
     if(error) throw new Error('Saving failed — please try again.');
     spaceId = data.id;
-    state.activeSpaceId = spaceId;
+    /* The id belongs to the plan that asked for the insert, not to whatever
+       is on screen when it lands. Stamping it unconditionally handed the new
+       plan the previous one's row: every later save of the new plan UPDATEd
+       it, so the space the user had just saved was overwritten column by
+       column with a different space's answers. The row itself is still
+       written and still theirs — it is only the in-memory pointer that is
+       withheld, because the plan it pointed at is gone. */
+    if(planInstanceIsCurrent(snapshot.planInstance)) state.activeSpaceId = spaceId;
     // Only the insert is reported. An update is a re-save of a space that has
     // already been counted, and counting it again would make one diligent user
     // look like a growing funnel.
-    track('space_saved', { auto:!!auto, space:String(state.space||'') });
+    track('space_saved', { auto:!!auto, space:snapshot.space });
   }
-  if(media) await uploadPendingMedia(spaceId);
+  // The snapshot's photos, never the ones in state now: media collected after
+  // the request uploaded the next plan's photos into this plan's space.
+  if(snapshot.uploads.length) await uploadMissingMedia(c, userId, spaceId, snapshot.uploads);
   return spaceId;
+}
+
+export async function saveSpace(name, { media=true, auto=false }={}){
+  const { c, u } = requireClient();
+  return persistSpace(c, u.id, snapshotSave(name, { media }), { auto });
 }
 
 /* A signed-out visitor's plan survives a reload in localStorage; a signed-in
@@ -96,26 +128,31 @@ export async function autoSaveSpace(){
   if(!supa() || !getUser()) return null;
   if(state.shareView || !state.ai) return null;
   const isNew = !state.activeSpaceId;
+  const instance = currentPlanInstance();
   try{
     const id = await saveSpace(defaultSpaceName(), { media:false, auto:true });
     // Say it once, when the space starts existing. Re-planning an open space
-    // updates it quietly.
-    if(isNew) toast('Saved to “My spaces”.');
+    // updates it quietly. And say it only about the plan the user is still on:
+    // "Saved to My spaces" landing after they moved to another plan names the
+    // wrong space, and points at a row this one does not own.
+    if(isNew && planInstanceIsCurrent(instance)) toast('Saved to “My spaces”.');
     return id;
   }catch(_){
     return null;
   }
 }
 
-async function uploadPendingMedia(spaceId){
-  const { c, u } = requireClient();
+/* The photos and video frames held in memory right now, captured as a list
+   rather than read live. Called from snapshotSave, before the save's first
+   await. */
+function pendingMedia(target=state){
   const uploads=[];
-  (state.uploadedFiles||[]).forEach((file,i)=>uploads.push({ blobPromise:Promise.resolve(file), kind:'photo', sort:i, ext:'jpg', type:file.type||'image/jpeg' }));
-  (state.frames||[]).forEach((fr,i)=>uploads.push({
+  (target.uploadedFiles||[]).forEach((file,i)=>uploads.push({ blobPromise:Promise.resolve(file), kind:'photo', sort:i, ext:'jpg', type:file.type||'image/jpeg' }));
+  (target.frames||[]).forEach((fr,i)=>uploads.push({
     blobPromise:fetch('data:image/jpeg;base64,'+fr.data).then(r=>r.blob()),
     kind:'frame', sort:i, ext:'jpg', type:'image/jpeg',
   }));
-  return uploadMissingMedia(c, u.id, spaceId, uploads);
+  return uploads;
 }
 
 /* Takes its client the way deleteSpaceData does, so a test can drive the
@@ -280,8 +317,31 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   return data;
 }
 
-export async function loadSpace(id){
-  return applyLoadedSpace(await fetchSpace(id));
+/* Opening a saved plan, in the two halves every async writer here is now split
+   into: fetch without touching state, then apply only if this is still the
+   plan the user asked for.
+
+   This replaces loadSpace(), which was fetch-and-apply in one call and so had
+   nowhere to put the check. It is gone rather than kept beside this: an
+   unguarded convenience wrapper is how the next caller reintroduces the race.
+
+   The caller claims the switch with startPlanInstance() at the CLICK and
+   passes the id it got. That ordering is the point. Guarding on "has anything
+   changed since the response came back" would let the row that loads first
+   win; two cards tapped in quick succession would leave the user on whichever
+   plan the network happened to return sooner, and the second tap — the one
+   they meant — could be the one thrown away. Claiming at the click means the
+   last tap owns the screen and every earlier load lands on a stale id and
+   stops. Returns null when it was superseded, so the caller renders nothing
+   and navigates nowhere.
+
+   The fetch is a parameter for the same reason deleteSpaceData takes its
+   client: the rule worth testing is what happens to state when a switch lands
+   mid-request, and that should be testable without a live project. */
+export async function openSavedSpace(id, instance, fetch=fetchSpace){
+  const fetched = await fetch(id);
+  if(!planInstanceIsCurrent(instance)) return null;
+  return applyLoadedSpace(fetched);
 }
 
 // Debounced incremental writes for progress / shopping / arrangement
@@ -350,11 +410,16 @@ export async function deleteSpace(id){
    Enabling generates an unguessable share_id; anyone with the link can view
    the sanitized plan via the get-shared-space edge function. Disabling nulls
    the id, which revokes every copy of the link instantly. */
-export async function setShareEnabled(on){
+/* `spaceId` is explicit because the caller always knows it better than the
+   global does: doShare() has just been handed the id its own save wrote, and
+   re-reading state.activeSpaceId after that await is how a share link for the
+   plan the user had moved on to could be minted from the plan they were
+   looking at. */
+export async function setShareEnabled(on, spaceId=state.activeSpaceId){
   const { c } = requireClient();
-  if(!state.activeSpaceId) throw new Error('Save this space first, then share it.');
+  if(!spaceId) throw new Error('Save this space first, then share it.');
   const shareId = on ? crypto.randomUUID() : null;
-  const { error } = await c.from('spaces').update({ share_id: shareId }).eq('id', state.activeSpaceId);
+  const { error } = await c.from('spaces').update({ share_id: shareId }).eq('id', spaceId);
   if(error) throw new Error('Sharing failed — please try again.');
   return shareId;
 }

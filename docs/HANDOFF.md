@@ -331,6 +331,21 @@ said so in each case. Check it before believing the backlog.
   those defaults include `household.adults = 2`. Anything the report renders
   from state has to be blanked explicitly for a share view, or the visitor is
   shown a default as though it were the owner's answer.
+- **Async ownership (plan instance).** `state` is one shared object and almost
+  every writer writes after an await, so each one has to prove it still owns
+  the plan it started on. `js/state.js` keeps a monotonic **plan instance** id
+  that moves inside `resetPlanRecord()` — i.e. on Start over, opening a saved
+  space, a share link, `setArea()`, and the demo. The contract for any async
+  operation: capture `currentPlanInstance()` and snapshot everything it needs
+  (media, `activeSpaceId`, render instructions, the row) BEFORE the first
+  await, then write nothing if `planInstanceIsCurrent()` is false. The
+  dashboard calls `startPlanInstance()` at the *click* rather than at the
+  response, so the card tapped last wins. Rebuilding a plan for the same space
+  is not a new instance — the analysis has its own run token in
+  `js/screens/loading.js` for that, and checks both. `openSavedSpace()` and
+  `snapshotSave()`/`persistSpace()` are the guarded halves of what used to be
+  `loadSpace()` and `saveSpace()`; re-reading `state` after an await is the
+  bug the whole mechanism exists to prevent.
 - **Persistence.** Signed in: `autoSaveSpace()` creates the row,
   `updateSpacePatch()` debounces incremental writes (progress, shopping,
   arrangement) at 800ms, explicit save/share uploads media. Signed out:

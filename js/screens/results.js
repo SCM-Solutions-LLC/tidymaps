@@ -1,6 +1,6 @@
 import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_CATS } from '../data.js';
 import { SVG, ICON } from '../icons.js';
-import { state, persistGuestDraft, isMetric } from '../state.js';
+import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief, modelLabel } from '../plan.js';
 import { areaFor, art, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
@@ -372,24 +372,28 @@ function setupAfterPhoto(){
   }
 }
 
-async function beforePhotoB64(){
-  if(state.uploadedFiles && state.uploadedFiles.length){
-    return { media_type:'image/jpeg', data: await fileToScaledB64(state.uploadedFiles[0]) };
-  }
-  if(state.frames && state.frames.length){
-    return { media_type:'image/jpeg', data: state.frames[0].data };
-  }
-  if(state._beforeUrl){
-    const blob=await (await fetch(state._beforeUrl)).blob();
-    const data=await new Promise((res,rej)=>{
-      const fr=new FileReader();
-      fr.onload=()=>res(String(fr.result).split(',')[1]);
-      fr.onerror=rej;
-      fr.readAsDataURL(blob);
-    });
-    return { media_type: blob.type||'image/jpeg', data };
-  }
-  throw new Error('No photo to work from.');
+/* Which photo this render works from, decided synchronously. The encode is
+   awaited; the CHOICE must not be, or a plan switch between the two picks the
+   photo from one plan and everything around it from another. */
+function beforePhotoSource(target=state){
+  if(target.uploadedFiles && target.uploadedFiles.length) return { kind:'file', file:target.uploadedFiles[0] };
+  if(target.frames && target.frames.length) return { kind:'frame', data:target.frames[0].data };
+  if(target._beforeUrl) return { kind:'url', url:target._beforeUrl };
+  return null;
+}
+
+async function encodeBeforePhoto(src){
+  if(!src) throw new Error('No photo to work from.');
+  if(src.kind==='file') return { media_type:'image/jpeg', data: await fileToScaledB64(src.file) };
+  if(src.kind==='frame') return { media_type:'image/jpeg', data: src.data };
+  const blob=await (await fetch(src.url)).blob();
+  const data=await new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>res(String(fr.result).split(',')[1]);
+    fr.onerror=rej;
+    fr.readAsDataURL(blob);
+  });
+  return { media_type: blob.type||'image/jpeg', data };
 }
 
 export async function generateAfter(){
@@ -398,17 +402,37 @@ export async function generateAfter(){
   btn.disabled=true;
   btn.innerHTML='Rendering&hellip; <span class="spin-ring" style="border-color:rgba(255,255,255,.5);border-right-color:transparent"></span>';
   note.textContent='This usually takes ten seconds or so.';
+  /* Photo, instructions, space and plan id are all taken here, together,
+     before the first await. The render used to await the encode and only then
+     read buildGeminiBrief() and state.activeSpaceId, so opening another plan
+     mid-encode sent one space's photo with another space's zone plan, billed
+     it to the new space's row, and wrote the returned image onto whichever
+     plan was on screen when it came back. Every one of those is a different
+     plan's data crossing into this one. */
+  const instance=currentPlanInstance();
+  const source=beforePhotoSource();
+  const brief=buildGeminiBrief();
+  const spaceId=state.activeSpaceId;
+  const stillCurrent=()=>planInstanceIsCurrent(instance);
   try{
-    const image=await beforePhotoB64();
-    const res=await renderAfterApi(image, buildGeminiBrief(), state.activeSpaceId);
+    const image=await encodeBeforePhoto(source);
+    if(!stillCurrent()) return;
+    const res=await renderAfterApi(image, brief, spaceId);
+    // The preview belongs to the plan it was rendered for. A plan switch while
+    // it was in flight means there is nothing here to write it to.
+    if(!stillCurrent()) return;
     state.afterRenderB64=res.image.data;
     setupAfterPhoto();
     track('after_render_requested', { ok:true });
     toast('Photo preview ready — drag the slider');
   }catch(e){
     track('after_render_requested', { ok:false });
-    note.textContent=renderAfterErrorMessage(e);
+    // The note sits on the plan that failed. Another plan's screen must not
+    // inherit its error message.
+    if(stillCurrent()) note.textContent=renderAfterErrorMessage(e);
   }finally{
+    /* The button is restored either way: it belongs to the report, and
+       leaving it spinning would strand whichever plan is on screen now. */
     btn.disabled=false;
     btn.textContent='Generate photo preview';
   }
