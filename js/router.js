@@ -1,9 +1,9 @@
-import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord } from './state.js';
+import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord, resetWizardAnswers } from './state.js';
 import { track } from './telemetry.js';
 import { setFootHeightVar, scrollToTop } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll, buildCustomize } from './screens/index.js';
-import { runLoading } from './screens/loading.js';
+import { runLoading, cancelAnalysis } from './screens/loading.js';
 import { buildDashboard } from './screens/dashboard.js';
 import { buildFeedback } from './screens/feedback.js';
 import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
@@ -88,7 +88,13 @@ function syncHistory(id, from, replace){
    screen recorded" — indistinguishable from arriving from another site. */
 export function initHistory(){
   if(!canHistory()) return;
-  history.replaceState({ screen:current },'',location.pathname+location.search);
+  /* Stamped with the generation like every other entry. Unstamped, it failed
+     the `gen === generation` test below forever — `undefined !== 0` — so Back
+     onto the session's FIRST entry was read as an obsolete pre-restart one and
+     answered with a pushed landing entry. Pressing Back again popped to the
+     same unstamped entry and pushed another: the button stopped being able to
+     leave the site at all. */
+  history.replaceState({ screen:current, gen:generation },'',location.pathname+location.search);
   addEventListener('popstate',(e)=>{
     /* An open modal is what Back should dismiss — on a phone it is the only
        gesture people use for "get me out of this". Dismiss it and put the entry
@@ -112,9 +118,16 @@ export function initHistory(){
     if(!e.state || !e.state.screen) return;
     /* An entry from before Start over describes answers that were cleared.
        Rather than restore a step that no longer means anything, land on the
-       landing page and claim the entry, so a second Back keeps going back. */
+       landing page and CLAIM the entry — replace it in place, rather than
+       pushing a new one over it. Pushing left the dead entry underneath, so
+       the next Back popped straight back onto it and pushed again; the stack
+       grew by one per press and Back could never reach whatever came before
+       the app. Replacing means a second Back keeps going back, which is what
+       this branch was always meant to do. */
     if(e.state.gen !== generation){
-      go('landing');
+      popping=true;
+      try{ go('landing'); } finally { popping=false; }
+      history.replaceState({ screen:'landing', gen:generation },'', urlFor('landing'));
       return;
     }
     const id=e.state.screen;
@@ -141,6 +154,11 @@ export function setRail(){
 }
 export function go(id, opts={}){
   const from=current;
+  /* Leaving the loading screen abandons the analysis, whichever way they left
+     — Back, Start over, My spaces. The run is retired here rather than only
+     where a new one begins, because those three exits start no new run and the
+     abandoned one would otherwise still be current when its answer lands. */
+  if(from==='loading' && id!=='loading') cancelAnalysis();
   if(current==='viewer3d' && id!=='viewer3d'){
     // free WebGL resources when leaving the 3D screen
     import('./screens/viewer3d.js').then(m=>m.disposeViewer3d());
@@ -246,27 +264,15 @@ export function updateGate(){
 export function restart(){
   const hasProgress = current!=='landing' && (state.ai || state.uploadedFiles.length || WIZARD_STEPS.indexOf(current)>0);
   if(hasProgress && !confirm('Start over? Your current answers will be cleared.')) return;
-  state.goal=state.capture=state.budget=null;
-  state.prefs=new Set(); state.upgrades=false;
-  state.cats=[]; state.features=[];
-  state.goals=[]; state.styles=[]; state.detected=[]; state.catsTouched=false;
-  state.shoppingPref='Use what I have';
-  state.effort='Weekend reset';
-  /* Reset the "did they actually say this?" flags with the answers they
-     belong to. Without these, Start over left the two defaults pre-ticked and
-     Review went back to calling them the user's — the whole bug, restored by
-     the button meant to clear everything. */
-  state.effortTouched=false;
-  state.shoppingTouched=false;
-  state.uploadedFiles=[]; state.uploadedVideo=null; state.frames=[];
-  state.dims=null; state.dimsFt=null;
-  state.household={ adults:2, kidCount:0, petCount:0, kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' };
-  state.afterMode='Use existing containers';
-  state.setupTouched=false;
+  /* Every wizard answer, from one list (js/state.js) — including the "did they
+     actually say this?" flags, which belong to the answers they qualify.
+     Without those, Start over left the two defaults pre-ticked and Review went
+     back to calling them the user's: the whole bug, restored by the button
+     meant to clear everything. This used to be a second hand-maintained copy
+     of that list and had already drifted from it. */
+  resetWizardAnswers(state);
   resetPlanRecord(state);
-  Object.keys(state).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete state[k]; });
   // back to the design defaults: Kitchen → Pantry → Cabinet
-  state.room='kitchen';
   setArea('kitchen','pantry');
   clearGuestDraft();
   const custom=document.getElementById('customize-result');

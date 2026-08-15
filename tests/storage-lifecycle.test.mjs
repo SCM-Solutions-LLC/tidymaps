@@ -105,3 +105,89 @@ test('stale deletion tombstones resume the complete idempotent cleanup', async (
   await db.resumeDeletionTombstones(client, new Date('2026-07-22T12:00:00Z'));
   assert.deepEqual(calls, ['mark', 'files', 'ready', 'row']);
 });
+
+/* ---------- Resuming a partial media upload ----------
+
+   The guard used to ask whether the space had ANY media row, which answered
+   yes as soon as the first photo of six had landed. A save that failed partway
+   through therefore skipped the other five on every later attempt — and the
+   only retry window is the session that still holds the files, so from the
+   user's side those photos were simply never stored. */
+
+function uploadHarness({ existing = [], existingError = null, uploadFails = [], insertFails = [] } = {}) {
+  const calls = [];
+  const client = {
+    from(table) {
+      if (table !== 'space_media') throw new Error(`unexpected table ${table}`);
+      return {
+        select: () => ({ eq: async () => ({ data: existing, error: existingError }) }),
+        insert: async (row) => {
+          const key = `${row.kind}:${row.sort}`;
+          calls.push(['insert', key]);
+          return { error: insertFails.includes(key) ? { message: 'insert failed' } : null };
+        },
+      };
+    },
+    storage: {
+      from: () => ({
+        upload: async (path) => {
+          // {user}/{space}/{uuid}.{ext}; uploadsFor puts the item key in ext.
+          const key = path.split('/').pop().split('.').slice(1).join('.');
+          calls.push(['upload', key]);
+          return { error: uploadFails.includes(key) ? { message: 'upload failed' } : null };
+        },
+        remove: async (paths) => { calls.push(['remove', paths.length]); return { error: null }; },
+      }),
+    },
+  };
+  return { client, calls };
+}
+
+// crypto.randomUUID makes the storage path unguessable; the test needs it
+// predictable so it can say WHICH item was uploaded.
+function uploadsFor(keys) {
+  return keys.map((k) => {
+    const [kind, sort] = k.split(':');
+    return { blobPromise: Promise.resolve(`blob-${k}`), kind, sort: Number(sort), ext: k, type: 'image/jpeg' };
+  });
+}
+
+test('a partial media upload is resumed rather than skipped', async () => {
+  const { client, calls } = uploadHarness({ existing: [{ kind: 'photo', sort: 0 }] });
+  await db.uploadMissingMedia(client, 'user', 'space',
+    uploadsFor(['photo:0', 'photo:1', 'photo:2']));
+
+  assert.deepEqual(calls, [
+    ['upload', 'photo:1'], ['insert', 'photo:1'],
+    ['upload', 'photo:2'], ['insert', 'photo:2'],
+  ], 'the item already stored is skipped; the ones that never landed are retried');
+});
+
+test('an unreadable media list does not re-upload the whole batch', async () => {
+  // Destructuring only `count` made a failed query read as "nothing here yet",
+  // which duplicated every object and row on the next save.
+  const { client, calls } = uploadHarness({ existing: null, existingError: { message: 'nope' } });
+  await db.uploadMissingMedia(client, 'user', 'space', uploadsFor(['photo:0', 'photo:1']));
+  assert.deepEqual(calls, [], 'an unreadable list is not an empty one');
+});
+
+test('an uploaded object whose row fails to insert is removed again', async () => {
+  /* An object with no metadata row is invisible to deleteSpaceData, which
+     builds its delete list from those rows — so it would outlive the space. */
+  const { client, calls } = uploadHarness({ insertFails: ['photo:0'] });
+  await db.uploadMissingMedia(client, 'user', 'space', uploadsFor(['photo:0', 'photo:1']));
+
+  assert.deepEqual(calls, [
+    ['upload', 'photo:0'], ['insert', 'photo:0'], ['remove', 1],
+    ['upload', 'photo:1'], ['insert', 'photo:1'],
+  ], 'the orphan is compensated and the rest of the batch still goes');
+});
+
+test('a failed upload does not sink the rest of the save', async () => {
+  const { client, calls } = uploadHarness({ uploadFails: ['photo:0'] });
+  await db.uploadMissingMedia(client, 'user', 'space', uploadsFor(['photo:0', 'photo:1']));
+  assert.deepEqual(calls, [
+    ['upload', 'photo:0'],
+    ['upload', 'photo:1'], ['insert', 'photo:1'],
+  ], 'no row is written for an object that never landed');
+});

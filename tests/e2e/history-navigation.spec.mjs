@@ -29,6 +29,58 @@ test('Back walks the wizard in reverse instead of leaving the site', async ({ pa
   expect(page.url()).not.toContain('#');
 });
 
+/* Walking back to the landing page is only half of Back working. The session's
+   FIRST history entry was written without a generation stamp, so the router's
+   `gen !== generation` test read it as an entry from before a Start over —
+   `undefined !== 0` — and answered by PUSHING a fresh landing entry over it.
+   The next Back popped onto the same unstamped entry and pushed again. The
+   stack grew by one per press and Back could never reach whatever the visitor
+   was looking at before the site, which on a phone is also the edge swipe.
+
+   So the test enters from a real previous page and insists on getting back to
+   it, rather than stopping at the landing page and calling that success. */
+test('Back keeps going past the landing page and leaves the app', async ({ page }) => {
+  await page.goto('/privacy.html');
+  await page.goto('/index.html');
+  await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
+  await page.locator('#screen-landing .btn-primary').first().click();
+  for (let i = 0; i < 3; i++) await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-measure')).toHaveClass(/active/);
+
+  for (let i = 0; i < 4; i++) await page.goBack();
+  expect(await screen(page)).toBe('landing');
+
+  await page.goBack();
+  await expect(page).toHaveURL(/privacy\.html/);
+});
+
+test('Back still leaves the app after Start over', async ({ page }) => {
+  // Start over bumps the generation, so every entry already on the stack is
+  // obsolete. Each must be CLAIMED in place; pushing over them was the trap.
+  await page.goto('/privacy.html');
+  await page.goto('/index.html');
+  await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
+  await page.locator('#screen-landing .btn-primary').first().click();
+  for (let i = 0; i < 3; i++) await page.locator('#flow-next').click();
+
+  // Same entry point the test above uses: the appbar button is hidden while a
+  // step counter is showing, which is every wizard screen.
+  page.once('dialog', (d) => d.accept());
+  await page.evaluate(() => window.restart());
+  await expect(page.locator('#screen-landing')).toHaveClass(/active/);
+
+  // At most one press per entry that was on the stack; the bug made this
+  // unbounded, so a finite budget that reaches privacy.html is the assertion.
+  /* Most of these presses are same-document popstates, which never fire a load
+     event, so the default goBack() wait does not apply to them. */
+  for (let i = 0; i < 8; i++) {
+    if (page.url().includes('privacy.html')) break;
+    await page.goBack({ waitUntil: 'commit' });
+    await page.waitForTimeout(60);
+  }
+  await expect(page).toHaveURL(/privacy\.html/);
+});
+
 test('Forward returns along the same path', async ({ page }) => {
   await enterWizard(page);
   await page.locator('#flow-next').click();

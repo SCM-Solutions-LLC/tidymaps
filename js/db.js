@@ -1,8 +1,8 @@
 import { supa, getUser } from './auth.js';
 import { submitForm } from './api.js';
-import { state } from './state.js';
+import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord } from './state.js';
 import { toast } from './ui.js';
-import { areaFor } from './wizard-data.js';
+import { areaFor, roomFor } from './wizard-data.js';
 import { track } from './telemetry.js';
 
 /* Saved spaces: one row per organized area, media in the private
@@ -18,29 +18,31 @@ function requireClient(){
    applyLoadedSpace() back in. Two hand-maintained halves of one contract is
    how the shopping answer came to be written by neither. */
 export function rowFromState(name){
+  /* One serializer for both storage backends — see js/state.js. The signed-in
+     row used to keep its own shorter list than the guest draft did, so goals,
+     styles, categories, catsTouched, detected, room and afterMode were saved
+     for signed-OUT visitors and dropped for signed-in ones. The whole answer
+     set rides in the prefs blob because the spaces table has no column per
+     answer; the named columns below stay as they are because queries and the
+     dashboard select them. */
+  const answers = wizardAnswers(state);
   return {
     name: name || defaultSpaceName(),
     space_type: state.space,
     goal: state.goal,
     dims: state.dims,
     household: state.household,
-    // setup/setupLabel ride in the prefs blob because the spaces table has no
-    // column for them. Without them a reopened space lost its setup type, and
-    // resolveLayout() keys the 3D archetype off exactly that — so a saved
-    // walk-in came back rendered as whatever setup happened to be in memory.
-    // The guest draft has always kept these (js/state.js); this closes the gap
-    // for signed-in spaces.
-    prefs: { prefs:[...(state.prefs||[])], budget:state.budget, effort:state.effort,
-             setup:state.setup, setupLabel:state.setupLabel, setupTouched:!!state.setupTouched,
-             /* The shopping answer was never saved at all — a signed-in user
-                who chose "Open to a few ideas" got "Use what I have" back on
-                reopening, which is the answer that empties the product list.
-                The touched flags ride along for the same reason setupTouched
-                does: without them a reopened space labels the user's own
-                answers "(our default)". */
-             shoppingPref:state.shoppingPref,
-             effortTouched:!!state.effortTouched, shoppingTouched:!!state.shoppingTouched,
-             toggles:Object.fromEntries(Object.keys(state).filter(k=>k.startsWith('detail_')).map(k=>[k.slice(7),state[k]])) },
+    /* `answers` is canonical. The flat keys beside it are the shape rows were
+       written in before it existed: still written so a client running the
+       previous build can read a row this one saved, still read below so a row
+       saved by that build loads here. Derived from `answers`, never typed out
+       a second time. */
+    prefs: { answers,
+             prefs:answers.prefs, budget:answers.budget, effort:answers.effort,
+             setup:answers.setup, setupLabel:answers.setupLabel, setupTouched:answers.setupTouched,
+             shoppingPref:answers.shoppingPref,
+             effortTouched:answers.effortTouched, shoppingTouched:answers.shoppingTouched,
+             toggles:answers.toggles },
     plan: state.ai,
     plan_meta: state.planMeta,
     shopping: state.shopping || null,
@@ -113,16 +115,45 @@ async function uploadPendingMedia(spaceId){
     blobPromise:fetch('data:image/jpeg;base64,'+fr.data).then(r=>r.blob()),
     kind:'frame', sort:i, ext:'jpg', type:'image/jpeg',
   }));
+  return uploadMissingMedia(c, u.id, spaceId, uploads);
+}
+
+/* Takes its client the way deleteSpaceData does, so a test can drive the
+   resume and compensation paths without a live project. */
+export async function uploadMissingMedia(c, userId, spaceId, uploads){
   if(!uploads.length) return;
-  // skip if this space already has media rows (re-saves shouldn't duplicate)
-  const { count } = await c.from('space_media').select('id',{count:'exact',head:true}).eq('space_id',spaceId);
-  if(count) return;
+  /* Which items are already up, not merely whether ANY of them is.
+     "Does this space have media rows?" answered yes as soon as the first photo
+     of six landed, so a save that failed partway through skipped the other
+     five on every later attempt — permanently, from the app's point of view,
+     since the only retry window is the session that still holds the files.
+     (kind, sort) is what identifies an item, so it is what gets compared. */
+  const { data:existing, error:listError } = await c.from('space_media')
+    .select('kind,sort').eq('space_id',spaceId);
+  /* An unreadable list is NOT an empty one. This destructured only `count`, so
+     a failed query read as "nothing here yet" and re-uploaded the whole batch,
+     duplicating every object and row — the same missing check as the skip
+     above, failing the opposite way. */
+  if(listError) return;
+  const already=new Set((existing||[]).map(r=>`${r.kind}:${r.sort}`));
   for(const up of uploads){
+    if(already.has(`${up.kind}:${up.sort}`)) continue;
     const blob = await up.blobPromise;
-    const path = `${u.id}/${spaceId}/${crypto.randomUUID()}.${up.ext}`;
+    const path = `${userId}/${spaceId}/${crypto.randomUUID()}.${up.ext}`;
     const { error } = await c.storage.from('space-media').upload(path, blob, { contentType:up.type });
     if(error) continue; // a failed thumbnail shouldn't sink the save
-    await c.from('space_media').insert({ space_id:spaceId, user_id:u.id, kind:up.kind, storage_path:path, sort:up.sort });
+    const { error:metadataError } = await c.from('space_media')
+      .insert({ space_id:spaceId, user_id:userId, kind:up.kind, storage_path:path, sort:up.sort });
+    /* The object and its row are one thing in two services, so a half-written
+       pair is undone rather than left. An object with no row is invisible to
+       deleteSpaceData — which builds its delete list FROM those rows — so it
+       would outlive the space itself, against a privacy page that ties photo
+       storage to an explicit save. render-after does the same compensation. */
+    if(metadataError){
+      await c.storage.from('space-media').remove([path]);
+      continue;
+    }
+    already.add(`${up.kind}:${up.sort}`);
   }
 }
 
@@ -174,6 +205,44 @@ export async function fetchSpace(id){
 }
 
 export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
+  /* Reset BEFORE hydrating, both halves of the state. Without this, opening a
+     second saved space kept whatever the first one left behind in any field
+     the row did not carry — stale goals, styles, categories and detail_
+     toggles reached buildAnalysisContext(), so the screen showed one plan
+     while a re-analysis was built from another's answers. resetPlanRecord
+     covers the same hole on the plan side: shareView in particular survived
+     into an owned space and made it unsaveable. */
+  /* Feedback is about a specific plan, and resetPlanRecord clears it so a
+     different space asks fresh rather than showing the previous space's rating
+     back. Reopening the space you are already on is not a different plan
+     though, and fbSent is what holds "one submission per plan" — losing it
+     there re-asks someone who already answered, and takes a second row. */
+  const sameSpace = data.id && data.id===state.activeSpaceId;
+  const feedback = sameSpace
+    ? { fbUseful:state.fbUseful, fbVs:state.fbVs, fbNext:state.fbNext,
+        fbRated:state.fbRated, fbSent:state.fbSent }
+    : null;
+  resetPlanRecord(state);
+  if(feedback) Object.assign(state, feedback);
+  const prefs = data.prefs || {};
+  /* `prefs.answers` is canonical; a row written before it existed carries the
+     same answers flattened across prefs and the named columns. `room` is the
+     one answer no older row carries in any form, and it cannot be left to the
+     default: the wizard's own heading reads "Where in the <room>?", so a
+     reopened garage workbench asked the user where in the kitchen it was, over
+     a list of kitchen areas that does not contain it. The area implies the
+     room, so it is derived rather than guessed. */
+  const legacy = {
+    ...prefs,
+    space: data.space_type, goal: data.goal,
+    dims: data.dims, household: data.household,
+  };
+  // roomFor returns the room record; state.room holds its id.
+  if(!prefs.answers && data.space_type) legacy.room = roomFor(data.space_type).id;
+  applyWizardAnswers(prefs.answers || legacy, state);
+  // The named columns are the source of truth for the answers they duplicate:
+  // the dashboard and share payload read them, so a row edited elsewhere lands
+  // here rather than in the blob.
   state.activeSpaceId = data.id;
   state.space = data.space_type;
   state.goal = data.goal;
@@ -184,25 +253,27 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   state.dimsFt = data.dims && data.dims.w_in
     ? { w: data.dims.w_in/12, h: data.dims.h_in/12, d: data.dims.d_in/12 } : null;
   if(data.household) state.household = data.household;
-  if(data.prefs){
-    state.prefs = new Set(data.prefs.prefs||[]);
-    state.budget = data.prefs.budget||null;
-    state.effort = data.prefs.effort||null;
-    if(data.prefs.shoppingPref) state.shoppingPref = data.prefs.shoppingPref;
-    state.effortTouched = !!data.prefs.effortTouched;
-    state.shoppingTouched = !!data.prefs.shoppingTouched;
-    if(data.prefs.setup){
-      state.setup = data.prefs.setup;
-      state.setupLabel = data.prefs.setupLabel || state.setupLabel;
-      state.setupTouched = !!data.prefs.setupTouched;
-    }
-    Object.entries(data.prefs.toggles||{}).forEach(([k,v])=>{ state['detail_'+k]=v; });
-  }
   state.ai = data.plan;
   state.planMeta = data.plan_meta;
   state.shopping = data.shopping;
   state.stepDone = (data.progress && data.progress.stepsDone) || [];
   state.arrangement = data.arrangement;
+  /* `upgrades` is the one answer this row does NOT trust, and the reason is
+     freshness rather than principle. The report's own products switch and the
+     Adjust screen both change it long after the plan was saved, and both
+     persist through updateSpacePatch, which only ever writes plan, shopping,
+     progress and arrangement — never the prefs blob. So the stored copy is
+     whatever it happened to be at the last full save, and trusting it hid the
+     products section (and zeroed the cost tile) for anyone who turned products
+     on from Adjust and then reopened the space. The shopping list is written
+     by those same incremental patches, so it is the only signal in the row
+     that is actually current.
+
+     The guest draft has no such problem — it is rewritten on every screen
+     change — so it keeps the answer, which is why this exception lives here
+     and not in the shared deserializer. Making the row's copy trustworthy
+     means persisting the answers blob when the switch moves; until then, this
+     is the honest reading. */
   state.upgrades = !!(data.shopping && data.shopping.length);
   state.beforePhotoUrl = beforePhotoUrl;
   state.afterRenderUrl = afterRenderUrl;

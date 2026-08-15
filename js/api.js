@@ -24,13 +24,22 @@ const TIMEOUT_MS = {
 };
 const DEFAULT_TIMEOUT_MS = 30000;
 
-async function callFn(name, body){
+/* The caller's own signal is combined with the deadline rather than replacing
+   it, so abandoning a request (the user changed an answer and started a new
+   analysis) stops the old one without giving up the timeout on the new. */
+function requestSignal(name, signal){
+  const deadline = AbortSignal.timeout(TIMEOUT_MS[name] || DEFAULT_TIMEOUT_MS);
+  if(!signal) return deadline;
+  return (typeof AbortSignal.any === 'function') ? AbortSignal.any([deadline, signal]) : deadline;
+}
+
+async function callFn(name, body, { signal }={}){
   if(!backendConfigured()) throw new ApiError('The analysis backend is not connected yet.', { code:'unconfigured' });
   let res;
   try{
     res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
       method:'POST',
-      signal: AbortSignal.timeout(TIMEOUT_MS[name] || DEFAULT_TIMEOUT_MS),
+      signal: requestSignal(name, signal),
       headers:{
         'content-type':'application/json',
         'apikey':SUPABASE_ANON_KEY,
@@ -39,6 +48,10 @@ async function callFn(name, body){
       body: JSON.stringify(body),
     });
   }catch(e){
+    /* A request the caller abandoned is not a failure anyone should read
+       about: the code says so, and the loading screen drops it rather than
+       putting "that took longer than expected" over a newer analysis. */
+    if(signal && signal.aborted) throw new ApiError('That request was cancelled.', { code:'aborted' });
     if(e && (e.name==='TimeoutError' || e.name==='AbortError')){
       throw new ApiError('That took longer than expected — showing the demo plan instead.', { code:'timeout' });
     }
@@ -64,8 +77,8 @@ async function callFn(name, body){
 }
 
 // images: [{media_type, data(b64)}]; context: see supabase/functions/analyze-space
-export function analyzeSpace(images, context){
-  return callFn('analyze-space', { images, context });
+export function analyzeSpace(images, context, opts={}){
+  return callFn('analyze-space', { images, context }, opts);
 }
 
 // image: {media_type, data(b64)}; returns {image:{media_type,data}, storagePath}

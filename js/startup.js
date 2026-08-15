@@ -15,6 +15,7 @@ export async function initializeRoute({
   go,
   toast,
   loadSharedPlan,
+  applySharedPlan,
 }){
   await setupAccount();
   if(currentScreen()!=='landing') return { status:'skipped-navigation' };
@@ -26,8 +27,16 @@ export async function initializeRoute({
   const shareId=params.get('share');
   if(shareId && loadSharedPlan){
     try{
-      await loadSharedPlan(shareId);
+      /* Fetch, THEN check the route, THEN apply — the same order the saved
+         space path below uses, and for the same reason. loadSharedPlan used to
+         apply the payload itself, and applySharedSpace() begins by wiping every
+         wizard answer: someone who opened a share link and started their own
+         plan while it was in flight had their answers replaced when it landed.
+         The navigation was correctly skipped; the damage was already done.
+         loadSharedPlan must not touch state — applySharedPlan does that. */
+      const payload=await loadSharedPlan(shareId);
       if(currentScreen()!=='landing') return { status:'skipped-navigation' };
+      if(applySharedPlan) applySharedPlan(payload);
       buildResults();
       go('results');
       toast('You’re viewing a shared plan — read-only');

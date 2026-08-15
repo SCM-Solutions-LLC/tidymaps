@@ -45,8 +45,55 @@ export function readableError(e){
   return message;
 }
 
-/* ---------- Loading ---------- */
+/* ---------- Loading ----------
+
+   An analysis takes 70-90 seconds and Back is reachable the whole time, so a
+   second run can start while the first is still in the air. Nothing tied a
+   response to the run that asked for it: whichever finished LAST wrote
+   state.ai and pushed the user to the report, so the plan on screen could be
+   the one built from the answers they had just changed away from.
+
+   Checking `getCurrentScreen()!=='loading'` was not enough on its own, because
+   a second run puts the loading screen back up — run A would find the screen
+   it expected and overwrite run B. Every run now carries a token, and a run
+   that is no longer the current one writes nothing and navigates nowhere. The
+   token is checked again inside the delayed navigation, which is its own race:
+   the user has 550ms (or 1400ms on the fallback path) to leave. */
+let analysisRun=0;
+let activeAnalysis=null;   // AbortController for the run in flight
+
+/* Comfortably above the request's own 125s budget (TIMEOUT_MS in js/api.js),
+   so a slow request still fails in its own words and this only catches a
+   promise that has stopped settling at all. */
+const ANALYSIS_WATCHDOG_MS = 150000;
+
+/* Leaving the loading screen abandons the build, and abandoning it has to
+   retire the run — not just the navigation it would have caused.
+
+   Starting a NEW analysis is not the only way to walk away from one. "Start
+   over" and "My spaces" both sit in the appbar, which the loading screen keeps
+   (it has no step counter, so nothing hides them), and Back is always there.
+   A run abandoned that way was still the current run 60 seconds later, so it
+   wrote its plan into state on top of whatever the user had moved on to: over
+   the answers Start over had just cleared — which the guest-draft writer then
+   put back on disk, so the next visit "restored" the plan they deleted — or
+   over the saved space they had opened in the meantime.
+
+   Called by the router on every departure from the loading screen. */
+export function cancelAnalysis(){
+  analysisRun++;
+  if(activeAnalysis){ activeAnalysis.abort(); activeAnalysis=null; }
+}
+
 export function runLoading(){
+  /* Retire the previous run before claiming a token, so the old run's
+     isCurrent() is already false by the time its aborted request rejects. */
+  cancelAnalysis();
+  const runId=analysisRun;
+  const controller=(typeof AbortController==='function') ? new AbortController() : null;
+  activeAnalysis=controller;
+  const isCurrent=()=>analysisRun===runId;
+
   const wrap=document.getElementById('load-steps'); wrap.innerHTML='';
   const fw=document.getElementById('frames-wrap');
   fw.classList.add('hide');
@@ -70,7 +117,12 @@ export function runLoading(){
   let framesPromise=null;
   if(state.capture==='video' && state.uploadedVideo){
     framesPromise = extractVideoFrames(state.uploadedVideo, 6)
-      .then(frames=>{ state.frames=frames; showFrames(frames); return frames; })
+      .then(frames=>{
+        // Frames belong to the run that extracted them; a superseded run must
+        // not paint its thumbnails over the current one's.
+        if(isCurrent()){ state.frames=frames; showFrames(frames); }
+        return frames;
+      })
       .catch(()=>{ return []; });
   }
 
@@ -113,7 +165,8 @@ export function runLoading(){
           throw new Error('We could not read those photos. JPG or PNG versions usually work.');
         }
       }
-      const answer = await analyzeSpace(images.slice(0,6), buildAnalysisContext());
+      const answer = await analyzeSpace(images.slice(0,6), buildAnalysisContext(),
+        controller ? { signal:controller.signal } : {});
       /* Checked before it is destructured, and checked for CONTENT rather than
          truthiness. A null body used to throw "Cannot destructure property
          'plan' of '(intermediate value)' as it is null" — straight into the
@@ -139,9 +192,29 @@ export function runLoading(){
         map: plan && plan.map,
       });
       enforceArchetypeHonesty(plan, drawn.type);
+      if(!isCurrent()) return;   // superseded mid-flight: this plan is for answers that changed
       state.ai = normalizeAi(plan);
       state.planMeta = { model, source:'ai', analyzedAt: Date.now() };
-    })().catch(e=>{ state.aiError = readableError(e); state.ai=null; state.planMeta=null; });
+    })().catch(e=>{
+      if(!isCurrent()) return;
+      state.aiError = readableError(e); state.ai=null; state.planMeta=null;
+    });
+    /* A last resort, because finishLoading hands the whole screen to this one
+       promise: if it never settles, the spinner runs forever with no banner and
+       no way out but a reload, which is a worse failure than any plan we could
+       have shown instead. The request itself already has a deadline in
+       js/api.js — this covers everything AROUND it, which is where the hang
+       actually was. It sits above the request's own budget so a real timeout
+       still reports itself in the request's own words. */
+    aiPromise = Promise.race([
+      aiPromise,
+      new Promise(res=>setTimeout(()=>{
+        if(isCurrent() && !state.ai && !state.aiError){
+          state.aiError = 'That took longer than expected.';
+        }
+        res();
+      }, ANALYSIS_WATCHDOG_MS)),
+    ]);
   }else{
     // Space-specific demo data, personalized by the full wizard answer set
     // (prefs, budget, effort, toggles, dims) — never a bare template. The
@@ -157,18 +230,24 @@ export function runLoading(){
 
   let i=0;
   const tick=()=>{
-    if(i>0) document.getElementById('ls-'+(i-1)).classList.replace('doing','done');
+    // A superseded run's ticker is driving rows that belong to the new run.
+    if(!isCurrent()) return;
+    if(i>0){
+      const prev=document.getElementById('ls-'+(i-1));
+      if(prev) prev.classList.replace('doing','done');
+    }
     /* Count the numbered rows actually rendered — the media rows are
        conditional now. #ls-final is appended separately and is not part of the
        ticker's sequence, so it must not be counted. */
-    if(i>=document.querySelectorAll('#load-steps .load-step:not(#ls-final)').length){ finishLoading(aiPromise); return; }
-    const row=document.getElementById('ls-'+i); row.classList.add('doing');
+    if(i>=document.querySelectorAll('#load-steps .load-step:not(#ls-final)').length){ finishLoading(aiPromise, isCurrent); return; }
+    const row=document.getElementById('ls-'+i);
+    if(row) row.classList.add('doing');
     i++;
     setTimeout(tick, i===2?780:430);
   };
   setTimeout(tick,400);
 }
-export function finishLoading(aiPromise){
+export function finishLoading(aiPromise, isCurrent=()=>true){
   const fin=document.getElementById('ls-final');
   if(fin) fin.classList.add('doing');
   const proceed=()=>{
@@ -177,8 +256,12 @@ export function finishLoading(aiPromise){
        recalled, so the finished plan used to arrive later and throw the user
        onto the report from wherever they had navigated to, mid-edit. Someone
        who pressed Back wanted to change an answer; the plan they get should be
-       the one built from the answer they changed. */
-    if(getCurrentScreen()!=='loading') return;
+       the one built from the answer they changed.
+
+       The screen check alone cannot tell two runs apart — a newer run puts the
+       loading screen back up, and the older one would find exactly what it
+       expected — so the run token is checked with it. */
+    if(!isCurrent() || getCurrentScreen()!=='loading') return;
     track('plan_created', {
       space: state.space || 'unknown',
       source: (state.planMeta && state.planMeta.source) || (state.aiError ? 'demo-fallback' : 'demo'),
@@ -192,12 +275,22 @@ export function finishLoading(aiPromise){
       const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
       state.ai = normalizeAi(scenario);
       state.planMeta = { model: 'demo', source: 'demo-fallback', analyzedAt: Date.now() };
-      setTimeout(()=>{ syncCategoriesToResults(); autoSaveSpace(); go('results'); }, 1400);
+      /* Re-checked inside the delay, not only before it. The user has the full
+         1400ms to press Back, and the timer used to fire regardless — landing
+         them on the report they had just left, or saving a plan they had
+         walked away from. */
+      setTimeout(()=>{
+        if(!isCurrent() || getCurrentScreen()!=='loading') return;
+        syncCategoriesToResults(); autoSaveSpace(); go('results');
+      }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');
       syncCategoriesToResults();
       autoSaveSpace();
-      setTimeout(()=>go('results'), 550);
+      setTimeout(()=>{
+        if(!isCurrent() || getCurrentScreen()!=='loading') return;
+        go('results');
+      }, 550);
     }
   };
   if(aiPromise){ aiPromise.then(proceed); }

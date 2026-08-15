@@ -97,3 +97,39 @@ export async function assertResultsCoverage(page) {
   }
   return rendered.length;
 }
+
+/* ---------- driving the wizard ----------
+   Twelve steps stand between the landing page and a plan, and any spec about
+   what happens AFTER the build has to walk all of them first. Shared so the
+   walk is written once: a miscounted Continue click fails in a way that looks
+   like the behaviour under test. */
+export async function driveWizardToReview(page, { photo = null } = {}) {
+  await page.goto('/index.html');
+  await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();          // setup
+  await page.fill('#m-num-w', '3');
+  await page.fill('#m-num-h', '6');
+  await page.fill('#m-num-d', '1.33');
+  await page.locator('#flow-next').click();          // measure → photos
+  if (photo) {
+    await page.setInputFiles('#photo-input', photo);
+    // The tile confirms the file reached handleFiles, which is what sets
+    // state.capture — without it the analysis is silently skipped downstream.
+    await page.locator('#photo-tiles .wz-photo').first().waitFor();
+  }
+  await page.locator('#flow-next').click();          // photos → household
+  await page.locator('#flow-next').click();          // household
+  await page.locator('#flow-next').click();          // contents
+  await page.locator('#goal-list .wz-goal').first().click();
+  await page.locator('#flow-next').click();          // goals
+  await page.locator('#flow-next').click();          // style
+  await page.locator('#flow-next').click();          // effort
+  await page.locator('#flow-next').click();          // shopping → review
+  await page.locator('#screen-review.active').waitFor();
+}
