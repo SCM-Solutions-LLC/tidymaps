@@ -115,16 +115,45 @@ async function uploadPendingMedia(spaceId){
     blobPromise:fetch('data:image/jpeg;base64,'+fr.data).then(r=>r.blob()),
     kind:'frame', sort:i, ext:'jpg', type:'image/jpeg',
   }));
+  return uploadMissingMedia(c, u.id, spaceId, uploads);
+}
+
+/* Takes its client the way deleteSpaceData does, so a test can drive the
+   resume and compensation paths without a live project. */
+export async function uploadMissingMedia(c, userId, spaceId, uploads){
   if(!uploads.length) return;
-  // skip if this space already has media rows (re-saves shouldn't duplicate)
-  const { count } = await c.from('space_media').select('id',{count:'exact',head:true}).eq('space_id',spaceId);
-  if(count) return;
+  /* Which items are already up, not merely whether ANY of them is.
+     "Does this space have media rows?" answered yes as soon as the first photo
+     of six landed, so a save that failed partway through skipped the other
+     five on every later attempt — permanently, from the app's point of view,
+     since the only retry window is the session that still holds the files.
+     (kind, sort) is what identifies an item, so it is what gets compared. */
+  const { data:existing, error:listError } = await c.from('space_media')
+    .select('kind,sort').eq('space_id',spaceId);
+  /* An unreadable list is NOT an empty one. This destructured only `count`, so
+     a failed query read as "nothing here yet" and re-uploaded the whole batch,
+     duplicating every object and row — the same missing check as the skip
+     above, failing the opposite way. */
+  if(listError) return;
+  const already=new Set((existing||[]).map(r=>`${r.kind}:${r.sort}`));
   for(const up of uploads){
+    if(already.has(`${up.kind}:${up.sort}`)) continue;
     const blob = await up.blobPromise;
-    const path = `${u.id}/${spaceId}/${crypto.randomUUID()}.${up.ext}`;
+    const path = `${userId}/${spaceId}/${crypto.randomUUID()}.${up.ext}`;
     const { error } = await c.storage.from('space-media').upload(path, blob, { contentType:up.type });
     if(error) continue; // a failed thumbnail shouldn't sink the save
-    await c.from('space_media').insert({ space_id:spaceId, user_id:u.id, kind:up.kind, storage_path:path, sort:up.sort });
+    const { error:metadataError } = await c.from('space_media')
+      .insert({ space_id:spaceId, user_id:userId, kind:up.kind, storage_path:path, sort:up.sort });
+    /* The object and its row are one thing in two services, so a half-written
+       pair is undone rather than left. An object with no row is invisible to
+       deleteSpaceData — which builds its delete list FROM those rows — so it
+       would outlive the space itself, against a privacy page that ties photo
+       storage to an explicit save. render-after does the same compensation. */
+    if(metadataError){
+      await c.storage.from('space-media').remove([path]);
+      continue;
+    }
+    already.add(`${up.kind}:${up.sort}`);
   }
 }
 

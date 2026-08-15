@@ -62,6 +62,11 @@ export function readableError(e){
 let analysisRun=0;
 let activeAnalysis=null;   // AbortController for the run in flight
 
+/* Comfortably above the request's own 125s budget (TIMEOUT_MS in js/api.js),
+   so a slow request still fails in its own words and this only catches a
+   promise that has stopped settling at all. */
+const ANALYSIS_WATCHDOG_MS = 150000;
+
 /* Leaving the loading screen abandons the build, and abandoning it has to
    retire the run — not just the navigation it would have caused.
 
@@ -194,6 +199,22 @@ export function runLoading(){
       if(!isCurrent()) return;
       state.aiError = readableError(e); state.ai=null; state.planMeta=null;
     });
+    /* A last resort, because finishLoading hands the whole screen to this one
+       promise: if it never settles, the spinner runs forever with no banner and
+       no way out but a reload, which is a worse failure than any plan we could
+       have shown instead. The request itself already has a deadline in
+       js/api.js — this covers everything AROUND it, which is where the hang
+       actually was. It sits above the request's own budget so a real timeout
+       still reports itself in the request's own words. */
+    aiPromise = Promise.race([
+      aiPromise,
+      new Promise(res=>setTimeout(()=>{
+        if(isCurrent() && !state.ai && !state.aiError){
+          state.aiError = 'That took longer than expected.';
+        }
+        res();
+      }, ANALYSIS_WATCHDOG_MS)),
+    ]);
   }else{
     // Space-specific demo data, personalized by the full wizard answer set
     // (prefs, budget, effort, toggles, dims) — never a bare template. The

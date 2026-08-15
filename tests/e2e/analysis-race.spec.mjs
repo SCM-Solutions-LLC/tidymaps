@@ -1,5 +1,6 @@
 import { test, expect } from 'playwright/test';
 import { fileURLToPath } from 'node:url';
+import { driveWizardToReview } from './helpers.mjs';
 
 /* An analysis runs 70-90 seconds and Back is reachable the whole time, so a
    second run can begin while the first is still in the air. Nothing tied a
@@ -44,32 +45,6 @@ const planNamed = (firstStep) => ({
 const STALE = 'Empty the shelf the user gave up on';
 const WANTED = 'Empty the shelf the user actually asked about';
 
-async function driveToReview(page) {
-  await page.goto('/index.html');
-  await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
-  await page.goto('/index.html');
-  await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#flow-next').click();          // setup
-  await page.fill('#m-num-w', '3');
-  await page.fill('#m-num-h', '6');
-  await page.fill('#m-num-d', '1.33');
-  await page.locator('#flow-next').click();          // measure → photos
-  await page.setInputFiles('#photo-input', PHOTO);
-  await expect(page.locator('#photo-tiles .wz-photo')).toHaveCount(1);
-  await page.locator('#flow-next').click();          // photos → household
-  await page.locator('#flow-next').click();          // household
-  await page.locator('#flow-next').click();          // contents
-  await page.locator('#goal-list .wz-goal').first().click();
-  await page.locator('#flow-next').click();          // goals
-  await page.locator('#flow-next').click();          // style
-  await page.locator('#flow-next').click();          // effort
-  await page.locator('#flow-next').click();          // shopping → review
-  await expect(page.locator('#screen-review')).toHaveClass(/active/);
-}
 
 test('a superseded analysis cannot overwrite the plan the user is waiting for', async ({ page }) => {
   const release = [];
@@ -92,7 +67,7 @@ test('a superseded analysis cannot overwrite the plan the user is waiting for', 
     }
   });
 
-  await driveToReview(page);
+  await driveWizardToReview(page, { photo: PHOTO });
   await page.locator('#flow-next').click();          // Build my plan → run 1
   await expect(page.locator('#screen-loading')).toHaveClass(/active/);
   // Wait until run 1's checklist has finished, which is when it arms the
@@ -138,7 +113,7 @@ test('an analysis abandoned by Start over does not come back', async ({ page }) 
     } catch (_) { /* aborted, which is the point */ }
   });
 
-  await driveToReview(page);
+  await driveWizardToReview(page, { photo: PHOTO });
   await page.locator('#flow-next').click();
   await expect(page.locator('#screen-loading')).toHaveClass(/active/);
   await expect(page.locator('#ls-final')).toHaveClass(/doing/, { timeout: 20_000 });
@@ -183,7 +158,7 @@ test('leaving the loading screen during the hand-off delay does not drag the use
     } catch (_) { /* aborted */ }
   });
 
-  await driveToReview(page);
+  await driveWizardToReview(page, { photo: PHOTO });
   await page.locator('#flow-next').click();
   await expect(page.locator('#screen-loading')).toHaveClass(/active/);
   await expect(page.locator('#ls-final')).toHaveClass(/doing/, { timeout: 20_000 });
