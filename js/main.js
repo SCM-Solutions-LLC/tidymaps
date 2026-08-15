@@ -85,10 +85,16 @@ initializeRoute({
   getStepDone:()=>state.stepDone,
   go,
   toast,
-  // Read-only share links: fetch the sanitized payload, apply it as a
-  // share view (blocks draft writes), and normalize the plan for rendering.
+  /* Read-only share links, in two halves on purpose: the fetch must leave
+     state alone so startup can check whether the visitor navigated away
+     before any of it is applied (js/startup.js). */
   loadSharedPlan: async (shareId)=>{
     const { space } = await fetchSharedSpace(shareId);
+    return space;
+  },
+  // Apply the sanitized payload as a share view (blocks draft writes) and
+  // normalize the plan for rendering.
+  applySharedPlan: (space)=>{
     applySharedSpace(space);
     state.ai = normalizeAi(space.plan);
     state.planMeta = space.planMeta || null;

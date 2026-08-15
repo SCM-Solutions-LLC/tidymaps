@@ -94,37 +94,114 @@ export function resetPlanRecord(target=state){
   return target;
 }
 
+/* ---------- The wizard's answers, in one place ----------
+
+   Every answer the twelve steps collect, with ONE serializer and ONE
+   deserializer between them. There used to be two hand-maintained halves per
+   storage backend and four halves in total — the guest draft wrote `goals`,
+   `styles`, `cats`, `catsTouched` and `afterMode`; the signed-in row did not —
+   so which answers survived depended on whether you were signed in. Worse,
+   applyLoadedSpace() hydrated without resetting first, so a field the row did
+   not carry kept whatever the PREVIOUSLY opened space had left in memory: the
+   report showed one saved plan while the next analysis was quietly built from
+   another one's goals and categories.
+
+   The rule is now: reset every per-plan answer, then hydrate every one of them
+   explicitly. Adding a wizard answer means adding it to ANSWER_DEFAULTS and
+   nowhere else.
+
+   Deliberately NOT here: `units` (a reader preference — see getUnits), and
+   everything resetPlanRecord owns (the plan, its saved row, progress, the 3D
+   arrangement). Those have different lifetimes from the answers. */
+export const ANSWERS_VERSION = 1;
+
+const freshHousehold = () => ({ adults:2, kidCount:0, petCount:0,
+  kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' });
+
+// One entry per answer: the value a fresh wizard starts from.
+const ANSWER_DEFAULTS = {
+  room:'kitchen', space:'pantry', goal:null, capture:null,
+  setup:'cabinet', setupLabel:'Cabinet', setupTouched:false,
+  goals:[], styles:[], cats:[], catsTouched:false, detected:[], features:[],
+  budget:null, effort:'Weekend reset', effortTouched:false,
+  shoppingPref:'Use what I have', shoppingTouched:false,
+  upgrades:false, afterMode:'Use existing containers',
+  dims:null,
+};
+
+/* Every wizard answer back to its default. Media goes with them: photos belong
+   to the space that was being answered about, not to the next one. */
+export function resetWizardAnswers(target=state){
+  Object.entries(ANSWER_DEFAULTS).forEach(([k,v])=>{
+    target[k] = Array.isArray(v) ? v.slice() : v;
+  });
+  target.prefs=new Set();
+  target.household=freshHousehold();
+  target.dimsFt=null;
+  target.uploadedFiles=[]; target.uploadedVideo=null; target.frames=[];
+  Object.keys(target).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete target[k]; });
+  return target;
+}
+
+/* The canonical serialized form, shared by the guest draft and the signed-in
+   row. `toggles` keys are stored STRIPPED of the `detail_` prefix; the two
+   storage paths used to disagree about that (one stored `detail_lazySusan`,
+   the other `lazySusan`), which is why the reader below accepts either. */
+export function wizardAnswers(target=state){
+  const toggles={};
+  Object.keys(target).forEach(k=>{ if(k.startsWith('detail_')) toggles[k.slice(7)]=target[k]; });
+  const out={ v:ANSWERS_VERSION };
+  Object.keys(ANSWER_DEFAULTS).forEach(k=>{
+    const v=target[k];
+    out[k] = Array.isArray(v) ? v.slice() : v;
+  });
+  out.prefs=[...(target.prefs||[])];
+  out.household=target.household;
+  out.toggles=toggles;
+  return out;
+}
+
+export function applyWizardAnswers(a, target=state){
+  resetWizardAnswers(target);
+  if(!a || typeof a!=='object') return target;
+  Object.entries(ANSWER_DEFAULTS).forEach(([k,def])=>{
+    const v=a[k];
+    if(v===undefined || v===null){
+      // null is a legitimate stored value for the nullable answers (goal,
+      // budget, dims, capture); for the rest it means "absent", not "empty".
+      if(v===null && def===null) target[k]=null;
+      return;
+    }
+    if(Array.isArray(def)){ target[k]=Array.isArray(v)?v.slice():def.slice(); return; }
+    if(typeof def==='boolean'){ target[k]=!!v; return; }
+    target[k]=v;
+  });
+  target.prefs=new Set(Array.isArray(a.prefs)?a.prefs:[]);
+  if(a.household) target.household=a.household;
+  /* The measure screen renders from dimsFt, not dims. Restoring dims alone
+     left dimsFt at buildAll()'s pantry-cabinet defaults, so after a reload the
+     Review row showed 3′ against a 12′ plan — and focusing any measure field
+     wrote the stale default back over the real measurement on blur. */
+  target.dimsFt = (target.dims && target.dims.w_in)
+    ? { w:target.dims.w_in/12, h:target.dims.h_in/12, d:target.dims.d_in/12 } : null;
+  Object.entries(a.toggles||{}).forEach(([k,v])=>{
+    target[k.startsWith('detail_')?k:'detail_'+k]=v;
+  });
+  return target;
+}
+
 // Demo plans must never inherit a real user's media or saved-plan state.
 // Keeping this reset DOM-free makes the transition deterministic and testable.
 export function prepareDemoPlanState(target=state){
-  target.room='kitchen';
-  target.space='pantry';
+  resetWizardAnswers(target);
+  // The demo's own starting answers, on top of the cleared wizard.
   target.goal='find';
   target.capture='demo';
-  target.setup='cabinet';
-  target.setupLabel='Cabinet';
-  target.setupTouched=false;
-  target.goals=[];
-  target.styles=[];
-  target.shoppingPref='Use what I have';
-  target.effortTouched=false;
-  target.shoppingTouched=false;
-  target.detected=[];
-  target.catsTouched=false;
   target.upgrades=true;
-  target.prefs=new Set();
-  target.budget=null;
   target.effort=null;
-  target.cats=[];
-  target.features=[];
-  target.afterMode='Use existing containers';
-  target.uploadedFiles=[];
-  target.uploadedVideo=null;
-  target.frames=[];
-  target.dims=null;
-  target.household={ adults:2, kidCount:0, petCount:0, kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
+  target.household={ adults:2, kidCount:0, petCount:0,
+    kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
   resetPlanRecord(target);
-  Object.keys(target).filter(k=>k.startsWith('detail_')).forEach(k=>{ delete target[k]; });
   return target;
 }
 
@@ -181,20 +258,10 @@ export function persistGuestDraft(){
       localStorage.removeItem(DRAFT_KEY);
       return;
     }
-    const toggles={};
-    Object.keys(state).forEach(k=>{ if(k.startsWith('detail_')) toggles[k]=state[k]; });
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       v:2, savedAt:Date.now(),
       planReady: !!state.ai || !!(state.stepDone && state.stepDone.length),
-      space:state.space, goal:state.goal, capture:state.capture,
-      room:state.room, setup:state.setup, setupLabel:state.setupLabel,
-      setupTouched:!!state.setupTouched,
-      goals:state.goals, styles:state.styles, shoppingPref:state.shoppingPref,
-      catsTouched:state.catsTouched,
-      effortTouched:!!state.effortTouched, shoppingTouched:!!state.shoppingTouched,
-      prefs:[...state.prefs], budget:state.budget, effort:state.effort,
-      upgrades:state.upgrades, cats:state.cats, afterMode:state.afterMode,
-      dims:state.dims, household:state.household, toggles,
+      answers: wizardAnswers(state),
       ai:state.ai, planMeta:state.planMeta,
       stepDone:state.stepDone||[], upgradeChecked:state.upgradeChecked||null,
       shopping:state.shopping, arrangement:state.arrangement,
@@ -208,25 +275,10 @@ export function restoreGuestDraft(){
     if(!raw) return false;
     const d=JSON.parse(raw);
     if(!d || d.v!==2) return false;
-    state.space=d.space; state.goal=d.goal; state.capture=d.capture;
-    if(d.room) state.room=d.room;
-    if(d.setup){ state.setup=d.setup; state.setupLabel=d.setupLabel||state.setupLabel; }
-    state.setupTouched=!!d.setupTouched;
-    state.goals=d.goals||[]; state.styles=d.styles||[];
-    if(d.shoppingPref) state.shoppingPref=d.shoppingPref;
-    state.catsTouched=!!d.catsTouched;
-    state.effortTouched=!!d.effortTouched;
-    state.shoppingTouched=!!d.shoppingTouched;
-    state.prefs=new Set(d.prefs||[]); state.budget=d.budget; state.effort=d.effort;
-    state.upgrades=!!d.upgrades; state.cats=d.cats||[]; state.afterMode=d.afterMode||state.afterMode;
-    state.dims=d.dims||null;
-    // The measure screen renders from dimsFt, not dims. Restoring dims alone
-    // left dimsFt at buildAll()'s pantry-cabinet defaults, so after a reload
-    // the Review row showed 3′ against a 12′ plan — and focusing any measure
-    // field wrote the stale default back over the real measurement on blur.
-    state.dimsFt=d.dims?{w:d.dims.w_in/12, h:d.dims.h_in/12, d:d.dims.d_in/12}:null;
-    if(d.household) state.household=d.household;
-    Object.entries(d.toggles||{}).forEach(([k,v])=>{ state[k]=v; });
+    /* `d.answers` is the canonical blob; a draft written before it existed is
+       the same field names flattened onto the draft itself, so the older shape
+       reads through the same deserializer. */
+    applyWizardAnswers(d.answers || d, state);
     state.ai=d.ai||null; state.planMeta=d.planMeta||null;
     state.stepDone=d.stepDone||[]; state.upgradeChecked=d.upgradeChecked||null;
     state.shopping=d.shopping||null; state.arrangement=d.arrangement||null;

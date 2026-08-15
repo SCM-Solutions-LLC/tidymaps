@@ -84,6 +84,58 @@ test('restores a signed-in deep link when startup remains on landing', async()=>
   ]);
 });
 
+/* The share path had the saved-space path's guard on NAVIGATION but not on
+   STATE: loadSharedPlan applied the payload itself, and applySharedSpace()
+   begins by wiping every wizard answer. Someone who opened a share link and
+   started their own plan while it was still in flight kept their screen and
+   lost their answers. The fetch and the apply are separate deps now, and only
+   the fetch may run before the route check. */
+test('restores a shared plan when startup remains on landing', async()=>{
+  const payload={ name:'someone else’s pantry' };
+  const h=harness({
+    search:'?share=abc-123',
+    loadSharedPlan:async(id)=>{ h.calls.push(['fetchShared',id]); return payload; },
+    applySharedPlan:(value)=>h.calls.push(['applyShared',value]),
+  });
+
+  assert.deepEqual(await initializeRoute(h.deps), { status:'shared-view' });
+  assert.deepEqual(h.calls, [
+    ['fetchShared','abc-123'],
+    ['applyShared',payload],
+    'buildResults',
+    ['go','results'],
+    ['toast','You’re viewing a shared plan — read-only'],
+  ]);
+});
+
+test('does not apply a shared plan after navigation changes', async()=>{
+  const gate=deferred();
+  const h=harness({
+    search:'?share=abc-123',
+    loadSharedPlan:()=>gate.promise,
+    applySharedPlan:()=>h.calls.push('applyShared'),
+  });
+  const initializing=initializeRoute(h.deps);
+
+  // The visitor started answering the wizard while the share fetch was open.
+  h.setScreen('goals');
+  gate.resolve({ name:'someone else’s pantry' });
+
+  assert.deepEqual(await initializing, { status:'skipped-navigation' });
+  assert.deepEqual(h.calls, [], 'the shared payload must not touch state once they have moved on');
+});
+
+test('a failed share fetch says so and falls through', async()=>{
+  const h=harness({
+    search:'?share=abc-123',
+    loadSharedPlan:async()=>{ const e=new Error('gone'); e.code='http_404'; throw e; },
+    applySharedPlan:()=>h.calls.push('applyShared'),
+  });
+
+  assert.deepEqual(await initializeRoute(h.deps), { status:'unchanged' });
+  assert.deepEqual(h.calls, [['toast','That share link is no longer active.']]);
+});
+
 test('does not apply a fetched space after navigation changes', async()=>{
   const gate=deferred();
   const h=harness({

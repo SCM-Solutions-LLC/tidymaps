@@ -84,7 +84,13 @@ test('the untuned fallback drops cache_control too', () => {
 });
 
 test('the client gives up before waiting forever, and says why', () => {
-  assert.match(api, /signal: AbortSignal\.timeout\(/);
+  // The deadline is composed with the caller's optional cancel signal now, but
+  // it is still unconditional: requestSignal() returns the timeout alone when
+  // no signal is passed, and combines rather than replaces when one is.
+  assert.match(api, /AbortSignal\.timeout\(TIMEOUT_MS\[name\] \|\| DEFAULT_TIMEOUT_MS\)/);
+  assert.match(api, /if\(!signal\) return deadline;/);
+  assert.match(api, /AbortSignal\.any\(\[deadline, signal\]\)/);
+  assert.match(api, /signal: requestSignal\(name, signal\)/);
   const clientBudget = Number(api.match(/'analyze-space': (\d+)/)[1]);
   assert.ok(
     clientBudget > constant('TOTAL_BUDGET_MS'),

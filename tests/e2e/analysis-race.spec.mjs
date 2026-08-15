@@ -1,0 +1,150 @@
+import { test, expect } from 'playwright/test';
+import { fileURLToPath } from 'node:url';
+
+/* An analysis runs 70-90 seconds and Back is reachable the whole time, so a
+   second run can begin while the first is still in the air. Nothing tied a
+   response to the run that asked for it: whichever finished LAST wrote
+   state.ai and pushed the user to the report. Someone who pressed Back to
+   change an answer, changed it, and rebuilt could be thrown onto the report
+   for the answers they had just abandoned — mid-run, from the loading screen
+   for the analysis they actually wanted.
+
+   The screen check that existed was not enough on its own. It asked "are we
+   still on the loading screen?", and a second run puts the loading screen back
+   up, so the stale run found exactly what it expected. */
+
+const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.png', import.meta.url));
+
+const planNamed = (firstStep) => ({
+  spaceType: 'Pantry',
+  summary: 'A test plan from the mocked backend.',
+  categories: ['Canned goods'],
+  map: [{
+    level: 'Top shelf', icon: 'up', zone: 'Backstock', why: 'Rarely reached.',
+    eye: false, shelfIndex: 0, safety: { flag: null, why: null },
+    items: [{ name: 'Canned goods', size: 'm', flags: [] }], surface: 'shelf',
+  }],
+  geometry: { unit: 'in', width: 36, height: 72, depth: 16, shelfCount: 1, shelfYFracs: [0.1], estimated: false },
+  layout: null,
+  safetyNotes: [],
+  productNeeds: [],
+  steps: [
+    { task: firstStep, time: '10 min', why: 'A clear shelf is easier to plan.' },
+    { task: 'Group like with like', time: '10 min', why: 'You stop buying duplicates.' },
+    { task: 'Put backstock up top', time: '5 min', why: 'Daily items stay in reach.' },
+    { task: 'Label the fronts', time: '10 min', why: 'Everyone can put things back.' },
+    { task: 'Wipe the shelf down', time: '5 min', why: 'Crumbs attract pests.' },
+    { task: 'Set a restock spot', time: '5 min', why: 'You see gaps before you shop.' },
+    { task: 'Check reachability', time: '5 min', why: 'The plan has to survive a hurry.' },
+  ],
+  time: '45-60 min',
+  cost: '$0',
+});
+
+const STALE = 'Empty the shelf the user gave up on';
+const WANTED = 'Empty the shelf the user actually asked about';
+
+async function driveToReview(page) {
+  await page.goto('/index.html');
+  await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();          // setup
+  await page.fill('#m-num-w', '3');
+  await page.fill('#m-num-h', '6');
+  await page.fill('#m-num-d', '1.33');
+  await page.locator('#flow-next').click();          // measure → photos
+  await page.setInputFiles('#photo-input', PHOTO);
+  await expect(page.locator('#photo-tiles .wz-photo')).toHaveCount(1);
+  await page.locator('#flow-next').click();          // photos → household
+  await page.locator('#flow-next').click();          // household
+  await page.locator('#flow-next').click();          // contents
+  await page.locator('#goal-list .wz-goal').first().click();
+  await page.locator('#flow-next').click();          // goals
+  await page.locator('#flow-next').click();          // style
+  await page.locator('#flow-next').click();          // effort
+  await page.locator('#flow-next').click();          // shopping → review
+  await expect(page.locator('#screen-review')).toHaveClass(/active/);
+}
+
+test('a superseded analysis cannot overwrite the plan the user is waiting for', async ({ page }) => {
+  const release = [];
+  let calls = 0;
+
+  await page.route('**/functions/v1/analyze-space', async (route) => {
+    const n = calls++;
+    // Both runs are held open, and the STALE one is released FIRST — the
+    // ordering that used to hand the user the plan they had walked away from.
+    await new Promise((res) => { release[n] = res; });
+    const plan = planNamed(n === 0 ? STALE : WANTED);
+    try {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ plan, model: 'test-model', requestId: 'r' + n }),
+      });
+    } catch (_) {
+      // The client aborts the superseded request; fulfilling it then throws.
+    }
+  });
+
+  await driveToReview(page);
+  await page.locator('#flow-next').click();          // Build my plan → run 1
+  await expect(page.locator('#screen-loading')).toHaveClass(/active/);
+  // Wait until run 1's checklist has finished, which is when it arms the
+  // navigation that fires the moment its response lands.
+  await expect(page.locator('#ls-final')).toHaveClass(/doing/, { timeout: 20_000 });
+
+  // The user changes their mind, goes back, and rebuilds.
+  await page.goBack();
+  await expect(page.locator('#screen-review')).toHaveClass(/active/);
+  await page.locator('#flow-next').click();          // Build my plan → run 2
+  await expect(page.locator('#screen-loading')).toHaveClass(/active/);
+  await expect.poll(() => calls, { timeout: 20_000 }).toBe(2);
+
+  // Run 1 lands while run 2 is still working. It must change nothing.
+  release[0]();
+  await page.waitForTimeout(2500);
+  await expect(page.locator('#screen-loading'),
+    'the abandoned run threw the user onto its own report').toHaveClass(/active/);
+
+  release[1]();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  await expect(page.locator('#res-steps .task').first()).toContainText(WANTED);
+  await expect(page.locator('#res-steps .task').first()).not.toContainText(STALE);
+});
+
+test('leaving the loading screen during the hand-off delay does not drag the user back', async ({ page }) => {
+  /* Navigation to the report is delayed so the last checklist row can be seen
+     ticking over. The screen was checked BEFORE that delay and not again
+     inside it, so a Back press landed in the gap still ended on the report. */
+  let release;
+  await page.route('**/functions/v1/analyze-space', async (route) => {
+    await new Promise((res) => { release = res; });
+    try {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ plan: planNamed(WANTED), model: 'test-model', requestId: 'r' }),
+      });
+    } catch (_) { /* aborted */ }
+  });
+
+  await driveToReview(page);
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-loading')).toHaveClass(/active/);
+  await expect(page.locator('#ls-final')).toHaveClass(/doing/, { timeout: 20_000 });
+
+  release();
+  // Inside the 550ms hand-off window.
+  await page.waitForTimeout(120);
+  await page.goBack();
+
+  await page.waitForTimeout(1500);
+  await expect(page.locator('#screen-review'),
+    'Back during the hand-off delay must stick').toHaveClass(/active/);
+});

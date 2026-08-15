@@ -1,6 +1,6 @@
 import { supa, getUser } from './auth.js';
 import { submitForm } from './api.js';
-import { state } from './state.js';
+import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord } from './state.js';
 import { toast } from './ui.js';
 import { areaFor } from './wizard-data.js';
 import { track } from './telemetry.js';
@@ -18,29 +18,31 @@ function requireClient(){
    applyLoadedSpace() back in. Two hand-maintained halves of one contract is
    how the shopping answer came to be written by neither. */
 export function rowFromState(name){
+  /* One serializer for both storage backends — see js/state.js. The signed-in
+     row used to keep its own shorter list than the guest draft did, so goals,
+     styles, categories, catsTouched, detected, room and afterMode were saved
+     for signed-OUT visitors and dropped for signed-in ones. The whole answer
+     set rides in the prefs blob because the spaces table has no column per
+     answer; the named columns below stay as they are because queries and the
+     dashboard select them. */
+  const answers = wizardAnswers(state);
   return {
     name: name || defaultSpaceName(),
     space_type: state.space,
     goal: state.goal,
     dims: state.dims,
     household: state.household,
-    // setup/setupLabel ride in the prefs blob because the spaces table has no
-    // column for them. Without them a reopened space lost its setup type, and
-    // resolveLayout() keys the 3D archetype off exactly that — so a saved
-    // walk-in came back rendered as whatever setup happened to be in memory.
-    // The guest draft has always kept these (js/state.js); this closes the gap
-    // for signed-in spaces.
-    prefs: { prefs:[...(state.prefs||[])], budget:state.budget, effort:state.effort,
-             setup:state.setup, setupLabel:state.setupLabel, setupTouched:!!state.setupTouched,
-             /* The shopping answer was never saved at all — a signed-in user
-                who chose "Open to a few ideas" got "Use what I have" back on
-                reopening, which is the answer that empties the product list.
-                The touched flags ride along for the same reason setupTouched
-                does: without them a reopened space labels the user's own
-                answers "(our default)". */
-             shoppingPref:state.shoppingPref,
-             effortTouched:!!state.effortTouched, shoppingTouched:!!state.shoppingTouched,
-             toggles:Object.fromEntries(Object.keys(state).filter(k=>k.startsWith('detail_')).map(k=>[k.slice(7),state[k]])) },
+    /* `answers` is canonical. The flat keys beside it are the shape rows were
+       written in before it existed: still written so a client running the
+       previous build can read a row this one saved, still read below so a row
+       saved by that build loads here. Derived from `answers`, never typed out
+       a second time. */
+    prefs: { answers,
+             prefs:answers.prefs, budget:answers.budget, effort:answers.effort,
+             setup:answers.setup, setupLabel:answers.setupLabel, setupTouched:answers.setupTouched,
+             shoppingPref:answers.shoppingPref,
+             effortTouched:answers.effortTouched, shoppingTouched:answers.shoppingTouched,
+             toggles:answers.toggles },
     plan: state.ai,
     plan_meta: state.planMeta,
     shopping: state.shopping || null,
@@ -174,6 +176,25 @@ export async function fetchSpace(id){
 }
 
 export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
+  /* Reset BEFORE hydrating, both halves of the state. Without this, opening a
+     second saved space kept whatever the first one left behind in any field
+     the row did not carry — stale goals, styles, categories and detail_
+     toggles reached buildAnalysisContext(), so the screen showed one plan
+     while a re-analysis was built from another's answers. resetPlanRecord
+     covers the same hole on the plan side: shareView in particular survived
+     into an owned space and made it unsaveable. */
+  resetPlanRecord(state);
+  const prefs = data.prefs || {};
+  // `prefs.answers` is canonical; a row written before it existed carries the
+  // same answers flattened across prefs and the named columns.
+  applyWizardAnswers(prefs.answers || {
+    ...prefs,
+    space: data.space_type, goal: data.goal,
+    dims: data.dims, household: data.household,
+  }, state);
+  // The named columns are the source of truth for the answers they duplicate:
+  // the dashboard and share payload read them, so a row edited elsewhere lands
+  // here rather than in the blob.
   state.activeSpaceId = data.id;
   state.space = data.space_type;
   state.goal = data.goal;
@@ -184,26 +205,20 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   state.dimsFt = data.dims && data.dims.w_in
     ? { w: data.dims.w_in/12, h: data.dims.h_in/12, d: data.dims.d_in/12 } : null;
   if(data.household) state.household = data.household;
-  if(data.prefs){
-    state.prefs = new Set(data.prefs.prefs||[]);
-    state.budget = data.prefs.budget||null;
-    state.effort = data.prefs.effort||null;
-    if(data.prefs.shoppingPref) state.shoppingPref = data.prefs.shoppingPref;
-    state.effortTouched = !!data.prefs.effortTouched;
-    state.shoppingTouched = !!data.prefs.shoppingTouched;
-    if(data.prefs.setup){
-      state.setup = data.prefs.setup;
-      state.setupLabel = data.prefs.setupLabel || state.setupLabel;
-      state.setupTouched = !!data.prefs.setupTouched;
-    }
-    Object.entries(data.prefs.toggles||{}).forEach(([k,v])=>{ state['detail_'+k]=v; });
-  }
   state.ai = data.plan;
   state.planMeta = data.plan_meta;
   state.shopping = data.shopping;
   state.stepDone = (data.progress && data.progress.stepsDone) || [];
   state.arrangement = data.arrangement;
-  state.upgrades = !!(data.shopping && data.shopping.length);
+  /* `upgrades` is an answer, not a derivation: recomputePrefs() sets it from
+     the shopping step and the report's own switch overrides it, so someone who
+     turned the products section on without ticking anything yet had it turned
+     back off for them on reopening. A row that carries the answer is trusted.
+     Rows written before it was serialized carry none, and for those a saved
+     shopping list remains the best evidence the section was on. */
+  if(!(data.prefs && data.prefs.answers && 'upgrades' in data.prefs.answers)){
+    state.upgrades = !!(data.shopping && data.shopping.length);
+  }
   state.beforePhotoUrl = beforePhotoUrl;
   state.afterRenderUrl = afterRenderUrl;
   return data;
