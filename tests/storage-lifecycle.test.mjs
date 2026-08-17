@@ -191,3 +191,60 @@ test('a failed upload does not sink the rest of the save', async () => {
     ['upload', 'photo:1'], ['insert', 'photo:1'],
   ], 'no row is written for an object that never landed');
 });
+
+/* ---------- Incremental writes ----------
+
+   Progress ticks, shopping edits and the 3D arrangement are written through a
+   debounced PATCH. Its error was never read, and the pending patch is emptied
+   BEFORE the await — so a single failed request dropped that edit on the floor
+   with no retry and nothing on screen to say so. The user ticks a step off, it
+   looks saved, and it is gone. */
+
+test('a failed incremental write is queued again rather than dropped', async () => {
+  db.takePendingPatch();
+  const client = { from: () => ({ update: () => ({ eq: async () => ({ error: { message: 'offline' } }) }) }) };
+
+  await db.writePatch(client, 'space-a', { progress: { stepsDone: [true] } });
+
+  const owed = db.takePendingPatch();
+  assert.deepEqual(owed.patch, { progress: { stepsDone: [true] } });
+  assert.equal(owed.targetId, 'space-a');
+});
+
+test('a successful incremental write queues nothing', async () => {
+  db.takePendingPatch();
+  const client = { from: () => ({ update: () => ({ eq: async () => ({ error: null }) }) }) };
+
+  await db.writePatch(client, 'space-a', { progress: { stepsDone: [true] } });
+
+  assert.deepEqual(db.takePendingPatch().patch, {});
+});
+
+const failing = { from: () => ({ update: () => ({ eq: async () => ({ error: { message: 'offline' } }) }) }) };
+
+test('a retry does not undo anything the user did since it failed', async () => {
+  /* The failed body goes back UNDERNEATH whatever has accumulated since: the
+     user's later edit is newer than the attempt that failed, and must not be
+     reverted by it. The first failure below stands in for that later edit —
+     it is what is sitting in the queue when the second write fails. */
+  db.takePendingPatch();
+  await db.writePatch(failing, 'space-a', { shopping: ['what the user picked since'] });
+  await db.writePatch(failing, 'space-a', { shopping: ['stale'], progress: { stepsDone: [true] } });
+
+  const owed = db.takePendingPatch();
+  assert.deepEqual(owed.patch.shopping, ['what the user picked since'],
+    'the newer value must win over the one whose write failed');
+  assert.deepEqual(owed.patch.progress, { stepsDone: [true] },
+    'keys the newer edit did not touch still come back');
+});
+
+test('a failed write for one space is not replayed onto another', async () => {
+  /* Re-applying one space's columns to another is worse than losing them. */
+  db.takePendingPatch();
+  await db.writePatch(failing, 'space-b', { shopping: ['b'] });   // queued, target = space-b
+  await db.writePatch(failing, 'space-a', { progress: { stepsDone: [true] } });
+
+  const owed = db.takePendingPatch();
+  assert.equal(owed.targetId, 'space-b');
+  assert.deepEqual(owed.patch, { shopping: ['b'] }, 'space-a\'s columns must not reach space-b');
+});

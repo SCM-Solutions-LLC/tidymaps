@@ -4,6 +4,7 @@
 // copy of the filter is a courtesy, this one is the boundary. Writes go to
 // telemetry_events via the service role; the table has RLS with no policies.
 import { preflight, json } from '../_shared/cors.ts';
+import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 import { sanitizeBatch } from '../_shared/telemetryEvents.js';
@@ -15,12 +16,9 @@ Deno.serve(async (req) => {
   if (pf) return pf;
   if (req.method !== 'POST') return json(req, 405, { error: 'method_not_allowed' });
 
-  let body: { anonId?: string; events?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    return json(req, 400, { error: 'invalid_json' });
-  }
+  const parsed = await readJsonObject(req);
+  if (!parsed) return json(req, 400, { error: 'invalid_body' });
+  const body = parsed as unknown as { anonId?: string; events?: unknown };
   const anonId = UUID_RE.test(String(body.anonId ?? '')) ? String(body.anonId).toLowerCase() : null;
   const events = sanitizeBatch(body.events);
   if (!events.length) return json(req, 200, { accepted: 0 });

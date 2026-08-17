@@ -68,8 +68,13 @@ export async function saveSpace(name, { media=true, auto=false }={}){
   const row = rowFromState(name);
   let spaceId = state.activeSpaceId;
   if(spaceId){
-    const { error } = await c.from('spaces').update(row).eq('id', spaceId);
-    if(error) throw new Error('Saving failed — please try again.');
+    /* The returned row is checked, not just the error. An UPDATE that matches
+       nothing is not an error — it is a success that wrote nothing — so a
+       stale activeSpaceId (the space was deleted on another device, or RLS no
+       longer admits it) reported "Saved" over a save that never happened. */
+    const { data, error } = await c.from('spaces')
+      .update(row).eq('id', spaceId).select('id').maybeSingle();
+    if(error || !data) throw new Error('Saving failed — please try again.');
   }else{
     const { data, error } = await c.from('spaces').insert({ ...row, user_id:u.id }).select('id').single();
     if(error) throw new Error('Saving failed — please try again.');
@@ -296,13 +301,52 @@ export function updateSpacePatch(patch){
   clearTimeout(patchTimer);
   patchTimer=setTimeout(flushPatch, 800);
 }
+/* Writes are chained rather than fired off in parallel. Two overlapping PATCHes
+   of the same row can land in either order, and the loser silently wins. Each
+   key is written as a whole value (the full stepsDone array, the whole
+   arrangement), so a later write of the SAME key repairs an earlier one — but
+   only if it lands later, which is exactly what nothing here guaranteed. */
+let patchChain=Promise.resolve();
+
 async function flushPatch(){
   clearTimeout(patchTimer);
   const c=supa();
   const body=pendingPatch; const id=patchTargetId;
   pendingPatch={}; patchTargetId=null;
-  if(!c || !id || !Object.keys(body).length) return;
-  await c.from('spaces').update(body).eq('id', id);
+  if(!c || !id || !Object.keys(body).length) return patchChain;
+  patchChain = patchChain.then(()=>writePatch(c, id, body), ()=>writePatch(c, id, body));
+  return patchChain;
+}
+
+/* Drains the retry queue and hands it back. A dropped write and a saved one
+   look identical from the call site, so the test needs to see what is still
+   owed; draining it is what test isolation needs anyway. */
+export function takePendingPatch(){
+  const out={ patch:pendingPatch, targetId:patchTargetId };
+  pendingPatch={}; patchTargetId=null;
+  clearTimeout(patchTimer);
+  return out;
+}
+
+/* Takes its client the way deleteSpaceData and uploadMissingMedia do. */
+export async function writePatch(c, id, body){
+  const { error } = await c.from('spaces').update(body).eq('id', id);
+  if(!error) return;
+  /* The error was never read, and `pendingPatch` is emptied before the await —
+     so one failed request dropped that progress tick, shopping edit or 3D
+     arrangement on the floor, with no retry and nothing on screen to say so.
+     The user ticks a step off, it looks saved, and it is gone.
+
+     The keys go back so the next flush carries them again. They go back
+     UNDERNEATH whatever has accumulated since: anything the user has done in
+     the meantime is newer than this failed attempt and must not be undone by
+     it. And only if the pending patch still belongs to the same space —
+     re-applying one space's columns to another is worse than losing them. */
+  if(patchTargetId && patchTargetId!==id) return;
+  pendingPatch={ ...body, ...pendingPatch };
+  patchTargetId=id;
+  clearTimeout(patchTimer);
+  patchTimer=setTimeout(flushPatch, 4000);
 }
 
 export async function deleteSpaceData(c, id){

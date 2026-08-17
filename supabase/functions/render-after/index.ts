@@ -1,4 +1,5 @@
 import { preflight, json } from '../_shared/cors.ts';
+import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 
@@ -25,12 +26,9 @@ Deno.serve(async (req) => {
   if (pf) return pf;
   if (req.method !== 'POST') return json(req, 405, { error: 'method_not_allowed' });
 
-  let body: Body;
-  try {
-    body = await req.json();
-  } catch {
-    return json(req, 400, { error: 'invalid_json' });
-  }
+  const parsed = await readJsonObject(req);
+  if (!parsed) return json(req, 400, { error: 'invalid_body' });
+  const body = parsed as unknown as Body;
   const img = body.image;
   if (!img || !ALLOWED_MIME.has(img.media_type) || typeof img.data !== 'string') {
     return json(req, 400, { error: 'bad_image' });
