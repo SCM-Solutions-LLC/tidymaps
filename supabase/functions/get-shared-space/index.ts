@@ -4,6 +4,7 @@
 // _shared/sharePayload.js — never household, progress, shopping, or media.
 // Revocation is instant: owner sets share_id to null and the lookup misses.
 import { preflight, json } from '../_shared/cors.ts';
+import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 import { sharedSpacePayload } from '../_shared/sharePayload.js';
@@ -15,12 +16,9 @@ Deno.serve(async (req) => {
   if (pf) return pf;
   if (req.method !== 'POST') return json(req, 405, { error: 'method_not_allowed' });
 
-  let body: { shareId?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return json(req, 400, { error: 'invalid_json' });
-  }
+  const parsed = await readJsonObject(req);
+  if (!parsed) return json(req, 400, { error: 'invalid_body' });
+  const body = parsed as unknown as { shareId?: string };
   const shareId = String(body.shareId ?? '').trim().toLowerCase();
   if (!UUID_RE.test(shareId)) return json(req, 400, { error: 'bad_share_id' });
 
