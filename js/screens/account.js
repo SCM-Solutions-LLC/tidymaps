@@ -28,7 +28,19 @@ function handleModalKey(e){
   if(e.key!=='Tab') return;
   const modal=document.querySelector('#auth-modal .modal');
   if(!modal) return;
-  const focusable=modal.querySelectorAll('input:not([type=hidden]),button:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  /* Visible, not merely present. The modal carries both of its steps in the
+     DOM at once and hides one with `.hide` (display:none), which
+     querySelectorAll does not consider — so the trap's `last` was routinely a
+     control on the step that is not on screen. Tabbing off the last VISIBLE
+     control then matched nothing and let focus escape to the page behind the
+     modal, and shift-tabbing off the first sent it to an element nobody can
+     see. A trap anchored to elements the user cannot reach is not a trap.
+
+     (`input:not([type=hidden])` was already here and is not the issue: it
+     covers the input TYPE, not CSS visibility.) */
+  const isVisible=el=>!!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  const focusable=[...modal.querySelectorAll('input:not([type=hidden]),button:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(isVisible);
   if(!focusable.length) return;
   const first=focusable[0], last=focusable[focusable.length-1];
   if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }

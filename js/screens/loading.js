@@ -1,4 +1,4 @@
-import { LOAD_LABELS, LOAD_LABELS_MEDIA, LOAD_LABELS_COMMON, LOAD_LABELS_NO_MEDIA } from '../data.js';
+import { LOAD_LABELS_MEDIA, LOAD_LABELS_COMMON, LOAD_LABELS_NO_MEDIA } from '../data.js';
 import { ICON } from '../icons.js';
 import { state } from '../state.js';
 import { escapeHtml } from '../ui.js';

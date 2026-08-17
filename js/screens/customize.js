@@ -3,7 +3,6 @@ import { optionsForHousehold } from '../wizard-data.js';
 import { ICON } from '../icons.js';
 import { state, persistGuestDraft } from '../state.js';
 import { toast } from '../ui.js';
-import { go } from '../router.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { REVISIONS, applyRevision } from '../personalize.js';

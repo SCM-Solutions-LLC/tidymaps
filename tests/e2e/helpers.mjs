@@ -52,6 +52,7 @@ const FP = () => {
     safetyNotes: all('#res-safety-notes .safety-note'),
     mapZones: all('#res-map .shelf'),
     steps: all('#res-steps .tname'),
+    upgradesSub: t('#res-upgrades-sub'),
     products: all('#res-upgrades .pname'),
     shoppingLines: all('#res-shopping li'),
     shoppingTotal: t('#res-shop-total'),

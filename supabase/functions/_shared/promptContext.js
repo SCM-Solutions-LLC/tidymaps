@@ -12,6 +12,9 @@ export const INJECTION_GUARD =
 
 // Matches ASCII control characters except tab (\x09), newline (\x0A), and
 // carriage return (\x0D), which are legitimate in free-text notes.
+// Matching control characters is the entire job of this expression: it is what
+// strips them out of user-supplied text before it reaches the prompt.
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
 // Neutralize anything a user could type that would let their text escape the
@@ -53,7 +56,14 @@ export function buildContext(ctx = {}) {
   if (Array.isArray(ctx.styles) && ctx.styles.length) {
     parts.push(`How they like things kept: ${ctx.styles.join(', ')}.`);
   }
-  if (ctx.shopping) parts.push(`Their answer on buying storage: ${ctx.shopping}.`);
+  /* "Their answer" was a claim, and for anyone who left the preselected card
+     alone it was a false one — the model was told the user had asked to buy
+     nothing when they had not been asked. */
+  if (ctx.shopping) {
+    parts.push(ctx.shoppingTouched === false
+      ? `On buying storage they did not answer; we preselected "${ctx.shopping}" for them, so treat it as no preference either way.`
+      : `Their answer on buying storage: ${ctx.shopping}.`);
+  }
   if (Array.isArray(ctx.prefs) && ctx.prefs.length) parts.push(`Preferences: ${ctx.prefs.join(', ')}.`);
   if (ctx.budget) parts.push(`Budget: ${ctx.budget}.`);
   if (ctx.effort) parts.push(`Effort level: ${ctx.effort}.`);

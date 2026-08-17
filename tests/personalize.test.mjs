@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyAnswers, applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision, planMinutes, planMinuteRange } from '../js/personalize.js';
+import { applyCategoryEdits, EFFORT_STEPS, REVISIONS, applyRevision, planMinuteRange } from '../js/personalize.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 import { STYLESETS, prefsForStyles } from '../js/wizard-data.js';
 

@@ -499,8 +499,6 @@ test('every mobility answer leaves guidance, whatever the shape of the space', (
    answered "bending is difficult" by putting the heavy luggage on the
    floor. Convenience is not the only axis. */
 
-const HAZARD = ['heavy', 'chemical', 'sharp'];
-const hazardOf = (m) => new Set((m.items || []).flatMap(it => it.flags || []).filter(f => HAZARD.includes(f)));
 
 test('a mobility answer never rearranges the shelf map', () => {
   /* The engine has zone labels and item flags; it does not know which of a

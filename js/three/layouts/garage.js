@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { addBox, addShelfLabel, accentFor, makeHitbox } from './helpers.js';
 
 export function buildGarageRack(ctx){
-  const { scene, geo, rowsByShelf, mats }=ctx;
+  const { scene, geo, rowsByShelf }=ctx;
   const { W, H, D, T, NSH, shelfYs, gapAbove }=geo;
 
   const postMat=new THREE.MeshStandardMaterial({ color:0x777777, metalness:0.4, roughness:0.5 });
@@ -61,7 +61,7 @@ export function buildGarageRack(ctx){
 
 export function buildOverheadRack(ctx){
   const { scene, geo, rowsByShelf, mats }=ctx;
-  const { W, H, D, T, NSH, shelfYs, gapAbove }=geo;
+  const { W, H, D, T, shelfYs, gapAbove }=geo;
 
   const strutMat=new THREE.MeshStandardMaterial({ color:0x666666, metalness:0.5, roughness:0.4 });
   const strutW=1;

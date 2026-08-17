@@ -102,7 +102,29 @@ function syncDims(){
    analysis context for the AI path. */
 export function recomputePrefs(){
   const prefs = prefsForStyles(state.styles);
-  if(state.shoppingPref === 'Use what I have'){
+  if(!state.shoppingTouched){
+    /* Nobody has answered the shopping step yet, so neither constraint is
+       theirs to apply.
+
+       The preselected card is "Use what I have", and treating it as an answer
+       made it the most consequential thing the app decided on a user's behalf:
+       it added "Use only what I already own" to prefs, pinned the budget to
+       $0, and every one of applyBudget's five scrub sites then emptied
+       productNeeds on ANY plan — model, demo or offline — and printed "You
+       told us to use only what you already own" over it. Someone who walked
+       through the wizard accepting the defaults got no recommendations at all
+       and a sentence claiming they had asked for that.
+
+       Review already labelled it "our default" and the card already rendered
+       unselected. The interface was honest; only the engine was not.
+
+       Adding neither pref is the point: "Open to buying storage" is just as
+       much a claim about the user, and it makes the report announce a decision
+       they did not make. No constraint means the plan may suggest products,
+       and the report says plainly that they are optional. */
+    if(state.budget === '$0') state.budget = null;
+    state.upgrades = true;
+  }else if(state.shoppingPref === 'Use what I have'){
     prefs.add('Use only what I already own');
     state.budget = '$0';
     state.upgrades = false;
