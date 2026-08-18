@@ -30,7 +30,7 @@ with `data-img="<key>"`.
 ## Photo slots on the landing page
 
 The page degrades gracefully while these files are missing. The hero slot
-falls back to a real product visual (`assets/product/hero-3d.png`, the sample
+falls back to a real product visual (`assets/product/hero-3d.webp`, the sample
 plan in the 3D view) with its own caption; the story slot collapses and the
 layout reflows. Drop the photo files in and they take over automatically —
 no code changes needed, and the fallback caption hides itself.
@@ -118,7 +118,7 @@ a new `STEP_ART` scene or vocabulary word needs a matching scene component in
 
 ## Product screenshots
 
-Only one is still shown: `assets/product/hero-3d.png`, the sample plan in the
+Only one is still shown: `assets/product/hero-3d.webp`, the sample plan in the
 3D viewer, which backs the hero photo as its `onerror` fallback. Regenerate it
 after a product change and keep it honest — no retouching beyond cropping.
 
@@ -137,7 +137,37 @@ a press kit) should not have to re-shoot them. Anything that does show one
 needs a fresh manifest entry, since the reachability guard will otherwise fail
 the build.
 
+## File formats and weight
+
+Photographs ship as WebP; nothing in `assets/photos/` is a PNG. PNG is
+lossless, which for a photograph means paying to preserve sensor noise nobody
+can see. The landing page used to send 1.7MB for two pictures drawn at 522×700
+and 542×715 — one of them the LCP image, marked `fetchpriority="high"` — and
+the same two pictures at the same pixel dimensions are 85KB and 87KB as WebP
+at quality 82, with no visible difference at the size they are drawn.
+
+There is no browser left that a PNG fallback would serve: the stylesheet
+already uses `oklch()` colours, which need a 2023 browser, so a `<picture>`
+element with a PNG source would be dead weight on every request.
+
+Two guards in `tests/images.test.mjs` keep it that way — a PNG dropped into
+`assets/photos/` fails, and so does any image `index.html` references that goes
+over 200KB. Both budgets are roughly double what the files weigh now, so they
+catch a format mistake rather than policing kilobytes.
+
+To re-encode a new photo: `sharp(src).webp({ quality: 82, effort: 6 })`, at the
+photo's own pixel dimensions. Do not upscale — the hero and story photos are
+already 1× for the box they sit in, and inventing pixels only adds bytes.
+
+Product screenshots stay PNG. They are captures of text and flat UI, where
+lossy encoding is exactly wrong, and only `hero-3d` is on a page — that one is
+resized to 1100px wide and encoded as WebP because it stands in for a
+photograph.
+
 ## Social / OG image
 
 `assets/og.png` (1200×630) is a capture of the live hero. Regenerate whenever
-the hero copy or palette changes.
+the hero copy or palette changes. It stays a PNG on purpose: social scrapers
+are the one audience that still handles WebP unevenly, and it is fetched by
+crawlers rather than by readers, so its weight is not on the page's critical
+path.

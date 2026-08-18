@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
    a viewer that never opened looked identical from the outside. This walks it:
    photos in, backend plan back, button visible, scene built. */
 
-const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.png', import.meta.url));
+const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.webp', import.meta.url));
 
 // A walk-in at the schema's 12-row ceiling, split across three walls — the
 // largest thing the viewer is ever asked to build.

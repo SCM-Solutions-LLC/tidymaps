@@ -14,7 +14,7 @@ import { driveWizardToReview, fakeSession, REF } from './helpers.mjs';
    still on the loading screen?", and a second run puts the loading screen back
    up, so the stale run found exactly what it expected. */
 
-const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.png', import.meta.url));
+const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.webp', import.meta.url));
 
 const planNamed = (firstStep) => ({
   spaceType: 'Pantry',

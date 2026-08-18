@@ -17,7 +17,7 @@ import { driveWizardToReview } from './helpers.mjs';
    pressure, a tainted canvas) are not reproducible on demand — but the failure
    mode they produce is exactly this one. */
 
-const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.png', import.meta.url));
+const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.webp', import.meta.url));
 
 const breakCanvas = (page) => page.addInitScript(() => {
   HTMLCanvasElement.prototype.toDataURL = function () {
@@ -35,7 +35,7 @@ test('a photo the canvas cannot encode rejects instead of hanging', async ({ pag
        canvas. An undecodable stand-in would trip img.onerror first and never
        exercise the throw this test is about — which is how the test passed
        against the unfixed code the first time it was written. */
-    const blob = await (await fetch('/assets/photos/ex-cab-before.png')).blob();
+    const blob = await (await fetch('/assets/photos/ex-cab-before.webp')).blob();
     const file = new File([blob], 'shelf.png', { type: 'image/png' });
     return Promise.race([
       fileToScaledB64(file).then(() => 'resolved', (e) => 'rejected: ' + e.message),
