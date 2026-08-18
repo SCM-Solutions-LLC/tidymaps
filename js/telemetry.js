@@ -19,6 +19,17 @@ const FLUSH_AT = 12; // keep batches under the server's 25-event cap
 
 function optedOut() {
   try {
+    /* No DOM means no user. `node --test` imports this module transitively
+       (js/db.js calls track on a successful insert), and a Node process has a
+       global `navigator` since v21 but no `webdriver` on it — so the check
+       below did not catch it. Every unit-test run that exercised the save
+       path POSTed two real `space_saved` events to production; sixty-six
+       reached the table before anyone noticed, each with a null anon_id
+       because a Node process has no localStorage either. That is the exact
+       column the funnel is read by, so the junk was both loud and unjoinable.
+       Telemetry is a browser feature: asking for a document is asking whether
+       there is a session at all. */
+    if (typeof document === 'undefined') return true;        // not a browser
     if (navigator.webdriver) return true;                    // CI / robots
     /* Both are real signals the lib.dom typings do not carry: doNotTrack is
        legacy, globalPrivacyControl is newer than the typings. Read through a
@@ -47,6 +58,7 @@ export function telemetryEnabled() {
 export function telemetryStatus() {
   if (!backendConfigured()) return 'off: backend not configured';
   try {
+    if (typeof document === 'undefined') return 'off: no document (not a browser)';
     if (navigator.webdriver) return 'off: automation (navigator.webdriver)';
     // Same two signals as optedOut, and absent from lib.dom for the same reason.
     const nav = /** @type {any} */ (navigator);
