@@ -278,7 +278,12 @@ export function resetPlanRecord(target=state){
    Deliberately NOT here: `units` (a reader preference — see getUnits), and
    everything resetPlanRecord owns (the plan, its saved row, progress, the 3D
    arrangement). Those have different lifetimes from the answers. */
-export const ANSWERS_VERSION = 1;
+/* 2: the answers are written by every incremental save, not only by a full
+   one, so a row that carries this version has answers as fresh as its plan.
+   Version 1 rows do not, and applyLoadedSpace still re-derives `upgrades` for
+   them rather than trusting a value that may predate the user's last change.
+   Bump this whenever a reader has to be able to tell old rows from new. */
+export const ANSWERS_VERSION = 2;
 
 const freshHousehold = () => ({ adults:2, kidCount:0, petCount:0,
   kids:{present:'no', ages:[]}, pets:{present:'no', types:[]}, mobility:[], notes:'' });

@@ -102,17 +102,6 @@ test('a guest draft round-trips every answer', () => {
     'the measure screen renders from dimsFt, so it must be rehydrated too');
 });
 
-/* `upgrades` is deliberately re-derived from the saved shopping list rather
-   than read back, because nothing keeps the row's copy of it fresh — see the
-   comment in applyLoadedSpace. It is the single documented exception, and the
-   tests below pin it in both directions so it stays deliberate. */
-const ROW_DERIVES = ['upgrades'];
-const exceptRowDerived = (a) => {
-  const out = { ...a };
-  ROW_DERIVES.forEach((k) => { delete out[k]; });
-  return out;
-};
-
 test('a signed-in saved space round-trips every answer', () => {
   fillEveryAnswer();
   const before = wizardAnswers(state);
@@ -122,25 +111,53 @@ test('a signed-in saved space round-trips every answer', () => {
   resetWizardAnswers(state);
   applyLoadedSpace({ data: { ...row, id: 'space-a' }, beforePhotoUrl: null, afterRenderUrl: null });
 
-  assert.deepEqual(exceptRowDerived(wizardAnswers(state)), exceptRowDerived(before));
+  assert.deepEqual(wizardAnswers(state), before);
   assert.equal(state.activeSpaceId, 'space-a');
   assert.deepEqual(state.dimsFt, { w: 12, h: 6.5, d: 2 });
 });
 
-/* The products section is switched on from the report and from Adjust, and
-   both persist through updateSpacePatch, which never rewrites the prefs blob.
-   Reading the stale answer back hid the section — and zeroed the cost tile —
-   for a plan that plainly had products in it. */
-test('a saved shopping list turns the products section back on', () => {
+/* `upgrades` was the answer that exposed the stale-prefs problem: the report's
+   products switch and the Adjust screen change it long after the last full
+   save, and only a full save wrote the prefs column, so the stored value was
+   older than the plan. Now that every incremental write carries the answers, a
+   v2 row's copy is current and is read back as given — in both directions,
+   which is the half a shopping-list derivation could never express. */
+test('a v2 row is trusted about the products section, either way', () => {
   fillEveryAnswer();
-  state.upgrades = false;                 // what the last full save happened to store
+  state.upgrades = false;
+  const off = JSON.parse(JSON.stringify(rowFromState('x')));
+  off.shopping = [{ name: 'Turntable', checked: true }];   // ticked, then switched off
+
+  resetWizardAnswers(state);
+  applyLoadedSpace({ data: { ...off, id: 'x' }, beforePhotoUrl: null, afterRenderUrl: null });
+  assert.equal(state.upgrades, false,
+    'switching the section off has to survive, even with products still ticked');
+
+  fillEveryAnswer();
+  state.upgrades = true;
+  const on = JSON.parse(JSON.stringify(rowFromState('x')));
+  on.shopping = null;                                       // on, nothing ticked yet
+
+  resetWizardAnswers(state);
+  applyLoadedSpace({ data: { ...on, id: 'x' }, beforePhotoUrl: null, afterRenderUrl: null });
+  assert.equal(state.upgrades, true,
+    'turning the section on without ticking anything is still an answer');
+});
+
+/* Rows written before the answers were kept fresh keep the old reading, since
+   for them a stored `upgrades` really can be older than the plan and the
+   shopping list really is the better evidence. */
+test('a v1 row still derives the products section from its shopping list', () => {
+  fillEveryAnswer();
+  state.upgrades = false;
   const row = JSON.parse(JSON.stringify(rowFromState('x')));
+  row.prefs.answers.v = 1;                                  // as an older build wrote it
   row.shopping = [{ name: 'Turntable', checked: true }];
 
   resetWizardAnswers(state);
   applyLoadedSpace({ data: { ...row, id: 'x' }, beforePhotoUrl: null, afterRenderUrl: null });
   assert.equal(state.upgrades, true,
-    'a row with a shopping list must not come back with products hidden');
+    'an old row with products in it must not come back with the section hidden');
 });
 
 /* The gap that made this worth fixing: whichever backend you used decided
@@ -162,7 +179,7 @@ test('both backends carry the same answers', () => {
     return wizardAnswers(state);
   })();
 
-  assert.deepEqual(exceptRowDerived(viaRow), exceptRowDerived(viaDraft),
+  assert.deepEqual(viaRow, viaDraft,
     'the signed-in row and the guest draft must preserve the same answer set');
 });
 

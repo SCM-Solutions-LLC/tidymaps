@@ -15,6 +15,28 @@ function requireClient(){
   return { c, u };
 }
 
+/* The `prefs` column: every wizard answer, in the one serialized form
+   js/state.js defines.
+
+   Its own function because two things write it now. A full save writes it as
+   part of the row, and every incremental write carries it along — see
+   updateSpacePatch, and the reason it has to.
+
+   `answers` is canonical. The flat keys beside it are the shape rows were
+   written in before it existed: still written so a client running the previous
+   build can read a row this one saved, still read on the way back in so a row
+   saved by that build loads here. Derived from `answers`, never typed out a
+   second time. */
+function answersBlob(){
+  const answers = wizardAnswers(state);
+  return { answers,
+           prefs:answers.prefs, budget:answers.budget, effort:answers.effort,
+           setup:answers.setup, setupLabel:answers.setupLabel, setupTouched:answers.setupTouched,
+           shoppingPref:answers.shoppingPref,
+           effortTouched:answers.effortTouched, shoppingTouched:answers.shoppingTouched,
+           toggles:answers.toggles };
+}
+
 /* Exported so a test can drive the full round trip — rowFromState() out,
    applyLoadedSpace() back in. Two hand-maintained halves of one contract is
    how the shopping answer came to be written by neither. */
@@ -26,24 +48,13 @@ export function rowFromState(name){
      set rides in the prefs blob because the spaces table has no column per
      answer; the named columns below stay as they are because queries and the
      dashboard select them. */
-  const answers = wizardAnswers(state);
   return {
     name: name || defaultSpaceName(),
     space_type: state.space,
     goal: state.goal,
     dims: state.dims,
     household: state.household,
-    /* `answers` is canonical. The flat keys beside it are the shape rows were
-       written in before it existed: still written so a client running the
-       previous build can read a row this one saved, still read below so a row
-       saved by that build loads here. Derived from `answers`, never typed out
-       a second time. */
-    prefs: { answers,
-             prefs:answers.prefs, budget:answers.budget, effort:answers.effort,
-             setup:answers.setup, setupLabel:answers.setupLabel, setupTouched:answers.setupTouched,
-             shoppingPref:answers.shoppingPref,
-             effortTouched:answers.effortTouched, shoppingTouched:answers.shoppingTouched,
-             toggles:answers.toggles },
+    prefs: answersBlob(),
     plan: state.ai,
     plan_meta: state.planMeta,
     shopping: state.shopping || null,
@@ -302,23 +313,24 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   state.shopping = data.shopping;
   state.stepDone = (data.progress && data.progress.stepsDone) || [];
   state.arrangement = data.arrangement;
-  /* `upgrades` is the one answer this row does NOT trust, and the reason is
-     freshness rather than principle. The report's own products switch and the
-     Adjust screen both change it long after the plan was saved, and both
-     persist through updateSpacePatch, which only ever writes plan, shopping,
-     progress and arrangement — never the prefs blob. So the stored copy is
-     whatever it happened to be at the last full save, and trusting it hid the
-     products section (and zeroed the cost tile) for anyone who turned products
-     on from Adjust and then reopened the space. The shopping list is written
-     by those same incremental patches, so it is the only signal in the row
-     that is actually current.
+  /* `upgrades` is an answer again, for rows new enough to have kept it fresh.
 
-     The guest draft has no such problem — it is rewritten on every screen
-     change — so it keeps the answer, which is why this exception lives here
-     and not in the shared deserializer. Making the row's copy trustworthy
-     means persisting the answers blob when the switch moves; until then, this
-     is the honest reading. */
-  state.upgrades = !!(data.shopping && data.shopping.length);
+     It could not be trusted while only a full save wrote the prefs column: the
+     report's products switch and the Adjust screen change it long after that
+     save, so the stored value was stale and turning products on from Adjust
+     then reopening the space hid the section with the cost tile reading $0.
+     Re-deriving it from the shopping list was the honest reading of a row
+     whose answers were older than its plan.
+
+     updateSpacePatch carries the answers on every incremental write now, so a
+     v2 row's answers are as current as its plan and the derivation would be
+     the thing losing information — someone who turns the section on without
+     ticking anything means it. Rows written before that keep the old reading,
+     because for them it is still the true one. */
+  const answers = prefs.answers;
+  state.upgrades = (answers && answers.v >= 2)
+    ? !!answers.upgrades
+    : !!(data.shopping && data.shopping.length);
   state.beforePhotoUrl = beforePhotoUrl;
   state.afterRenderUrl = afterRenderUrl;
   return data;
@@ -359,9 +371,36 @@ export function updateSpacePatch(patch){
   const targetId=state.activeSpaceId;
   if(patchTargetId && patchTargetId!==targetId){ flushPatch(); }
   patchTargetId=targetId;
-  Object.assign(pendingPatch, patch);
+  /* The answers ride along with every incremental write.
+
+     Only a FULL save used to write the prefs column, and the report's products
+     switch and the whole Adjust screen change answers long after the last full
+     save — so the row's copy of them was whatever it happened to be at that
+     save, and reopening the space handed back stale answers. `upgrades` is the
+     one that showed: turn products on from Adjust, reopen, and the section was
+     hidden with the cost tile reading $0 over a plan full of products. The
+     workaround was to stop trusting the stored value and re-derive it from the
+     shopping list, which is applyLoadedSpace's job below and was always a
+     patch over this.
+
+     Snapshotted HERE, synchronously, rather than read at flush time 800ms
+     later: `patchTargetId` names the space this write is for, and by the time
+     the timer fires `state` may hold a different space's answers. Reading it
+     then is how one space's columns end up written to another's row — the
+     same mistake snapshotSave exists to prevent on the save path.
+
+     It goes UNDER `patch` so an explicit caller can still override it. */
+  Object.assign(pendingPatch, { prefs: answersBlob() }, patch);
   clearTimeout(patchTimer);
   patchTimer=setTimeout(flushPatch, 800);
+}
+
+/* For a change that touches nothing but the answers. Every current caller
+   changes something else too and so patches anyway, but "the answers moved and
+   no other column did" is a real state and it should not depend on a sibling
+   write happening to exist. */
+export function persistAnswers(){
+  updateSpacePatch({});
 }
 /* Writes are chained rather than fired off in parallel. Two overlapping PATCHes
    of the same row can land in either order, and the loser silently wins. Each

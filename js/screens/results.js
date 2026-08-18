@@ -10,7 +10,7 @@ import { backendConfigured } from '../config.js';
 import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.js';
 import { fileToScaledB64 } from '../media.js';
 import { getSession } from '../auth.js';
-import { updateSpacePatch } from '../db.js';
+import { updateSpacePatch, persistAnswers } from '../db.js';
 import { classifyAction, motifForSpace, glyphForStep, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { track } from '../telemetry.js';
 import { applyCategoryEdits } from '../personalize.js';
@@ -984,7 +984,12 @@ export function renderAfter(mode){
   }).join('');
 }
 export function setUpgrades(on){
+  /* Persist only on an actual change. buildResults calls this on every render
+     to re-apply the current value, and writing the row each time a report is
+     drawn would be a request per navigation for nothing. */
+  const changed = state.upgrades!==on;
   state.upgrades=on;
+  if(changed && getSession()) persistAnswers();
   document.getElementById('res-upgrades-wrap').classList.toggle('hide',!on);
   /* The subtitle used to state flatly that the reader had said they were open
      to buying storage. For anyone who left the preselected card alone that is
