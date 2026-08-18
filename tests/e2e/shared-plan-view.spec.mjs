@@ -15,9 +15,17 @@ import { test, expect } from 'playwright/test';
 
 const SHARE_ID = '1d6dcc74-5b57-486a-bc45-afb14524c5a0';
 
-// What the server sends: sharedSpacePayload() output, nothing more. Household,
-// progress, shopping, user_id, and media paths are absent by construction —
-// the function never selects them.
+/* What the server sends: sharedSpacePayload() output, nothing more. Household,
+   progress, shopping, user_id, and media paths are absent by construction —
+   the function never returns them.
+
+   The plan's own household section is absent for a different reason, and the
+   difference matters to what this file can prove. `safetyNotes` and every
+   row's `safety` are REMOVED by sharedSpacePayload rather than never stored:
+   the analysis writes them from the ages, pets and reach needs the owner gave,
+   and they used to travel. This payload is the shape that arrives after that
+   removal, so the tests below check what a visitor's browser does with a plan
+   that has no household section — which is now every shared plan. */
 const PAYLOAD = {
   space: {
     name: 'Pantry',
@@ -38,25 +46,25 @@ const PAYLOAD = {
       existing: [{ ico: '<svg viewBox="0 0 24 24"></svg>', ft: 'Clear acrylic bins', fd: 'Buy a matching set.' }],
       dontBuy: 'Skip a new shelf unit. You have plenty of shelf space already.',
       features: [{ ico: '<svg viewBox="0 0 24 24"></svg>', ttl: 'Multi-level wall shelving', sub: 'Five shelf levels' }],
-      safetyNotes: ['Keep heavy jars at mid-shelf height'],
       steps: [
-        /* Carries a citation, because the owner's answers travel with the plan.
-           The visitor did not give them, so the report must not tell them they
-           did — see the assertion below. */
-        { t: 'Pull everything off the shelves and sort into category piles', m: '45 min', w: 'You cannot see what you have until it is all out.', cite: 'You asked for labels and categories' },
+        /* No `cite`: the citation is the owner's own wizard answer quoted back,
+           and the server strips it now rather than relying on the report to
+           hide it. The client-side guard is still asserted below, because a
+           row saved by an older build can still carry one. */
+        { t: 'Pull everything off the shelves and sort into category piles', m: '45 min', w: 'You cannot see what you have until it is all out.' },
         { t: 'Toss expired items and donate duplicates', m: '15 min', w: 'Less stuff means less to organize.' },
       ],
       map: [
         {
           lv: 'Top shelf: left and back wall', zone: 'Rarely used appliances and bulk backup',
           why: 'Large items live here out of the way.', eye: false, shelfIndex: 0, surface: 'shelf',
-          ic: '<svg viewBox="0 0 24 24"></svg>', safety: { flag: null, why: null },
+          ic: '<svg viewBox="0 0 24 24"></svg>',
           items: [{ name: 'Rice cooker', size: 'l', flags: [] }],
         },
         {
           lv: 'Eye-level shelf: left wall', zone: 'Daily grab items: snacks, spreads',
           why: 'Eye level is prime real estate.', eye: true, shelfIndex: 1, surface: 'shelf',
-          ic: '<svg viewBox="0 0 24 24"></svg>', safety: { flag: null, why: null },
+          ic: '<svg viewBox="0 0 24 24"></svg>',
           items: [{ name: 'Snack bags', size: 's', flags: [] }],
         },
       ],
@@ -127,10 +135,17 @@ test('nothing personal is on the page, because nothing personal was sent', async
   // No photos: the payload carries no media path and no signed URL exists.
   await expect(page.locator('#after-photo')).toBeHidden();
 
-  /* The plan's own safetyNotes are deliberately NOT checked for here: they are
-     on the share allowlist and they should be. They are placement advice that
-     belongs to the plan ("keep heavy jars at mid-shelf height"), not a
-     description of who lives there. */
+  /* The plan's own safety section used to be exempt from this, on the reasoning
+     that "keep heavy jars at mid-shelf height" is placement advice about the
+     space rather than a description of who lives there. Some of it is. But the
+     analysis is asked to write those notes from the household — to name the
+     child's age in a row's safety.why, to name the pet type the owner gave —
+     and the report heads the section "Safety notes for your household". The
+     server drops it now, so the visitor's page must have nowhere to put it. */
+  await expect(page.locator('#res-safety-notes .safety-note')).toHaveCount(0);
+  // The per-row badge ("kid safe", "lock or latch") is the same disclosure in
+  // two words: it is the only `.tag` the map renders.
+  await expect(page.locator('#res-map .tag')).toHaveCount(0);
 
   /* Scoped to the report, not the document: every screen lives in index.html
      at once, so the hidden wizard's household stepper carries data-k="kidCount"
@@ -165,4 +180,52 @@ test('a shared plan does not tell the visitor what they asked for', async ({ pag
   expect(await page.locator('#res-steps .step-cite').count()).toBe(0);
   // the step itself is still there — it is the attribution that is dropped
   await expect(page.locator('#res-steps .tname').first()).toContainText(/pull everything off the shelves/i);
+});
+
+/* A plan with no safety section reads as a plan that needs none, and for a
+   space with bleach in it that is a worse outcome than the disclosure was.
+   The banner says so — on every shared plan, in the same words, whether or
+   not this one had notes removed. A line that appeared only when there was
+   something to hide would announce that there was something to hide. */
+test('the visitor is told the household section is missing, on every plan', async ({ page }) => {
+  await openShared(page);
+  await expect(page.locator('#screen-results')).toBeVisible({ timeout: 20000 });
+  const banner = page.locator('#res-share-note');
+  await expect(banner).toContainText('leave out everything about the owner’s household');
+  await expect(banner).toContainText('safety notes');
+
+  /* The same words for a plan that plainly never had a household section: a
+     one-shelf plan with no safety anything. If this line were conditional,
+     the two payloads would read differently and the difference would be the
+     leak. */
+  await openShared(page, {
+    space: {
+      ...PAYLOAD.space,
+      plan: { ...PAYLOAD.space.plan, map: [PAYLOAD.space.plan.map[0]], geometry: { ...PAYLOAD.space.plan.geometry, shelfCount: 1, shelfYFracs: [0.08] } },
+    },
+  });
+  await expect(page.locator('#screen-results')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#res-share-note')).toContainText('leave out everything about the owner’s household');
+});
+
+/* Redaction can empty a list — a plan whose only opportunity was the
+   household's own note comes back with none. The report fills an empty
+   problems/opportunities list with a sample one, which is fine for a plan
+   that has not been built yet and is not fine here: it would render six
+   sentences nobody wrote as this owner's findings about their own space. */
+test('a shared plan never fills its gaps with sample content', async ({ page }) => {
+  await openShared(page, {
+    space: {
+      ...PAYLOAD.space,
+      plan: { ...PAYLOAD.space.plan, problems: [], opportunities: [] },
+    },
+  });
+  await expect(page.locator('#screen-results')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#res-steps .task').first()).toBeVisible();
+
+  await expect(page.locator('#res-problems li')).toHaveCount(0);
+  await expect(page.locator('#res-opps li')).toHaveCount(0);
+  const report = await page.locator('#screen-results').innerHTML();
+  expect(report, 'the sample plan’s prose reached a visitor as the owner’s')
+    .not.toContain('Frequently used snacks are too high');
 });
