@@ -54,7 +54,7 @@ test('garage/utility-shelving with 2 kids: safety flags allowed, valid plan pass
   assert.equal(result.ok, true, result.errors && result.errors.join('; '));
 });
 
-test('vanity without kids present: a safety flag on any row is rejected', () => {
+test('a safety flag with nobody in the house to protect is rejected', () => {
   const plan = basePlan({
     map: [
       { level: 'Under sink', icon: 'down', zone: 'Cleaning supplies', why: 'Out of the way.', shelfIndex: 0, safety: { flag: 'lock-or-latch', why: 'Kept locked.' } },
@@ -62,7 +62,28 @@ test('vanity without kids present: a safety flag on any row is rejected', () => 
   });
   const result = validatePlan(plan, noKidsContext);
   assert.equal(result.ok, false);
-  assert.match(result.errors.join('\n'), /safety flag "lock-or-latch" is set but no kids are present/);
+  assert.match(result.errors.join('\n'), /no kids and no pets/);
+});
+
+/* The prompt tells the model that a cat reaches ANY height, so "a closed door
+   or latch is the barrier and height is not" — and the validator rejected
+   every flag without kids, which made that instruction impossible to follow.
+   A pet household's correctly latched cabinet was thrown away for being
+   latched. */
+test('a pet household may latch a cabinet, which is the only barrier that works', () => {
+  const plan = basePlan({
+    map: [
+      { level: 'Floor level', icon: 'down', zone: 'Cleaning supplies', why: 'Out of the way.', shelfIndex: 0,
+        safety: { flag: 'lock-or-latch', why: 'Latched, because the cat can reach any shelf.' } },
+    ],
+  });
+  const petsContext = { effort: 'Weekend project', household: { kids: { present: false }, pets: { present: true, types: ['Cat'] } } };
+  const result = validatePlan(plan, petsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+
+  // kid-safe still means what it says: that one needs kids.
+  plan.map[0].safety = { flag: 'kid-safe', why: 'Reachable.' };
+  assert.match(validatePlan(plan, petsContext).errors.join('\n'), /"kid-safe" is set but no kids/);
 });
 
 test('vanity without kids present: no safety flags at all is valid', () => {
@@ -109,8 +130,15 @@ test('two map rows claiming the same shelfIndex are rejected instead of double-c
   assert.match(result.errors.join('\n'), /duplicates shelfIndex 0/);
 });
 
-test('shelfIndex out of range for the reported shelfCount is rejected', () => {
-  const plan = basePlan({ map: [{ level: 'Ghost shelf', icon: 'up', zone: 'Nothing', why: 'n/a', shelfIndex: 5, safety: { flag: null, why: null } }], shelfCount: 2 });
+test('a shelfIndex pointing at a row the map does not have is rejected', () => {
+  // shelfCount is aligned to the map before this runs, so the range a row has
+  // to fall inside is the map's own length — here, two rows.
+  const plan = basePlan({
+    map: [
+      { level: 'Top shelf', icon: 'up', zone: 'Bulk', why: 'Rarely used.', shelfIndex: 0, safety: { flag: null, why: null } },
+      { level: 'Ghost shelf', icon: 'up', zone: 'Nothing', why: 'n/a', shelfIndex: 5, safety: { flag: null, why: null } },
+    ],
+  });
   const result = validatePlan(plan, noKidsContext);
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /out of range for shelfCount 2/);
@@ -464,7 +492,7 @@ test('a plan that instructs a purchase and lists nothing to buy is rejected', ()
     'Set up can risers and stock canned goods',
   ], []), OPEN_TO_BUYING);
   assert.equal(r.ok, false);
-  const err = r.errors.find(e => /productNeeds is empty/.test(e));
+  const err = r.errors.find(e => /productNeeds does not list/.test(e));
   assert.ok(err, `no coherence error raised: ${r.errors.join(' | ')}`);
   // The message has to name the step and the product, or the retry cannot act on it.
   assert.match(err, /turntable/);
@@ -535,4 +563,225 @@ test('an unfamiliar or missing id degrades quietly', () => {
   for (const weird of ['-', '--', 'claude-latest', 42, {}]) {
     assert.doesNotThrow(() => modelLabel(weird), `threw on ${JSON.stringify(weird)}`);
   }
+});
+
+/* ---------- the household safety contract, enforced ----------
+
+   The prompt states five hard rules in the imperative ("must NEVER", "every
+   safety-driven placement must") and checkInvariants used to check one of
+   them: a flag set with no kids. The four it did not check are the ones about
+   where the bleach goes, which is the wrong half to leave to model
+   compliance. Each test below is one of those rules, with its counterpart
+   showing the plan that should still pass — a safety check that rejects good
+   plans gets turned off, and then none of them are checked. */
+
+// height above the floor = geometry.height * (1 - shelfYFracs[shelfIndex]),
+// the same arithmetic the 3D viewer draws with. 72in tall: frac 0.9 is ~7in
+// off the floor, frac 0.1 is ~65in up.
+const reachPlan = ({ frac, flag = null, why = null, flags = ['chemical'], itemName = 'Drain cleaner' }) => ({
+  spaceType: 'Utility shelving',
+  summary: 'Utility shelving in the garage.',
+  map: [{
+    level: 'A shelf', icon: 'down', zone: 'Cleaning supplies', why: 'Grouped together.',
+    shelfIndex: 0, safety: { flag, why },
+    items: [{ name: itemName, size: 'm', flags }],
+  }],
+  geometry: { unit: 'in', width: 36, height: 72, depth: 18, shelfCount: 1, shelfYFracs: [frac], estimated: true },
+  steps: [
+    { task: 'Empty the shelf', time: '10 min', why: 'Start clean.' },
+    { task: 'Group like items', time: '10 min', why: 'Easy to keep.' },
+    { task: 'Put items back by zone', time: '10 min', why: 'Every item has a home.' },
+  ],
+  productNeeds: [],
+});
+const toddlerContext = {
+  effort: 'Quick refresh',
+  household: { kids: { present: true, ages: ['Toddler'], ageYears: { min: 1, max: 4 } } },
+};
+
+test('a hazard within a small child’s reach is rejected, not just discouraged', () => {
+  const r = validatePlan(reachPlan({ frac: 0.9 }), toddlerContext);
+  assert.equal(r.ok, false);
+  const err = r.errors.join('\n');
+  // The message has to name the item, the height, and both ways out.
+  assert.match(err, /Drain cleaner/);
+  assert.match(err, /7in from the floor/);
+  assert.match(err, /lock-or-latch/);
+});
+
+test('the same hazard is fine latched, or out of reach', () => {
+  const latched = validatePlan(reachPlan({ frac: 0.9, flag: 'lock-or-latch', why: 'Latched, out of reach of a toddler.' }), toddlerContext);
+  assert.equal(latched.ok, true, latched.errors.join('; '));
+
+  const high = validatePlan(reachPlan({ frac: 0.1 }), toddlerContext);
+  assert.equal(high.ok, true, high.errors.join('; '));
+
+  // And a household of teenagers is not the household this rule protects.
+  const teens = validatePlan(reachPlan({ frac: 0.9 }), {
+    effort: 'Quick refresh',
+    household: { kids: { present: true, ages: ['Teen'], ageYears: { min: 13, max: 17 } } },
+  });
+  assert.equal(teens.ok, true, teens.errors.join('; '));
+});
+
+test('kids present but no ages given still gets the height rule', () => {
+  // An age nobody gave is not evidence of an older child.
+  const r = validatePlan(reachPlan({ frac: 0.95 }), {
+    effort: 'Quick refresh', household: { kids: { present: true } },
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.errors.join('\n'), /within reach of a child/);
+});
+
+test('an item that is merely low is not a hazard', () => {
+  // The rule is about the four hazard flags, not about everything on the
+  // bottom shelf. Over-rejecting here would cost a retry on every good plan.
+  const r = validatePlan(reachPlan({ frac: 0.9, flags: [], itemName: 'Tea towels' }), toddlerContext);
+  assert.equal(r.ok, true, r.errors.join('; '));
+});
+
+test('a safety flag with no reason is rejected', () => {
+  for (const why of [null, '', '   ']) {
+    const r = validatePlan(reachPlan({ frac: 0.1, flag: 'keep-high', why }), toddlerContext);
+    assert.equal(r.ok, false, `safety.why ${JSON.stringify(why)} passed as an explanation`);
+    assert.match(r.errors.join('\n'), /has no safety\.why/);
+  }
+});
+
+test('a child’s daily things on a locked shelf is a plan nobody can follow', () => {
+  const r = validatePlan(reachPlan({
+    frac: 0.1, flag: 'keep-high', why: 'Out of reach.',
+    flags: ['kid-frequent'], itemName: 'Their snack box',
+  }), toddlerContext);
+  assert.equal(r.ok, false);
+  assert.match(r.errors.join('\n'), /"Their snack box" is flagged "kid-frequent" on a row flagged "keep-high"/);
+});
+
+/* ---------- geometry.shelfCount ---------- */
+
+/* The prompt calls this a hard limit and nothing checked it: the row-index
+   rules only require each shelfIndex to be INSIDE the count, so five rows with
+   shelfCount 8 passed. The client then keeps the model's count and clamps
+   every shelfIndex into it, so a count under the map stacks two zones onto one
+   shelf in the 3D view, and a count over it draws shelves nothing describes. */
+test('shelfCount is corrected to the map rather than costing a retry', () => {
+  const plan = basePlan({ shelfCount: 8 });   // two map rows
+  const r = validatePlan(plan, noKidsContext);
+  assert.equal(r.ok, true, r.errors.join('; '));
+  assert.equal(r.value.geometry.shelfCount, 2);
+  assert.equal(r.value.geometry.shelfYFracs.length, 2, 'the fracs have to follow the count');
+
+  // Under-counting is the damaging direction, and it is repaired the same way.
+  const under = validatePlan(basePlan({ shelfCount: 1 }), noKidsContext);
+  assert.equal(under.ok, true, under.errors.join('; '));
+  assert.equal(under.value.geometry.shelfCount, 2);
+});
+
+/* ---------- productNeeds vs the plan it belongs to ---------- */
+
+test('one listed product does not excuse every other purchase in the plan', () => {
+  /* The coherence check ran only when productNeeds was ENTIRELY empty, so a
+     plan that listed a label set and then instructed turntables and risers
+     passed — the shopping list adds up the labels, and the checklist cannot be
+     done without the rest. */
+  const r = validatePlan(coherencePlan([
+    'Place turntables and load spices',
+    'Set up can risers for the soup',
+    'Label the shelf edges',
+  ], [{ type: 'label-set', qty: 1, purpose: 'Label zones', targetZone: 'Top shelf', maxDims: null, priority: 'nice' }]),
+  OPEN_TO_BUYING);
+  assert.equal(r.ok, false);
+  const err = r.errors.find(e => /productNeeds does not list/.test(e));
+  assert.ok(err, `no coherence error raised: ${r.errors.join(' | ')}`);
+  assert.match(err, /turntable/);
+  assert.match(err, /can-riser or shelf-riser/);
+});
+
+test('a plan may list one product and instruct only that one', () => {
+  const r = validatePlan(coherencePlan([
+    'Place turntables and load spices', 'Sort items by category', 'Label the shelf edges',
+  ], [
+    { type: 'turntable', qty: 2, purpose: 'Rotate spices', targetZone: 'Top shelf', maxDims: null, priority: 'high' },
+    { type: 'label-set', qty: 1, purpose: 'Label zones', targetZone: 'Top shelf', maxDims: null, priority: 'nice' },
+  ]), OPEN_TO_BUYING);
+  assert.equal(r.ok, true, r.errors.join('; '));
+});
+
+test('a shopping list for someone who chose to buy nothing is rejected', () => {
+  /* The other half of the same answer. The prompt requires an EMPTY
+     productNeeds from someone who chose "Use what I have", and nothing checked
+     it — so a shopping list could sit under a report promising every step
+     works with what is already in the space. */
+  const r = validatePlan(coherencePlan(['Sort items by category', 'Label the shelf edges', 'Group like with like'], [
+    { type: 'clear-bin', qty: 4, purpose: 'Corral packets', targetZone: 'Top shelf', maxDims: null, priority: 'high' },
+  ]), { shopping: 'Use what I have', shoppingTouched: true, effort: 'Quick refresh' });
+  assert.equal(r.ok, false);
+  assert.match(r.errors.join('\n'), /chose to use only what they already have/);
+});
+
+test('the preselected "Use what I have" is not an answer, so it constrains nothing', () => {
+  /* PR #84 stopped treating the untouched default as a choice, in the prompt
+     and in the client. The validator still read the bare value, so it went on
+     enforcing a rule the model was no longer being given — the two halves of
+     one answer disagreeing, which is the failure this whole block exists to
+     prevent. */
+  const untouched = { shopping: 'Use what I have', shoppingTouched: false, effort: 'Quick refresh' };
+  const r = validatePlan(coherencePlan(['Sort items by category', 'Label the shelf edges', 'Group like with like'], [
+    { type: 'clear-bin', qty: 4, purpose: 'Corral packets', targetZone: 'Top shelf', maxDims: null, priority: 'high' },
+  ]), untouched);
+  assert.equal(r.ok, true, r.errors.join('; '));
+
+  // ...and the coherence rule applies to them like anyone else who might buy.
+  const incoherent = validatePlan(coherencePlan([
+    'Place turntables and load spices', 'Sort items by category', 'Label the shelf edges',
+  ], []), untouched);
+  assert.equal(incoherent.ok, false);
+  assert.match(incoherent.errors.join('\n'), /productNeeds does not list/);
+});
+
+/* The prompt has to state every rule the validator applies, or the user pays
+   80 seconds to discover it. These are the new ones. */
+test('the enforced-limits block states the safety rules the validator applies', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  // Derived from the validator's own constants, never retyped.
+  assert.match(fn, /KID_REACH_IN, YOUNG_KID_MAX_AGE \} from '\.\.\/_shared\/planSchema\.js'/);
+  assert.match(fn, /\$\{KID_REACH_IN\}in of the floor/);
+  assert.match(fn, /aged \$\{YOUNG_KID_MAX_AGE\} or under/);
+  // Every flagged row needs a reason, and kid-frequent items are not locked away.
+  assert.match(fn, /EVERY flagged row must carry a plain-language safety\.why/);
+  assert.match(fn, /must not sit on a row flagged "keep-high" or "lock-or-latch"/);
+  // A pet household is told which flags it may use, rather than told none.
+  assert.match(fn, /"lock-or-latch" and "keep-high" are available for the pets/);
+  // The per-item coherence rule says it is per item.
+  assert.match(fn, /checked per item, so listing one product does not cover the others/);
+});
+
+/* The height rule applies to two flags, and the two it leaves alone are the
+   point of this test.
+
+   The prompt used to name four — heavy, chemical, sharp, fragile — and
+   enforcing that literally would have rejected 12 of the 16 deterministic
+   scenarios, for placements those scenarios are RIGHT about: "Heavy bins go
+   low so kids pull them out safely" is this app's own copy, and a rule that
+   pushed heavy bins overhead to satisfy a child-safety check would have
+   produced the plan that actually injures somebody. */
+test('heavy and fragile items belong low with children in the house', () => {
+  for (const flag of ['heavy', 'fragile']) {
+    const r = validatePlan(reachPlan({ frac: 0.95, flags: [flag], itemName: 'Bin of blocks' }), toddlerContext);
+    assert.equal(r.ok, true, `a ${flag} item placed low was rejected: ${r.errors.join('; ')}`);
+  }
+  // ...while the two that hurt a child who reaches them are still checked.
+  for (const flag of ['chemical', 'sharp']) {
+    const r = validatePlan(reachPlan({ frac: 0.95, flags: [flag], itemName: 'Drain cleaner' }), toddlerContext);
+    assert.equal(r.ok, false, `a ${flag} item within reach passed`);
+  }
+});
+
+test('the prompt gives the two height rules in opposite directions, on purpose', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /Chemical or sharp items must NEVER be placed below 48 inches/);
+  assert.match(fn, /Heavy items go LOW when there are children, and never overhead/);
+  // The contradiction is explained where the model reads it, not left to be
+  // resolved by whichever sentence it happened to weight more.
+  assert.match(fn, /it is not a contradiction/);
 });
