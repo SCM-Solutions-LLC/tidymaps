@@ -195,7 +195,18 @@ function isProtected(st) {
    put the badge on the bathroom's latched chemicals caddy; skipping every
    flagged row entirely picked the pantry's narrow door rack. So: keep the
    original low-zone preference, then walk upward past anything already
-   carrying a flag of its own. */
+   carrying a flag of its own.
+
+   And past anything holding a hazard, flagged or not, which is the half that
+   was missing. "Carries a flag" was standing in for "is dangerous", and it is
+   not the same test: the garage's floor level holds garden tools and says
+   nothing about them, so it was the lowest UNFLAGGED row and won the badge —
+   "Lower zones stay kid-accessible and free of hazards", printed over the
+   garden tools. The items say what is in there; read those. */
+const HAZARDOUS_ITEM_FLAGS = ['chemical', 'sharp'];
+const holdsHazard = (row) => (row && row.items || [])
+  .some(it => it && (it.flags || []).some(f => HAZARDOUS_ITEM_FLAGS.includes(f)));
+
 export function lowestUnflaggedZone(map) {
   const rows = Array.isArray(map) ? map : [];
   const order = [];
@@ -204,7 +215,7 @@ export function lowestUnflaggedZone(map) {
   for (let i = rows.length - 3; i >= 0; i--) order.push(i);
   for (const i of order) {
     const m = rows[i];
-    if (m && (!m.safety || !m.safety.flag)) return m;
+    if (m && (!m.safety || !m.safety.flag) && !holdsHazard(m)) return m;
   }
   return null;
 }

@@ -314,7 +314,9 @@ function garageScenario() {
       {level: 'Lower shelf', icon: 'down', zone: 'Power tools · Automotive · Heavy equipment',
         why: 'Heavy power tools are safer on lower shelves where they cannot fall far.',
         eye: false, shelfIndex: 3,
-        safety: {flag: 'kid-safe', why: 'Power tools should stay out of easy reach for small children.'},
+        // Same contradiction as the laundry's lower shelf: a kid-safe badge on
+        // power tools and automotive chemicals.
+        safety: {flag: 'lock-or-latch', why: 'Power tools should stay out of easy reach for small children.'},
         items: [{name: 'Power tools', size: 'l', flags: ['heavy', 'sharp']}, {name: 'Automotive supplies', size: 'm', flags: ['chemical']}, {name: 'Extension cords', size: 'm', flags: []}], surface: 'shelf'},
       {level: 'Floor level', icon: 'down', zone: 'Sports gear · Garden equipment · Large items',
         why: 'Bulky gear stores best on the floor where it is easy to grab and return.',
@@ -405,7 +407,10 @@ function laundryScenario() {
       {level: 'Lower shelf / wall', icon: 'down', zone: 'Iron & steamer · Cleaning sprays · Misc supplies',
         why: 'Heavier items like the iron stay low; cleaning sprays stay separate from textiles.',
         eye: false, shelfIndex: 3,
-        safety: {flag: 'kid-safe', why: 'Cleaning sprays and the hot iron should be out of reach for small children.'},
+        /* Was flagged `kid-safe` — the green badge — over a reason that says
+           the opposite. A shelf holding cleaning sprays and a hot iron is
+           not where a child helps themselves. */
+        safety: {flag: 'lock-or-latch', why: 'Cleaning sprays and the hot iron should be out of reach for small children.'},
         items: [{name: 'Iron & steamer', size: 'm', flags: ['heavy']}, {name: 'Cleaning sprays', size: 's', flags: ['chemical']}, {name: 'Sponges & brushes', size: 's', flags: []}], surface: 'shelf'}
     ],
     geometry: {unit: 'in', width: 36, height: 48, depth: 14, shelfCount: 4, shelfYFracs: [0.08, 0.35, 0.62, 0.90], estimated: true},
@@ -474,7 +479,14 @@ function kidsScenario() {
       {level: 'Top shelf', icon: 'up', zone: 'Board games · Puzzles · Small-piece items',
         why: 'Items with small pieces belong on the highest shelf, supervised by an adult.',
         eye: false, shelfIndex: 0,
-        safety: {flag: 'kid-safe', why: 'Small game pieces and puzzle parts are choking hazards for children under 3.'},
+        /* The third of these, and in the kids' room of all places: the badge
+           said kid-safe over a reason about choking hazards, on the row whose
+           own `why` says it is the highest shelf and adult-supervised. The
+           items carry no hazard flag — "choking hazard" is not in the flag
+           vocabulary — so enforceHazardZones cannot reach this one, which is
+           why the data is where it gets fixed. `keep-high` is what the row
+           was already describing. */
+        safety: {flag: 'keep-high', why: 'Small game pieces and puzzle parts are choking hazards for children under 3.'},
         items: [{name: 'Board games', size: 'l', flags: []}, {name: 'Puzzles', size: 'm', flags: []}, {name: 'Small-piece kits', size: 's', flags: []}], surface: 'shelf'},
       {level: 'Eye level (kid height)', icon: 'eye', zone: 'Books · Coloring books · Favorite toys',
         why: 'Kid eye level means they will actually choose and return these items independently.',
@@ -1455,6 +1467,94 @@ function isPresent(v) {
   return v === true || v === 'yes';
 }
 
+/* ---------- hazard zones ----------
+
+   The analysis path has this rule enforced against the model
+   (checkInvariants in supabase/functions/_shared/planSchema.js): with a young
+   child in the house, a chemical or sharp item may not sit within reach
+   without a barrier, and a row the plan flags as restricted may not also be
+   the row a child is sent to. These plans are written by us rather than by a
+   model, so nothing was checking them at all — and five of the sixteen put
+   hazards in a toddler's reach with the plan saying nothing: cleaning sprays
+   and detergent in the laundry, garden tools on the garage floor, sharp tools
+   in the junk drawer, fasteners in the bench drawers.
+
+   Two of them said something worse than nothing. The laundry's lower shelf
+   and the garage's lower shelf were flagged `kid-safe` — the green badge —
+   while their own reason said "should be out of reach for small children".
+   Both are fixed in the scenario data; this pass is what stops the next one,
+   and covers every scenario rather than the two that were found.
+
+   Zone-based rather than height-based, unlike the validator, and that is
+   deliberate: the model reports a real measured geometry, while these
+   scenarios carry an estimate that the client later rescales to whatever the
+   user measured (normalizeGeometry in js/plan.js). A rule that read inches
+   here would be reasoning about a unit that does not exist yet. What a zone
+   HOLDS, and what the plan has already said about it, both survive that
+   rescaling. */
+export const HAZARD_ITEM_FLAGS = ['chemical', 'sharp'];
+/* The wizard's age bands that fall inside the validator's 0-9 rule
+   (KID_AGE_YEARS in js/wizard-data.js: Baby 0-1, Toddler 1-4, Big kid 5-12,
+   Teen 13-17). Duplicated rather than imported for the same reason the
+   validator duplicates evenShelfFracs — that module is shared with Deno and
+   cannot be reached from here — and pinned to the server's own constant by a
+   parity test in tests/plan-schema.test.mjs. */
+export const YOUNG_KID_BANDS = /^(baby|toddler|big kid)$/i;
+
+const hazardNames = (row) => (row.items || [])
+  .filter(it => it && (it.flags || []).some(f => HAZARD_ITEM_FLAGS.includes(f)))
+  .map(it => it.name)
+  .filter(Boolean);
+
+const listNames = (names) => (names.length > 1
+  ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+  : names[0]);
+
+function enforceHazardZones(plan, household) {
+  const ages = (household && household.kids && household.kids.ages) || [];
+  // An age nobody gave is not evidence of an older child — the same reading
+  // the validator takes.
+  const young = !ages.length || ages.some(a => YOUNG_KID_BANDS.test(String(a || '').trim()));
+
+  (plan.map || []).forEach(row => {
+    const hazards = hazardNames(row);
+    if (!hazards.length) return;
+    row.safety = row.safety || { flag: null, why: null };
+
+    /* A zone holding a hazard is never the kid-safe one, at any age. The
+       badge is a positive claim — "your child may help themselves here" —
+       and it was printed over cleaning sprays and a hot iron. */
+    if (row.safety.flag === 'kid-safe') {
+      row.safety = {
+        flag: 'lock-or-latch',
+        why: `${listNames(hazards)} live here, so this zone needs a latch rather than open access.`,
+      };
+      return;
+    }
+    if (!young) return;
+
+    /* `keep-high` is not something a drawer or a cupboard can deliver: the
+       row is where it is, and telling somebody to keep the knife drawer high
+       is advice about furniture they do not have. Where the plan reached for
+       it on an enclosed surface, the barrier it meant is a latch. Everywhere
+       else the plan has already decided, and this leaves it alone. */
+    const enclosed = row.surface === 'drawer' || row.surface === 'door';
+    if (row.safety.flag && !(enclosed && row.safety.flag === 'keep-high')) return;
+
+    /* One resolution, matching the validator's: a hazard the plan leaves
+       within reach needs a barrier. "Keep high" on a row that keeps them low
+       describes the plan we did not write — the placement is what is
+       dangerous, so the badge has to be about the placement. The wording
+       carries what a latch means on open shelving. */
+    row.safety = {
+      flag: 'lock-or-latch',
+      why: enclosed
+        ? `${listNames(hazards)} are in reach here, so latch this one while the children are small.`
+        : `${listNames(hazards)} are in reach here: latch this zone, or move them above a small child's reach.`,
+    };
+  });
+}
+
 const KID_WORDS = /kid|child|little hands|small hands/i;
 
 /* Kid-phrase rewrites, applied before the sentence-level scrub. Deleting
@@ -1688,6 +1788,12 @@ function applyHousehold(plan, household) {
 
   // Kids present
   if (kidsPresent) {
+    /* First, before anything reads the flags below it. The kid-safe zone is
+       picked from the rows that carry no flag of their own, so a hazard row
+       wrongly flagged kid-safe would satisfy that check and suppress a real
+       one — and a hazard row this pass has just flagged is correctly no
+       longer a candidate for it. */
+    enforceHazardZones(plan, household);
     if (!plan.safetyNotes.some(n => /kid|child/i.test(n))) {
       plan.safetyNotes.push('With children in the household, heavy and hazardous items are kept on upper shelves.');
     }

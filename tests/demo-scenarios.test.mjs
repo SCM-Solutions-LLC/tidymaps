@@ -352,3 +352,134 @@ test('the same plan in the other system differs only in its measurements', () =>
   assert.match(metric.summary, /56 cm wide and 198 cm tall/);
   assert.match(imperial.summary, /1′10″ wide and 6′6″ tall/);
 });
+
+/* ---------- hazards, in the plans we write ourselves ----------
+
+   The analysis path has this contract enforced against the model. These
+   scenarios are our own data, so nothing checked them, and five of the
+   sixteen put chemical or sharp items within a toddler's reach with the plan
+   saying nothing about it — cleaning sprays at ankle height in the laundry,
+   garden tools on the garage floor, sharp tools in the junk drawer.
+
+   Three said something worse than nothing: a green "kid safe" badge on the
+   laundry shelf holding cleaning sprays and a hot iron, on the garage shelf
+   holding power tools and automotive chemicals, and — in the kids' room — on
+   the shelf whose own reason reads "choking hazards for children under 3".
+
+   These plans are what a visitor sees offline, on an AI failure, and behind
+   "View a sample plan", so they are read by exactly the households the rule
+   protects. */
+
+import { HAZARD_ITEM_FLAGS, YOUNG_KID_BANDS } from '../js/demo-scenarios.js';
+import { HAZARD_ITEM_FLAGS as SERVER_HAZARD_FLAGS, YOUNG_KID_MAX_AGE } from '../supabase/functions/_shared/planSchema.js';
+import { KID_AGE_YEARS } from '../js/wizard-data.js';
+
+const SCENARIO_KEYS = ['pantry', 'cabinet', 'closet', 'walkin', 'garage', 'laundry', 'kids', 'attic',
+  'drawers', 'junk', 'bathroom', 'linen', 'fridge', 'dresser', 'workbench', 'other'];
+const toddlerHousehold = {
+  adults: 2, kidCount: 1, petCount: 0,
+  kids: { present: 'yes', ages: ['Toddler'] }, pets: { present: 'no', types: [] }, mobility: [], notes: '',
+};
+const hazardRows = (plan) => (plan.map || []).filter(row =>
+  (row.items || []).some(it => (it.flags || []).some(f => HAZARD_ITEM_FLAGS.includes(f))));
+
+test('no scenario leaves a hazard zone unaddressed for a household with a toddler', () => {
+  for (const key of SCENARIO_KEYS) {
+    const plan = getDemoScenario(key, 'find', toddlerHousehold, { household: toddlerHousehold });
+    for (const row of hazardRows(plan)) {
+      const flag = row.safety && row.safety.flag;
+      const names = (row.items || []).map(i => i.name).join(', ');
+      assert.ok(flag, `${key} / "${row.level}" holds ${names} and the plan says nothing about it`);
+      assert.notEqual(flag, 'kid-safe', `${key} / "${row.level}" holds ${names} under a kid-safe badge`);
+      assert.ok(String(row.safety.why || '').trim(), `${key} / "${row.level}" is flagged ${flag} with no reason`);
+    }
+  }
+});
+
+test('a hazard zone is never the kid-safe one, whatever the children’s ages', () => {
+  // The badge is a positive claim — "your child may help themselves here" —
+  // so unlike the placement rule it does not wait for a young age band.
+  for (const ages of [['Toddler'], ['Big kid'], ['Teen'], []]) {
+    const household = { ...toddlerHousehold, kids: { present: 'yes', ages } };
+    for (const key of ['laundry', 'garage', 'kids']) {
+      const plan = getDemoScenario(key, 'find', household, { household });
+      for (const row of hazardRows(plan)) {
+        assert.notEqual(row.safety && row.safety.flag, 'kid-safe',
+          `${key} / "${row.level}" is kid-safe with ages ${JSON.stringify(ages)}`);
+      }
+    }
+  }
+});
+
+test('the barrier is named for what the surface can actually do', () => {
+  const junk = getDemoScenario('junk', 'find', toddlerHousehold, { household: toddlerHousehold });
+  const drawer = junk.map.find(m => (m.items || []).some(it => (it.flags || []).includes('sharp')));
+  assert.equal(drawer.safety.flag, 'lock-or-latch');
+  assert.match(drawer.safety.why, /latch/i);
+  // The reason names what is in there, so it reads as being about this space.
+  assert.match(drawer.safety.why, /Small tools/);
+
+  // An open shelf cannot hold a latch, so the wording carries the other way out.
+  const laundry = getDemoScenario('laundry', 'find', toddlerHousehold, { household: toddlerHousehold });
+  const openShelf = laundry.map.find(m => m.surface === 'shelf'
+    && (m.items || []).some(it => (it.flags || []).includes('chemical'))
+    && /move them above/.test((m.safety && m.safety.why) || ''));
+  assert.ok(openShelf, 'an open shelf of chemicals should offer moving them up as the alternative');
+});
+
+test('a teenage household is not told to latch the cleaning cupboard', () => {
+  /* The placement rule protects small children. A plan that latched every
+     hazard for every household would be advice nobody follows, and the
+     scenario's own decisions would stop meaning anything. */
+  const teens = { ...toddlerHousehold, kids: { present: 'yes', ages: ['Teen'] } };
+  const plan = getDemoScenario('workbench', 'find', teens, { household: teens });
+  const benchDrawers = plan.map.find(m => /bench drawers/i.test(m.level || ''));
+  assert.ok(benchDrawers, 'the workbench scenario should still have its bench drawers');
+  assert.equal(benchDrawers.safety.flag, null, 'a teen household got the toddler treatment');
+});
+
+test('a household with no kids gets no kid-driven flags at all', () => {
+  const none = { adults: 1, kidCount: 0, petCount: 0, kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' };
+  for (const key of ['laundry', 'junk', 'workbench']) {
+    const plan = getDemoScenario(key, 'find', none, { household: none });
+    for (const row of plan.map || []) {
+      assert.notEqual(row.safety && row.safety.flag, 'kid-safe', `${key} kept a kid-safe flag with no kids`);
+      assert.ok(!/children|small child/i.test((row.safety && row.safety.why) || ''),
+        `${key} / "${row.level}" tells a childless household about children`);
+    }
+  }
+});
+
+/* The client cannot import planSchema (it pulls in zod, and it is shared with
+   Deno), so the two halves of one rule are written twice. That is fine as
+   long as they cannot drift apart quietly. */
+test('the deterministic rule and the validator agree on what a hazard is', () => {
+  assert.deepEqual([...HAZARD_ITEM_FLAGS].sort(), [...SERVER_HAZARD_FLAGS].sort());
+
+  // ...and on which of the wizard's age bands count as young.
+  for (const [band, [min]] of Object.entries(KID_AGE_YEARS)) {
+    assert.equal(YOUNG_KID_BANDS.test(band), min <= YOUNG_KID_MAX_AGE,
+      `"${band}" (from age ${min}) is classified differently by the two halves`);
+  }
+});
+
+/* The kid-safe badge is chosen by walking up from the lowest row, and the
+   test for "not this one" was "does it carry a flag". A row can hold garden
+   tools and carry no flag at all, which is how the garage's floor level came
+   to wear "Lower zones stay kid-accessible and free of hazards" over the
+   garden tools — for a teenage household, where the placement rule above
+   does not fire and nothing else was looking. */
+test('the kid-safe badge never lands on a zone holding hazards', () => {
+  for (const ages of [['Toddler'], ['Big kid'], ['Teen']]) {
+    const household = { ...toddlerHousehold, kids: { present: 'yes', ages } };
+    for (const key of SCENARIO_KEYS) {
+      const plan = getDemoScenario(key, 'find', household, { household });
+      const badged = (plan.map || []).filter(m => m.safety && m.safety.flag === 'kid-safe');
+      for (const row of badged) {
+        const hazards = (row.items || []).filter(it => (it.flags || []).some(f => HAZARD_ITEM_FLAGS.includes(f)));
+        assert.deepEqual(hazards.map(h => h.name), [],
+          `${key} / "${row.level}" is badged kid-safe with ages ${JSON.stringify(ages)}`);
+      }
+    }
+  }
+});
