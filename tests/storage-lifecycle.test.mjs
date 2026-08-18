@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import * as db from '../js/db.js';
 
 test('space deletion removes owned storage objects before deleting the row', async () => {
@@ -247,4 +248,34 @@ test('a failed write for one space is not replayed onto another', async () => {
   const owed = db.takePendingPatch();
   assert.equal(owed.targetId, 'space-b');
   assert.deepEqual(owed.patch, { shopping: ['b'] }, 'space-a\'s columns must not reach space-b');
+});
+
+/* ---------- Answers on every incremental write ----------
+
+   Only a full save wrote the `prefs` column, and the report's products switch
+   and the whole Adjust screen change answers long after the last full save. So
+   a row's answers could be older than its plan, and `upgrades` in particular
+   came back wrong: turn products on from Adjust, reopen the space, and the
+   section was hidden with the cost tile reading $0 over a plan full of them.
+   Re-deriving it from the shopping list was a patch over this. */
+
+test('the answers a patch carries are snapshotted when it is queued', async () => {
+  /* Not read at flush time. `patchTargetId` names the space the write is for,
+     and by the time the 800ms timer fires `state` may hold another space's
+     answers — reading it then is how one space's columns reach another's row,
+     which is the mistake snapshotSave exists to prevent on the save path. */
+  const { state } = await import('../js/state.js');
+  const src = readFileSync(new URL('../js/db.js', import.meta.url), 'utf8');
+  const queue = src.slice(src.indexOf('export function updateSpacePatch'), src.indexOf('export function persistAnswers'));
+  assert.match(queue, /Object\.assign\(pendingPatch, \{ prefs: answersBlob\(\) \}, patch\)/,
+    'the answers must be built where the patch is queued, not where it is flushed');
+
+  const flush = src.slice(src.indexOf('async function flushPatch'), src.indexOf('export function takePendingPatch'));
+  assert.doesNotMatch(flush, /answersBlob\(/,
+    'flushPatch must not read the answers — by then they may belong to another space');
+
+  // And an explicit key still wins over the ride-along.
+  db.takePendingPatch();
+  state.activeSpaceId = null;   // guests persist via localStorage; nothing queued
+  assert.deepEqual(db.takePendingPatch().patch, {});
 });

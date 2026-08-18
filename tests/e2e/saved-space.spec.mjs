@@ -213,3 +213,38 @@ test('a save that matches no row says so instead of claiming success', async ({ 
   await expect(page.locator('#toast')).toContainText('Saving failed');
   await expect(page.locator('#toast')).not.toContainText('Find it under');
 });
+
+/* Only a full save wrote the `prefs` column, and the report's products switch
+   and the whole Adjust screen change answers long after the last one. So a
+   row's answers could be older than its plan: turn products on from Adjust,
+   reopen the space, and the section was hidden with the cost tile reading $0
+   over a plan full of them. Re-deriving `upgrades` from the shopping list was
+   a patch over that, and it could only ever express one direction of it.
+
+   Every incremental write carries the answers now. Ticking a step is the
+   smallest thing that triggers one. */
+test('an incremental write carries the current answers', async ({ page }) => {
+  const wire = await stubBackend(page, { signedIn: true });
+  await buildAPlan(page);
+  await page.waitForTimeout(1500);
+  wire.length = 0;
+
+  // The tick is the .check button on the step row, not the row itself.
+  await page.locator('#res-steps .task .check').first().click();
+  await page.waitForTimeout(1500);
+
+  const patches = wire
+    .filter((c) => c.method === 'PATCH' && /\/rest\/v1\/spaces/.test(c.url) && c.body)
+    .map((c) => JSON.parse(c.body));
+  expect(patches.length, 'ticking a step should write progress').toBeGreaterThan(0);
+
+  const withAnswers = patches.find((b) => b.prefs && b.prefs.answers);
+  expect(withAnswers, 'the write carried no answers, so the row can go stale').toBeTruthy();
+  expect(withAnswers.prefs.answers.v).toBe(2);
+  // It is the whole answer set, not a subset that will drift from the saver's.
+  expect(withAnswers.prefs.answers).toHaveProperty('shoppingPref');
+  expect(withAnswers.prefs.answers).toHaveProperty('upgrades');
+  expect(withAnswers.prefs.answers).toHaveProperty('goals');
+  // And the write it was riding along with is still there.
+  expect(patches.some((b) => b.progress)).toBe(true);
+});
