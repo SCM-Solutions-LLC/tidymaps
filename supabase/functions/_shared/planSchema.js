@@ -106,22 +106,137 @@ function issuesToStrings(zodError) {
   return zodError.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`);
 }
 
+/* The prompt's hard safety rules, in the numbers it states them in. Kept as
+   named constants because the enforced-limits block in analyze-space quotes
+   them back to the model from here: a rule the validator applies and the
+   prompt describes differently is how three production plans were thrown away
+   after the user had already waited out the analysis. */
+export const KID_REACH_IN = 48;      // "must NEVER be placed below 48 inches"
+export const YOUNG_KID_MAX_AGE = 9;  // "when kids ages 0-9 are present"
+/* The flags where "within a small child's reach" IS the danger, and so the
+   only two the height rule applies to.
+
+   The prompt used to name four — heavy, chemical, sharp, fragile — and
+   enforcing that literally would have been worse than not enforcing it at all.
+   A heavy bin is dangerous because a child pulls it DOWN on themselves, so it
+   belongs at or below waist height; this app's own scenarios say exactly that
+   ("Heavy bins go low so kids pull them out safely", "Heavy bins should always
+   be on lower shelves to prevent injury"). A rule that forced heavy items
+   above 48in to satisfy a child-safety check would have produced the plan that
+   actually hurts somebody, on 12 of the 16 deterministic scenarios. The prompt
+   now states the two rules separately, in opposite directions, and this is the
+   half a validator can decide. */
+export const HAZARD_ITEM_FLAGS = ['chemical', 'sharp'];
+
+/* A row's height above the floor, using the same arithmetic the 3D viewer
+   draws it with (js/three/scene.js: `y = H * (1 - frac)`). shelfYFracs
+   measures DOWN from the top, which is the thing to get wrong here — reading
+   it as height above the floor would put the bleach on the top shelf and
+   pass. Duplicated rather than imported for the same reason as
+   evenShelfFracs: this module is shared by the Deno edge function and the
+   Node suite, neither of which can reach the browser bundle. */
+function rowHeightIn(plan, row) {
+  const fracs = plan.geometry.shelfYFracs;
+  const frac = Array.isArray(fracs) ? Number(fracs[row.shelfIndex]) : NaN;
+  if (!Number.isFinite(frac) || frac < 0 || frac > 1) return null;
+  const height = Number(plan.geometry.height);
+  if (!Number.isFinite(height) || height <= 0) return null;
+  return height * (1 - frac);
+}
+
+const hazardsOn = (row) => (row.items || [])
+  .filter((item) => (item.flags || []).some((f) => HAZARD_ITEM_FLAGS.includes(f)))
+  .map((item) => item.name);
+
+const kidItemsOn = (row) => (row.items || [])
+  .filter((item) => (item.flags || []).includes('kid-frequent'))
+  .map((item) => item.name);
+
 /**
  * Business rules the prompt states but the model isn't guaranteed to follow:
- * kid-safety flags only when kids are actually in the household, step count
- * scaled to the chosen effort, no two map rows claiming the same shelf, and
- * product footprints that fit the space the user actually measured.
+ * the household safety contract, step count scaled to the chosen effort, no
+ * two map rows claiming the same shelf, and product footprints that fit the
+ * space the user actually measured.
+ *
+ * The safety half used to be one rule out of five — a flag set with no kids in
+ * the household — while the prompt asked for four more in the imperative
+ * ("must NEVER", "every safety-driven placement must"). Everything else was
+ * left to model compliance, which is the one thing a validator exists not to
+ * rely on, and the rules left unchecked were the ones about where the bleach
+ * goes. What can be decided from the plan and the household is decided here;
+ * what cannot is named in a comment rather than half-enforced.
  */
 function checkInvariants(plan, context) {
   const errors = [];
   const household = context && context.household;
-  const kidsPresent = !!(household && household.kids && household.kids.present === true);
+  const kids = (household && household.kids) || {};
+  const pets = (household && household.pets) || {};
+  const kidsPresent = kids.present === true;
+  const petsPresent = pets.present === true;
+  /* An age nobody gave is not evidence of an older child. The rule protects
+     0-9s, and a household that said "kids" and skipped the ages gets it. */
+  const ageYears = kids.ageYears;
+  const youngKids = kidsPresent
+    && (!ageYears || !Number.isFinite(Number(ageYears.min)) || Number(ageYears.min) <= YOUNG_KID_MAX_AGE);
 
   plan.map.forEach((row, i) => {
-    if (row.safety && row.safety.flag && !kidsPresent) {
-      errors.push(`map[${i}] ("${row.level}"): safety flag "${row.safety.flag}" is set but no kids are present in the household`);
+    const safety = row.safety || {};
+    const where = `map[${i}] ("${row.level}")`;
+
+    /* A flag is a claim about who is in the house. `lock-or-latch` is the one
+       a pet household legitimately needs — the prompt tells the model a cat
+       reaches ANY height, so a closed door is the only barrier that works —
+       and rejecting every flag without kids made that instruction impossible
+       to follow. `kid-safe` still means what it says. */
+    if (safety.flag === 'kid-safe' && !kidsPresent) {
+      errors.push(`${where}: safety flag "kid-safe" is set but no kids are present in the household`);
+    } else if (safety.flag && !kidsPresent && !petsPresent) {
+      errors.push(`${where}: safety flag "${safety.flag}" is set but this household has no kids and no pets`);
+    }
+
+    // "Every safety-driven placement must carry a plain-language safety.why."
+    // A flagged row with no reason renders a badge and no explanation.
+    if (safety.flag && !String(safety.why || '').trim()) {
+      errors.push(`${where}: safety flag "${safety.flag}" has no safety.why; say in plain language why this placement is safer`);
+    }
+
+    /* "Heavy, chemical, sharp, or fragile items must NEVER be placed below 48
+       inches when kids ages 0-9 are present, unless that zone is flagged
+       lock-or-latch." The one rule in this file where being wrong is not a
+       cosmetic problem, and it was not being checked at all. */
+    if (youngKids && safety.flag !== 'lock-or-latch') {
+      const hazards = hazardsOn(row);
+      const heightIn = rowHeightIn(plan, row);
+      if (hazards.length && heightIn !== null && heightIn < KID_REACH_IN) {
+        errors.push(`${where}: ${hazards.map((n) => `"${n}"`).join(', ')} `
+          + `${hazards.length === 1 ? 'is' : 'are'} flagged hazardous and this row sits about `
+          + `${Math.round(heightIn)}in from the floor, within reach of a child aged ${YOUNG_KID_MAX_AGE} or under. `
+          + `Move ${hazards.length === 1 ? 'it' : 'them'} above ${KID_REACH_IN}in, or flag this row "lock-or-latch" and say so in safety.why.`);
+      }
+    }
+
+    /* "Kid-frequent items go on the lowest safe shelf so children can reach
+       them without climbing." How low is a judgement, so what is checked is
+       the plan contradicting itself: an item the plan says a child uses
+       daily, on a row the same plan says is locked or deliberately out of
+       reach. That is not a placement anyone can follow. */
+    if (safety.flag === 'keep-high' || safety.flag === 'lock-or-latch') {
+      const forKids = kidItemsOn(row);
+      if (forKids.length) {
+        errors.push(`${where}: ${forKids.map((n) => `"${n}"`).join(', ')} `
+          + `${forKids.length === 1 ? 'is' : 'are'} flagged "kid-frequent" on a row flagged "${safety.flag}". `
+          + `Kid-frequent items belong on the lowest safe shelf; move them, or drop the flag if this row is not restricted.`);
+      }
     }
   });
+
+  /* Deliberately NOT enforced: "with Limited reach, Avoid bending or
+     Wheelchair user, daily-use items belong between 30 and 60 inches". The
+     plan carries no marker for "daily-use" — `eye` is about eye level, not
+     frequency — so every version of this check has to guess which items the
+     rule is about, and a guess that throws away an 80-second analysis is
+     worse than the rule going unchecked. It stays a prompt instruction until
+     the contract carries the fact it needs. */
 
   const seenShelves = new Map();
   plan.map.forEach((row, i) => {
@@ -172,29 +287,64 @@ function checkInvariants(plan, context) {
      own, and demanding a product entry for those would reject good plans. A
      step that names the thing as already present is not a purchase either. */
   const BUYABLE = [
-    [/\bturntables?\b|\blazy susans?\b/i, 'turntable'],
-    [/\bcan risers?\b|\bshelf risers?\b|\brisers?\b/i, 'can-riser or shelf-riser'],
-    [/\bairtight containers?\b/i, 'airtight-container'],
-    [/\bdoor racks?\b/i, 'door-rack'],
-    [/\bhook racks?\b/i, 'hook-rack'],
-    [/\bdrawer (?:organizer|divider)s?\b/i, 'drawer-organizer'],
+    [/\bturntables?\b|\blazy susans?\b/i, 'turntable', ['turntable']],
+    [/\bcan risers?\b|\bshelf risers?\b|\brisers?\b/i, 'can-riser or shelf-riser', ['can-riser', 'shelf-riser']],
+    [/\bairtight containers?\b/i, 'airtight-container', ['airtight-container']],
+    [/\bdoor racks?\b/i, 'door-rack', ['door-rack']],
+    [/\bhook racks?\b/i, 'hook-rack', ['hook-rack']],
+    [/\bdrawer (?:organizer|divider)s?\b/i, 'drawer-organizer', ['drawer-organizer']],
   ];
   const ALREADY_OWNED = /\bexisting\b|\balready\b|\byou (?:have|own)\b|\byour own\b/i;
-  const buysAllowed = !context || context.shopping !== 'Use what I have';
-  if (buysAllowed && !(plan.productNeeds || []).length) {
+  /* Mirrors analyze-space: the wizard PRESELECTS "Use what I have", so the
+     answer is only a constraint once the user has touched the step. `=== false`
+     rather than a falsy check, because a client built before the flag existed
+     sends nothing and has to keep the meaning it was built against. Without
+     this the validator enforced a rule the prompt had stopped stating — the
+     two halves of one answer, disagreeing again. */
+  const ctx = context || {};
+  const usesWhatTheyHave = ctx.shopping === 'Use what I have' && ctx.shoppingTouched !== false;
+
+  /* A plan that tells you to buy something must say WHAT to buy.
+
+     This used to run only when productNeeds was ENTIRELY empty, so one entry
+     bought silence for every other purchase in the plan: a list holding a
+     label set, over steps instructing turntables and risers, passed — and the
+     Cost tile added up the labels while the checklist could not be done
+     without the rest. The check is per-noun now, against the types actually
+     listed.
+
+     Still deliberately narrow. It rejects a plan and costs the user a retry,
+     so it only fires on nouns you cannot improvise: a turntable is a purchase,
+     while a "bin", a "basket" or a label is something a household may well
+     already own, and demanding an entry for those would reject good plans. A
+     step that names the thing as already present is not a purchase either. */
+  const listedTypes = new Set((plan.productNeeds || []).map((n) => n.type));
+  if (!usesWhatTheyHave) {
     const named = [];
     for (const step of plan.steps) {
       const text = `${step.task || ''}`;
       if (ALREADY_OWNED.test(text)) continue;
-      for (const [re, type] of BUYABLE) {
-        if (re.test(text) && !named.some(n => n.type === type)) named.push({ type, task: step.task });
+      for (const [re, label, types] of BUYABLE) {
+        if (!re.test(text)) continue;
+        if (types.some((t) => listedTypes.has(t))) continue;
+        if (!named.some((n) => n.label === label)) named.push({ label, task: step.task });
       }
     }
     if (named.length) {
-      errors.push(`productNeeds is empty, but ${named.length === 1 ? 'a step tells' : 'steps tell'} the user to buy things: `
-        + named.map(n => `"${n.task}" needs ${n.type}`).join('; ')
+      errors.push(`${named.length === 1 ? 'a step tells' : 'steps tell'} the user to buy things that productNeeds does not list: `
+        + named.map((n) => `"${n.task}" needs ${n.label}`).join('; ')
         + '. Add an entry to productNeeds for each, or rewrite the step to work with what is already in the space.');
     }
+  } else if ((plan.productNeeds || []).length) {
+    /* The other half of the same answer, and it was enforced nowhere: the
+       prompt requires an EMPTY productNeeds from someone who chose to use
+       only what they already own, and a plan that returns one anyway puts a
+       shopping list under a report that promises every step works with what
+       is already in the space. */
+    errors.push(`productNeeds has ${plan.productNeeds.length} `
+      + `${plan.productNeeds.length === 1 ? 'entry' : 'entries'} (${[...listedTypes].join(', ')}), `
+      + 'but this user chose to use only what they already have. Return an empty productNeeds array '
+      + 'and write every step to work with containers already in the space.');
   }
 
   const shelfDepth = usableShelfDepth(plan.layout && plan.layout.type, context && context.dims);
@@ -263,11 +413,37 @@ function normalizeShelfYFracs(geometry) {
  * @param {object} [context] - the same context object sent to the model (household, effort, dims, ...)
  * @returns {{ok: true, value: object, errors: []} | {ok: false, value: null, errors: string[]}}
  */
+/* "geometry.shelfCount must equal the number of map rows" is stated in the
+   prompt as a hard limit and was checked nowhere: the row-index rules only
+   require every shelfIndex to be inside the count, so a map of 5 rows with
+   shelfCount 8 passed. That is not cosmetic. The client keeps the model's
+   count (js/plan.js normalizeGeometry) and then CLAMPS every shelfIndex into
+   it, so a count smaller than the map silently stacks rows onto one shelf —
+   two zones drawn on top of each other in the 3D view — and a count larger
+   draws shelves the plan never describes.
+ *
+   Repaired rather than rejected, on the same reasoning as shelfYFracs below:
+   the right value is knowable with certainty from the plan itself (the map IS
+   the plan), so throwing away an 80-second analysis to ask the model for a
+   number we already have would be a worse trade than any it saves. The
+   shelfIndex range check runs afterwards against the corrected count, so a
+   plan whose rows genuinely disagree with each other still fails.
+
+   Note this cannot fix the client's other override: a user who typed their own
+   shelf count still wins over both. That is deliberate there and unchanged. */
+function alignShelfCount(plan) {
+  if (plan.geometry.shelfCount !== plan.map.length) {
+    plan.geometry.shelfCount = plan.map.length;
+  }
+}
+
 export function validatePlan(raw, context = {}) {
   const structural = planSchema.safeParse(raw);
   if (!structural.success) {
     return { ok: false, value: null, errors: issuesToStrings(structural.error) };
   }
+  // Order matters: the fracs are regenerated to match the corrected count.
+  alignShelfCount(structural.data);
   normalizeShelfYFracs(structural.data.geometry);
   const errors = checkInvariants(structural.data, context);
   if (errors.length) {

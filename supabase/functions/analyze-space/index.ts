@@ -2,7 +2,8 @@ import { preflight, json } from '../_shared/cors.ts';
 import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
-import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth, ARCHETYPES } from '../_shared/planSchema.js';
+import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth, ARCHETYPES,
+         KID_REACH_IN, YOUNG_KID_MAX_AGE } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -119,7 +120,8 @@ Layout & geometry rules — handle ANY space configuration:
 - HARD LIMIT: the map must never exceed 12 rows, and geometry.shelfCount must equal the number of map rows, so it must never exceed 12 either. This is a schema limit, not a preference: a plan with more than 12 rows is rejected outright and the user sees nothing. Walk-in pantries and closets counted wall by wall are the usual way to blow past it, so count your rows before answering. If the space has more than 12 distinct levels, consolidate the least-used surfaces into shared rows (one "Bulk storage" row, or one row per wall instead of one per shelf) until the map is 12 rows or fewer. Aim for 10 or fewer so the plan stays actionable.
 
 Hard safety rules (apply whenever the household context says kids are present):
-- Heavy, chemical, sharp, or fragile items must NEVER be placed below 48 inches when kids ages 0-9 are present, unless that zone is flagged "lock-or-latch". The household gives ages both as words and as household.kids.ageYears {min,max} in years, so use the numbers for this rule rather than interpreting the words.
+- Chemical or sharp items must NEVER be placed below 48 inches when kids ages 0-9 are present, unless that zone is flagged "lock-or-latch". The household gives ages both as words and as household.kids.ageYears {min,max} in years, so use the numbers for this rule rather than interpreting the words.
+- Heavy items go LOW when there are children, and never overhead. This is the opposite instruction to the one above and it is not a contradiction: a bleach bottle hurts a child who opens it, so it goes up or behind a latch, while a heavy bin hurts a child who pulls it down on themselves, so it goes at or below waist height where it can be slid out rather than lifted down. Fragile items follow the same logic as heavy ones.
 - Kid-frequent items (snacks, cups, their own things) go on the lowest safe shelf so children can reach them without climbing.
 - With "Limited reach", "Avoid bending" or "Wheelchair user" mobility needs, daily-use items belong between 30 and 60 inches.
 - Every safety-driven placement must carry a plain-language safety.why (e.g. "Cleaning sprays stay out of reach of your 3-year-old").
@@ -193,13 +195,21 @@ Deno.serve(async (req) => {
   const ctx = (body.context ?? {}) as {
     effort?: string;
     dims?: { w_in?: number; h_in?: number; d_in?: number };
-    household?: { kids?: { present?: boolean } };
+    household?: { kids?: { present?: boolean; ageYears?: { min?: number } }; pets?: { present?: boolean } };
     setup?: { archetype?: string; touched?: boolean };
     shopping?: string;
     shoppingTouched?: boolean;
   };
   const [minSteps, maxSteps] = EFFORT_STEP_RANGES[ctx.effort as string] ?? DEFAULT_STEP_RANGE;
   const kidsPresent = ctx.household?.kids?.present === true;
+  const petsPresent = ctx.household?.pets?.present === true;
+  /* The hard height rule protects 0-9s, and the validator reads an unstated
+     age the same way: a household that said "kids" and skipped the ages gets
+     the rule. Told to the model in the same terms, so it is not surprised by
+     the rejection. */
+  const kidAges = ctx.household?.kids?.ageYears;
+  const youngKids = kidsPresent
+    && (!kidAges || !Number.isFinite(Number(kidAges.min)) || Number(kidAges.min) <= YOUNG_KID_MAX_AGE);
   /* Product depth is checked against the usable SHELF depth, and for a walk-in
      or an L-run that is nothing like the measured room depth. The model picks
      the archetype, so give it both numbers rather than guessing which it will
@@ -252,13 +262,25 @@ Deno.serve(async (req) => {
       `- layout.type: the user picked their own setup from a set of cards, so classify this space as "${chosenArchetype}" and write every level name, step, and product suggestion for that shape. Describe only the surfaces "${chosenArchetype}" actually has. If the photos show something genuinely different, still use "${chosenArchetype}" and say what you see in the summary instead.`,
     ] : []),
     ...(!usesWhatTheyHave ? [
-      '- productNeeds vs steps: if any step tells the user to use a turntable, riser, airtight container, door rack, hook rack or drawer organizer, that item MUST also appear in productNeeds. A plan that instructs a purchase and returns an empty productNeeds gives the user a shopping list with nothing on it and a cost of $0 over steps they cannot do for $0. Either list what they need to buy, or write the step to work with what is already in the space.',
+      '- productNeeds vs steps: if any step tells the user to use a turntable, riser, airtight container, door rack, hook rack or drawer organizer, that item MUST also appear in productNeeds — checked per item, so listing one product does not cover the others. A plan that instructs a purchase it does not list gives the user a shopping list missing the thing the step needs, and a cost that does not add up. Either list what they need to buy, or write the step to work with what is already in the space.',
     ] : []),
     `- steps: return between ${minSteps} and ${maxSteps} steps, matching the effort level this user chose.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
-    kidsPresent
-      ? '- safety.flag: this household has children, so flag the rows that need it and give each one a plain-language safety.why.'
-      : '- safety.flag: this household has NO children, so safety.flag MUST be null on every single map row. Heavy or hazardous items still belong low or high as good practice, and you can say so in the row\'s why, but the flag itself must be null.',
+    /* Every clause below is a rule checkInvariants applies to the answer. The
+       numbers come from planSchema so the two cannot drift: a validator that
+       is stricter than the prompt spends the user's 80 seconds and returns a
+       demo plan, which is how the last three of these were found. */
+    ...(kidsPresent ? [
+      '- safety.flag: this household has children, so flag the rows that need it. EVERY flagged row must carry a plain-language safety.why; a flag with no reason is rejected.',
+      ...(youngKids ? [
+        `- safety and height: any item flagged chemical or sharp must NOT sit on a row within ${KID_REACH_IN}in of the floor, because this household has a child aged ${YOUNG_KID_MAX_AGE} or under. Put it higher, or flag that row "lock-or-latch" and say so in safety.why. Row height is measured as geometry.height x (1 - shelfYFracs[shelfIndex]), so a shelfYFrac near 1 is the floor. This is checked for chemical and sharp ONLY: heavy and fragile items belong low with children in the house, so putting them high to satisfy a height rule would be the more dangerous plan.`,
+      ] : []),
+      '- safety and kid-frequent items: an item flagged "kid-frequent" must not sit on a row flagged "keep-high" or "lock-or-latch". Those two say the row is out of bounds, so putting a child\'s daily things there is a plan nobody can follow.',
+    ] : petsPresent ? [
+      '- safety.flag: this household has NO children, so "kid-safe" must never appear. "lock-or-latch" and "keep-high" are available for the pets, and every flagged row must carry a plain-language safety.why.',
+    ] : [
+      '- safety.flag: this household has NO children and NO pets, so safety.flag MUST be null on every single map row. Heavy or hazardous items still belong low or high as good practice, and you can say so in the row\'s why, but the flag itself must be null.',
+    ]),
     '- shelfIndex: unique per row, and every value less than geometry.shelfCount.',
     '- layout.sections: every row number must also be less than geometry.shelfCount, and no row may appear in two sections.',
     ...(depthLimit ? [depthLimit] : []),

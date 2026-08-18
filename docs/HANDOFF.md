@@ -50,6 +50,31 @@ present, effort caps, zero purchases on "use what I have"). One retry with
 validation errors appended; second failure falls back to the deterministic
 scenario engine. Fixture tests in `tests/`.
 
+**What checkInvariants enforces, and what it deliberately does not.** The
+household safety contract is machine-checked rather than requested: a flag
+needs somebody to protect (kids, or pets for `lock-or-latch` — a cat reaches
+any height, so a latch is the only barrier and rejecting it was wrong), every
+flag needs a `safety.why`, chemical or sharp items may not sit within
+`KID_REACH_IN` (48in) of the floor with a child aged `YOUNG_KID_MAX_AGE` (9)
+or under unless the row is latched, and a `kid-frequent` item may not sit on a
+row the plan itself calls locked or out of reach. `geometry.shelfCount` is
+repaired to the map length rather than rejected. Product coherence is per
+item now (one listed product used to buy silence for every other purchase in
+the plan), and `productNeeds` must be empty when the user actually CHOSE "Use
+what I have" — mirroring `shoppingTouched`, which the validator was ignoring.
+
+Two rules are deliberately unenforced, and the reasons matter more than the
+rules. **Daily-use items between 30 and 60in for a reach need**: the plan
+carries no marker for "daily", so every version of the check has to guess, and
+a guess that discards an 80-second analysis is worse than the gap. **Heavy and
+fragile items low**: the prompt used to demand all four hazard flags stay above
+48in with young kids, which is backwards for these two — a heavy bin injures a
+child who pulls it DOWN, which is why this app's own scenarios say "Heavy bins
+go low so kids pull them out safely". Enforcing the prompt as written would
+have rejected 12 of the 16 deterministic scenarios and pushed plans toward the
+placement that hurts somebody. The prompt now states the two rules separately
+and says why they point in opposite directions.
+
 ### #2 Vision hardening (PR #20)
 - Prompt injection: `_shared/promptContext.js` wraps ALL user-typed context in
   a `<user_context>` block behind a standing guard instruction;
