@@ -70,7 +70,7 @@ async function probe(label, forged) {
          and no such endpoint are meant to look identical to a stranger. That
          makes this the one error worth spelling out for the person running it,
          because both causes are ordinary and the response cannot tell them
-         apart. */
+         apart. It is fatal because it applies to every case, not to this one. */
       throw new Error(`${label}: 404.\n\n`
         + 'Either the function is not deployed yet, or DEBUG_HEADERS_TOKEN does not match\n'
         + 'the secret set on the project. They are indistinguishable by design.\n\n'
@@ -78,7 +78,22 @@ async function probe(label, forged) {
         + '  secret?    supabase secrets list        (shows the name and a digest, never the value)\n\n'
         + 'If you generated the token inline and did not keep it, set a new one and re-run.');
     }
-    throw new Error(`${label}: HTTP ${res.status} ${body.slice(0, 200)}`);
+    /* Every other non-2xx is a RESULT, not a failure to report and give up on.
+       A request refused for carrying a header is the strongest answer this
+       probe can get — the caller cannot even send that header, let alone
+       choose their identity with it. The first run of this script aborted on
+       the first such refusal and never learned anything about the remaining
+       headers, which are the ones that decide whether the ceiling holds.
+
+       An HTML body means the refusal came from the edge in front of the
+       function rather than from the function, which is exactly the layer this
+       is asking about. */
+    const html = /^\s*<(!doctype|html)/i.test(body);
+    return {
+      label, forged, refused: true, status: res.status,
+      byEdge: html,
+      hint: html ? (/cloudflare/i.test(body) ? 'cloudflare' : 'an edge proxy') : 'the function',
+    };
   }
   return { label, forged, ...(await res.json()) };
 }
@@ -114,6 +129,10 @@ for (const [label, forged] of CASES) {
 
 for (const r of results) {
   console.log(`\n── ${r.label}`);
+  if (r.refused) {
+    console.log(`   request REFUSED with ${r.status} by ${r.hint}, before the function ran`);
+    continue;
+  }
   for (const [name, h] of Object.entries(r.headers)) {
     if (h.present === false && !(name in r.forged)) continue;
     const sent = name in r.forged ? '  (we sent this)' : '';
@@ -127,30 +146,44 @@ for (const r of results) {
    addresses out of the output. */
 console.log('\n──────── verdict ────────');
 const baseline = results[0];
-let anyForgeable = false;
+if (baseline.refused) {
+  console.error('The baseline request was refused, so nothing below can be trusted.');
+  process.exit(1);
+}
+const forgeable = [];
 
 for (const r of results.slice(1)) {
-  const sentName = Object.keys(r.forged)[0];
-  const arrived = r.headers[sentName];
-  const survived = arrived && arrived.present !== false;
+  const sentNames = Object.keys(r.forged);
+  const label = sentNames.join(' + ').padEnd(34);
+  if (r.refused) {
+    // The best outcome available: the header never reaches anything, because
+    // the request carrying it is thrown away in front of the function.
+    console.log(`REFUSED AT THE EDGE    ${label}  cannot be sent at all`);
+    continue;
+  }
+  const survived = sentNames.some((n) => r.headers[n] && r.headers[n].present !== false);
   // Our planted values are all single-hop; the baseline's may not be.
   const changed = r.chosen.length !== baseline.chosen.length
     || r.chosen.looksIpv4 !== baseline.chosen.looksIpv4
     || r.chosen.empty !== baseline.chosen.empty;
-  if (survived && changed) anyForgeable = true;
-  console.log(`${survived ? 'PASSED THROUGH' : 'stripped/overwritten'}  ${sentName.padEnd(26)}`
+  if (survived && changed) forgeable.push(sentNames.join(' + '));
+  console.log(`${survived ? 'PASSED THROUGH        ' : 'stripped/overwritten  '} ${label}`
     + `  identity ${changed ? 'CHANGED' : 'unchanged'}`);
 }
 
 console.log('');
-if (anyForgeable) {
-  console.log('BYPASSABLE: a caller can choose their own anonymous rate-limit identity.');
-  console.log('Trust only the header the gateway is documented to control, and reject the rest.');
-  console.log('Note the per-caller ceilings are what this defeats; the globalPerDay ceilings');
-  console.log('in check_and_log_usage still bound total spend.');
+if (forgeable.length) {
+  console.log('BYPASSABLE via: ' + forgeable.join(', '));
+  console.log('A caller can choose their own anonymous rate-limit identity through those.');
+  console.log('Trust only a header proved gateway-controlled above, and ignore the rest —');
+  console.log('note that tightening the address regex would NOT help, since well-formed');
+  console.log('addresses can be rotated just as freely as malformed ones.');
+  console.log('The per-caller ceilings are what this defeats; the globalPerDay ceilings in');
+  console.log('check_and_log_usage still bound total spend.');
 } else {
-  console.log('NOT BYPASSABLE by these headers: the gateway strips or overwrites them,');
-  console.log('or callerIp() ignored them. Record WHICH header proved authoritative in');
-  console.log('supabase/functions/_shared/callerIp.js, so the next reader does not re-derive it.');
+  console.log('NOT BYPASSABLE by any of these: each was refused at the edge, stripped,');
+  console.log('or ignored by callerIp().');
 }
-console.log('\nDelete the debug-headers function and unset DEBUG_HEADERS_TOKEN when done.');
+console.log('\nRecord what this proved in supabase/functions/_shared/callerIp.js, so the');
+console.log('next reader inherits the answer instead of the assumption. Then delete the');
+console.log('debug-headers function, this script, and their tests together.');
