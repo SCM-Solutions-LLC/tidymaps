@@ -221,6 +221,7 @@ const PRIMARY_NOUN = {
 
 const PLURAL_NOUN = { shelf: 'shelves', drawer: 'drawers', bench: 'benches', 'rack deck': 'rack decks' };
 
+/** @type {[string, [RegExp, string | ((...args: any[]) => string)][]][]} */
 const SURFACE_PHRASES = [
   ['pegboard', [
     [/\bon the pegboard\b/gi, 'on the {n}'],

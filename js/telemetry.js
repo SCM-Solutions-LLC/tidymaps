@@ -20,8 +20,14 @@ const FLUSH_AT = 12; // keep batches under the server's 25-event cap
 function optedOut() {
   try {
     if (navigator.webdriver) return true;                    // CI / robots
-    if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return true;
-    if (navigator.globalPrivacyControl) return true;
+    /* Both are real signals the lib.dom typings do not carry: doNotTrack is
+       legacy, globalPrivacyControl is newer than the typings. Read through a
+       cast rather than dropped — a privacy opt-out is not the place to defer
+       to a type definition. */
+    const nav = /** @type {any} */ (navigator);
+    const win = /** @type {any} */ (window);
+    if (nav.doNotTrack === '1' || win.doNotTrack === '1') return true;
+    if (nav.globalPrivacyControl) return true;
   } catch (_) { /* privacy checks must never throw */ }
   return false;
 }
@@ -42,8 +48,11 @@ export function telemetryStatus() {
   if (!backendConfigured()) return 'off: backend not configured';
   try {
     if (navigator.webdriver) return 'off: automation (navigator.webdriver)';
-    if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return 'off: Do Not Track';
-    if (navigator.globalPrivacyControl) return 'off: Global Privacy Control';
+    // Same two signals as optedOut, and absent from lib.dom for the same reason.
+    const nav = /** @type {any} */ (navigator);
+    const win = /** @type {any} */ (window);
+    if (nav.doNotTrack === '1' || win.doNotTrack === '1') return 'off: Do Not Track';
+    if (nav.globalPrivacyControl) return 'off: Global Privacy Control';
   } catch (_) { /* privacy checks must never throw */ }
   return 'on';
 }

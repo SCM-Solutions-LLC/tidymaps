@@ -1464,6 +1464,7 @@ const KID_WORDS = /kid|child|little hands|small hands/i;
    rationale went down with the kid mention. Each rule keeps the sentence and
    removes only the kid reference — naming pets when the household has them,
    falling back to neutral phrasing when it doesn't. */
+/** @type {[RegExp, string, string][]} */
 const KID_PHRASES = [
   // Most specific first. This one is mid-sentence ("...placed above kid reach
   // or behind latched containers"), so the generic trailing rule below would
@@ -1527,6 +1528,7 @@ function petVocabulary(types) {
    true. Longest first, and each replacement drops the phrase it matched, so
    nothing re-matches. Claims about children survive intact — the top shelf
    IS out of a toddler's reach; it is only the cat half that was never true. */
+/** @type {[RegExp, string][]} */
 const CAT_PHRASES = [
   /* An imperative keeps its verb — swallowing "Keep" left the row reading
      "…are toxic. behind a door or latch." A declarative sentence gets advice
@@ -1813,6 +1815,7 @@ const EASE_OF_ACCESS = [
   [/ where they are easy to grab and return\b/gi, ', which is where their weight belongs — though it is not the easiest level for you to reach'],
 ];
 
+/** @type {{match: RegExp, task: string, why: string, cite: string, rewrite?: [RegExp, string][]}[]} */
 const MOBILITY_RULES = [
   {
     match: /limited.?reach/i,
@@ -1827,18 +1830,18 @@ const MOBILITY_RULES = [
     cite: 'You told us bending is difficult.',
     // "Heavy items on the lowest shelf" is right for lifting and wrong for
     // bending; knee-to-waist is the compromise that serves both.
-    rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'between knee and waist height'],
+    rewrite: /** @type {[RegExp, string][]} */ ([[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'between knee and waist height'],
       [/\blowest shelf\b/gi, 'knee-to-waist zone'],
-      ...EASE_OF_ACCESS],
+      ...EASE_OF_ACCESS]),
   },
   {
     match: /wheelchair/i,
     task: 'Keep everything you use weekly between 15 and 48 inches from the floor — the seated reach band',
     why: 'Above and below that band needs a helper or a grabber, so keep those levels for things you need a few times a year.',
     cite: 'You told us this space is used from a wheelchair.',
-    rewrite: [[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'within seated reach'],
+    rewrite: /** @type {[RegExp, string][]} */ ([[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'within seated reach'],
       [/\bstep stool\b/gi, 'reacher grabber'],
-      ...EASE_OF_ACCESS],
+      ...EASE_OF_ACCESS]),
   },
 ];
 

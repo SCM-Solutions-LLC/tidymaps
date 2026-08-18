@@ -33,6 +33,11 @@ function requestSignal(name, signal){
   return (typeof AbortSignal.any === 'function') ? AbortSignal.any([deadline, signal]) : deadline;
 }
 
+/**
+ * @param {string} name
+ * @param {unknown} body
+ * @param {{signal?: AbortSignal}} [opts]
+ */
 async function callFn(name, body, { signal }={}){
   if(!backendConfigured()) throw new ApiError('The analysis backend is not connected yet.', { code:'unconfigured' });
   let res;

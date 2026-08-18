@@ -17,6 +17,10 @@ jobs:
       # test failure three screens down.
       - name: Lint
         run: npm run lint
+      # Scoped to the data layer — see the note in jsconfig.json for what is
+      # checked, what is not, and why the screen files are not worth it yet.
+      - name: Type check
+        run: npm run check:types
       - name: Unit and contract tests
         run: node --test tests/*.test.mjs
   e2e:

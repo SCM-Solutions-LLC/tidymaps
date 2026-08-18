@@ -14,7 +14,9 @@ export function supa(){
 
 export async function initAuth(){
   if(!backendConfigured()) return null;
-  const { createClient } = await import('../vendor/supabase/supabase.esm.js');
+  /* The vendored bundle ships no type declarations, so everything it returns
+     is `{}`. Cast once, here, rather than at each of its call sites. */
+  const { createClient } = /** @type {any} */ (await import('../vendor/supabase/supabase.esm.js'));
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   setAuthTokenGetter(()=> session ? session.access_token : null);
   const { data } = await client.auth.getSession();

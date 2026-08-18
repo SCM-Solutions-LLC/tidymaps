@@ -1,5 +1,7 @@
 export function toast(msg){
-  const t=document.getElementById('toast');
+  // The pending timer rides on the element so a second toast replaces the
+  // first without module-level bookkeeping.
+  const t = /** @type {HTMLElement & {_t?: number}} */ (document.getElementById('toast'));
   t.textContent=msg; t.classList.add('show');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
 }
@@ -24,7 +26,7 @@ export function scrollIntoViewSafely(el, opts={}){
 // The sticky progress bar offsets itself by the real appbar height (--appbar-h),
 // which varies with font metrics and viewport width.
 export function setAppbarHeightVar(){
-  const bar=document.querySelector('.appbar');
+  const bar = /** @type {HTMLElement} */ (document.querySelector('.appbar'));
   if(bar) document.documentElement.style.setProperty('--appbar-h', bar.offsetHeight+'px');
 }
 

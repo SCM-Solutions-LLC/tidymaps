@@ -352,6 +352,7 @@ export const SHOPPING_OPTS = [
    inferring them from "Folding never lasts" would act on a decision the user did
    not make. And an unrecognized answer returns null rather than 'unsure' —
    "their main goal is unsure" is a claim, and it reaches the model as one. */
+/** @type {[RegExp, string][]} */
 const GOAL_IDS = [
   // findability: knowing where a thing is, or getting to it in date order
   [/can'?t find|can’t find|outfits take forever|sets? get separated|lids everywhere|seasonal stuff gets buried|expired|hides in back/i, 'find'],
@@ -375,6 +376,7 @@ export function goalIdFor(goalText) {
 /* Styles that have a matching engine preference get it, so deterministic
    personalization can cite and act on them; the raw style labels also travel
    in the analysis context for the AI path. */
+/** @type {[RegExp, string][]} */
 const STYLE_PREF_RULES = [
   [/^label|labels$|labeled/i, 'Labels and categories'],
   [/clear (containers|acrylic|latching)/i, 'Use clear containers'],
