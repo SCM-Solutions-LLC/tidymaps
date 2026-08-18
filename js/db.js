@@ -1,5 +1,6 @@
-import { supa, getUser } from './auth.js';
+import { supa, getUser, getSession } from './auth.js';
 import { submitForm, ApiError } from './api.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord,
          currentPlanInstance, planInstanceIsCurrent } from './state.js';
 import { toast } from './ui.js';
@@ -417,6 +418,70 @@ async function flushPatch(){
   if(!c || !id || !Object.keys(body).length) return patchChain;
   patchChain = patchChain.then(()=>writePatch(c, id, body), ()=>writePatch(c, id, body));
   return patchChain;
+}
+
+/* ---------- The last write ----------
+
+   Everything above assumes the page is still there when the timer fires. It
+   often is not. A write waits 800ms to be batched, and a failed one waits
+   4000ms to be retried, and the whole of that is spent on a page the user may
+   close, background, or navigate away from — on a phone, switching apps is
+   enough for the tab to be discarded outright. Ticking the last step of a plan
+   and closing the tab is not an unusual way to finish; it is the normal one.
+
+   Nothing recovers a write lost that way. The queue is in memory, so it goes
+   with the page, and the next visit loads the row as the server has it: the
+   step comes back unticked, and the only person who knows is the user who
+   ticked it.
+
+   `visibilitychange` to hidden is the event to use, not `beforeunload` —
+   that one does not fire reliably on mobile, which is where tabs are killed
+   most aggressively. `pagehide` covers the bfcache path alongside it. */
+function flushBeforeUnload(){
+  clearTimeout(patchTimer);
+  const body=pendingPatch; const id=patchTargetId;
+  pendingPatch={}; patchTargetId=null;
+  if(!id || !Object.keys(body).length) return;
+
+  /* Sent as a raw request rather than through supabase-js, for one reason:
+     `keepalive`. A normal fetch is cancelled when the document goes away, so
+     flushing here without it would only move the moment the write is lost.
+     keepalive hands the request to the browser to finish on its own.
+
+     supabase-js takes a custom fetch when the client is CREATED and not per
+     call, so there is no way to ask it for this on one request. What it would
+     have built is small and stable — a PostgREST PATCH filtered by id — and
+     RLS still applies, because the user's own token goes in the header.
+
+     sendBeacon is the usual answer for this and cannot be used: it posts, and
+     it cannot set apikey or authorization. */
+  const session=getSession();
+  const token=(session && session.access_token) || SUPABASE_ANON_KEY;
+  try{
+    fetch(`${SUPABASE_URL}/rest/v1/spaces?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH',
+      keepalive:true,
+      headers:{
+        'content-type':'application/json',
+        apikey:SUPABASE_ANON_KEY,
+        authorization:`Bearer ${token}`,
+        // Nothing is left to read the response, so do not ask for a body.
+        Prefer:'return=minimal',
+      },
+      body:JSON.stringify(body),
+    }).catch(()=>{ /* the page is going; there is nobody to tell */ });
+  }catch(_){ /* same */ }
+}
+
+/* Registered here rather than wired from main.js: a persistence guarantee that
+   depends on somebody remembering to install it is the shape of half the bugs
+   this file has already had. Guarded because the Node suite imports this
+   module and has no document. */
+if(typeof document!=='undefined' && typeof document.addEventListener==='function'){
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='hidden') flushBeforeUnload();
+  });
+  if(typeof addEventListener==='function') addEventListener('pagehide', flushBeforeUnload);
 }
 
 /* Drains the retry queue and hands it back. A dropped write and a saved one

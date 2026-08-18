@@ -248,3 +248,53 @@ test('an incremental write carries the current answers', async ({ page }) => {
   // And the write it was riding along with is still there.
   expect(patches.some((b) => b.progress)).toBe(true);
 });
+
+/* A write waits 800ms to be batched, and that wait is spent on a page the user
+   may close, background, or switch away from — on a phone, switching apps is
+   enough for the tab to be discarded. The queue lives in memory, so it goes
+   with the page: the step comes back unticked on the next visit and the only
+   person who knows is the user who ticked it.
+
+   Ticking the last step and leaving is not an unusual way to finish a plan. */
+test('a write still inside the debounce survives the page going away', async ({ page }) => {
+  const wire = await stubBackend(page, { signedIn: true });
+  await buildAPlan(page);
+  await page.waitForTimeout(1500);
+  wire.length = 0;
+
+  await page.locator('#res-steps .task .check').first().click();
+  // Hidden immediately — well inside the 800ms the batcher would have waited.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(300);
+
+  const patches = wire
+    .filter((c) => c.method === 'PATCH' && /\/rest\/v1\/spaces/.test(c.url) && c.body)
+    .map((c) => JSON.parse(c.body));
+  expect(patches.length,
+    'the tick was still queued when the page went away, and went with it').toBeGreaterThan(0);
+  expect(patches.some((b) => b.progress), 'the progress write is the one that had to survive').toBe(true);
+});
+
+test('hiding the page twice does not send the same write again', async ({ page }) => {
+  // The queue is drained before the request, so there is nothing left to resend.
+  const wire = await stubBackend(page, { signedIn: true });
+  await buildAPlan(page);
+  await page.waitForTimeout(1500);
+  wire.length = 0;
+
+  await page.locator('#res-steps .task .check').first().click();
+  const hide = () => page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await hide();
+  await page.waitForTimeout(200);
+  const afterFirst = wire.filter((c) => c.method === 'PATCH').length;
+  await hide();
+  await page.waitForTimeout(200);
+
+  expect(wire.filter((c) => c.method === 'PATCH').length).toBe(afterFirst);
+});
