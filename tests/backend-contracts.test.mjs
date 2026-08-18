@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 const rateLimit = readFileSync(new URL('../supabase/functions/_shared/ratelimit.ts', import.meta.url), 'utf8');
 const migrations = [1, 2, 3, 4, 5, 6, 7]
@@ -79,15 +79,33 @@ test('a forged X-Forwarded-For cannot change the rate-limit identity', () => {
   assert.equal(callerIp(headers('')), '');
   assert.equal(callerIp(new Headers()), '');
 
-  // A single-value header set by the edge wins, since it carries one address
-  // with nothing for a caller to prepend.
-  assert.equal(callerIp(new Headers({ 'x-real-ip': REAL, 'x-forwarded-for': `1.2.3.4, 9.9.9.9` })), REAL);
+  /* cf-connecting-ip wins: it carries one address, Cloudflare sets it, and a
+     request that tries to send its own is rejected at the edge with a 403
+     before the function runs. Measured against the deployment on 2026-08-18 —
+     see the header notes in callerIp.js. */
   assert.equal(callerIp(new Headers({ 'cf-connecting-ip': REAL, 'x-forwarded-for': '1.2.3.4' })), REAL);
 
   // But only when it really holds one well-formed address: a caller that
   // smuggles a chain through that header name is ignored, not trusted.
-  assert.equal(callerIp(new Headers({ 'x-real-ip': `1.2.3.4, 5.6.7.8`, 'x-forwarded-for': `evil, ${REAL}` })), REAL);
-  assert.equal(callerIp(new Headers({ 'x-real-ip': 'not-an-address', 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+  assert.equal(callerIp(new Headers({ 'cf-connecting-ip': `1.2.3.4, 5.6.7.8`, 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+  assert.equal(callerIp(new Headers({ 'cf-connecting-ip': 'not-an-address', 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+
+  /* `deadbeef` passed the old /^[0-9a-fA-F:.]+$/ guard. It is only reachable
+     through a header the gateway controls, so it was never the bypass the
+     review took it for — but a value that is not an address has no business
+     becoming one. */
+  assert.equal(callerIp(new Headers({ 'cf-connecting-ip': 'deadbeef', 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+  assert.equal(callerIp(new Headers({ 'cf-connecting-ip': '999.1.1.1', 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+  // Real addresses still pass, IPv6 included.
+  assert.equal(callerIp(new Headers({ 'cf-connecting-ip': '2001:db8::1' })), '2001:db8::1');
+
+  /* x-real-ip is NOT trusted, though the gateway strips it today. That is the
+     gateway's doing, and the day it changes this would hand an attacker the
+     identity of their choice with nothing failing. The trusted set holds only
+     what was shown to be gateway-controlled. */
+  assert.equal(callerIp(new Headers({ 'x-real-ip': '1.2.3.4', 'x-forwarded-for': `evil, ${REAL}` })), REAL);
+  assert.equal(callerIp(new Headers({ 'x-real-ip': '1.2.3.4' })), '',
+    'x-real-ip alone must not become an identity');
 
   // And the function actually uses it, rather than re-parsing the header.
   assert.match(auth, /callerIp\(req\.headers\)/);
@@ -154,50 +172,5 @@ test('every function reads its body through the shared guard', () => {
     assert.match(src, /error: 'invalid_body'/, `${fn} does not answer a bad body with 400`);
     assert.doesNotMatch(src, /await req\.json\(\)/,
       `${fn} still parses its own body, so the guard can be bypassed there`);
-  }
-});
-
-/* ---------- The temporary caller-IP diagnostic ----------
-
-   A diagnostic that leaks is worse than the uncertainty it resolves, so the
-   properties that make this one safe to deploy are pinned here rather than
-   left to the reviewer's eye. Delete this test with the function. */
-test('the header diagnostic is inert without its token and never echoes a value', () => {
-  const src = readFileSync(new URL('../supabase/functions/debug-headers/index.ts', import.meta.url), 'utf8');
-
-  // No secret set => the endpoint does nothing, so forgetting to remove it is
-  // not the same as leaving a hole open.
-  assert.match(src, /if \(!expected \|\| !tokenMatches\(given, expected\)\)/);
-  assert.match(src, /return json\(req, 404, \{ error: 'not_found' \}\)/,
-    'a wrong token must be indistinguishable from no such endpoint');
-  // Compared without an early return, so the token cannot be recovered a byte
-  // at a time from response timing.
-  assert.match(src, /diff \|= given\.charCodeAt\(i\) \^ expected\.charCodeAt\(i\)/);
-
-  /* Shape only. A caller's address is personal data; the question this answers
-     is "which header won", which needs no value. `raw` must reach only
-     length/parse checks, never the response body. */
-  assert.doesNotMatch(src, /value:\s*raw|raw,\s*$/m, 'a raw header value reaches the response');
-  assert.doesNotMatch(src, /console\.(log|error|warn)/, 'a header value could reach the logs');
-
-  // Nothing billable: no model call, no table, no storage.
-  for (const forbidden of ['adminClient', 'checkAndLog', 'anthropic', 'generativelanguage', 'from(']) {
-    assert.ok(!src.includes(forbidden), `the diagnostic must not use ${forbidden}`);
-  }
-});
-
-test('the diagnostic and its probe are removed together', () => {
-  /* Both halves are temporary, and a probe left pointing at a deleted function
-     is a confusing failure rather than an answer. If one is gone the other
-     must be too — this test then goes with them. */
-  const root = new URL('../', import.meta.url);
-  const fnExists = existsSync(new URL('supabase/functions/debug-headers/index.ts', root));
-  const probeExists = existsSync(new URL('scripts/probe-caller-ip.mjs', root));
-  assert.equal(fnExists, probeExists,
-    'debug-headers and scripts/probe-caller-ip.mjs must be added and deleted as a pair');
-  if (fnExists) {
-    const config = readFileSync(new URL('supabase/config.toml', root), 'utf8');
-    assert.match(config, /\[functions\.debug-headers\]/,
-      'the diagnostic is deployed by CI, so it has to declare verify_jwt like the rest');
   }
 });
