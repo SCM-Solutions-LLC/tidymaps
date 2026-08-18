@@ -527,7 +527,12 @@ said so in each case. Check it before believing the backlog.
    report, the second needs someone to walk three more screens. Both are
    joinable to `step_checked` depth per `anon_id`.
 
-   One caveat on reading `feedback_submitted` against the `feedback` table:
+   Two caveats before reading any of it, both detailed in `docs/telemetry.md`:
+   `step_checked` used to re-count every completed step each time a checklist
+   was restored (a reopen, a reload, a `?space=` link, an Adjust click), so
+   historical `checkedCount` reads high and reads highest for the users who
+   came back most. And on reading `feedback_submitted` against the `feedback`
+   table:
    until the item-4 fix, the event fired beside the write rather than after
    it, and the write's failure was swallowed — so any historical gap between
    the count and the row count is that bug, not a load or a join. From now on

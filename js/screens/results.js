@@ -897,7 +897,20 @@ export function focusDone(){
   if(!state.stepDone[focusIdx]) toggleStep(focusIdx);
   focusShow(focusIdx < state.stepCount-1 ? focusIdx+1 : focusIdx);
 }
-export function toggleStep(i){
+/* `restore` means "put the checklist back the way it was", not "the user just
+   did this". Both go through here because the DOM work is identical, and that
+   is how every restore came to be counted as fresh engagement: reopening a
+   saved plan, following a ?space= link, restoring a guest draft, and — twice
+   per visit — rendering the Adjust screen all call applySavedProgress, which
+   calls this once per completed step.
+
+   The event it fired is not a spare one. `checkedCount` is described in this
+   file as the core engagement-depth signal, the "did they actually work the
+   plan" number, and the handoff reads it per anon_id to decide what to build
+   next. Someone with five steps done who opened Adjust twice produced fifteen
+   step_checked events with the count climbing each time. The plan was worked
+   once. */
+export function toggleStep(i, { restore=false }={}){
   state.stepDone[i]=!state.stepDone[i];
   document.getElementById('task-'+i).classList.toggle('done',state.stepDone[i]);
   const check=document.querySelector('#task-'+i+' .check');
@@ -905,13 +918,17 @@ export function toggleStep(i){
   check.setAttribute('aria-label', state.stepDone[i]?`Mark step ${i+1} incomplete`:`Mark step ${i+1} complete`);
   document.querySelector('#task-'+i+' .mark').textContent=state.stepDone[i]?'Completed':'Mark complete';
   updateProgress();
-  if(state.stepDone[i]){
+  if(state.stepDone[i] && !restore){
     // checkedCount is the core engagement depth signal (>= 3 = worked the plan)
     track('step_checked', {
       index:i, total:state.stepCount||0,
       checkedCount:(state.stepDone||[]).filter(Boolean).length,
     });
   }
+  /* The write stays on the restore path. It is the same value going back
+     where it came from, so it costs one debounced PATCH and nothing else —
+     but Adjust can change how many steps a plan has, and the restored
+     checklist is then a genuinely new shape that has to be saved. */
   if(getSession()) updateSpacePatch({progress:{stepsDone:state.stepDone}});
   else persistGuestDraft();
 }
@@ -919,7 +936,8 @@ export function toggleStep(i){
 // Re-apply a saved checklist (from a saved space or a guest draft) after renderSteps reset it
 export function applySavedProgress(saved){
   (saved||[]).forEach((v,i)=>{
-    if(v && state.stepDone && i<state.stepDone.length && !state.stepDone[i]) toggleStep(i);
+    // restore:true — this is a checklist coming back, not somebody ticking it.
+    if(v && state.stepDone && i<state.stepDone.length && !state.stepDone[i]) toggleStep(i, { restore:true });
   });
 }
 /* Skipping is not doing. Skip used to call toggleStep, so the card flipped to

@@ -43,6 +43,28 @@ photo render (both visible in `usage_events`) while `telemetry_events` had
 nothing newer than 2026-07-23. The client was verified working in a browser
 harness the same day. Privacy settings, not a bug.
 
+## Two corrections to apply before reading any of these numbers
+
+Both are fixed in the code; both affect rows already in the table.
+
+1. **`feedback_submitted` used to count submissions that never landed.** The
+   event fired beside the write rather than after it, and the write's failure
+   was swallowed, so any historical gap between this count and the `feedback`
+   table is that bug rather than a join error. From the fix onward the event is
+   sent only once the server has confirmed the row.
+2. **`step_checked` used to count restores as fresh taps.** Reopening a plan,
+   reloading a guest draft, following a `?space=` link and applying an Adjust
+   option all restore the checklist through the same handler a tap uses, so
+   every completed step was re-counted each time — inflating `checkedCount`,
+   which is the depth signal this whole document turns on. A user with five
+   steps done who reopened their plan twice produced fifteen events. Historical
+   `checkedCount` values read HIGH, and the inflation grows with how often
+   somebody came back — so the users who look most engaged are the ones whose
+   numbers are least trustworthy.
+
+Neither is fixable retroactively in the data. Read pre-fix rows as an upper
+bound and prefer distinct `anon_id` over event counts.
+
 ## What the data says today (2026-07-28)
 
 Sample: 4 browsers, 66 `screen_viewed`, 3 `plan_created`. Small, and mostly the
