@@ -76,6 +76,15 @@ placement that hurts somebody. The prompt now states the two rules separately
 and says why they point in opposite directions.
 
 ### #2 Vision hardening (PR #20)
+- The photo preview is hardened the same way, and later: `render-after` used to
+  take `instructions` — 4000 characters of free text — and hand them to the
+  image model verbatim. The client now sends `zones: [{level, zone}]` and the
+  brief is composed in `_shared/renderBrief.js`, where the zone text is
+  sanitized with the same `sanitizeUntrusted` and fenced behind its own guard.
+  The upstream call has a 75s deadline (below the client's 90s, so the server's
+  own answer is what the user reads) that cancels the request rather than
+  abandoning it, and the returned image is checked for type, base64 shape and
+  size BEFORE it is uploaded, pointed at, or sent to a phone.
 - Prompt injection: `_shared/promptContext.js` wraps ALL user-typed context in
   a `<user_context>` block behind a standing guard instruction;
   `sanitizeUntrusted` strips control chars, defangs the delimiter token, caps
