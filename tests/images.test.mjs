@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 
 // Build-time guard for the imagery pipeline. The manifest (data/images.json)
 // is the single source of truth; this suite fails CI if the manifest is
@@ -124,5 +124,47 @@ test('no external image hotlinks (stock/CDN) in the app source', () => {
   for (const f of files) {
     const txt = readFileSync(new URL(f, root), 'utf8');
     assert.doesNotMatch(txt, banned, `external image hotlink found in ${f}`);
+  }
+});
+
+/* ---------- weight ----------
+
+   The landing page used to ship 1.7MB of photography for two pictures drawn at
+   522x700 and 542x715: PNG originals, one of them the LCP image with
+   fetchpriority="high". Encoded as WebP at the same pixel dimensions they are
+   85KB and 87KB, and the difference is not visible at the size they are drawn.
+
+   Photographs are not PNGs. PNG is lossless, which for a photo means paying to
+   preserve sensor noise nobody can see, and there is no browser left that a
+   WebP fallback would serve. The budget below is generous — roughly twice what
+   the current files weigh — because the point is to catch a PNG dropped back
+   into a photo slot, not to police a few kilobytes. */
+
+const KB = 1024;
+const PHOTO_BUDGET = 200 * KB;
+/* The OG image stays a PNG: social scrapers are the one audience that still
+   handles WebP unevenly, and it is fetched by crawlers rather than readers. */
+const OG_BUDGET = 150 * KB;
+
+test('no photograph ships as a PNG', () => {
+  const stray = readdirSync(new URL('assets/photos/', root)).filter((f) => /\.(png|bmp|tiff?)$/i.test(f));
+  assert.deepEqual(stray, [], `assets/photos holds lossless captures of photographs: ${stray.join(', ')}`);
+});
+
+test('every image the site actually serves stays within its weight budget', () => {
+  /* Only what a visitor downloads: the files index.html names, including the
+     one the hero swaps in through onerror. The archived product screenshots
+     are on disk but on no page (see docs/asset-plan.md), so they are not a
+     visitor's problem and are not measured here. */
+  const referenced = new Set([...html.matchAll(/assets\/[A-Za-z0-9/_-]+\.(?:webp|png|jpe?g|svg|avif)/g)].map((m) => m[0]));
+  assert.ok(referenced.size >= 3, `expected index.html to reference several images, found ${referenced.size}`);
+
+  for (const file of referenced) {
+    const bytes = statSync(new URL(file, root)).size;
+    const budget = file === 'assets/og.png' ? OG_BUDGET : PHOTO_BUDGET;
+    assert.ok(
+      bytes <= budget,
+      `${file} is ${Math.round(bytes / KB)}KB, over its ${Math.round(budget / KB)}KB budget`,
+    );
   }
 });

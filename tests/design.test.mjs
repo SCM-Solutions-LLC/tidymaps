@@ -63,7 +63,7 @@ test('landing offers every space the wizard supports', () => {
 
 test('landing shows real evidence: sample-plan excerpt and the finished space', () => {
   assert.ok(landing.includes('Plan excerpt'), 'sample plan lost its excerpt');
-  for (const shot of ['assets/product/hero-3d.png', 'assets/photos/ex-pantry-after.png']) {
+  for (const shot of ['assets/product/hero-3d.webp', 'assets/photos/ex-pantry-after.webp']) {
     assert.ok(landing.includes(shot), `missing image slot: ${shot}`);
     assert.ok(existsSync(new URL(`../${shot}`, import.meta.url)), `image missing on disk: ${shot}`);
   }
@@ -72,8 +72,8 @@ test('landing shows real evidence: sample-plan excerpt and the finished space', 
 // A section headed "See a finished plan" showing a chaotic pantry argues
 // against itself. The before shot is the wizard's business, not the homepage's.
 test('the sample-plan section shows the finished space, not the mess', () => {
-  assert.ok(landing.includes('ex-pantry-after.png'), 'sample plan lost its finished-space photo');
-  assert.ok(!landing.includes('pantry-before.png'), 'the before shot is back on the homepage');
+  assert.ok(landing.includes('ex-pantry-after.webp'), 'sample plan lost its finished-space photo');
+  assert.ok(!landing.includes('pantry-before.webp'), 'the before shot is back on the homepage');
 });
 
 // A picture of text is not an explanation: app screenshots scaled down to fit

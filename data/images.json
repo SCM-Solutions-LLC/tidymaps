@@ -14,7 +14,7 @@
       "spec": { "orientation": "landscape", "minWidth": 1600, "crop": "4:3" }
     },
     "sample-after": {
-      "file": "assets/photos/ex-pantry-after.png",
+      "file": "assets/photos/ex-pantry-after.webp",
       "alt": "The finished pantry: labeled jars and bins on every shelf, snacks within reach, bulk stock up top",
       "license": {
         "type": "first-party",
@@ -24,13 +24,13 @@
       "status": "ready"
     },
     "product-hero-3d": {
-      "file": "assets/product/hero-3d.png",
+      "file": "assets/product/hero-3d.webp",
       "alt": "The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf",
       "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the app's own 3D viewer; interim hero stand-in until real photography lands." },
       "status": "ready"
     },
     "hero-pantry-after": {
-      "file": "assets/photos/pantry-after.png",
+      "file": "assets/photos/pantry-after.webp",
       "alt": "A family pantry organized with labeled bins, clear containers, and everything in its place",
       "license": {
         "type": "first-party",

@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
    so. This pins the client half of that path: photos attached means a request
    to analyze-space, and the plan that comes back is the one that renders. */
 
-const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.png', import.meta.url));
+const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.webp', import.meta.url));
 
 // The smallest plan the schema and the UI will both accept.
 const PLAN = {

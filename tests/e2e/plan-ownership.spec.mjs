@@ -15,7 +15,7 @@ import { normalizeAi } from '../../js/plan.js';
    The Supabase session is faked in localStorage and every call to the project
    is intercepted, so this runs offline and touches no real data. */
 
-const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.png', import.meta.url));
+const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.webp', import.meta.url));
 
 const SPACE_A = 'aaaaaaaa-1111-4111-8111-111111111111';
 const SPACE_B = 'bbbbbbbb-2222-4222-8222-222222222222';
