@@ -6,6 +6,7 @@ import { buildResults } from './results.js';
 import { getDemoScenario } from '../demo-scenarios.js';
 import { normalizeAi } from '../plan.js';
 import { submitInviteRequest } from '../db.js';
+import { submitFormErrorMessage } from '../api.js';
 import { affiliatesConfigured } from '../affiliates.js';
 import { hydrateImages } from '../images.js';
 import { ROOMS, AREAS, art } from '../wizard-data.js';
@@ -26,7 +27,20 @@ export function runDemo(){
 /* ---------- Email updates signup ---------- */
 const INVITE_KEY='tidymap_invite_email';
 
-export function requestInvite(){
+/* "You're signed up" was said to everyone, and it was a claim about a row in
+   a table nobody had heard back from. The request was fired with its failure
+   discarded (`.catch(()=>{})`), the address was written to localStorage before
+   it was sent, and the confirmation was shown regardless — so a failed signup
+   looked identical to a real one, and because the local copy is what the next
+   visit reads back, it kept saying "you're signed up" on every later visit to
+   a list the address was never on. Nobody would ever find out: not the person,
+   who was told they had signed up, and not the owner, whose table simply had
+   one fewer row than the funnel said.
+
+   Nothing is claimed or kept now until the server has said `ok`. */
+let signingUp=false;
+
+export async function requestInvite(){
   const input=document.getElementById('signup-email');
   const email=(input.value||'').trim();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
@@ -35,9 +49,23 @@ export function requestInvite(){
     toast('Please enter a valid email address');
     return;
   }
+  if(signingUp) return;
+  signingUp=true;
+  const btn=document.querySelector('#signup-form button[type=submit], #signup-form .btn');
+  if(btn) btn.disabled=true;
+  try{
+    toast('Signing you up…');
+    await submitInviteRequest(email);
+  }catch(e){
+    toast(submitFormErrorMessage(e, 'signup'));
+    return;
+  }finally{
+    signingUp=false;
+    if(btn) btn.disabled=false;
+  }
+  // Only now: the address is on the list, so the local copy that shows this
+  // confirmation back on the next visit is telling the truth.
   try{ localStorage.setItem(INVITE_KEY,email); }catch(e){}
-  // store the request in the database so the owner actually sees it
-  submitInviteRequest(email).catch(()=>{});
   showSignupConfirmed(email);
   toast('You’re signed up');
 }

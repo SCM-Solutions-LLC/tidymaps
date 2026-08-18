@@ -100,6 +100,29 @@ export function submitForm(payload){
   return callFn('submit-form', payload);
 }
 
+/* What to tell someone whose feedback or signup did not arrive. It has to say
+   what to do next, because the alternative — what this used to do — was to
+   say nothing and show them a thank-you.
+
+   `what` names the thing that failed ("feedback", "signup"), so one function
+   serves both without either reading as though it were written for the other.
+   The generic messages from callFn all mention the ANALYSIS backend, which is
+   the wrong subject on a form. */
+export function submitFormErrorMessage(error, what){
+  const code = error && error.code;
+  if(code==='rate_limited'){
+    return `That is a few ${what}s in a row — give it a few minutes and try again.`;
+  }
+  if(code==='network'){
+    return `Your ${what} did not send — check your connection and try again.`;
+  }
+  if(code==='unconfigured'){
+    return `${what[0].toUpperCase()}${what.slice(1)} is not connected yet, so this did not reach us.`;
+  }
+  if(code==='bad_email') return 'That email address was not accepted — check it and try again.';
+  return `That ${what} did not reach us. Nothing was lost — try again in a moment.`;
+}
+
 export function renderAfterErrorMessage(error){
   if(error && error.code==='rate_limited') return error.message;
   if(error && error.code==='preview_misconfigured'){

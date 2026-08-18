@@ -492,6 +492,13 @@ said so in each case. Check it before believing the backlog.
    `plan_rated` before `feedback_submitted`: the first is one tap on the
    report, the second needs someone to walk three more screens. Both are
    joinable to `step_checked` depth per `anon_id`.
+
+   One caveat on reading `feedback_submitted` against the `feedback` table:
+   until the item-4 fix, the event fired beside the write rather than after
+   it, and the write's failure was swallowed — so any historical gap between
+   the count and the row count is that bug, not a load or a join. From now on
+   the event is only sent once the server has confirmed the row, so the two
+   should agree.
 3. **#5 products:** SKU curation + real affiliate IDs (business), then flip the
    flags in `js/affiliates.js`. Every entry is still an empty string, so all 30
    catalog products link plain and no disclosure renders.

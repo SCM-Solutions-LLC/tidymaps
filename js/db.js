@@ -1,5 +1,5 @@
 import { supa, getUser } from './auth.js';
-import { submitForm } from './api.js';
+import { submitForm, ApiError } from './api.js';
 import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord,
          currentPlanInstance, planInstanceIsCurrent } from './state.js';
 import { toast } from './ui.js';
@@ -480,18 +480,39 @@ export function shareUrlFor(shareId){
    user_id was whatever the browser put in the body. They now go through
    submit-form, which applies the same ceilings as every other function and
    takes user_id from the verified caller. */
-export async function submitFeedbackRow(row){
-  if(!supa()) return false;
-  try{ await submitForm({ kind:'feedback', ...row }); return true; }
-  catch(_){ return false; }
+/* Both of these used to answer `false` instead of failing, and both callers
+   were written as though they threw: the feedback screen attaches a `.catch`
+   that rolls back `fbSent` and says the answer did not arrive, and that catch
+   could never run. So a 500, a rate limit, or no connection at all still
+   collapsed the card to "Thanks — that's genuinely useful" over a row nobody
+   wrote, and the screen went on saying "you already sent this" for the rest
+   of the session. Someone who took the trouble to answer was told it landed.
+
+   They throw now, and the `supa()` guard is gone with the swallow: it was
+   standing in for "is the backend configured", which callFn already answers
+   properly, while actually testing whether auth had finished initializing —
+   so a fast click was reported to the user as a delivered submission.
+
+   `send` is a parameter for the same reason deleteSpaceData takes its client:
+   the behaviour worth testing is what happens on each kind of failure. */
+export async function submitFeedbackRow(row, send=submitForm){
+  confirmSubmitted(await send({ kind:'feedback', ...row }));
 }
 
 // Founding Circle: store the request where the owner can see it. An address
 // already on the list is success for the person asking, and the function
 // answers it identically to a fresh signup so the response cannot be used to
 // test whether an address is registered.
-export async function submitInviteRequest(email){
-  if(!supa()) return false;
-  try{ await submitForm({ kind:'invite', email }); return true; }
-  catch(_){ return false; }
+export async function submitInviteRequest(email, send=submitForm){
+  confirmSubmitted(await send({ kind:'invite', email }));
+}
+
+/* submit-form answers `{ok:true}` and nothing else, so anything else is not a
+   confirmation. A 2xx that is not JSON leaves callFn returning null — a
+   captive-portal login page and a proxy's error page both arrive that way —
+   and "no error" is not the same as "stored". */
+function confirmSubmitted(result){
+  if(!result || result.ok !== true){
+    throw new ApiError('That did not reach us.', { code:'unconfirmed' });
+  }
 }
