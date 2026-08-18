@@ -3,6 +3,7 @@ import { ICON } from '../icons.js';
 import { state } from '../state.js';
 import { go } from '../router.js';
 import { submitFeedbackRow } from '../db.js';
+import { submitFormErrorMessage } from '../api.js';
 import { track, flush } from '../telemetry.js';
 import { toast } from '../ui.js';
 
@@ -77,9 +78,10 @@ export function buildRate(){
 }
 
 // Submitting from the report writes the same row the screen would. The card
-// collapses to a thank-you instead of sending the reader two screens away.
-export function sendRate(){
-  sendFeedback((document.getElementById('rate-text')||{}).value||null);
+// collapses to a thank-you instead of sending the reader two screens away —
+// once there is a row behind it.
+export async function sendRate(){
+  await sendFeedback((document.getElementById('rate-text')||{}).value||null);
   buildRate();
 }
 
@@ -98,34 +100,53 @@ export function buildFeedback(){
   optionList(document.getElementById('fb-next'), FB_NEXT, 'chip', t=>{ state.fbNext=t; }, state.fbNext);
 }
 
-export function submitFeedback(){
-  sendFeedback((document.getElementById('fb-text')||{}).value||null);
-  go('done');
+// The screen's own submit moves on to 'done' — but only once the answer is
+// somewhere other than this tab. A failure leaves the reader on the form with
+// everything they typed still in it.
+export async function submitFeedback(){
+  if(await sendFeedback((document.getElementById('fb-text')||{}).value||null)) go('done');
 }
 
-function sendFeedback(comments){
-  if(state.fbSent) return;
-  state.fbSent=true;
+/* `fbSent` means "there is a row for this plan", and it is what both surfaces
+   render their thank-you from, so it cannot be set hopefully. `sending` is the
+   separate thing it was doing badly: stopping a second submit while the first
+   is still in the air. */
+let sending=false;
+
+async function sendFeedback(comments){
+  if(state.fbSent || sending) return false;
+  sending=true;
   /* The write was best-effort and the thank-you was unconditional, so a 500
      produced "Thanks — that's genuinely useful" over a row that was never
-     written, and the screen went on saying "you already sent this". Someone who
-     took the trouble to answer is owed the truth about whether it arrived. */
-  submitFeedbackRow({
-    useful: state.fbUseful||null,
-    vs: state.fbVs||null,
-    comments: comments||null,
-    next_space: state.fbNext||null,
-  }).catch(()=>{
-    state.fbSent=false;
-    toast('That did not reach us — your answers are still here, try again in a moment.');
-    buildRate();
-    buildFeedback();
-  });
-  // The pay-for-it signal: fbUseful is a fixed choice ("I would pay for
-  // this" among them), joined against step_checked depth per anon_id.
-  // Free-text comments deliberately stay out of telemetry.
+     written, and the screen went on saying "you already sent this". The catch
+     that was meant to undo that could never run: submitFeedbackRow answered
+     `false` on failure rather than rejecting. Someone who took the trouble to
+     answer is owed the truth about whether it arrived. */
+  try{
+    await submitFeedbackRow({
+      useful: state.fbUseful||null,
+      vs: state.fbVs||null,
+      comments: comments||null,
+      next_space: state.fbNext||null,
+    });
+  }catch(e){
+    toast(submitFormErrorMessage(e, 'feedback'));
+    return false;
+  }finally{
+    sending=false;
+  }
+  state.fbSent=true;
+  /* The pay-for-it signal: fbUseful is a fixed choice ("I would pay for
+     this" among them), joined against step_checked depth per anon_id.
+     Free-text comments deliberately stay out of telemetry.
+
+     After the write, not beside it. Counting submissions that never landed
+     makes the one number this app steers by — how many people answered —
+     larger than the table it is supposed to describe, and the gap grows with
+     exactly the failures nobody would otherwise notice. */
   track('feedback_submitted', {
     useful: state.fbUseful||'', vs: state.fbVs||'', nextSpace: state.fbNext||'',
   });
   flush(); // the session often ends right after — don't wait the debounce
+  return true;
 }

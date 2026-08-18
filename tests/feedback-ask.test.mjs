@@ -46,11 +46,27 @@ test('the rating is recorded when tapped, not when a form is completed', () => {
 
 test('answering on the report and then walking the flow counts once', () => {
   // fbSent gates the database row, fbRated the telemetry event.
-  assert.match(feedback, /function sendFeedback\(comments\)\{\s*\n\s*if\(state\.fbSent\) return;/);
+  assert.match(feedback, /if\(state\.fbSent \|\| sending\) return false;/);
   assert.match(feedback, /state\.fbSent=true;/);
   // ...and the screen shows the answer back rather than asking a second time.
   assert.ok(html.includes('id="fb-sent"'), 'no already-answered state on the feedback screen');
   assert.match(feedback, /sent\.classList\.toggle\('hide', !state\.fbSent\)/);
+});
+
+/* fbSent is what both surfaces draw their thank-you from, so setting it before
+   the write returns is the whole bug: the card said "Thanks" over a row that
+   was never written, and kept saying "you already sent this" afterwards. The
+   ORDER is the contract, so the order is what this reads. */
+test('the thank-you and the telemetry both wait for the write to land', () => {
+  const send = feedback.slice(feedback.indexOf('async function sendFeedback('));
+  const wrote = send.indexOf('await submitFeedbackRow(');
+  const marked = send.indexOf('state.fbSent=true;');
+  const counted = send.indexOf("track('feedback_submitted'");
+  assert.ok(wrote > -1 && marked > -1 && counted > -1);
+  assert.ok(marked > wrote, 'fbSent is set before the row is written');
+  assert.ok(counted > wrote, 'feedback_submitted counts submissions that never landed');
+  // And a failure has to say so rather than passing silently.
+  assert.match(send, /toast\(submitFormErrorMessage\(e, 'feedback'\)\)/);
 });
 
 test('a new plan gets a fresh ask', () => {
