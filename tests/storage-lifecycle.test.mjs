@@ -279,3 +279,47 @@ test('the answers a patch carries are snapshotted when it is queued', async () =
   state.activeSpaceId = null;   // guests persist via localStorage; nothing queued
   assert.deepEqual(db.takePendingPatch().patch, {});
 });
+
+/* ---------- The last write ----------
+
+   A write waits 800ms to be batched and a failed one waits 4000ms to be
+   retried, and the whole of that is spent on a page the user may close,
+   background, or navigate away from. The queue is in memory, so it goes with
+   the page: the step comes back unticked and the only person who knows is the
+   user who ticked it. Ticking the last step and closing the tab is not an
+   unusual way to finish a plan, it is the normal one. */
+test('a pending write is flushed when the page goes away, and survives it', () => {
+  const src = readFileSync(new URL('../js/db.js', import.meta.url), 'utf8');
+  const flush = src.slice(src.indexOf('function flushBeforeUnload'), src.indexOf('/* Registered here'));
+
+  /* keepalive is the whole point. A normal fetch is cancelled when the
+     document goes away, so flushing without it would only move the moment the
+     write is lost rather than prevent it. */
+  assert.match(flush, /keepalive:\s*true/,
+    'without keepalive the flush is cancelled with the page it is trying to outlive');
+  assert.match(flush, /method:\s*'PATCH'/);
+  // The queue is drained before the request, so a second hide cannot resend it.
+  assert.match(flush, /pendingPatch=\{\}; patchTargetId=null;[\s\S]*?fetch\(/);
+  // RLS still applies: the write carries the user's own token, not just the key.
+  assert.match(flush, /authorization:`Bearer \$\{token\}`/);
+
+  const install = src.slice(src.indexOf('/* Registered here'), src.indexOf('export function takePendingPatch'));
+  /* visibilitychange, not beforeunload: beforeunload does not fire reliably on
+     mobile, which is exactly where tabs are killed most aggressively. */
+  assert.match(install, /visibilitychange/);
+  assert.match(install, /visibilityState==='hidden'/);
+  assert.match(install, /pagehide/);
+  assert.doesNotMatch(install, /beforeunload/);
+  // Guarded, because the Node suite imports this module and has no document.
+  assert.match(install, /typeof document!=='undefined'/);
+});
+
+test('the unload flush is registered on import, not left to a caller', () => {
+  /* A persistence guarantee that depends on somebody remembering to install it
+     is the shape of half the bugs this file has already had. */
+  const src = readFileSync(new URL('../js/db.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /export function installPatchFlush/);
+  const main = readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(main, /flushBeforeUnload/,
+    'the listener must not need wiring from main.js');
+});
