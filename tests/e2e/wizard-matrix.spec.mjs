@@ -191,6 +191,9 @@ test('no-kid household shows no KID safety content (safety rules fire only when 
 test('wizard answers personalize the plan: style cited, effort sized, use-what-I-have = no purchases, contents authoritative', async ({ page }) => {
   await driveWizard(page, 'pantry', {
     kids: 'no',
+    // Chosen, not left preselected: "Use what I have" is only a constraint
+    // when the user actually picks it (see the untouched-default test below).
+    shopping: 'Use what I have',
     onContents: async (p) => {
       // The user says only these live in the pantry — the contents list is
       // authoritative, so scenario-only categories (e.g. "Paper goods") must
@@ -222,7 +225,7 @@ test('wizard answers personalize the plan: style cited, effort sized, use-what-I
   expect(stepsText).toMatch(/labels and categories/i);
   expect(stepsText).toMatch(/already own/i);
 
-  // "Use what I have" (the default) → the shopping upsell stays off.
+  // "Use what I have", chosen on the shopping step → the upsell stays off.
   await expect(page.locator('#res-upgrades-wrap')).toHaveClass(/hide/);
 
   // Unticked scenario categories are gone from the shelf map, not just the tags.
@@ -243,4 +246,30 @@ test('product links are https and point at known retailers', async ({ page }) =>
   const hrefs = await page.$$eval('#res-upgrades a[href]', (as) => as.map((a) => a.href));
   const allowed = /^https:\/\/([a-z0-9-]+\.)*(amazon\.com|target\.com|walmart\.com|containerstore\.com|ikea\.com)\//i;
   for (const h of hrefs) expect(h, `unexpected product link: ${h}`).toMatch(allowed);
+});
+
+/* The shopping step ships with "Use what I have" already selected, and that
+   preselection was enforced as a hard constraint: prefs gained "Use only what
+   I already own", the budget was pinned to $0, and applyBudget emptied
+   productNeeds on every plan and printed "You told us to use only what you
+   already own" over it. Someone who accepted the defaults got no product
+   recommendations at all, and a sentence claiming they had asked for that.
+
+   Review already called it "our default" and the card already rendered
+   unselected — the interface was honest, the engine was not. */
+test('the untouched shopping default suggests products instead of banning them', async ({ page }) => {
+  await driveWizard(page, 'pantry', { kids: 'no' });   // shopping step left alone
+  await expect(page.locator('#screen-results')).toHaveClass(/active/);
+
+  await expect(page.locator('#res-upgrades-wrap'),
+    'nobody chose to use only what they own, so the suggestions stay available')
+    .not.toHaveClass(/hide/);
+
+  // And the report does not claim the reader asked for them.
+  await expect(page.locator('#res-upgrades-sub')).toContainText(/did(n[’']t| not) tell us either way/i);
+  await expect(page.locator('#res-upgrades-sub')).not.toContainText(/you said you/i);
+
+  const stepsText = await page.locator('#res-steps').textContent();
+  expect(stepsText, 'a step cited an answer the user never gave')
+    .not.toMatch(/you told us to use only what you already own/i);
 });

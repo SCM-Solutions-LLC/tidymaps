@@ -13,15 +13,19 @@ import { snapshotSave, persistSpace, openSavedSpace } from '../js/db.js';
    The scenario throughout is the one that costs the most: plan A is mid-save
    (or mid-load) when the user starts plan B. */
 
-// A row shaped like the one the client actually saves. `select('id').single()`
-// is the chain saveSpace uses, so the stub answers exactly that shape.
-function fakeClient({ onUpdate=()=>({ error:null }), insertId='new-space-id' }={}){
+/* A row shaped like the one the client actually saves. persistSpace updates
+   with `.update(row).eq('id',id).select('id').maybeSingle()` and inserts with
+   `.select('id').single()`, so the stub answers exactly those chains — an
+   update that matches no row is a real outcome the caller has to see. */
+function fakeClient({ onUpdate=(_body,id)=>({ data:{ id }, error:null }), insertId='new-space-id' }={}){
   const calls=[];
   return {
     calls,
     from(table){
       if(table==='spaces') return {
-        update:(body)=>({ eq:async (_col,id)=>{ calls.push(['update',id,body]); return onUpdate(body,id); } }),
+        update:(body)=>({ eq:(_col,id)=>({ select:()=>({ maybeSingle:async ()=>{
+          calls.push(['update',id,body]); return onUpdate(body,id);
+        } }) }) }),
         insert:(body)=>({ select:()=>({ single:async ()=>{ calls.push(['insert',body]); return { data:{ id:insertId }, error:null }; } }) }),
       };
       if(table==='space_media') return {

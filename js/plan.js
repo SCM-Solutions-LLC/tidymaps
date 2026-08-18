@@ -17,22 +17,47 @@ const ITEM_FLAGS = new Set(['heavy','chemical','sharp','fragile','kid-frequent']
 const ITEM_SIZES = new Set(['s','m','l']);
 
 const s = v => (v==null?'':String(v));
-const num = (v,fallback)=>{ const n=Number(v); return Number.isFinite(n)&&n>0?n:fallback; };
+/* Two helpers, because one was doing two incompatible jobs.
+
+   `positive` is right for everything it is used on below — widths, depths,
+   quantities, shelf counts — where zero is not a measurement but a missing
+   one, and where `maxDims` even relies on the zero fallback being falsy.
+
+   It was wrong for exactly one caller. `shelfIndex` is an index: 0 is the top
+   shelf, the most ordinary value a plan can carry. Under `positive` an
+   explicit 0 failed the `n>0` test and fell back to the row's array position,
+   which is not merely a misplaced row — it can land on an index another row
+   already holds, and the 3D view keys its shelves by index, so one of the two
+   is dropped from the drawing entirely. It also recreates the duplicate-index
+   condition the server validator rejects by name, and breaks the idempotency
+   contract documented below that the share path depends on. Latent so far only
+   because a plan whose rows arrive top-down has shelfIndex === i anyway. */
+const positive = (v,fallback)=>{ const n=Number(v); return Number.isFinite(n)&&n>0?n:fallback; };
+/* The absent values are named rather than left to Number(), which answers 0
+   for null, '' and false alike. Under `positive` those all failed the `n>0`
+   test and fell through to the fallback, so admitting 0 as a real index has to
+   keep saying "absent" for them explicitly — otherwise a row with no
+   shelfIndex at all silently claims the top shelf. */
+const nonNegInt = (v,fallback)=>{
+  if(v===null || v===undefined || v==='' || typeof v==='boolean') return fallback;
+  const n=Number(v);
+  return Number.isFinite(n) && n>=0 ? Math.round(n) : fallback;
+};
 
 function normalizeGeometry(g, mapLen){
   // the user's own shelf count wins over the AI estimate (map rows are clamped
   // to shelfCount downstream, so the two always stay consistent)
   const userShelves = state.dims && state.dims.shelves;
-  const shelfCount = Math.max(1, Math.min(12, Math.round(num(userShelves, num(g&&g.shelfCount, mapLen||5)))));
+  const shelfCount = Math.max(1, Math.min(12, Math.round(positive(userShelves, positive(g&&g.shelfCount, mapLen||5)))));
   let fracs = Array.isArray(g&&g.shelfYFracs) ? g.shelfYFracs.map(Number).filter(n=>Number.isFinite(n)&&n>=0&&n<=1) : [];
   if(fracs.length!==shelfCount){
     fracs = Array.from({length:shelfCount},(_,i)=>0.08+0.82*(shelfCount===1?0:i/(shelfCount-1)));
   }
   const geo = {
     unit:'in',
-    width: num(g&&g.width, 30),
-    height: num(g&&g.height, 60),
-    depth: num(g&&g.depth, 14),
+    width: positive(g&&g.width, 30),
+    height: positive(g&&g.height, 60),
+    depth: positive(g&&g.depth, 14),
     shelfCount,
     shelfYFracs: fracs,
     estimated: g ? g.estimated!==false : true,
@@ -81,7 +106,7 @@ export function normalizeAi(j){
     opportunities: (j.opportunities||[]).map(s).filter(Boolean),
     map: rawMap.map((m,i)=>({
       lv:s(pick(m.level, m.lv)), ic:iconFor(pick(m.icon, m.ic)), zone:s(m.zone), why:s(m.why), eye:!!m.eye,
-      shelfIndex: Math.max(0, Math.min(geometry.shelfCount-1, Math.round(num(m.shelfIndex, i)))),
+      shelfIndex: Math.max(0, Math.min(geometry.shelfCount-1, nonNegInt(m.shelfIndex, i))),
       safety: {
         flag: (m.safety && SAFETY_FLAGS.has(m.safety.flag)) ? m.safety.flag : null,
         why: s(m.safety && m.safety.why) || null,
@@ -97,11 +122,11 @@ export function normalizeAi(j){
       .slice(0,10)
       .map(p=>({
         type:p.type,
-        qty: Math.max(1, Math.min(12, Math.round(num(p.qty,1)))),
+        qty: Math.max(1, Math.min(12, Math.round(positive(p.qty,1)))),
         purpose: s(p.purpose),
         targetZone: s(p.targetZone),
-        maxDims: (p.maxDims && num(p.maxDims.w_in,0) && num(p.maxDims.h_in,0) && num(p.maxDims.d_in,0))
-          ? {w_in:num(p.maxDims.w_in,0), h_in:num(p.maxDims.h_in,0), d_in:num(p.maxDims.d_in,0)} : null,
+        maxDims: (p.maxDims && positive(p.maxDims.w_in,0) && positive(p.maxDims.h_in,0) && positive(p.maxDims.d_in,0))
+          ? {w_in:positive(p.maxDims.w_in,0), h_in:positive(p.maxDims.h_in,0), d_in:positive(p.maxDims.d_in,0)} : null,
         priority: p.priority==='high'?'high':'nice',
         /* Survives normalizeAi so a saved or reloaded plan still knows which
            products the user asked for. Dropping it here is how `observed` and
@@ -239,7 +264,12 @@ export function buildAnalysisContext(){
     goal: (state.goals && state.goals[0]) || state.goal || null,
     goals: (state.goals||[]).slice(),      // the user's own words — cite verbatim
     styles: (state.styles||[]).slice(),
+    /* `touched` travels with the shopping answer for the same reason it does
+       with the setup: the value alone cannot tell the model whether the user
+       chose it or merely left the card we preselected, and the backend turns
+       "Use what I have" into a hard rule that empties the shopping list. */
     shopping: state.shoppingPref || null,
+    shoppingTouched: !!state.shoppingTouched,
     detected: (state.detected||[]).slice(),
     categories: (state.cats||[]).slice(),  // authoritative when the user edited them
     prefs: [...(state.prefs||[])],

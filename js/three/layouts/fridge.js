@@ -32,7 +32,6 @@ export function build(ctx){
     const row=rowsByShelf.get(i)||null;
     const surface=row&&row.surface;
     const isDrawer=surface==='drawer'||(i>=NSH-2 && !surface);
-    const isShelf=!isDrawer;
 
     if(isDrawer){
       const drawerH=Math.min(gapAbove[i]-0.5, 7);

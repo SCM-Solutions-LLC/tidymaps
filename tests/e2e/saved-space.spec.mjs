@@ -19,7 +19,7 @@ const NEW_SPACE_ID = '11111111-2222-4333-8444-555555555555';
 const SECOND_SPACE_ID = '99999999-8888-4777-8666-555555555555';
 
 // Records every Supabase call and answers it locally.
-async function stubBackend(page, { signedIn }) {
+async function stubBackend(page, { signedIn, updateMatchesNothing = false }) {
   const wire = [];
   const newIds = [NEW_SPACE_ID, SECOND_SPACE_ID];
   let inserted = 0;
@@ -42,6 +42,22 @@ async function stubBackend(page, { signedIn }) {
     if (/\/rest\/v1\/spaces/.test(url) && req.method() === 'POST') {
       const id = newIds[Math.min(inserted++, newIds.length - 1)];
       return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id }) });
+    }
+    /* An UPDATE ... RETURNING id answers with the row it changed, and saveSpace
+       now reads that row: an update matching nothing is not an error, it is a
+       save that silently wrote nothing, and it used to be reported as "Saved".
+       The catch-all below returns `[]` for everything, which is what a real
+       PATCH says only when it matched no rows — so the stub has to be specific
+       here or it stands in for the very failure the check exists to catch. */
+    if (/\/rest\/v1\/spaces/.test(url) && req.method() === 'PATCH') {
+      if (updateMatchesNothing) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      }
+      const id = new URL(`https://x${url}`).searchParams.get('id') || '';
+      return route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify([{ id: id.replace(/^eq\./, '') || NEW_SPACE_ID }]),
+      });
     }
     if (/\/rest\/v1\//.test(url)) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
@@ -179,4 +195,21 @@ test('the explicit save still runs and is the thing that uploads photos', async 
   expect(spaceWrites(wire)).toHaveLength(0);
   expect(wire.filter((c) => c.method === 'PATCH' && /\/rest\/v1\/spaces/.test(c.url)).length).toBeGreaterThan(0);
   await expect(page.locator('#toast')).toContainText('Saved');
+});
+
+/* PostgREST does not treat "matched no rows" as an error, so an UPDATE against
+   a space that has since been deleted on another device — or that RLS no
+   longer admits — came back clean and was reported as "Saved". The user closes
+   the tab believing their plan is filed. */
+test('a save that matches no row says so instead of claiming success', async ({ page }) => {
+  await stubBackend(page, { signedIn: true, updateMatchesNothing: true });
+  await buildAPlan(page);
+  await page.waitForTimeout(1500);
+
+  await page.getByRole('button', { name: 'Save & share' }).click();
+  await expect(page.locator('#screen-save')).toHaveClass(/active/);
+  await page.locator('#save-opts .opt', { hasText: 'Save plan' }).click();
+
+  await expect(page.locator('#toast')).toContainText('Saving failed');
+  await expect(page.locator('#toast')).not.toContainText('Find it under');
 });

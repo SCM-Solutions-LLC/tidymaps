@@ -11,6 +11,7 @@
 // machinery every other function uses, and user_id comes from the verified
 // caller, never the body.
 import { preflight, json } from '../_shared/cors.ts';
+import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 
@@ -32,15 +33,12 @@ Deno.serve(async (req) => {
 
   // next_space matches the column and is what js/screens/feedback.js sends;
   // nextSpace is accepted too so either spelling round-trips.
-  let body: {
+  const parsed = await readJsonObject(req);
+  if (!parsed) return json(req, 400, { error: 'invalid_body' });
+  const body = parsed as unknown as {
     kind?: string; email?: string; useful?: unknown; vs?: unknown;
     comments?: unknown; next_space?: unknown; nextSpace?: unknown;
   };
-  try {
-    body = await req.json();
-  } catch {
-    return json(req, 400, { error: 'invalid_json' });
-  }
 
   const kind = String(body.kind ?? '');
   if (kind !== 'feedback' && kind !== 'invite') return json(req, 400, { error: 'bad_kind' });

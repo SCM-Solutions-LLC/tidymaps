@@ -12,6 +12,7 @@ const renderAfter = readFileSync(new URL('../supabase/functions/render-after/ind
 const getSharedSpace = readFileSync(new URL('../supabase/functions/get-shared-space/index.ts', import.meta.url), 'utf8');
 const auth = readFileSync(new URL('../supabase/functions/_shared/auth.ts', import.meta.url), 'utf8');
 import { callerIp } from '../supabase/functions/_shared/callerIp.js';
+import { readJsonObject } from '../supabase/functions/_shared/body.js';
 
 test('rate limiting is delegated to one atomic database operation', () => {
   assert.match(rateLimit, /\.rpc\(['"]check_and_log_usage['"]/);
@@ -122,5 +123,36 @@ test('every edge function declares verify_jwt in config.toml', () => {
   for (const fn of ['analyze-space', 'render-after', 'track-events', 'get-shared-space', 'submit-form']) {
     assert.match(config, new RegExp(`\\[functions\\.${fn}\\][\\s\\S]{0,80}?verify_jwt`),
       `${fn}: verify_jwt is not declared, so the deploy decides it`);
+  }
+});
+
+/* ---------- Request bodies ----------
+
+   Every function wrapped `await req.json()` in a try/catch for malformed JSON
+   and then trusted the result — but JSON.parse succeeds just as readily on
+   `null`, `4`, `"hi"` and `[]`. Each of those reached the property access on
+   the next line, and `body.images` on a null body throws a TypeError the
+   runtime turns into a 500: the caller's mistake reported as a server fault,
+   generated on demand by anyone, burying the real 500s in the log. */
+test('a body that is not an object is refused rather than dereferenced', async () => {
+  const asRequest = (text) => ({ json: async () => JSON.parse(text) });
+
+  for (const bad of ['null', '4', '"hi"', '[]', '[{"kind":"feedback"}]', 'true']) {
+    assert.equal(await readJsonObject(asRequest(bad)), null, `${bad} must not pass as a body`);
+  }
+  assert.equal(await readJsonObject({ json: async () => { throw new SyntaxError('bad'); } }), null,
+    'unparseable JSON is still refused');
+
+  assert.deepEqual(await readJsonObject(asRequest('{"kind":"feedback"}')), { kind: 'feedback' });
+  assert.deepEqual(await readJsonObject(asRequest('{}')), {}, 'an empty object is a valid body');
+});
+
+test('every function reads its body through the shared guard', () => {
+  for (const fn of ['analyze-space', 'render-after', 'track-events', 'get-shared-space', 'submit-form']) {
+    const src = readFileSync(new URL(`../supabase/functions/${fn}/index.ts`, import.meta.url), 'utf8');
+    assert.match(src, /readJsonObject\(req\)/, `${fn} does not use the shared body guard`);
+    assert.match(src, /error: 'invalid_body'/, `${fn} does not answer a bad body with 400`);
+    assert.doesNotMatch(src, /await req\.json\(\)/,
+      `${fn} still parses its own body, so the guard can be bypassed there`);
   }
 });

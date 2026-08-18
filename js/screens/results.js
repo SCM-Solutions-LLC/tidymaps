@@ -973,6 +973,18 @@ export function renderAfter(mode){
 export function setUpgrades(on){
   state.upgrades=on;
   document.getElementById('res-upgrades-wrap').classList.toggle('hide',!on);
+  /* The subtitle used to state flatly that the reader had said they were open
+     to buying storage. For anyone who left the preselected card alone that is
+     a sentence about a decision they never made — the same false attribution
+     the touched flags exist to prevent, printed above a list of things to buy.
+     Suggestions are still worth showing when nobody said either way; claiming
+     they were asked for is not. */
+  const sub=document.getElementById('res-upgrades-sub');
+  if(sub){
+    sub.textContent = state.shoppingTouched
+      ? 'Only because you said you’re open to buying storage products. The $0 plan above works without any of these.'
+      : 'You didn’t tell us either way about buying storage, so these are suggestions only. The plan above works without any of them.';
+  }
   const tocShop=document.getElementById('toc-shop');
   if(tocShop) tocShop.classList.toggle('hide',!on);
   // Turning the section off zeroes what the plan costs; the tile has to hear it.
