@@ -397,6 +397,14 @@ verify_jwt = false
 [functions.submit-form]
 verify_jwt = false
 
+# TEMPORARY diagnostic — see supabase/functions/debug-headers/index.ts. It is
+# inert without the DEBUG_HEADERS_TOKEN secret, and answers 404 to everyone
+# else. Delete this block with the function once the caller-IP question is
+# settled. verify_jwt stays false for the same reason as the rest: the anon key
+# ships in the client and proves nothing. The token is what gates this one.
+[functions.debug-headers]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

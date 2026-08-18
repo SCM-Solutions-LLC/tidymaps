@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 const rateLimit = readFileSync(new URL('../supabase/functions/_shared/ratelimit.ts', import.meta.url), 'utf8');
 const migrations = [1, 2, 3, 4, 5, 6, 7]
@@ -154,5 +154,50 @@ test('every function reads its body through the shared guard', () => {
     assert.match(src, /error: 'invalid_body'/, `${fn} does not answer a bad body with 400`);
     assert.doesNotMatch(src, /await req\.json\(\)/,
       `${fn} still parses its own body, so the guard can be bypassed there`);
+  }
+});
+
+/* ---------- The temporary caller-IP diagnostic ----------
+
+   A diagnostic that leaks is worse than the uncertainty it resolves, so the
+   properties that make this one safe to deploy are pinned here rather than
+   left to the reviewer's eye. Delete this test with the function. */
+test('the header diagnostic is inert without its token and never echoes a value', () => {
+  const src = readFileSync(new URL('../supabase/functions/debug-headers/index.ts', import.meta.url), 'utf8');
+
+  // No secret set => the endpoint does nothing, so forgetting to remove it is
+  // not the same as leaving a hole open.
+  assert.match(src, /if \(!expected \|\| !tokenMatches\(given, expected\)\)/);
+  assert.match(src, /return json\(req, 404, \{ error: 'not_found' \}\)/,
+    'a wrong token must be indistinguishable from no such endpoint');
+  // Compared without an early return, so the token cannot be recovered a byte
+  // at a time from response timing.
+  assert.match(src, /diff \|= given\.charCodeAt\(i\) \^ expected\.charCodeAt\(i\)/);
+
+  /* Shape only. A caller's address is personal data; the question this answers
+     is "which header won", which needs no value. `raw` must reach only
+     length/parse checks, never the response body. */
+  assert.doesNotMatch(src, /value:\s*raw|raw,\s*$/m, 'a raw header value reaches the response');
+  assert.doesNotMatch(src, /console\.(log|error|warn)/, 'a header value could reach the logs');
+
+  // Nothing billable: no model call, no table, no storage.
+  for (const forbidden of ['adminClient', 'checkAndLog', 'anthropic', 'generativelanguage', 'from(']) {
+    assert.ok(!src.includes(forbidden), `the diagnostic must not use ${forbidden}`);
+  }
+});
+
+test('the diagnostic and its probe are removed together', () => {
+  /* Both halves are temporary, and a probe left pointing at a deleted function
+     is a confusing failure rather than an answer. If one is gone the other
+     must be too — this test then goes with them. */
+  const root = new URL('../', import.meta.url);
+  const fnExists = existsSync(new URL('supabase/functions/debug-headers/index.ts', root));
+  const probeExists = existsSync(new URL('scripts/probe-caller-ip.mjs', root));
+  assert.equal(fnExists, probeExists,
+    'debug-headers and scripts/probe-caller-ip.mjs must be added and deleted as a pair');
+  if (fnExists) {
+    const config = readFileSync(new URL('supabase/config.toml', root), 'utf8');
+    assert.match(config, /\[functions\.debug-headers\]/,
+      'the diagnostic is deployed by CI, so it has to declare verify_jwt like the rest');
   }
 });
