@@ -2,7 +2,7 @@ import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_C
 import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
-import { activeSafetyNotes, activeProductNeeds, activeGeometry, buildGeminiBrief, modelLabel } from '../plan.js';
+import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
 import { areaFor, art, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
@@ -424,13 +424,13 @@ export async function generateAfter(){
      plan's data crossing into this one. */
   const instance=currentPlanInstance();
   const source=beforePhotoSource();
-  const brief=buildGeminiBrief();
+  const zones=renderZones();
   const spaceId=state.activeSpaceId;
   const stillCurrent=()=>planInstanceIsCurrent(instance);
   try{
     const image=await encodeBeforePhoto(source);
     if(!stillCurrent()) return;
-    const res=await renderAfterApi(image, brief, spaceId);
+    const res=await renderAfterApi(image, zones, spaceId);
     // The preview belongs to the plan it was rendered for. A plan switch while
     // it was in flight means there is nothing here to write it to.
     if(!stillCurrent()) return;

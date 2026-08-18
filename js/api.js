@@ -86,9 +86,12 @@ export function analyzeSpace(images, context, opts={}){
   return callFn('analyze-space', { images, context }, opts);
 }
 
-// image: {media_type, data(b64)}; returns {image:{media_type,data}, storagePath}
-export function renderAfter(image, instructions, spaceId = null){
-  return callFn('render-after', { image, instructions, spaceId });
+/* image: {media_type, data(b64)}; zones: [{level, zone}] — DATA, not a prompt.
+   The function composes the edit brief from it (_shared/renderBrief.js), so
+   nothing this client sends is treated as an instruction to the image model.
+   Returns {image:{media_type,data}, storagePath}. */
+export function renderAfter(image, zones, spaceId = null){
+  return callFn('render-after', { image, zones, spaceId });
 }
 
 // shareId: uuid from a read-only share link; returns { space } (sanitized —
@@ -144,6 +147,12 @@ export function renderAfterErrorMessage(error){
   }
   if(error && error.code==='upstream_invalid_request'){
     return 'The photo preview could not process this image. Try another clear JPG, PNG, or WebP photo.';
+  }
+  if(error && (error.code==='upstream_timeout' || error.code==='timeout')){
+    return 'The photo preview took too long this time — try again in a moment.';
+  }
+  if(error && (error.code==='bad_upstream_image' || error.code==='upstream_image_too_large')){
+    return 'The photo preview came back in a form we could not use. Try again, or try another photo.';
   }
   return 'Photo preview unavailable right now — the illustrated layout below still shows the full plan.';
 }

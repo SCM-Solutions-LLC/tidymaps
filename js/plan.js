@@ -204,20 +204,22 @@ export function activeProductNeeds(){
   return state.ai ? (state.ai.productNeeds || []) : DEMO_PRODUCT_NEEDS;
 }
 
-// The edit brief for the photorealistic "after" render. The transformation
-// must be dramatic and cover the WHOLE frame — an after photo that changed
-// two items reads as a bug, not a plan.
-export function buildGeminiBrief(){
-  const lines=activeMapV2().map(m=>{
-    const safety=(m.safety&&m.safety.why)?` (${m.safety.why})`:'';
-    return `- ${m.lv}: ${m.zone}${safety}`;
-  });
-  return 'TASK: dramatically reorganize everything in this photo. The output must look like a completely different, professionally organized version of this exact space. If your result would look nearly identical to the input photo, you have failed the task; the transformation must be unmistakable at a glance.\n\n'
-    + 'Physically rearrange the items: pick up every visible object and place it in its mapped zone below. Stand containers upright in straight front-facing rows, group like items together, stack neatly, clear ALL loose clutter off the floor and surfaces, and leave visible empty breathing room on every shelf. Straighten anything tilted. Brighten the scene slightly so the result reads clean and well lit.\n\n'
-    + 'Zone plan (place items accordingly):\n'
-    + lines.join('\n')
-    + '\n\nReuse the photo\'s own items: the SAME products, packaging, and colors that appear in the original, just relocated and tidied. Do not invent new products, people, or text overlays.\n'
-    + 'Keep unchanged: the room itself, camera angle, walls, floor, and shelf architecture. Everything ON the shelves and floor must visibly move.';
+/* What the photorealistic "after" render is drawn from: one entry per storage
+   level, a name and what belongs on it.
+
+   This used to compose the whole prompt here and send it as `instructions` —
+   4000 characters of free text that the edge function passed to the image
+   model verbatim, having no idea what it was asking for. The instruction is
+   written server-side now (supabase/functions/_shared/renderBrief.js) and this
+   sends only the data it fills in, which is the same direction the analysis
+   context travels: the client describes, the server instructs.
+
+   The per-row safety note is deliberately not included. It is the household's
+   own line — "keep these out of reach of your 3-year-old" — and it tells an
+   image model nothing, because the placement it explains is already expressed
+   by which zone the items are in. */
+export function renderZones(){
+  return activeMapV2().map(m=>({ level:m.lv, zone:m.zone }));
 }
 
 // Assemble the context object the analyze-space edge function expects
