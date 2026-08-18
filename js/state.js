@@ -1,3 +1,113 @@
+/* ============================================================
+   The shape of the one object every screen shares.
+
+   `state` is a plain literal that the app also EXTENDS at runtime — dimsFt,
+   stepDone, beforePhotoUrl, sharedSpaceId and the detail_* toggles are all
+   written by code far from here and appear in no declaration. That is how the
+   expensive bugs in this file's history worked: a field written by one half
+   and never read by the other looks exactly like a field that does not exist,
+   and nothing anywhere could tell them apart.
+
+   So the fields are enumerated once, here, and checked. The typedef is not
+   decoration: `npm run check:types` reads it, so `state.uploadedFile` (no s)
+   is now an error rather than a silent undefined that reaches a user as a
+   missing photo.
+
+   Grouped by LIFETIME, because that is the distinction the resets encode and
+   the one that keeps going wrong:
+     - answers      cleared by resetWizardAnswers, serialized by wizardAnswers
+     - plan record  cleared by resetPlanRecord — belongs to one plan of one space
+     - session      outlives both; units is a reader preference, not plan data
+
+   Adding a field means adding it here. That is the whole point.
+   ============================================================ */
+
+/**
+ * @typedef {Object} Household
+ * @property {number} adults
+ * @property {number} kidCount
+ * @property {number} petCount
+ * @property {{present: string|null, ages: string[]}} kids   'yes'/'no' — never truthiness-checked, see docs/HANDOFF.md
+ * @property {{present: string|null, types: string[]}} pets
+ * @property {string[]} mobility
+ * @property {string} notes
+ */
+
+/**
+ * @typedef {Object} Dims
+ * @property {number} [w_in]
+ * @property {number} [h_in]
+ * @property {number} [d_in]
+ * @property {number|null} [shelves]
+ */
+
+/**
+ * @typedef {Object} AppState
+ *
+ * -- answers: what the wizard collected (resetWizardAnswers / wizardAnswers) --
+ * @property {string} room
+ * @property {string|null} space
+ * @property {string|null} goal
+ * @property {string|null} capture              'photos' | 'video' | 'demo'
+ * @property {string|null} setup
+ * @property {string|null} setupLabel
+ * @property {boolean} setupTouched             they picked the card, not just left it
+ * @property {string[]} goals
+ * @property {string[]} styles
+ * @property {string[]} cats
+ * @property {boolean} catsTouched
+ * @property {string[]} detected
+ * @property {Object[]} features
+ * @property {string|null} budget
+ * @property {string|null} effort
+ * @property {boolean} effortTouched
+ * @property {string} shoppingPref              'Use what I have' | 'Open to a few ideas'
+ * @property {boolean} shoppingTouched
+ * @property {boolean} upgrades
+ * @property {string} afterMode
+ * @property {Dims|null} dims                   inches — the plan and 3D contract
+ * @property {{w:number,h:number,d:number}|null} [dimsFt]   feet — what the measure screen renders from
+ * @property {Set<string>} prefs
+ * @property {Household} household
+ *
+ * -- media: belongs to the answers, but never serialized (File objects) --
+ * @property {File[]} uploadedFiles
+ * @property {File|null} uploadedVideo
+ * @property {{data:string,t:number}[]} frames
+ *
+ * -- plan record: one plan of one space (resetPlanRecord) --
+ * @property {Object|null} ai                   the normalized plan — see normalizeAi
+ * @property {string|null} [aiError]
+ * @property {{model:string,source:string,analyzedAt:number}|null} planMeta
+ * @property {string|null} activeSpaceId
+ * @property {Object[]|null} shopping
+ * @property {Object|null} arrangement
+ * @property {boolean[]} [stepDone]
+ * @property {boolean[]} [stepSkipped]
+ * @property {number} [stepCount]
+ * @property {string} [stepsView]
+ * @property {Object|null} [upgradeChecked]
+ * @property {string|null} [beforePhotoUrl]
+ * @property {string|null} [afterRenderUrl]
+ * @property {string|null} [afterRenderB64]
+ * @property {string} [_beforeUrl]             object URL, revoked by clearGuestMedia
+ * @property {boolean} fbUseful
+ * @property {string|null} fbVs
+ * @property {string|null} fbNext
+ * @property {boolean} fbRated
+ * @property {boolean} fbSent
+ *
+ * -- share view: someone else's plan, read-only --
+ * @property {boolean} shareView
+ * @property {string} [sharedName]
+ * @property {string|null} [sharedSpaceId]      display only; `space` stays null so the wizard stays gated
+ *
+ * -- session --
+ * @property {string} units                     reader preference, deliberately not plan data
+ * @property {boolean} returnToReview
+ */
+
+/** @type {AppState} */
 export const state = {
   // Three-step space selection (design contract): room → area → setup type.
   // The wizard preselects the design defaults so Continue is always valid.

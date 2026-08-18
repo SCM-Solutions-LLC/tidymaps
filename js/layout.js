@@ -109,6 +109,7 @@ export function surfaceFromIcon(iconKeyword) {
 
 /* ---------- Surface derivation from level text (old-plan heuristic) ---------- */
 
+/** @type {[RegExp, string][]} */
 const LEVEL_SURFACE_RULES = [
   [/\brod\b|\bhang/i,                           'rod'],
   [/\bdrawer\b/i,                               'drawer'],
@@ -151,6 +152,7 @@ const ARCHETYPE_DEFAULTS = {
 
 /* ---------- Section assignment from level text ---------- */
 
+/** @type {[RegExp, string][]} */
 const SECTION_MATCHERS = [
   [/^left/i,     'left'],
   [/^back/i,     'back'],

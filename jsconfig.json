@@ -1,0 +1,53 @@
+{
+  "//": [
+    "Type-checking, scoped by evidence rather than ambition.",
+    "",
+    "Running tsc --checkJs over all of js/ reports 225 errors, and they were",
+    "counted before this file was written rather than assumed: roughly 90 are",
+    "DOM narrowing (getElementById returns HTMLElement, so .value and .disabled",
+    "and .dataset all complain), 17 are the untyped `three` import, and a dozen",
+    "more are TS inference limits on [RegExp, string] tuple arrays. None of",
+    "them is a bug. Clearing them means casts at ~90 call sites or a typed-DOM",
+    "helper refactor across every screen — a lot of edits to files that are not",
+    "where anything has gone wrong.",
+    "",
+    "The data layer is 21 errors and is where the bugs actually lived: answers",
+    "bleeding between saved spaces, a serializer that drifted from its reader,",
+    "an analysis writing over newer state. Those files are checked here, so the",
+    "AppState typedef in state.js is enforced rather than aspirational.",
+    "",
+    "Adding a screen file to `include` is welcome — expect DOM casts with it."
+  ],
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": [
+    "js/state.js",
+    "js/plan.js",
+    "js/db.js",
+    "js/personalize.js",
+    "js/layout.js",
+    "js/setupStructure.js",
+    "js/wizard-data.js",
+    "js/catalog.js",
+    "js/startup.js",
+    "js/api.js",
+    "js/config.js",
+    "js/affiliates.js",
+    "js/planExport.js",
+    "js/demo-scenarios.js",
+    "js/imageQuality.js",
+    "js/data.js",
+    "js/telemetry.js",
+    "js/ui.js"
+  ],
+  "exclude": ["node_modules", "vendor", "remotion", "test-results"]
+}

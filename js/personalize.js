@@ -136,6 +136,7 @@ let activeStyles = [];
    likes their things kept. */
 const HAZARD_STEP = /chemical|solvent|paint|medicine|bleach|hazard|sharp/i;
 
+/** @type {[RegExp, string][]} */
 const NOUN_ECHO = [
   [/trays? & caddies|caddies/i, 'trays and caddies'],
   [/woven baskets/i, 'woven baskets'],
@@ -631,6 +632,7 @@ function applyNote(plan, answers) {
 
    Every replacement is a phrase that cannot match again after it is made, so
    the rules cannot cascade into each other whatever order they run in. */
+/** @type {[RegExp, string][]} */
 const OWN_ONLY_WORDS = [
   [/\bBin (?=[a-z])/g, 'Box up '],
   [/\bin a bin\b/gi, 'in a box you already have'],
