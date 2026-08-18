@@ -1,6 +1,6 @@
 import { test, expect } from 'playwright/test';
 import { fileURLToPath } from 'node:url';
-import { driveWizardToReview } from './helpers.mjs';
+import { driveWizardToReview, fakeSession, REF } from './helpers.mjs';
 
 /* An analysis runs 70-90 seconds and Back is reachable the whole time, so a
    second run can begin while the first is still in the air. Nothing tied a
@@ -142,10 +142,8 @@ test('an analysis abandoned by Start over does not come back', async ({ page }) 
   expect(draft && draft.planReady, 'the next visit would offer to restore it').toBeFalsy();
 });
 
-test('leaving the loading screen during the hand-off delay does not drag the user back', async ({ page }) => {
-  /* Navigation to the report is delayed so the last checklist row can be seen
-     ticking over. The screen was checked BEFORE that delay and not again
-     inside it, so a Back press landed in the gap still ended on the report. */
+/* Holds the analysis open, then releases it on demand. */
+async function holdAnalysis(page) {
   let release;
   await page.route('**/functions/v1/analyze-space', async (route) => {
     await new Promise((res) => { release = res; });
@@ -157,6 +155,22 @@ test('leaving the loading screen during the hand-off delay does not drag the use
       });
     } catch (_) { /* aborted */ }
   });
+  return () => release();
+}
+
+/* Navigation to the report is delayed so the last checklist row can be seen
+   ticking over. The screen was checked BEFORE that delay and not again inside
+   it, so a Back press landed in the gap still ended on the report.
+
+   Cancelling the navigation was only half of it, which is what the two
+   assertions below the screen check are about. The plan was written into
+   state as soon as it arrived — one guarded step earlier — so a Back press
+   that correctly kept the user on Review left them there with an AI plan
+   already in memory, and the guest-draft writer serialized it on the very
+   next screen change. The next visit then offered to restore a plan they had
+   walked away from, built from answers they had gone back to change. */
+test('leaving the loading screen during the hand-off delay does not drag the user back', async ({ page }) => {
+  const release = await holdAnalysis(page);
 
   await driveWizardToReview(page, { photo: PHOTO });
   await page.locator('#flow-next').click();
@@ -171,4 +185,63 @@ test('leaving the loading screen during the hand-off delay does not drag the use
   await page.waitForTimeout(1500);
   await expect(page.locator('#screen-review'),
     'Back during the hand-off delay must stick').toHaveClass(/active/);
+
+  const planInMemory = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return !!state.ai;
+  });
+  expect(planInMemory, 'the abandoned plan was committed to state anyway').toBe(false);
+
+  // The draft writer has already run — go() calls it on every screen change,
+  // including the Back that landed here.
+  const draft = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('tidymap_draft_v2') || 'null'); } catch (_) { return null; }
+  });
+  expect(draft && draft.ai, 'the abandoned plan was written to disk').toBeFalsy();
+  expect(draft && draft.planReady, 'the next visit would offer to restore it').toBeFalsy();
+});
+
+/* The signed-in half of the same gap. autoSaveSpace() ran BEFORE the delayed
+   navigation, so a plan the user walked away from during the hand-off had
+   already created a row in their account: a space in "My spaces" they never
+   asked for, named after a plan they never saw, and an activeSpaceId in
+   memory pointing at it — so the next plan they did build would UPDATE that
+   row rather than take one of its own. */
+test('a plan abandoned during the hand-off is never written to the account', async ({ page }) => {
+  const wire = [];
+  await page.addInitScript(([key, value]) => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [`sb-${REF}-auth-token`, fakeSession()]);
+  await page.route(`**/${REF}.supabase.co/**`, async (route) => {
+    const req = route.request();
+    const url = req.url().replace(`https://${REF}.supabase.co`, '');
+    wire.push({ method: req.method(), url });
+    if (/\/auth\/v1\/user/.test(url)) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession().user) });
+    }
+    if (/\/rest\/v1\/spaces/.test(url) && req.method() === 'POST') {
+      return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'unwanted-row' }) });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  const release = await holdAnalysis(page);
+
+  await driveWizardToReview(page, { photo: PHOTO });
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-loading')).toHaveClass(/active/);
+  await expect(page.locator('#ls-final')).toHaveClass(/doing/, { timeout: 20_000 });
+
+  release();
+  await page.waitForTimeout(120);
+  await page.goBack();
+  await page.waitForTimeout(2000);
+
+  await expect(page.locator('#screen-review')).toHaveClass(/active/);
+  const inserts = wire.filter((c) => c.method === 'POST' && /\/rest\/v1\/spaces/.test(c.url));
+  expect(inserts, 'the abandoned plan was autosaved into the account').toHaveLength(0);
+  const openSpace = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return state.activeSpaceId;
+  });
+  expect(openSpace, 'the next plan would have overwritten that row').toBeFalsy();
 });

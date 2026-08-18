@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initializeRoute } from '../js/startup.js';
+import { startPlanInstance } from '../js/state.js';
 
 function deferred(){
   let resolve;
@@ -151,4 +152,44 @@ test('does not apply a fetched space after navigation changes', async()=>{
 
   assert.deepEqual(await initializing, { status:'skipped-navigation' });
   assert.deepEqual(h.calls, []);
+});
+
+/* Navigation is not the only way a restore stops being wanted. Start over
+   clears every answer and lands the user back on the LANDING page, which is
+   exactly the screen the guard was looking for — so a deep link still in
+   flight passed the check and dropped a saved plan on top of answers that had
+   just been deliberately cleared. The plan instance is what tells those two
+   landing pages apart. */
+test('does not apply a fetched space after the user has started a different plan', async()=>{
+  const gate=deferred();
+  const h=harness({
+    getSession:()=>({ access_token:'test' }),
+    search:'?space=space-123',
+    fetchSpace:()=>gate.promise,
+    applyLoadedSpace:()=>h.calls.push('apply'),
+  });
+  const initializing=initializeRoute(h.deps);
+
+  // Still on landing — but not on the same plan.
+  startPlanInstance();
+  gate.resolve({ data:{ id:'space-123' } });
+
+  assert.deepEqual(await initializing, { status:'skipped-navigation' });
+  assert.deepEqual(h.calls, []);
+});
+
+test('does not apply a shared plan after the user has started a different plan', async()=>{
+  const gate=deferred();
+  const h=harness({
+    search:'?share=abc-123',
+    loadSharedPlan:()=>gate.promise,
+    applySharedPlan:()=>h.calls.push('applyShared'),
+  });
+  const initializing=initializeRoute(h.deps);
+
+  startPlanInstance();
+  gate.resolve({ name:'someone else’s pantry' });
+
+  assert.deepEqual(await initializing, { status:'skipped-navigation' });
+  assert.deepEqual(h.calls, [], 'the shared payload must not wipe the plan they started');
 });

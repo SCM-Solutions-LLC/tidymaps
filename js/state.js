@@ -51,6 +51,53 @@ export const state = {
   fbUseful:null, fbVs:null, fbNext:null, fbRated:false, fbSent:false,
 };
 
+/* ---------- Plan instance ----------
+
+   One number that answers "is this still the same plan the user is working
+   on?", and the only thing any asynchronous operation is allowed to trust.
+
+   `state` is a single mutable object shared by every screen, and almost
+   everything that writes to it does so AFTER an await — a save, a load, a
+   render, an analysis. Between the await and the write, the user can start a
+   different plan, and each of those writers used to land on whatever plan was
+   current when it finished rather than the one that asked for it:
+
+   - saveSpace() read state.activeSpaceId back out of the global state after
+     its insert returned and stamped the new row's id there. Plan A saving
+     while the user started plan B gave B plan A's database row, so B's next
+     save UPDATEd A's row and overwrote it. Media was worse: it was collected
+     from state.uploadedFiles and state.frames after the request, so B's
+     photos were uploaded into A's space.
+   - The dashboard's "Open plan" awaited a fetch and then applied the row
+     globally. Clicking two cards quickly meant whichever request finished
+     LAST won, which is not necessarily the one clicked last.
+   - The photo preview awaited the encode, then read buildGeminiBrief() and
+     state.activeSpaceId — so a plan switch mid-encode sent an old photo with
+     a new plan's instructions and wrote the result onto the new plan.
+
+   Each of those could be patched with its own private token, which is how
+   the analysis race was fixed first, and the next one would appear somewhere
+   else. So the lifecycle is named once, here: the id moves whenever the user
+   starts, opens, or switches plans (every one of those paths goes through
+   resetPlanRecord below), an async operation captures it before its first
+   await, and it refuses to touch current state if the id has moved on.
+
+   The rule for callers is: capture the id AND snapshot everything you will
+   need — media, space id, render instructions — before awaiting anything.
+   Re-reading `state` after an await is the bug this exists to prevent. */
+let planInstanceId = 1;
+
+export function currentPlanInstance(){ return planInstanceId; }
+
+/* Declare that the user is now on a different plan. Called by
+   resetPlanRecord, and directly by anything that claims the switch BEFORE
+   the state it is switching to has arrived — the dashboard claims at the
+   click, so that the card clicked last wins rather than the row that loads
+   first. */
+export function startPlanInstance(){ return ++planInstanceId; }
+
+export function planInstanceIsCurrent(id){ return id===planInstanceId; }
+
 /* Everything that belongs to ONE plan of ONE space: the analysis, the saved
    row it writes to, the 3D arrangement, the shopping list, the progress ticks,
    and the rendered before/after images.
@@ -68,8 +115,16 @@ export const state = {
 
    restart(), prepareDemoPlanState(), and setArea() all need exactly this set,
    so it lives in one place — three hand-maintained copies is how the gap
-   opened in the first place. */
+   opened in the first place.
+
+   It is also where the plan instance moves. Every way the user gets onto a
+   different plan — Start over, opening a saved space, a share link, the demo
+   — clears the plan record first, so the id and the state it identifies can
+   never disagree. A caller that clears a scratch object rather than the live
+   state (`target !== state`) is not switching the user's plan and leaves the
+   id alone. */
 export function resetPlanRecord(target=state){
+  if(target===state) startPlanInstance();
   target.ai=null;
   target.aiError=null;
   target.planMeta=null;

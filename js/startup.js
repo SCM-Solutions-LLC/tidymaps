@@ -1,6 +1,15 @@
+import { currentPlanInstance, planInstanceIsCurrent } from './state.js';
+
 /* Route restoration runs after account setup, which may take long enough for
    someone to start using the app. Never let delayed initialization replace a
-   route they already chose. */
+   route they already chose.
+
+   "Still on the landing page" is the navigation half of that question. The
+   plan half is the plan instance (js/state.js): a visitor can start over, or
+   the restore itself can be raced by another plan being opened, without the
+   screen changing. Both are checked before anything is applied, and for the
+   same reason — a restore is one more asynchronous writer that must not land
+   on a plan it does not own. */
 export async function initializeRoute({
   setupAccount,
   getSession,
@@ -17,8 +26,10 @@ export async function initializeRoute({
   loadSharedPlan,
   applySharedPlan,
 }){
+  const instance=currentPlanInstance();
+  const owned=()=>currentScreen()==='landing' && planInstanceIsCurrent(instance);
   await setupAccount();
-  if(currentScreen()!=='landing') return { status:'skipped-navigation' };
+  if(!owned()) return { status:'skipped-navigation' };
 
   const params=new URLSearchParams(search);
 
@@ -35,7 +46,7 @@ export async function initializeRoute({
          The navigation was correctly skipped; the damage was already done.
          loadSharedPlan must not touch state — applySharedPlan does that. */
       const payload=await loadSharedPlan(shareId);
-      if(currentScreen()!=='landing') return { status:'skipped-navigation' };
+      if(!owned()) return { status:'skipped-navigation' };
       if(applySharedPlan) applySharedPlan(payload);
       buildResults();
       go('results');
@@ -52,7 +63,7 @@ export async function initializeRoute({
   if(spaceId && getSession()){
     try{
       const loaded=await fetchSpace(spaceId);
-      if(currentScreen()!=='landing') return { status:'skipped-navigation' };
+      if(!owned()) return { status:'skipped-navigation' };
       const data=applyLoadedSpace(loaded);
       buildResults();
       applySavedProgress((data.progress&&data.progress.stepsDone)||[]);
@@ -63,7 +74,7 @@ export async function initializeRoute({
     }
   }
 
-  if(currentScreen()!=='landing') return { status:'skipped-navigation' };
+  if(!owned()) return { status:'skipped-navigation' };
   if(!getSession()){
     const res=restoreGuestDraft();
     if(res && res.planReady){

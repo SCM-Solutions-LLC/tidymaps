@@ -1,5 +1,6 @@
 import { getUser, signOut } from '../auth.js';
-import { listSpaces, coverUrl, loadSpace, deleteSpace } from '../db.js';
+import { listSpaces, coverUrl, openSavedSpace, deleteSpace } from '../db.js';
+import { startPlanInstance } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { go, restart } from '../router.js';
 import { areaFor } from '../wizard-data.js';
@@ -53,9 +54,18 @@ export async function buildDashboard(){
         </div>
       </div>`;
     card.querySelector('[data-open]').onclick=async ()=>{
+      /* The switch is claimed here, at the click, not when the row arrives.
+         Opening a plan used to be "fetch, then apply to whatever is current",
+         so two cards tapped in quick succession left the user on whichever
+         row the network returned last — the contents of one plan, possibly
+         the name and progress of the other, and a report they did not ask
+         for. Claiming at the click makes the last tap the owner; every
+         earlier load sees a moved id and applies nothing. */
+      const instance=startPlanInstance();
       try{
         toast('Opening '+sp.name+'…');
-        const data=await loadSpace(sp.id);
+        const data=await openSavedSpace(sp.id, instance);
+        if(!data) return;   // another card was opened while this one loaded
         buildResults();
         applySavedProgress((data.progress&&data.progress.stepsDone)||[]);
         go('results');
