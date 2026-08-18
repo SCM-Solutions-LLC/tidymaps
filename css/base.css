@@ -81,7 +81,12 @@ p{margin:0 0 1em}
 }
 .site-nav a:hover,.site-nav button:hover{color:var(--primary)}
 body[data-site="1"] .site-nav{display:flex}
-@media(max-width:719px){
+/* The crowding point is measured, not guessed: laid out in a row, the brand,
+   the four nav items, "Sign in" and the CTA need 777px. The breakpoint used to
+   be 719px, so between 720 and 777 the row was shown at widths it did not fit
+   and the whole page scrolled sideways — worst on a 768px tablet. 860 keeps a
+   margin for the wider type a reader may have set. */
+@media(max-width:859px){
   body[data-site="1"] .site-nav{
     display:none;flex-direction:column;align-items:stretch;gap:0;margin:0;
     position:absolute;top:100%;left:0;right:0;
@@ -89,10 +94,14 @@ body[data-site="1"] .site-nav{display:flex}
     box-shadow:0 4px 12px oklch(0.30 0.01 100 / .08);
     padding:8px 0;
   }
-  body[data-site="1"] .site-nav a{
-    padding:13px var(--pad,18px);font-size:16px;border-bottom:1px solid var(--line);
+  /* "Products" is a button, not a link, so the link-only rules left it
+     unpadded and centre-aligned in a column of left-aligned rows. */
+  body[data-site="1"] .site-nav a,
+  body[data-site="1"] .site-nav button{
+    padding:13px var(--pad,18px);font-size:16px;text-align:left;
+    border-bottom:1px solid var(--line);
   }
-  body[data-site="1"] .site-nav a:last-child{border-bottom:none}
+  body[data-site="1"] .site-nav > :last-child{border-bottom:none}
   body[data-site="1"] .nav-toggle{display:block}
   body.nav-open[data-site="1"] .site-nav{display:flex}
 }
@@ -123,6 +132,24 @@ body[data-screen="viewer3d"] .viewer3d-only{display:inline-flex !important}
 body[data-screen="viewer3d"] .appbar .restart{display:none}
 @media(max-width:419px){
   .appbar .restart{padding:7px 10px;letter-spacing:.04em}
+}
+/* Narrow phones ran out of appbar before the content even started: at 320px
+   the landing row needed 339px and the report row (brand, Sign in, "Edit
+   answers", "View in 3D") needed 387px, so every screen scrolled sideways.
+   Tighten the row, and below the point where that is still not enough let the
+   two report actions fall back to their icons — the label stays in the DOM for
+   assistive tech, so both buttons keep the name they are tested by. */
+@media(max-width:479px){
+  .appbar-inner{gap:9px;padding-left:12px;padding-right:12px}
+  .appbar .navlink{padding:8px 2px}
+  .appbar .btn-sm{padding:10px 12px}
+}
+@media(max-width:399px){
+  .appbar .results-only .btn-label{
+    position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;
+  }
+  .appbar .results-only svg{margin-right:0 !important}
 }
 
 /* progress rail under appbar */

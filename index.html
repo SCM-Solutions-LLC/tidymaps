@@ -57,8 +57,8 @@
     <button class="navlink hide" id="acct-btn" onclick="go('dashboard')">My spaces</button>
     <span class="step-counter" id="appbar-step"></span>
     <button class="restart" onclick="restart()">Start over</button>
-    <button class="navlink results-only" onclick="go('space')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Edit answers</button>
-    <button class="btn btn-primary btn-sm results-only" onclick="openViewer3d()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px" aria-hidden="true"><path d="M12 3 2 9l10 6 10-6-10-6Z"/><path d="m2 15 10 6 10-6"/><path d="m2 9 10 6 10-6"/></svg> View in 3D</button>
+    <button class="navlink results-only" onclick="go('space')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg><span class="btn-label">Edit answers</span></button>
+    <button class="btn btn-primary btn-sm results-only" onclick="openViewer3d()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px" aria-hidden="true"><path d="M12 3 2 9l10 6 10-6-10-6Z"/><path d="m2 15 10 6 10-6"/><path d="m2 9 10 6 10-6"/></svg><span class="btn-label">View in 3D</span></button>
     <button class="navlink viewer3d-only" onclick="go('results')">&lsaquo; Back to plan</button>
     <button class="btn btn-primary btn-sm" id="nav-cta" onclick="go('space')">Plan my space</button>
   </div>
@@ -928,7 +928,7 @@
       <span>Organizing plans built from photos of your real space, starting with what you already own.</span>
     </div>
     <div class="footer-legal">
-      <span>&copy; 2026 SCM Solutions LLC</span>
+      <span>&copy; <span data-year>2026</span> SCM Solutions LLC</span>
       <span>Your photos stay private. We never sell your data.</span>
       <span><button class="home-link" onclick="openProducts()">Products</button> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="security.html">Security</a> &middot; <a href="cookies.html">Cookies</a> &middot; <a href="accessibility.html">Accessibility</a></span>
     </div>
@@ -951,6 +951,7 @@
      element. Without a live region none of them reached a screen reader. -->
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
+<script src="js/year.js" defer></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
