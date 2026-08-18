@@ -470,7 +470,6 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
           KIND_DEPTH[kind]||6,
         );
         const offset=-usable/2+cell*(i+0.5);
-        const position=pointOnSurface(sh, offset, ITEM_NORMAL_OFFSET);
         const itemLift=organizer?(type==='riser'?2.8:type==='turntable'?0.75:type==='divider'?0.28:0.45):0;
         const visuals=ensureDisplayCopies(m,unitCount);
         const visualStep=w+unitGap;

@@ -4,7 +4,6 @@ import { downloadChecklist, sendShoppingList } from '../planExport.js';
 import { go, restart } from '../router.js';
 import { backendConfigured } from '../config.js';
 import { getSession } from '../auth.js';
-import { state } from '../state.js';
 import { saveSpace, defaultSpaceName, setShareEnabled, shareUrlFor } from '../db.js';
 import { openAuth, registerAuthIntent } from './account.js';
 import { track } from '../telemetry.js';

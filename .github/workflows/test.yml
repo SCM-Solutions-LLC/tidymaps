@@ -12,6 +12,11 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm ci
+      # Runs before the suite: a lint failure is usually a typo'd name or a
+      # binding nothing reads, and those are quicker to read here than as a
+      # test failure three screens down.
+      - name: Lint
+        run: npm run lint
       - name: Unit and contract tests
         run: node --test tests/*.test.mjs
   e2e:

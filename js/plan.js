@@ -264,7 +264,12 @@ export function buildAnalysisContext(){
     goal: (state.goals && state.goals[0]) || state.goal || null,
     goals: (state.goals||[]).slice(),      // the user's own words — cite verbatim
     styles: (state.styles||[]).slice(),
+    /* `touched` travels with the shopping answer for the same reason it does
+       with the setup: the value alone cannot tell the model whether the user
+       chose it or merely left the card we preselected, and the backend turns
+       "Use what I have" into a hard rule that empties the shopping list. */
     shopping: state.shoppingPref || null,
+    shoppingTouched: !!state.shoppingTouched,
     detected: (state.detected||[]).slice(),
     categories: (state.cats||[]).slice(),  // authoritative when the user edited them
     prefs: [...(state.prefs||[])],

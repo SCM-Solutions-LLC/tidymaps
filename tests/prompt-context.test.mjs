@@ -102,6 +102,10 @@ const NOT_IN_PROMPT = {
   // description it may use. Untrusted text is explicitly never an instruction.
   setup: 'archetype pinned in the enforced-limits block; the label is rendered here',
   shopping: 'the $0 constraint is enforced in the trusted block; the answer itself is rendered here',
+  /* A boolean has no value of its own to find in the prose: it chooses WHICH
+     sentence describes `shopping`, and it gates the enforced limit in the
+     trusted block. Both renderings are asserted directly below instead. */
+  shoppingTouched: 'selects the wording for `shopping` rather than adding text; asserted in its own test',
 };
 
 test('every answer the client sends reaches the prompt, or is listed as not needing to', async () => {
@@ -113,7 +117,7 @@ test('every answer the client sends reaches the prompt, or is listed as not need
   state.setup = 'utility'; state.setupLabel = 'Utility shelving'; state.setupTouched = true;
   state.goals = ['The floor is a pile zone', 'Seasonal stuff gets buried'];
   state.styles = ['Clear latching totes'];
-  state.shoppingPref = 'Open to a few ideas';
+  state.shoppingPref = 'Open to a few ideas'; state.shoppingTouched = true;
   state.detected = ['Paint cans'];
   state.cats = ['Tools', 'Paint & chemicals'];
   state.prefs = new Set(['Labels and categories']);
@@ -180,4 +184,35 @@ test('the $0 constraint is enforced in the trusted block, and only when chosen',
   // and it sits in `enforced`, not in the untrusted context
   const enforcedBlock = analyzeFn.slice(analyzeFn.indexOf('const enforced = ['), analyzeFn.indexOf('].join(\'\\n\')'));
   assert.match(enforcedBlock, /productNeeds: this user chose/);
+});
+
+/* "Their answer on buying storage: Use what I have." was a claim, and for
+   anyone who left the preselected card alone it was a false one — the model
+   was told the user had asked to buy nothing when they had never been asked.
+   The wizard preselects that card, so this was the common case, not the edge. */
+test('an untouched shopping default is described as ours, not theirs', () => {
+  const theirs = buildContext({ shopping: 'Use what I have', shoppingTouched: true });
+  assert.match(theirs, /Their answer on buying storage: Use what I have\./);
+
+  const ours = buildContext({ shopping: 'Use what I have', shoppingTouched: false });
+  assert.doesNotMatch(ours, /Their answer on buying storage/,
+    'a preselection must not be reported to the model as the user\'s answer');
+  assert.match(ours, /did not answer/);
+  assert.match(ours, /no preference either way/);
+});
+
+/* A client built before `shoppingTouched` existed sends nothing for it. Those
+   requests must keep the old meaning, or a stale tab mid-deploy gets a plan
+   its own build never promised. */
+test('a context with no touched flag is still treated as their answer', () => {
+  const rendered = buildContext({ shopping: 'Use what I have' });
+  assert.match(rendered, /Their answer on buying storage: Use what I have\./);
+});
+
+test('the no-purchase limit is enforced only for a chosen answer', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  // `=== false` and not a falsy check: absent must mean "enforce", so a client
+  // from before the field existed keeps the behaviour it was built against.
+  assert.match(fn, /const untouchedDefault = ctx\.shoppingTouched === false;/);
+  assert.match(fn, /ctx\.shopping === 'Use what I have' && !untouchedDefault/);
 });

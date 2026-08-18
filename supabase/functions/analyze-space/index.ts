@@ -195,6 +195,7 @@ Deno.serve(async (req) => {
     household?: { kids?: { present?: boolean } };
     setup?: { archetype?: string; touched?: boolean };
     shopping?: string;
+    shoppingTouched?: boolean;
   };
   const [minSteps, maxSteps] = EFFORT_STEP_RANGES[ctx.effort as string] ?? DEFAULT_STEP_RANGE;
   const kidsPresent = ctx.household?.kids?.present === true;
@@ -229,7 +230,17 @@ Deno.serve(async (req) => {
      is already in the space") was enforced only by scrubbing the answer
      afterwards on the client. Compared against the wizard's own constant rather
      than interpolated, since `context` is user-supplied. */
-  const usesWhatTheyHave = ctx.shopping === 'Use what I have';
+  /* Only when they actually chose it. The wizard preselects "Use what I have",
+     and enforcing a preselection as a constraint returned an empty shopping
+     list to people who never answered that step.
+
+     `=== false` rather than a falsy check, deliberately: a client from before
+     this field existed sends no `shoppingTouched` at all, and for those the
+     answer has to keep being enforced exactly as it was. Only an explicit
+     "they did not touch it" relaxes the rule, so a stale tab mid-deploy still
+     gets the plan its own build promised. */
+  const untouchedDefault = ctx.shoppingTouched === false;
+  const usesWhatTheyHave = ctx.shopping === 'Use what I have' && !untouchedDefault;
   const enforced = [
     '',
     'Enforced limits for this request. A plan that breaks any of these is rejected and the user sees nothing, so check each one before answering:',

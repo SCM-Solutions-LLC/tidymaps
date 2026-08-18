@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ARCHETYPES, SURFACES, PLACES, ARCHETYPE_LABELS,
+  ARCHETYPES, SURFACES, ARCHETYPE_LABELS,
   SETUP_ARCHETYPE, SCENARIO_ARCHETYPE,
   surfaceFromIcon, surfaceFromLevelText, normalizeLayout,
   resolveLayout, chipArchetypesFor,
