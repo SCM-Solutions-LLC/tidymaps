@@ -1,7 +1,8 @@
 // Public read-only fetch of a shared plan. The caller presents a share_id
 // (an unguessable v4 UUID the owner generated); the function looks the space
 // up with the service role and returns ONLY the sanitized payload from
-// _shared/sharePayload.js — never household, progress, shopping, or media.
+// _shared/sharePayload.js — never household, progress, shopping, or media,
+// and never the household details the plan's own prose was written from.
 // Revocation is instant: owner sets share_id to null and the lookup misses.
 import { preflight, json } from '../_shared/cors.ts';
 import { readJsonObject } from '../_shared/body.js';
@@ -35,9 +36,14 @@ Deno.serve(async (req) => {
     return json(req, 500, { error: 'internal' });
   }
 
+  /* `household` is selected so that it can be REMOVED. sharedSpacePayload
+     never emits it; it reads the ages, pet types, reach needs and note this
+     owner gave, and uses them to find the same details written into the plan's
+     own prose — which is where they actually live, because the analysis prompt
+     asks for them there. Selecting less would mean sharing more. */
   const { data, error } = await admin
     .from('spaces')
-    .select('name,space_type,goal,dims,plan,plan_meta,updated_at')
+    .select('name,space_type,goal,dims,household,plan,plan_meta,updated_at')
     .eq('share_id', shareId)
     .is('deleting_at', null)
     .maybeSingle();

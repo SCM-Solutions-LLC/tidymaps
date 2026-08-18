@@ -18,8 +18,16 @@ async function doSave(){
   }
 }
 
-// Share = save (if needed) + mint a read-only link + copy it. The link shows
-// the plan only — never household details, progress, or photos.
+/* Share = save (if needed) + mint a read-only link + copy it. The link shows
+   the plan only — never household details, progress, or photos.
+
+   "Not your details" was a promise about a database column, and the plan is
+   written from those details: the analysis is asked to name a child's age in
+   a safety note and to answer the household's free-text note, and offline the
+   note is quoted back verbatim. get-shared-space now removes all of it —
+   safety notes wholesale, and any remaining sentence that names this
+   household — so the sentence below is finally about what the visitor sees
+   rather than about which columns were selected. */
 async function doShare(){
   try{
     toast('Creating your share link…');
@@ -31,7 +39,7 @@ async function doShare(){
     const url=shareUrlFor(shareId);
     try{
       await navigator.clipboard.writeText(url);
-      toast('Read-only link copied. Anyone with it can view this plan — not your photos or details.');
+      toast('Read-only link copied. It shows the plan for this space — no photos, and nothing about your household or its safety notes.');
     }catch(_){
       prompt('Copy this read-only link:', url);
     }

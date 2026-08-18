@@ -121,7 +121,12 @@ export function buildResults(){
   if(shareNote){
     shareNote.classList.toggle('hide', !state.shareView);
     if(state.shareView){
-      shareNote.textContent=`You’re viewing “${state.sharedName||'a shared plan'}” — a read-only plan someone shared with you. Checking off steps here won’t change their copy.`;
+      /* The second sentence is CONSTANT, and that is the point of it. A
+         visitor reading a plan with no safety section would otherwise take it
+         for a plan that needed none; saying so only when notes were removed
+         would itself disclose that this household has some. It reads the same
+         on every shared plan, so it says nothing about this one. */
+      shareNote.textContent=`You’re viewing “${state.sharedName||'a shared plan'}” — a read-only plan someone shared with you. Checking off steps here won’t change their copy. Shared plans leave out everything about the owner’s household, including any safety notes written for it, so ask them if that matters here.`;
     }
   }
   document.querySelectorAll('#screen-results [data-owner-only]')
@@ -176,14 +181,22 @@ export function buildResults(){
   document.getElementById('res-cat-tags').innerHTML=state.cats.map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('');
   const catTitle=document.getElementById('res-cat-title');
   if(catTitle) catTitle.textContent = unobserved ? 'Item categories you told us about' : 'Detected item categories';
-  const problems = (A&&A.problems.length)?A.problems:[
+  /* The sample lists below stand in for a plan that has not been built yet.
+     On a SHARED plan they would be something else: sentences nobody wrote,
+     rendered to a visitor as the owner's findings about their own space. The
+     hole is reachable now that get-shared-space removes any line naming the
+     household — a plan whose only opportunity was the household's note comes
+     through with an empty list — but a plan that simply came back without
+     problems always had it. Empty stays empty for a visitor. */
+  const sample = (list) => (state.shareView ? [] : list);
+  const problems = (A&&A.problems.length)?A.problems:sample([
     'Similar items are spread across multiple shelves','Frequently used snacks are too high',
     'Canned goods are hard to see','Loose packets are creating clutter',
-    'Bulk items are taking up prime shelf space','Heavy items should be moved lower'];
+    'Bulk items are taking up prime shelf space','Heavy items should be moved lower']);
   document.getElementById('res-problems').innerHTML=problems.map(p=>`<li>${escapeHtml(p)}</li>`).join('');
-  const opps = (A&&A.opportunities.length)?A.opportunities:[
+  const opps = (A&&A.opportunities.length)?A.opportunities:sample([
     'Existing baskets are underused','Unused vertical space above the cans',
-    'Right-side open shelf space is free','Lower shelf can safely hold heavy items'];
+    'Right-side open shelf space is free','Lower shelf can safely hold heavy items']);
   document.getElementById('res-opps').innerHTML=opps.map(p=>`<li>${escapeHtml(p)}</li>`).join('');
 
   // household safety notes (only present when the plan carries them)

@@ -109,6 +109,19 @@ datacenter IPs).
   lookup; response passes through the `_shared/sharePayload.js` **allowlist**
   (plan/zones/steps/dims only — household, progress, shopping, media, ids can
   never leak; new fields are excluded by default).
+- The allowlist is only the first of two passes, because the plan TEXT is
+  written from the household: analyze-space is asked to name a child's age in
+  a row's `safety.why` and to answer the free-text note, and offline
+  `applyNote()` quotes that note back verbatim into `opportunities`. So
+  `sharePayload.js` also (a) drops the plan's household section outright —
+  `safetyNotes`, every row's `safety`, `steps[].cite`, the `kid-frequent` item
+  flag — and (b) checks what survives against the row's OWN stored household
+  (ages, pet types, reach needs, distinctive note words) and removes any
+  sentence that still matches. Closed set, not PII guessing: the row says what
+  to look for. It runs at READ time, so links minted before it exist are
+  covered. `get-shared-space` therefore SELECTs `household` in order to remove
+  it — dropping that column from the query silently disarms the whole second
+  pass, which is why `tests/backend-contracts.test.mjs` asserts it.
 - Owner UX: "Share with family / roommate" on the save screen saves, mints, and
   copies `?share=<uuid>`. Nulling `share_id` revokes instantly.
 - Visitor UX: read-only results view (banner, `data-owner-only` actions hidden,

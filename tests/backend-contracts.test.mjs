@@ -52,6 +52,34 @@ test('public share lookup hides spaces whose deletion has started', () => {
   assert.match(getSharedSpace, /\.is\('deleting_at', null\)/);
 });
 
+/* The redaction in _shared/sharePayload.js works from the household the row
+   stores: the ages, pet types, reach needs and note it checks the plan's prose
+   against. Drop `household` from this SELECT — an obvious tidy-up, since the
+   payload must never contain it — and every one of those checks still runs,
+   finds nothing to match, and passes. The sanitizer would keep its tests and
+   lose its teeth, silently, for exactly the households that need it. */
+test('the share lookup reads the household it is going to redact against', () => {
+  const select = /\.select\('([^']*)'\)/.exec(getSharedSpace);
+  assert.ok(select, 'the shared-space query must select an explicit column list');
+  assert.ok(select[1].split(',').includes('household'),
+    'sharePayload cannot remove household details from the plan text without knowing them');
+  // And it stays out of the response: the payload builder is the only writer.
+  assert.doesNotMatch(getSharedSpace, /household:/);
+});
+
+const analyzeSpace = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+
+/* Half of the share-safety guarantee is structural: safetyNotes and every
+   row's `safety` are dropped whole, so anything written there cannot reach a
+   visitor. That only holds if the prompt keeps household specifics in those
+   two fields, which is why the instruction is asserted rather than trusted to
+   survive the next prompt edit. */
+test('the analysis prompt confines household specifics to the shareable fields', () => {
+  assert.match(analyzeSpace, /Household specifics belong in safety\.why and safetyNotes ONLY/);
+  assert.match(analyzeSpace, /answer it in a safety\.why or in safetyNotes/,
+    'the free-text note is the one the offline path leaks, so it is named explicitly');
+});
+
 /* X-Forwarded-For grows left to right: every proxy APPENDS the address of the
    peer it received from, so a request that crossed one trusted edge reads
    "<whatever the client sent>, <address the edge saw>". Reading entry [0] read
