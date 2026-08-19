@@ -468,18 +468,27 @@ which is why the config is scoped rather than repo-wide.
    test spies on `fetch` rather than stubbing it: a stub answering 200 lets the
    test pass while the request still leaves the machine.
 5. **The numbers are a smoke test, not a trend.** As of 2026-08-19: 1 user,
-   1 saved space, 1 feedback row, 142 usage events, and 103 telemetry rows —
-   of which 99 are real and **4 are the same junk, created after the cleanup
-   and before #98 reached `main`** (two from PR #99's CI at 18:35, two from the
-   `main` deploy run at 19:56, both on code predating the fix). They are safe
-   to delete with the same predicate:
+   1 saved space, 1 feedback row, 142 usage events, and **99 telemetry rows,
+   every one carrying a real `anon_id`** — 92 `screen_viewed`, 4
+   `plan_created`, 3 `shared_plan_viewed`. Do not reason about conversion from
+   this.
+
+   The table was cleaned twice. 68 junk rows went first; four more appeared
+   afterwards (two from PR #99's CI at 18:35, two from the `main` deploy run at
+   19:56, both on code predating the fix) and were deleted once #98 landed. The
+   predicate was exact both times, because every `space_saved` row was junk and
+   no other event ever had a null `anon_id`:
 
    ```sql
    delete from telemetry_events where name = 'space_saved' and anon_id is null;
    ```
 
-   Direct evidence the fix holds: #98's own unit job ran at 20:21 **with** the
-   fix and produced no row.
+   `space_saved` therefore now reads **zero**, and that is the honest number —
+   there has never been a genuine one.
+
+   Two pieces of direct evidence the fix holds: #98's own unit job ran at 20:21
+   **with** the fix and produced no row, and nothing has been written to the
+   table since 19:56.
 6. **`analyze-space` has been called 22 times ever**, last 2026-08-19 16:16:56.
    `render-after` has been called 4 times ever and remains the least-exercised
    path in production; its `GOOGLE_AI_API_KEY` has **not** been checked since
@@ -654,18 +663,16 @@ Ordered by whether anyone can act on them today.
 
 ### Actionable now
 
-1. **Delete the last 4 junk telemetry rows.** They arrived after the cleanup
-   and before #98 reached `main`. One statement, in Production health #5.
-2. **Check `GOOGLE_AI_API_KEY` has not expired too.** `render-after` has been
+1. **Check `GOOGLE_AI_API_KEY` has not expired too.** `render-after` has been
    called 4 times ever and not at all since the Anthropic key died, so nobody
    would know. The cheapest test is to generate a photo preview from a report
    and watch for a 502 in the edge logs within the retention window.
-3. **Nothing alerts on a broken model path.** The outage in Production health
+2. **Nothing alerts on a broken model path.** The outage in Production health
    #3 ran for around two weeks behind a graceful fallback. A daily check of
    `plan_meta->>'source'` on the newest `spaces` row — or of the
    `analyze-space` error rate while the logs still hold it — would have caught
    it on day one. This is the highest-value piece of unbuilt work in the repo.
-4. **The AI photo preview may be undiscoverable.** Reported as missing from the
+3. **The AI photo preview may be undiscoverable.** Reported as missing from the
    report. The button lives in `#after-photo`, which `setupAfterPhoto()`
    (`js/screens/results.js:302`) unhides whenever a photo is in memory — but
    its chapter `#ch-after` ships `class="chapter collapsed"` under the heading
@@ -680,7 +687,7 @@ Ordered by whether anyone can act on them today.
    Neither containing `hide` → it is present and merely folded, and the fix is
    discoverability. `after-photo` containing `hide` → the photo left memory,
    which is a different and worse bug.
-5. **Step-length caps are unvalidated server-side.** `planSchema.js` checks step
+4. **Step-length caps are unvalidated server-side.** `planSchema.js` checks step
    *count* (line ~272) and nothing about length, so a model that ignores the
    8-word cap ships a plan that passes validation and renders long. It behaved
    on the 08-19 run; if it stops, the cap needs to move into `checkInvariants`,
@@ -688,7 +695,7 @@ Ordered by whether anyone can act on them today.
 
 ### Waiting on traffic
 
-6. **The funnel still has nothing to say.** `plan_rated` and
+5. **The funnel still has nothing to say.** `plan_rated` and
    `feedback_submitted` have never had a row. `plan_created` last fired
    2026-07-30 — and note the 2026-08-19 session produced a plan and *still* no
    `plan_created`, which is not yet explained. Do Not Track / GPC is the
@@ -700,13 +707,13 @@ Ordered by whether anyone can act on them today.
 
 ### Waiting on business input
 
-7. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in
+6. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in
    `js/affiliates.js`. Every entry is still an empty string, so all 30 catalog
    products link plain and no disclosure renders.
 
 ### Known gap, no owner
 
-8. **`docs/HANDOFF.md` went 14 days and 45 PRs stale**, and its headline
+7. **`docs/HANDOFF.md` went 14 days and 45 PRs stale**, and its headline
    framing actively misled (see the correction at the top). If you are reading
    this more than a few merges after the refresh date, distrust the specifics
    and re-derive from `git log` and the tables before acting on them.
