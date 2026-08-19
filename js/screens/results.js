@@ -981,7 +981,10 @@ export function updateProgress(){
 export function activeMap(){ return (state.ai && state.ai.map && state.ai.map.length) ? state.ai.map : MAP; }
 export function parseZone(z){ return String(z||'').split(/[·•,;]|\s\/\s/).map(s=>s.trim()).filter(Boolean); }
 export function renderAfter(mode){
-  document.getElementById('after-h').textContent='After · '+mode;
+  /* Just the mode. It read "After · <mode>", which only meant anything while
+     a "before" pane sat beside it; with that gone, "After" implied a
+     comparison the section no longer makes. */
+  document.getElementById('after-h').textContent=mode;
   const cab=document.getElementById('after-cabinet');
   const map=activeMap();
   let colorI=0;
