@@ -159,6 +159,17 @@
 }
 .v3d-zones-h{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em}
 .v3d-zone-list{display:grid;gap:0}
+/* The zone-label switch. A real 44px row rather than a bare checkbox: it sits
+   in a sidebar people use on a phone, where the drawing is the whole screen
+   and turning the names off is a normal thing to want. */
+.v3d-labels-toggle{
+  display:flex;align-items:center;gap:9px;
+  margin:0 0 14px;padding:9px 10px;min-height:44px;
+  border:1px solid var(--line);border-radius:var(--radius-sm);
+  font-size:13.5px;font-weight:600;color:var(--ink-2);cursor:pointer;
+}
+.v3d-labels-toggle:hover{border-color:var(--line-2);color:var(--ink)}
+.v3d-labels-toggle input{width:16px;height:16px;flex:none;accent-color:var(--primary);cursor:pointer}
 .v3d-zone-item{
   display:flex;gap:12px;align-items:flex-start;padding:14px 2px;
   border-top:1px solid var(--line);cursor:pointer;transition:.15s;

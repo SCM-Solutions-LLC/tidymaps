@@ -854,7 +854,14 @@
     <aside class="v3d-zones" id="v3d-zone-sidebar">
      <div class="v3d-zones-inner">
       <h3 class="v3d-zones-h" id="v3d-zones-h">Zones</h3>
-      <p class="small muted" style="margin:4px 0 14px">Hover to spotlight each on the shelf.</p>
+      <!-- A zone and a shelf are the same row of the plan: the controls above
+           set how many shelves there are, and each one gets a zone here. The
+           panel used to say neither, so the two words read as two things. -->
+      <p class="small muted" id="v3d-zones-sub" style="margin:4px 0 10px">One per shelf &mdash; what that shelf is for. Hover a zone to spotlight it.</p>
+      <label class="v3d-labels-toggle" for="v3d-show-labels">
+        <input type="checkbox" id="v3d-show-labels" checked>
+        <span>Show zone names in the drawing</span>
+      </label>
       <div class="v3d-zone-list" id="v3d-zone-list"></div>
       <section class="v3d-organizers hide" id="v3d-organizers">
         <h3 class="v3d-zones-h">Organizers shown</h3>

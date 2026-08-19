@@ -94,7 +94,8 @@ export function build(ctx){
     if(accent) addBox(scene,back?length:0.4,0.35,back?0.4:length,
       back?x:(left?-W/2+shelfDepth+T:W/2-shelfDepth-T),y+0.2,
       back?-D/2+shelfDepth+T:z,new THREE.MeshBasicMaterial({color:accent}));
-    if(row) addShelfLabel(scene,row,back?-W/2:(left?-W/2:W/2-shelfDepth),y+3.2,back?z+shelfDepth/2+0.7:-D/2+T);
+    if(row) addShelfLabel(scene,row,back?-W/2:(left?-W/2:W/2-shelfDepth),y+3.2,back?z+shelfDepth/2+0.7:-D/2+T,
+      { normal: back?new THREE.Vector3(0,0,1):new THREE.Vector3(left?1:-1,0,0) });
 
     const hit=makeHitbox(scene,back?length:shelfDepth,Math.max(6,H/NSH*0.8),back?shelfDepth:length,
       x,rod?y-gapAbove[idx]*0.25:y+Math.max(3,H/NSH*0.4),z,{shelfIndex:idx,shelfY:y,row});
