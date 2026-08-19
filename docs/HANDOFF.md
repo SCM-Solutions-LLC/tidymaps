@@ -4,15 +4,25 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-05, at the close of the session that moved the
-feedback ask onto the report, **verified the share round trip against
-production**, deployed the `analyze-space` step-length caps, and cleared
-twenty-one dead entries out of the imagery manifest. Everything through PR #53
-is merged; `main` is the single source of truth.
+**Last refreshed:** 2026-08-19. Everything through PR #99 is merged; `main` is
+the single source of truth.
 
-Read the open items with one thing in mind: **all four are waiting on someone
-using the app, not on code.** Nothing below is blocked on a change anybody can
-write.
+**Correcting the previous refresh, because it was load-bearing and wrong.** The
+2026-08-05 entry said to read the open items knowing that *"all four are waiting
+on someone using the app, not on code."* That framing survived two weeks and it
+cost real time. Two of the four were not waiting on traffic at all:
+
+- **Plan generation was down.** The `ANTHROPIC_API_KEY` secret had expired.
+  Every `analyze-space` call returned 502 `authentication_error: API key is
+  invalid`, and the client fell back to a demo plan behind an honest banner. So
+  the app looked like it worked, and the "quiet funnel" read as low usage.
+- **The funnel was being written to by the test suite.** `node --test` posted
+  real `space_saved` events to production (see Production health #4).
+
+Neither was visible from the tables the old entry told you to check, and the
+first was findable in one query against the edge logs. When something reads as
+"nobody is using it", rule out "it is broken" and "we are lying to ourselves in
+the data" before concluding anything about demand.
 
 ## Product state in one paragraph
 
@@ -33,14 +43,14 @@ shared-plan view.
 
 | # | Item | Status | PR |
 |---|------|--------|----|
-| 1 | Plan generation engine | ✅ shipped, and **confirmed live** 07-30 | #19 |
+| 1 | Plan generation engine | ✅ shipped; **re-confirmed live 08-19** after the key expiry | #19 |
 | 2 | Vision detection hardening | ✅ shipped | #20 |
-| 3 | Imagery library pipeline | ✅ shipped; manifest now 5 keys, 1 photo pending | #20, #52, #53 |
-| 4 | Step-media pipeline | ✅ shipped (clips pending, by design) | #21 |
+| 3 | Imagery library pipeline | ✅ shipped; 5 keys, 1 photo pending, all photos now WebP | #20, #52, #53, #96 |
+| 4 | Step-media pipeline | ✅ shipped; **134 clips rendered 08-10** | #21, #64–#79 |
 | 5 | Products | ⏸ code done; blocked on business inputs | — |
 | 6 | Persistence: share links + photo promise | ✅ shipped + deployed + **proven in production** | #23 |
-| 7 | Automated QA (Playwright in CI) | ✅ shipped | #22 |
-| 8 | Telemetry + feedback loop | ✅ shipped + deployed; **ask now on the report** | #24 |
+| 7 | Automated QA | ✅ shipped; now lint + types + 504 unit + 183 e2e, all gating | #22, #90 |
+| 8 | Telemetry + feedback loop | ✅ shipped; **pipeline fixed 08-19**, funnel still silent | #24, #98 |
 
 ### #1 Plan engine (PR #19)
 `supabase/functions/analyze-space/index.ts` validates model output against a
@@ -173,11 +183,16 @@ local requests; kid/no-kid safety variants; product-link shape.
 
 ### #8 Telemetry (PR #24, analysis layer 2026-07-28) — DEPLOYED
 - Migration `0006_telemetry.sql`: `telemetry_events` (RLS, no policies).
-- `track-events` edge function (live, v4) re-sanitizes every batch against
+- `track-events` edge function (live, v18) re-sanitizes every batch against
   `_shared/telemetryEvents.js`: 10-event allowlist, flat primitive props,
   80-char strings, 1KB/event, 25/batch. Client `js/telemetry.js`: random
-  localStorage `anon_id`, debounce + flush-on-hide, honors DNT/GPC, disables
-  under `navigator.webdriver`, fails silently.
+  localStorage `anon_id`, debounce + flush-on-hide, honors DNT/GPC, fails
+  silently.
+- **It refuses to send from anything that is not a browser.** `optedOut()`
+  checks `typeof document === 'undefined'` *before* `navigator.webdriver`,
+  because the webdriver check catches Playwright and misses Node — and for a
+  while `node --test` was posting real events to production (Production health
+  #4). Anything that imports `js/db.js` outside a browser reaches `track()`.
 - The allowlist gained `plan_rated` and `space_saved` on 2026-08-04. Adding an
   event means editing that file **and redeploying `track-events`** — the server
   copy is the boundary, and an unknown name is dropped silently, which looks
@@ -320,40 +335,169 @@ often a decision someone already made than work still owed.** Both batches had
 a plausible "staged for later" story, and both were wrong — the git history
 said so in each case. Check it before believing the backlog.
 
-## Production health as of 2026-08-05
+## What shipped in PRs #54–#99 (2026-08-07 → 08-19)
+
+Forty-five PRs across four working branches. Grouped by what they were for,
+because the branch names do not tell you.
+
+**The plan says only what it can support (08-07, 08-11).** A long run of
+honesty fixes, most found by reading a real report rather than the code: the
+prose and the headline time now agree; every goal the user picks is read, not
+just the first that maps; the style cards and the pet answer are used rather
+than collected; the household scrub rewrites kid phrases instead of deleting
+them mid-sentence; and the report stopped describing rooms it never saw. Six
+answers that the wizard collected and never sent now reach the model.
+
+**Measurement and fit (08-07, 08-11).** Typed measurements survive re-confirms,
+reloads and reopens. The measured space caps product fit on every axis. A
+renter can say so, and their measurements stop being silently replaced. The
+mobility answer moves things — and specifically does not move the things that
+must not move.
+
+**Step clips (08-10).** `remotion/` renders the step animations
+programmatically from the `STEP_ART` spec: 13 choreographies, 134 clips, VP9
+WebM per key. This moved the step-media slot from design-owned photo work to a
+re-runnable build step. The inline SVGs stay as the permanent fallback for any
+key outside the produced set.
+
+**Accessibility (08-11).** axe-core runs inside Playwright and sweeps every
+screen for WCAG 2 A/AA failures, so the contrast work cannot silently rot.
+
+**The 3D viewer (08-13, 08-14, 08-19).** Ten sliders folded behind one
+disclosure; the two columns balanced; organizers placed where the plan pays for
+them, and addable — with the cost stated, because adding one is a purchase.
+Most recently (#99) the viewer stopped calling one thing two things: the
+controls said "Number of shelves" while the sidebar said "Zones" for the same
+`row.shelfIndex`, and the scene's zone labels were built `visible=false` and
+revealed only on hover — unreachable on a touch screen. Labels are now drawn by
+default with a toggle, read place *and* purpose ("Top shelf · Bulk overflow"),
+and are culled per frame when the camera is behind their wall.
+
+**Edge functions deploy on merge (08-12).** Previously the site shipped on
+every merge and the functions were whatever someone last pushed by hand — which
+is how the `analyze-space` prompt sat seven days behind `main`. Now the same
+merge publishes both. The workflow deliberately omits `--prune`, so deleting a
+function is still a manual act.
+
+**Legal and site paperwork (08-14).** The five legal documents completed,
+Virginia named as the governing law.
+
+**Plan identity and async ownership (08-15, 08-17, 08-18).** The largest
+structural change of the period. Every plan carries an instance id, and every
+asynchronous writer proves it still owns the plan before touching state — a
+save, a load, a render, an analysis. This closed a family of bugs where plan A
+finishing mid-flight would land on plan B: `activeSpaceId` stamped onto the
+wrong row (so B's next save overwrote A), media uploaded into the wrong space,
+and a photo preview rendered against another plan's instructions.
+
+**Persistence (08-17, 08-18).** Incremental saves stopped being lost; shelf
+index 0 stopped being treated as absent; malformed bodies are rejected with
+`400 invalid_body` by a shared guard; the answers ride along on every
+incremental write (`ANSWERS_VERSION = 2`); and a `keepalive` PATCH on
+`visibilitychange`/`pagehide` stops the last write dying with the page.
+
+**Site hygiene (08-18, PR #96).** Two measured bands of horizontal scroll
+removed (the appbar needs 777px, and the hamburger breakpoint was 719px);
+a custom `404.html`; the copyright year unfrozen; and the photographs re-encoded
+as WebP — `assets/` went from **11MB to 1.9MB**, with the landing page's two
+pictures dropping from 1.7MB to 172KB. Guards in `tests/images.test.mjs` now
+reject a PNG in `assets/photos/` and enforce a per-image weight budget.
+
+**The caller-IP question, settled by measurement (08-18).** A temporary
+`debug-headers` function established what the edge actually does with forged
+client-IP headers: Cloudflare **rejects** a request carrying `cf-connecting-ip`
+(403 before the function runs), **strips** `x-real-ip`, and **overwrites**
+`x-forwarded-for`. Identity did not move for any forged header — the rate limit
+is not bypassable that way. `_shared/callerIp.js` was rewritten around the
+measurement, and the probe, its secret and its config deleted afterwards.
+
+**Types and lint (08-18).** `eslint.config.mjs` and a data-layer-scoped
+`jsconfig.json` (`tsc --checkJs`) both run in CI ahead of the tests. The state
+object has a declared `AppState` typedef. Worth knowing: of the 225 type errors
+the first full run produced, **none was a bug** — about 90 were DOM narrowing —
+which is why the config is scoped rather than repo-wide.
+
+## Production health as of 2026-08-19
 
 1. ~~Zero saved spaces~~ — fixed 07-28.
-2. ~~**`analyze-space` timing out in production**~~ — fixed, deployed, and now
-   **confirmed working end to end.** The symptom was a **546 after 150.2
-   seconds**: Supabase's wall-clock limit, hit by two unbounded model calls,
-   returning no body at all. `EFFORT` is explicit (`medium`), thinking is pinned
-   off, and the handler is measured against `TOTAL_BUDGET_MS` (100s).
-   - **The confirmation, since "fixed" was previously only a claim about the
-     code:** the one row in `spaces` carries
-     `plan_meta = {"source":"ai","model":"claude-sonnet-4-6","analyzedAt":
-     1785373371923}`. That is 2026-07-30 01:02:51, and `usage_events` has the
-     `analyze-space` call at 01:01:37 — **74 seconds, inside the budget.** Its
-     summary describes a real walk-in pantry with L-shaped shelving, text that
-     appears in no `js/demo-scenarios.js` entry. The AI path works.
-   - The `output_config.effort` / `thinking` tuning is therefore also fine in
-     practice, since that run used it. `cache_control` shipped in this session
-     and has **not** been exercised — the same caveat applies, and the fallback
-     now strips it too. Grep the edge logs for
-     `model rejected effort/thinking/cache tuning` before assuming otherwise.
-3. **Telemetry is suppressed for the owner's own testing.** `usage_events`
-   shows edge-function calls; `telemetry_events` has nothing after 2026-07-23
-   from that browser. This is Do Not Track / Global Privacy Control doing
-   exactly what it should. Do not read a quiet week as low usage — check
-   `usage_events` first (query 0 in the SQL file).
-4. **The numbers are a smoke test, not a trend.** As of 2026-08-05: 1 user,
-   1 saved space, 1 feedback row, 99 telemetry events (last 08-04 16:16 UTC),
-   92 usage events (last 08-04 18:03 UTC). Do not reason about conversion from
+2. ~~`analyze-space` timing out~~ — fixed 07-30, and the timing has not
+   regressed. `EFFORT` is explicit (`medium`), thinking is pinned off, and the
+   handler is measured against `TOTAL_BUDGET_MS` (100s).
+3. **The API key expired, and nothing noticed for days.** Between roughly
+   2026-08-04 and 2026-08-19, every `analyze-space` call failed:
+
+   ```
+   analyze-space model call failed <id> upstream
+   {"type":"error","error":{"type":"authentication_error","message":"API key is invalid."}}
+   ```
+
+   Five calls on 08-18 (three of them 28 seconds apart — a person pressing
+   "Retry analysis" twice), all 502, all failing in 0.3–1.1s, far too fast to
+   be a model call. **Replaced 2026-08-19 and confirmed working:** the `spaces`
+   row created 16:17:55 carries
+   `plan_meta = {"source":"ai","model":"claude-sonnet-4-6"}`, and the report
+   named nine detected categories from a real photo.
+
+   Three things worth keeping from this:
+   - **The failure was invisible from the product side.** The client falls back
+     to a demo plan built from the user's own answers, behind an honest banner
+     ("We couldn't analyze your photos this time"). That is the right
+     behaviour, and it is also why an outage can run for two weeks unnoticed.
+     Nothing alerts on it.
+   - **`usage_events` cannot tell you.** It is a rate-limit ledger — `fn`,
+     `user_id`, `ip_hash`, `created_at` — with no status column. A failed call
+     and a successful one look identical there. The edge logs are the only
+     record of the outcome, and they retain **24 hours**.
+   - The cheapest standing check is `plan_meta->>'source'` on recent `spaces`
+     rows. `demo-fallback` where you expected `ai` means the model path is
+     broken, and it survives longer than the logs do.
+4. **The unit suite was posting telemetry to production.** `telemetry_events`
+   held 68 `space_saved` rows with a null `anon_id` that no user created.
+   `optedOut()` disabled telemetry under automation via `navigator.webdriver`,
+   which catches Playwright but not Node — Node has had a global `navigator`
+   since v21 without `webdriver` on it, so `node --test` read as a consenting
+   browser. `tests/plan-instance.test.mjs` drives two successful inserts
+   through `persistSpace()`, `js/db.js` reports a successful insert with
+   `track()`, and the batch left four seconds later.
+
+   Fixed in #98 (`typeof document === 'undefined'` → opted out), and the 68
+   rows deleted. `anon_id` is the column the funnel joins on, so the junk was
+   both louder than the real data and unjoinable to it.
+
+   **Verify a claim like this at the socket, not the flag.** The regression
+   test spies on `fetch` rather than stubbing it: a stub answering 200 lets the
+   test pass while the request still leaves the machine.
+5. **The numbers are a smoke test, not a trend.** As of 2026-08-19: 1 user,
+   1 saved space, 1 feedback row, 142 usage events, and **99 telemetry rows,
+   every one carrying a real `anon_id`** — 92 `screen_viewed`, 4
+   `plan_created`, 3 `shared_plan_viewed`. Do not reason about conversion from
    this.
-   - **`analyze-space` has been called 13 times ever, and that number has not
-     moved since 2026-07-30.** It is the cleanest single check on open item 1:
-     if it still reads 13, neither `cache_control` nor the v16 step caps have
-     run in production, whatever else the tables show. The 08-04 activity was
-     share-link traffic and this session's own testing, not a new analysis.
+
+   The table was cleaned twice. 68 junk rows went first; four more appeared
+   afterwards (two from PR #99's CI at 18:35, two from the `main` deploy run at
+   19:56, both on code predating the fix) and were deleted once #98 landed. The
+   predicate was exact both times, because every `space_saved` row was junk and
+   no other event ever had a null `anon_id`:
+
+   ```sql
+   delete from telemetry_events where name = 'space_saved' and anon_id is null;
+   ```
+
+   `space_saved` therefore now reads **zero**, and that is the honest number —
+   there has never been a genuine one.
+
+   Two pieces of direct evidence the fix holds: #98's own unit job ran at 20:21
+   **with** the fix and produced no row, and nothing has been written to the
+   table since 19:56.
+6. **`analyze-space` has been called 22 times ever**, last 2026-08-19 16:16:56.
+   `render-after` has been called 4 times ever and remains the least-exercised
+   path in production; its `GOOGLE_AI_API_KEY` has **not** been checked since
+   the Anthropic key expired, and the same silent-expiry failure mode applies.
+7. **Telemetry from the owner's own browser may be suppressed.** Do Not Track
+   and Global Privacy Control both switch it off (Brave, DuckDuckGo and Firefox
+   send GPC by default), and `telemetryStatus()` on `window` says which in one
+   line. Check `usage_events` before reading a quiet week as low usage — but
+   read #3 above first, because "broken" and "unused" look the same from here.
 
 ## Architecture crib sheet
 
@@ -413,159 +557,166 @@ said so in each case. Check it before believing the backlog.
 
 - Migrations applied: 0001 init, 0002 storage, 0003 feedback,
   0004 invite_requests, 0005 sharing, 0006 telemetry,
-  0007 atomic_usage_and_storage.
-- Edge functions live: `analyze-space` (v16), `render-after` (v11),
-  `get-shared-space` (v4), `track-events` (v4), `submit-form` (v1). All
-  `verify_jwt: false` — they check JWTs themselves so guests can call them.
-  CORS allowlist in `_shared/cors.ts` (Pages, scmsolutions.org, tidymaps.ai,
-  localhost:8000/8123).
-- **Production matches `main` as of 2026-08-04.** `analyze-space` v16 carries
-  the step-length caps (task ≤8 words verb-first, why ≤12) and tells the model
-  the step animation exists, deployed after PR #50 merged rather than ahead of
-  review, same as v15's `cache_control` after #48; `track-events` v4 carries
-  the `plan_rated` / `space_saved` allowlist, which went out *before* the
-  client because an additive allowlist has to lead the client that sends to it.
-- After a `deploy_edge_function`, read the function back with
-  `get_edge_function` and check the changed regions actually landed. The MCP
-  tool takes file contents inline, so a deploy is a transcription of the repo
-  rather than an upload of it, and nothing else catches a bad copy.
+  0007 atomic_usage_and_storage, then three timestamped ones —
+  `20260728231041 add_analysis_diagnostics`,
+  `20260728232808 drop_analysis_diagnostics` (added and removed the same
+  evening), and `20260729185333 form_submissions_via_function`.
+- Edge functions live, versions as of 2026-08-19: `analyze-space` v31,
+  `render-after` v25, `get-shared-space` v18, `track-events` v18,
+  `submit-form` v15. All `verify_jwt: false` — they check JWTs themselves so
+  guests can call them. CORS allowlist in `_shared/cors.ts` (Pages,
+  scmsolutions.org, tidymaps.ai, localhost:8000/8123). **Note 3000 is not on
+  that list**, so a local dev server on that port gets a preflight failure and
+  telemetry silently never sends.
+- **Production matches `main` automatically now.** Since 2026-08-12 the same
+  merge that publishes the site publishes the functions
+  (`.github/workflows/deploy-functions.yml`, requires a `SUPABASE_ACCESS_TOKEN`
+  repo secret). The old advice to deploy by hand and read the function back is
+  obsolete for the normal path — but the workflow deliberately omits
+  `--prune`, so **deleting** a function is still a manual `supabase functions
+  delete`.
+- Secrets live on the project, not in the repo (`supabase secrets list` prints
+  digests, never values): `ANTHROPIC_API_KEY`, `GOOGLE_AI_API_KEY`,
+  `IP_HASH_SALT`, plus the Supabase-managed ones. `js/config.js` holds only the
+  project URL and the anon key, both public by design.
+  - **These expire silently.** See Production health #3. Nothing in the repo or
+    in CI can detect an expired key, because CI cannot reach the real API and
+    the function returns the same 502 shape for any upstream failure.
 - Note the two entrypoint layouts, which are not interchangeable:
   `analyze-space` and `render-after` deploy under `supabase/functions/...`,
   while `get-shared-space`, `track-events`, and `submit-form` deploy under
   `functions/...`. Bundle `_shared/*` and `import_map.json` at the matching
   depth or the imports do not resolve.
-- Deploys go through the Supabase MCP tools (`apply_migration`,
-  `deploy_edge_function` with the `_shared/*` files bundled alongside the
-  entrypoint). The CCR sandbox's network policy blocks direct HTTPS to
-  `supabase.co` — use MCP, not curl, and don't mistake that 403 for an outage.
+- For manual deploys and SQL, use the Supabase MCP tools. The CCR sandbox's
+  network policy blocks direct HTTPS to `supabase.co` — use MCP, not curl, and
+  don't mistake that 403 for an outage.
+- **Edge logs retain 24 hours**, and `query_logs` caps a request at a 24-hour
+  window. Anything you want to know about a production failure older than that
+  has to come out of the database instead.
 
 ## Testing & verification
 
 - `npm install` first — `zod` is a runtime dependency of the shared plan
   schema, and two unit files fail with `ERR_MODULE_NOT_FOUND` without it.
-- `npm test` — Node built-in runner over `tests/*.test.mjs`.
-- `npx playwright test` — `tests/e2e/`, config `playwright.config.mjs`, python
-  http.server on :8123. In this sandbox the Playwright-managed browser isn't
-  installed; run with
+- **Four gates, all of them in CI on every PR** (`.github/workflows/test.yml`):
+  `npm run lint` (ESLint 9 flat config), `npm run check:types`
+  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**504 tests**
+  across 41 files), and `npx playwright test` (**183 tests** across 38 files).
+  Pages deploy and the edge-function deploy both run on push to `main`.
+- In this sandbox the Playwright-managed browser isn't installed; run with
   `CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
-- CI: `.github/workflows/test.yml` on every PR. Pages deploy: `pages.yml` on
-  push to main.
-- Two habits that keep paying off: browser smoke-test every user-facing change
-  rather than reasoning about it, and mock the edge functions with
-  `page.route('**/functions/v1/...')` when the backend isn't reachable. A faked
-  Supabase session in `localStorage` (see `tests/e2e/saved-space.spec.mjs`)
-  makes the whole signed-in surface testable offline.
-  - The 07-28 session found both its bugs by screenshotting pixels and reading
-    the wire, and one looked like a model-quality problem right up until it
-    didn't. The 08-04 session found two more the same way: the feedback screen
-    still asking a question already answered, and the share view claiming two
-    adults. Neither was visible in the code, and neither unit test would have
-    caught them.
-- **Do not use `git checkout <file>` to test whether a new test fails without
-  its fix.** It reverts every change in that file, not the one line you sed'd,
-  and it happened twice in the 08-04 session. Copy the file aside and restore
-  from the copy, or revert the edit with the inverse edit.
+- Mock the edge functions with `page.route('**/functions/v1/...')` when the
+  backend isn't reachable. A faked Supabase session in `localStorage` (see
+  `tests/e2e/saved-space.spec.mjs`) makes the whole signed-in surface testable
+  offline. Note only three specs install a **host-wide** catch-all; the rest
+  stub one function path each.
+- Browser smoke-test every user-facing change rather than reasoning about it.
+  Repeated sessions have found bugs this way that no unit test would catch: a
+  feedback screen asking a question already answered, a share view claiming two
+  adults, an appbar overflowing at 768px.
+
+### Prove a new test fails without its fix
+
+This is the single most valuable habit in this repo, and the reason is that
+**writing a test that cannot fail is easy and feels identical to writing a good
+one.** Real examples from these sessions, all of which passed against unfixed
+code:
+
+- a canvas test using a 3-byte fake PNG that never decoded, so `img.onerror`
+  fired before the canvas was ever touched
+- a focus-trap test asserting "focus stayed in the modal" — `.focus()` on a
+  `display:none` element silently does nothing, so "didn't move" looked
+  identical to "stayed"
+- a zone-label test asserting "visibility did not change" when nothing was
+  visible to begin with
+- a telemetry test asserting that a `fetch` **stub** was called, which would
+  pass while the request still left the machine. Assert at the socket: spy,
+  don't stub, and require the sent list to be empty.
+- a `check:types` run "verified" with `grep '^js/'`, which hid ~180 vendor
+  errors and a non-zero exit
+
+Verify by stashing the fix (`git stash push <files>`), running, and restoring.
+**Do not use `git checkout <file>`** — it reverts every change in that file,
+not the one line you edited.
 
 ## Closed since the last refresh
 
-- ~~Confirm the AI path completes~~ — confirmed from stored `plan_meta`
-  (Production health #2). This one is settled; do not re-open it on the
-  strength of `plan_created` telemetry alone, which still reads all-`demo`
-  because the only AI run happened in a browser sending GPC.
-- ~~Live share-link round trip~~ — **closed over the wire, 2026-08-04**, not
-  just in a mock. `tests/e2e/shared-plan-view.spec.mjs` covers the visitor's
-  half client-side (it found the "2 adults" bug), but the proof is in
-  production: edge logs show a run of `get-shared-space` 200s that afternoon,
-  and `telemetry_events` carries three `shared_plan_viewed` rows under three
-  distinct `anon_id`s (15:10, 15:14, 16:16 UTC) — real visits an hour apart,
-  not one test run, and not the e2e spec, which mocks the function and cannot
-  reach production from the sandbox anyway. The link was then revoked
-  (`spaces.share_id` null, `updated_at` 17:53) and the `get-shared-space` 404s
-  after that timestamp exercise the revoke path too. Both halves are done; no
-  live share link is outstanding.
-- ~~Feedback on the results screen~~ — shipped this session.
-- ~~`space_saved` telemetry event~~ — shipped and deployed (`track-events` v4).
-- ~~`cache_control` on the retry~~ — shipped and deployed (`analyze-space` v15).
-- ~~Step-length caps in the prompt~~ — shipped and deployed (`analyze-space`
-  v16). The old prompt bounded map-row whys at 14 words and said nothing at all
-  about step length, so a 9-word step was never out of spec.
-- ~~Dead imagery-manifest entries~~ — 21 removed across #52 and #53, and a
-  reachability guard added so they cannot rebuild silently. Both batches read
-  as art still owed and were in fact decisions already made: seventeen `wiz-*`
-  card photos (the design chose line art) and four landing screenshots (commit
-  2265978 replaced them with drawn explainers). Nothing on the site changed —
-  nothing had referenced any of them.
+- ~~Confirm the AI path completes~~ — settled twice over. Confirmed from stored
+  `plan_meta` on 2026-08-05, and again on 2026-08-19 after the key replacement.
+- ~~Live share-link round trip~~ — closed over the wire 2026-08-04. Three
+  `shared_plan_viewed` rows under three distinct `anon_id`s, an hour apart, plus
+  `get-shared-space` 404s after the link was revoked, exercising that path too.
+- ~~Watch the first live analysis after 2026-08-04~~ — done, and the answer was
+  that the analyses were **failing**, not merely unobserved. See Production
+  health #3. The v16 step caps have now run for real; the steps on the
+  2026-08-19 report are within the 8-word cap, so the cap does not need to move
+  into `checkInvariants` yet.
+- ~~Edge functions deployed by hand~~ — automated 2026-08-12.
+- ~~Step clips pending~~ — 134 rendered 2026-08-10.
+- ~~Media production, one remaining slot~~ — `hero-home` still has a working
+  declarative `src`, and the photographs are now WebP. Nothing on the site is
+  broken for want of art.
 
 ## Open items / next actions
 
-1. **Watch the first live analysis after 2026-08-04.** Two unexercised changes
-   now ride on it, and they fail in different ways. Still unexercised as of
-   2026-08-05: `select count(*) from usage_events where fn = 'analyze-space'`
-   reads **13**, unchanged since 2026-07-30, and the last `plan_created` was
-   2026-07-30 05:09 UTC. Re-run that count first — while it says 13, nothing
-   below has run in production and there is nothing to check yet.
-   - `cache_control` (v15) has never been called: nothing in CI can reach the
-     real API, and the last real analysis predates it. A 200 in a plausible
-     time means it is fine. If the API rejects the tuning, the function drops
-     it and carries on slow rather than broken — grep the edge logs for
-     `model rejected effort/thinking/cache tuning` before assuming otherwise.
-     The same caveat no longer applies to `effort`/`thinking`, which the
-     2026-07-30 run used successfully.
-   - The v16 step caps cannot fail loudly at all. Nothing validates step
-     length server-side — `planSchema.js` only requires `task`/`time`/`why` to
-     be strings — so a model that ignores the 8-word cap produces a plan that
-     passes validation and renders long. Read the steps on the first real
-     report rather than trusting the 200. If they run long, the cap needs to
-     move into `checkInvariants`, where a violation costs a retry instead of
-     shipping.
-2. **Wait for the funnel to say something.** Still nothing to read, confirmed
-   2026-08-04: `plan_rated` and `space_saved` have **zero rows** — neither name
-   appears in `telemetry_events` at all. The only names present are
-   `screen_viewed` (92), `shared_plan_viewed` (3), and `plan_created` (4, none
-   since 2026-07-30). `feedback` holds one row, from 2026-07-29. Read
-   `plan_rated` before `feedback_submitted`: the first is one tap on the
-   report, the second needs someone to walk three more screens. Both are
-   joinable to `step_checked` depth per `anon_id`.
+Ordered by whether anyone can act on them today.
 
-   Two caveats before reading any of it, both detailed in `docs/telemetry.md`:
-   `step_checked` used to re-count every completed step each time a checklist
-   was restored (a reopen, a reload, a `?space=` link, an Adjust click), so
-   historical `checkedCount` reads high and reads highest for the users who
-   came back most. And on reading `feedback_submitted` against the `feedback`
-   table:
-   until the item-4 fix, the event fired beside the write rather than after
-   it, and the write's failure was swallowed — so any historical gap between
-   the count and the row count is that bug, not a load or a join. From now on
-   the event is only sent once the server has confirmed the row, so the two
-   should agree.
-3. **#5 products:** SKU curation + real affiliate IDs (business), then flip the
-   flags in `js/affiliates.js`. Every entry is still an empty string, so all 30
-   catalog products link plain and no disclosure renders.
-4. **Media production (design-owned).** Now one slot, not eleven. The wizard
-   card photo plan was retired on 2026-08-04: seventeen `wiz-*` entries went,
-   because the design had already settled on line art (`css/components.css`
-   requires one "line-art language" across every card, and
-   `wizard-illustration-motion.spec.mjs` requires a detail that *moves at
-   rest*, which a photograph cannot do). Nothing referenced them, so nothing
-   changed on the site. See `docs/asset-plan.md` before re-adding any.
-   The single pending key left is `hero-home`, and it already has a working
-   declarative `src` (`pantry-after.png`) — an upgrade, not a hole. Step clips
-   are no longer empty: `remotion/` renders them programmatically from the
-   `STEP_ART` spec (2026-08-10), so this slot moved from design-owned photo
-   work to a re-runnable build step. The inline SVGs remain the permanent
-   fallback for any key outside the produced set.
-   **Nothing on the site is broken for want of these.**
-   The reverse guard now exists (`tests/images.test.mjs` fails on a declared
-   key nothing references), so this class of drift cannot rebuild silently.
-   The same guard then caught a second batch: `plan-map`, `plan-steps`,
-   `plan-shopping`, and `wizard-household`, which commit 2265978 had removed
-   from the landing page on purpose (an app screenshot at three-across is "a
-   picture of text at 6px") and replaced with drawn explainers. Their entries
-   went too on 2026-08-04; the files stay on disk for any future page that
-   shows a screenshot at readable size. `UNREFERENCED_OK` is now empty and
-   should stay that way — both batches that would have gone in it turned out
-   to be decisions already made, not art still owed. Only `hero-3d.png`
-   remains in use, as the hero's `onerror` fallback.
+### Actionable now
+
+1. **Check `GOOGLE_AI_API_KEY` has not expired too.** `render-after` has been
+   called 4 times ever and not at all since the Anthropic key died, so nobody
+   would know. The cheapest test is to generate a photo preview from a report
+   and watch for a 502 in the edge logs within the retention window.
+2. **Nothing alerts on a broken model path.** The outage in Production health
+   #3 ran for around two weeks behind a graceful fallback. A daily check of
+   `plan_meta->>'source'` on the newest `spaces` row — or of the
+   `analyze-space` error rate while the logs still hold it — would have caught
+   it on day one. This is the highest-value piece of unbuilt work in the repo.
+3. **The AI photo preview may be undiscoverable.** Reported as missing from the
+   report. The button lives in `#after-photo`, which `setupAfterPhoto()`
+   (`js/screens/results.js:302`) unhides whenever a photo is in memory — but
+   its chapter `#ch-after` ships `class="chapter collapsed"` under the heading
+   "What it could look like", while the TOC calls it "Before & after". Unproven
+   either way; settle it in a browser on a report with a photo:
+
+   ```js
+   [document.getElementById('after-photo').className,
+    document.getElementById('after-gen-row').className]
+   ```
+
+   Neither containing `hide` → it is present and merely folded, and the fix is
+   discoverability. `after-photo` containing `hide` → the photo left memory,
+   which is a different and worse bug.
+4. **Step-length caps are unvalidated server-side.** `planSchema.js` checks step
+   *count* (line ~272) and nothing about length, so a model that ignores the
+   8-word cap ships a plan that passes validation and renders long. It behaved
+   on the 08-19 run; if it stops, the cap needs to move into `checkInvariants`,
+   where a violation costs a retry instead of shipping.
+
+### Waiting on traffic
+
+5. **The funnel still has nothing to say.** `plan_rated` and
+   `feedback_submitted` have never had a row. `plan_created` last fired
+   2026-07-30 — and note the 2026-08-19 session produced a plan and *still* no
+   `plan_created`, which is not yet explained. Do Not Track / GPC is the
+   leading candidate (`telemetryStatus()` on `window` reports it in one line),
+   but rule out the CORS origin too: only the hosts in `_shared/cors.ts` can
+   post, and `localhost:3000` is not among them. Read `plan_rated` before
+   `feedback_submitted` — the first is one tap on the report, the second needs
+   three more screens.
+
+### Waiting on business input
+
+6. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in
+   `js/affiliates.js`. Every entry is still an empty string, so all 30 catalog
+   products link plain and no disclosure renders.
+
+### Known gap, no owner
+
+7. **`docs/HANDOFF.md` went 14 days and 45 PRs stale**, and its headline
+   framing actively misled (see the correction at the top). If you are reading
+   this more than a few merges after the refresh date, distrust the specifics
+   and re-derive from `git log` and the tables before acting on them.
 
 ## Session conventions
 
