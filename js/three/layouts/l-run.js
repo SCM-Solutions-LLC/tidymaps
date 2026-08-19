@@ -88,7 +88,8 @@ export function build(ctx){
         side==='back'?-D/2+shelfDepth+T:sideZ,
         new THREE.MeshBasicMaterial({color:accent}));
     }
-    if(row) addShelfLabel(scene,row,side==='back'?-W/2:sideSign*(W/2-shelfDepth),y+3.2,side==='back'?backZ+shelfDepth/2+0.7:-D/2+T);
+    if(row) addShelfLabel(scene,row,side==='back'?-W/2:sideSign*(W/2-shelfDepth),y+3.2,side==='back'?backZ+shelfDepth/2+0.7:-D/2+T,
+      { normal: side==='back'?new THREE.Vector3(0,0,1):new THREE.Vector3(-sideSign,0,0) });
 
     const hit=makeHitbox(scene,side==='back'?length:shelfDepth,
       Math.max(6,H/NSH*0.8),side==='back'?shelfDepth: length,

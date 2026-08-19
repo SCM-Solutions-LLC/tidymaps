@@ -158,7 +158,10 @@ function rebuildScene(){
     },
   });
   view.setSize();
+  exposeView();
   populateZones(map);
+  initZoneLabelToggle();
+  applyZoneLabelPref();
   populateOrganizers();
   populateAddOrganizer();
   initDimSliders(geometry, resolved);
@@ -224,7 +227,10 @@ export async function openViewer3d(){
       title.textContent='Your '+name+', standing up';
     }
 
+    exposeView();
     populateZones(map);
+    initZoneLabelToggle();
+    applyZoneLabelPref();
     populateOrganizers();
   populateAddOrganizer();
     initLayoutChips(resolved);
@@ -456,13 +462,65 @@ function populateOrganizers(){
   }
 }
 
+/* Zone labels are on by default now, so hover can no longer be the thing that
+   decides whether one is visible — leaving a row would switch off a label the
+   user had asked to see. Hover spotlights instead: the item labels on that
+   shelf come up, and the zone's own label is left to the toggle. */
+function spotlightShelf(shelfIndex, on){
+  if(!view) return;
+  view.items.filter(item=>item.userData.shelfIndex===shelfIndex).forEach(item=>{
+    item.material.emissive.setHex(on?0x26372c:0x000000);
+    if(item.userData.label) item.userData.label.visible=on;
+  });
+}
+
+/* The switch outlives the scene. Rebuilding (a shelf-count change, a layout
+   swap) throws the old scene away and the new one starts with its labels on,
+   so the user's choice has to be re-applied to whatever is current rather than
+   stored inside it. */
+/* A test seam, and the only one the 3D screen has.
+
+   Everything else about this screen is assertable through the DOM, but the
+   drawing is a canvas: whether a zone label is on screen, what it says, and
+   whether the camera-facing cull dropped it are decisions made on sprite
+   objects that leave no mark in the document. `data-layout` is already stamped
+   on the canvas for the same reason — to make "the scene assembled" observable
+   — and this is that idea carried as far as the labels.
+
+   Read-only by intent: nothing in the app reads it back. */
+function exposeView(){
+  if(typeof window!=='undefined') window.__v3dView=view;
+}
+
+function applyZoneLabelPref(){
+  const box=document.getElementById('v3d-show-labels');
+  if(view && view.setZoneLabels) view.setZoneLabels(!box || box.checked);
+}
+
+function initZoneLabelToggle(){
+  const box=document.getElementById('v3d-show-labels');
+  if(!box || box.dataset.wired) return;
+  box.dataset.wired='1';
+  box.addEventListener('change', applyZoneLabelPref);
+}
+
 function populateZones(map){
   const list=document.getElementById('v3d-zone-list');
   if(!list || !map) return;
   list.innerHTML='';
   const rows=(map.rows||map||[]);
   const heading=document.getElementById('v3d-zones-h');
-  if(heading) heading.textContent=rows.length===1?'1 zone':rows.length+' zones';
+  /* Named against the layout's own level noun, so the sidebar and the controls
+     above it describe one thing: "6 zones — one per shelf", not "Zones" beside
+     "Number of shelves" with nothing connecting them. */
+  if(heading){
+    const canvas=document.getElementById('v3d-canvas');
+    const drawn=(canvas&&canvas.dataset.layout)||'';
+    const noun=singularLevel(LEVEL_NOUN[drawn]||'shelves');
+    heading.textContent=rows.length===1
+      ? `1 zone — the ${noun.toLowerCase()}`
+      : `${rows.length} zones — one per ${noun.toLowerCase()}`;
+  }
   rows.forEach((row,i)=>{
     const zone=row.zone||row.lv||'Zone '+(i+1);
     const desc=row.why||'';
@@ -470,26 +528,8 @@ function populateZones(map){
     const el=document.createElement('div');
     el.className='v3d-zone-item';
     el.innerHTML=`<span class="vz-dot" style="background:${color}"></span><div><h4>${escapeHtml(zone)}</h4>${desc?'<p>'+escapeHtml(desc.slice(0,80))+'</p>':''}</div>`;
-    el.onmouseenter=()=>{
-      if(!view) return;
-      view.items.filter(item=>item.userData.shelfIndex===row.shelfIndex).forEach(item=>{
-        item.material.emissive.setHex(0x26372c);
-        if(item.userData.label) item.userData.label.visible=true;
-      });
-      view.scene.traverse(node=>{
-        if(node.userData.zoneShelfIndex===row.shelfIndex) node.visible=true;
-      });
-    };
-    el.onmouseleave=()=>{
-      if(!view) return;
-      view.items.filter(item=>item.userData.shelfIndex===row.shelfIndex).forEach(item=>{
-        item.material.emissive.setHex(0x000000);
-        if(item.userData.label) item.userData.label.visible=false;
-      });
-      view.scene.traverse(node=>{
-        if(node.userData.zoneShelfIndex===row.shelfIndex) node.visible=false;
-      });
-    };
+    el.onmouseenter=()=>spotlightShelf(row.shelfIndex, true);
+    el.onmouseleave=()=>spotlightShelf(row.shelfIndex, false);
     list.appendChild(el);
   });
 }

@@ -527,10 +527,58 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   }
   setSize();
 
+  /* ---------- zone labels ----------
+
+     The names are drawn by default, which is the whole point of them, but a
+     scene with thirteen sprites in it goes to soup fast. Two rules keep it
+     readable, both applied per frame because both depend on where the camera
+     is right now:
+
+       facing   a walk-in has three storage walls, so at any angle roughly a
+                third of the labels belong to a wall the camera is behind.
+                Sprites ignore depth (depthTest:false, so they are never buried
+                inside a shelf), which means without this they float over the
+                front of the room advertising a wall nobody is looking at.
+
+       distance pulling back to see the whole unit shrinks nothing — a sprite
+                is sized in world units — so the labels stay put while the
+                shelves recede and end up overlapping each other. Scaling them
+                down with distance past a threshold keeps them attached to what
+                they name.
+
+     `zoneLabelsOn` is the user's switch and wins over both. */
+  const zoneLabels=[];
+  scene.traverse(node=>{ if(node.userData && node.userData.isZoneLabel) zoneLabels.push(node); });
+  let zoneLabelsOn=true;
+  const camDir=new THREE.Vector3();
+
+  function setZoneLabels(on){
+    zoneLabelsOn=!!on;
+    if(!zoneLabelsOn) zoneLabels.forEach(l=>{ l.visible=false; });
+  }
+
+  function updateZoneLabels(){
+    if(!zoneLabelsOn || !zoneLabels.length) return;
+    camera.getWorldDirection(camDir);
+    const dist=camera.position.distanceTo(controls.target);
+    /* Below the reference distance labels stay their authored size; past it
+       they shrink in proportion, with a floor so they never vanish entirely. */
+    const k=Math.max(0.55, Math.min(1, (S*1.7)/Math.max(1, dist)));
+    for(const label of zoneLabels){
+      const n=label.userData.faceNormal;
+      // camDir points from the camera into the scene; a surface is visible
+      // when its outward normal opposes that.
+      label.visible=!n || n.dot(camDir) < -0.12;
+      const base=label.userData.baseScale;
+      if(base) label.scale.set(base.x*k, base.y*k, 1);
+    }
+  }
+
   let raf=0, disposed=false;
   function loop(){
     if(disposed) return;
     controls.update();
+    updateZoneLabels();
     renderer.render(scene, camera);
     raf=requestAnimationFrame(loop);
   }
@@ -564,6 +612,6 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   }
 
   return { scene, renderer, camera, controls, items, organizers, shelves, surfaces, reflow, setSize, dispose,
-    unplacedOrganizerQty,
+    unplacedOrganizerQty, setZoneLabels, zoneLabelsOn(){ return zoneLabelsOn; },
     placements(){ return items.map(m=>({ itemId:m.userData.itemId, shelfIndex:m.userData.shelfIndex, slot:m.userData.slot })); } };
 }
