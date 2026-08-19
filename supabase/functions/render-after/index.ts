@@ -5,7 +5,25 @@ import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 import { buildRenderBrief } from '../_shared/renderBrief.js';
 
 const GEMINI_MODEL = 'gemini-2.5-flash-image';
-const MAX_B64_CHARS = 2_100_000;
+/* Two limits, because they are two different questions.
+
+   IN is what a caller may send us: the client scales and re-encodes to JPEG
+   before upload, so anything near this is a client that has stopped doing
+   that, or is not our client at all.
+
+   OUT is a backstop against a pathological upstream response, and it has to
+   be sized against what the model actually returns. It was not: both used one
+   2.1M constant, and gemini-2.5-flash-image returns ~3.2-3.4M base64 chars for
+   a normal 1024px render. Measured on four consecutive production attempts,
+   2026-08-19: 3_227_852, 3_370_040, 3_314_168, 3_428_884. Every one was over,
+   so every render this feature has ever attempted was rejected by its own
+   guard and returned 502 upstream_image_too_large. Nothing caught it, because
+   the test pinned that the check exists rather than that it can pass, and CI
+   cannot reach the real API.
+
+   8M chars is ~6MB decoded — far above anything observed, still finite. */
+const MAX_IN_B64_CHARS = 2_100_000;
+const MAX_OUT_B64_CHARS = 8_000_000;
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 /* The upstream call had no deadline at all. Supabase kills a function at its
@@ -49,7 +67,7 @@ Deno.serve(async (req) => {
   if (!img || !ALLOWED_MIME.has(img.media_type) || typeof img.data !== 'string') {
     return json(req, 400, { error: 'bad_image' });
   }
-  if (img.data.length > MAX_B64_CHARS) return json(req, 413, { error: 'image_too_large' });
+  if (img.data.length > MAX_IN_B64_CHARS) return json(req, 413, { error: 'image_too_large' });
   if (!B64_RE.test(img.data)) return json(req, 400, { error: 'bad_image' });
   /* The brief is composed here from the zone list, never taken as text from
      the caller — see _shared/renderBrief.js. `instructions` from an older
@@ -159,7 +177,7 @@ Deno.serve(async (req) => {
       console.error('gemini returned a malformed image payload');
       return json(req, 502, { error: 'bad_upstream_image' });
     }
-    if (outB64.length > MAX_B64_CHARS) {
+    if (outB64.length > MAX_OUT_B64_CHARS) {
       console.error('gemini returned an oversized image', outB64.length);
       return json(req, 502, { error: 'upstream_image_too_large' });
     }

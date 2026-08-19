@@ -151,8 +151,14 @@ export function renderAfterErrorMessage(error){
   if(error && (error.code==='upstream_timeout' || error.code==='timeout')){
     return 'The photo preview took too long this time — try again in a moment.';
   }
-  if(error && (error.code==='bad_upstream_image' || error.code==='upstream_image_too_large')){
+  if(error && error.code==='bad_upstream_image'){
     return 'The photo preview came back in a form we could not use. Try again, or try another photo.';
+  }
+  /* Kept separate from the malformed case. They were one message, and it sent
+     the first person to debug this looking for a corrupt payload when the
+     image was fine and merely larger than our own cap allowed. */
+  if(error && error.code==='upstream_image_too_large'){
+    return 'The photo preview came back larger than we can handle. Try again, or try another photo.';
   }
   return 'Photo preview unavailable right now — the illustrated layout below still shows the full plan.';
 }

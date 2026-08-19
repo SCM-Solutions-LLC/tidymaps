@@ -135,7 +135,7 @@ test('what comes back is checked before it is stored or sent', () => {
   const guard = renderAfterSrc.slice(renderAfterSrc.indexOf('const outMime'), renderAfterSrc.indexOf('let storagePath'));
   assert.match(guard, /ALLOWED_MIME\.has\(outMime\)/, 'the returned type is unchecked');
   assert.match(guard, /B64_RE\.test\(outB64\)/, 'the returned payload is unchecked');
-  assert.match(guard, /outB64\.length > MAX_B64_CHARS/, 'the returned size is unchecked');
+  assert.match(guard, /outB64\.length > MAX_OUT_B64_CHARS/, 'the returned size is unchecked');
   // ...and all of it before the upload, not after.
   const firstCheck = renderAfterSrc.indexOf('bad_upstream_image');
   const upload = renderAfterSrc.indexOf('.upload(storagePath');
@@ -145,4 +145,64 @@ test('what comes back is checked before it is stored or sent', () => {
 
 test('the image the caller sends is base64, not a data URL or a novel', () => {
   assert.match(renderAfterSrc, /if \(!B64_RE\.test\(img\.data\)\) return json\(req, 400, \{ error: 'bad_image' \}\)/);
+});
+
+
+/* ---------- the cap has to be one the model can pass ----------
+
+   The test above pins that the size guard exists. It passed throughout the
+   entire time the feature was broken, because a guard that rejects everything
+   is structurally identical to one that rejects the right things.
+
+   Both limits were one 2.1M constant, and gemini-2.5-flash-image returns
+   ~3.2-3.4M base64 chars for a normal render. Every production attempt was
+   rejected by our own backstop and returned 502. Four consecutive ones on
+   2026-08-19, before the fix:
+
+     3_227_852   3_370_040   3_314_168   3_428_884
+
+   CI cannot call the real API, so the only way to hold this is to write the
+   measurement down and check the constant against it. */
+
+const OBSERVED_GEMINI_B64 = [3_227_852, 3_370_040, 3_314_168, 3_428_884];
+
+function constantIn(src, name) {
+  const m = new RegExp(`const ${name} = ([0-9_]+);`).exec(src);
+  assert.ok(m, `${name} is gone or renamed; this test needs rewriting`);
+  return Number(m[1].replace(/_/g, ''));
+}
+
+test('the inbound and outbound size limits are separate numbers', () => {
+  /* One constant for both meant tightening what a caller may upload also
+     tightened what the model is allowed to return, which is how a sane
+     inbound limit silently became an impossible outbound one. */
+  const inCap = constantIn(renderAfterSrc, 'MAX_IN_B64_CHARS');
+  const outCap = constantIn(renderAfterSrc, 'MAX_OUT_B64_CHARS');
+  assert.notEqual(inCap, outCap, 'the two limits answer different questions');
+  assert.match(renderAfterSrc, /img\.data\.length > MAX_IN_B64_CHARS/, 'the inbound check uses the outbound cap');
+});
+
+test('the outbound cap clears what the model actually returns, with headroom', () => {
+  const outCap = constantIn(renderAfterSrc, 'MAX_OUT_B64_CHARS');
+  const worst = Math.max(...OBSERVED_GEMINI_B64);
+
+  assert.ok(outCap > worst,
+    `MAX_OUT_B64_CHARS is ${outCap}, under the ${worst} the model was measured returning — ` +
+    'every render would 502 on our own guard');
+
+  /* Headroom, not a hairline. The observed spread is ~6% across four calls on
+     one photo; a different photo or a model revision moves it further. */
+  assert.ok(outCap >= worst * 1.5,
+    `MAX_OUT_B64_CHARS is ${outCap}, only ${(outCap / worst).toFixed(2)}x the largest observed render`);
+});
+
+test('a too-large upstream image reads differently from a malformed one', () => {
+  /* They shared one message, and it sent the first person to debug this
+     looking for a corrupt payload when the image was fine. */
+  const api = readFileSync(new URL('../js/api.js', import.meta.url), 'utf8');
+  const tooLarge = /upstream_image_too_large'\)\{\s*return '([^']+)'/.exec(api.replace(/\n\s*/g, ''));
+  const malformed = /bad_upstream_image'\)\{\s*return '([^']+)'/.exec(api.replace(/\n\s*/g, ''));
+  assert.ok(tooLarge, 'no distinct message for an oversized upstream image');
+  assert.ok(malformed, 'no distinct message for a malformed upstream image');
+  assert.notEqual(tooLarge[1], malformed[1], 'the two failures still say the same thing');
 });
