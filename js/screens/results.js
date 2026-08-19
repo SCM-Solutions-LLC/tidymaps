@@ -368,10 +368,22 @@ function setupAfterPhoto(){
   state._beforeUrl=beforeUrl;
   const afterUrl=state.afterRenderB64 ? 'data:image/png;base64,'+state.afterRenderB64 : (state.afterRenderUrl||null);
   wrap.classList.toggle('hide', !beforeUrl);
-  if(!beforeUrl) return;
+  if(!beforeUrl){
+    // No photo, nothing to advertise: the flag must not outlive the block.
+    const noFlag=document.getElementById('after-chapter-flag');
+    if(noFlag) noFlag.classList.add('hide');
+    return;
+  }
   const slider=document.getElementById('ba-slider');
   const genRow=document.getElementById('after-gen-row');
   const disclaimer=document.getElementById('ba-disclaimer');
+  /* The chapter this lives in ships folded, and a folded chapter renders
+     nothing but its h3 — .ch-sub is display:none while collapsed. So the only
+     way a reader learns the photo preview exists is a flag in the head. It was
+     reported twice as "I do not see the AI photo option": the button was
+     there, un-hidden and 0px tall inside a collapsed section. */
+  const flag=document.getElementById('after-chapter-flag');
+  if(flag) flag.classList.toggle('hide', !(afterUrl || backendConfigured()));
   if(afterUrl){
     document.getElementById('ba-before-img').src=beforeUrl;
     document.getElementById('ba-after-img').src=afterUrl;

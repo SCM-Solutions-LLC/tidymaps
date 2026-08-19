@@ -594,7 +594,13 @@
       <!-- 05. Before/After -->
       <section class="chapter collapsed" id="ch-after">
         <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>What it could look like</h3>
-          <p class="ch-sub">An illustrated layout of the recommended plan. Each shelf is a labeled zone.</p></div></div>
+          <p class="ch-sub">An illustrated layout of the recommended plan. Each shelf is a labeled zone. With a photo of your space, you can also see it edited to match the plan.</p></div>
+          <!-- The one thing in this chapter a reader would go looking for is
+               the photo preview, and a collapsed chapter shows nothing but its
+               h3 — .ch-sub is display:none while folded. So the flag lives in
+               the head, outside .ch-titles, and survives the fold. Shown only
+               when there is actually a photo to work from. -->
+          <span class="ch-flag hide" id="after-chapter-flag">Photo preview</span></div>
 
         <!-- Photorealistic preview: the user's own photo, reorganized by AI -->
         <div id="after-photo" class="hide" style="margin-bottom:18px">
