@@ -417,10 +417,12 @@ object has a declared `AppState` typedef. Worth knowing: of the 225 type errors
 the first full run produced, **none was a bug** — about 90 were DOM narrowing —
 which is why the config is scoped rather than repo-wide.
 
-## The photo preview render thread (PRs #102, #103, #106) — OPEN
+## The photo preview render thread (PRs #102, #103, #106) — RESOLVED
 
-The photorealistic "after" render is the one unresolved product thread. Read
-this before touching the brief, the model, or the input resolution.
+The render re-stages the space. Input resolution was the lever; the brief was
+not the problem. Read this before touching the brief, the model, or the
+resolution — most of the obvious moves here have already been made and
+measured.
 
 **What is known to be fixed.** `MAX_B64_CHARS = 2_100_000` capped the inbound
 request and the model's reply against one constant. Gemini returns 3.2-3.4M
@@ -436,7 +438,8 @@ matters. From `function_edge_logs`, every `render-after` POST in retention:
 | 08-19 21:54 x2 | 502 | 178,989 | size cap, pre-#102 |
 | 08-19 23:07 x2 | 502 | 178,989 | size cap, pre-#102 |
 | 08-20 04:26 x3 | 429 | 172,174 | rate limited |
-| **08-20 04:34:25** | **200** | **172,174** | the only successful render |
+| **08-20 04:34:25** | **200** | **172,174** | 1100px — no visible re-staging |
+| **08-20 16:57:34** | **200** | **292,074** | 1568px — re-staged correctly |
 
 #102's edge deploy completed 23:31:20Z and #103's at 03:26:03Z, and **no render
 was attempted between them**. So the single 200 ran the #103 brief at 1100px,
@@ -445,20 +448,51 @@ it against. The `js/media.js` comment describing output that "came back
 globally brightened and straightened" was authored 04:49:04Z — fifteen minutes
 after that render, describing it.
 
-Three briefs were *designed*; one shipped; one output has ever been seen. A
-claim that a brief change "had no effect" is therefore measured against
-expectation, not against a control. **Do not retire the feature on n=1.**
+Three briefs were *designed*; one shipped; and at the time only one output had
+ever been seen. A claim that a brief change "had no effect" was therefore
+measured against expectation, not against a control — which is why the
+"stop iterating, three designs is enough" conclusion recorded here was wrong.
+The answer arrived on the very next render.
 
-**#106 is deployed but untested.** The render upload went 1100px -> 1568px in
-`js/media.js`; the Pages run finished 2026-08-20 05:10:12Z and no render has
-run since. Because it is a client change, hard-refresh before testing. Its e2e
-test (`tests/e2e/render-input-resolution.spec.mjs`) is not one of the vacuous
-ones — it uses a 1744x1882 source and asserts on the bytes that leave the
-browser, so the 1568px path is genuinely covered.
+**#106 is what fixed it.** The render upload went 1100px -> 1568px in
+`js/media.js`. The 16:57 render came in at 292,074 request bytes against the
+172,174 baseline — **1.70x**, where the pixel-area increase is 2.03x and JPEG
+compresses large images more efficiently per pixel, so the ratio lands exactly
+where a real resolution bump belongs.
 
-**Reading the next result without guessing.** `render-after` logs nothing on
-success, but the platform records the POST body size. Compare against the
-172,174-byte baseline:
+It is a clean single-variable result. `render-after` was v28 for both renders
+with no edge deploy in between, so the brief, the model and the prompt were
+byte-identical; only the input resolution changed. The output went from global
+brightening to genuine re-staging: containers upright and front-faced, like
+grouped with like, bottles in a single row, shelves given one purpose each —
+the operations the #103 brief asks for and the 1100px render ignored.
+
+The mechanism was the one predicted in `js/media.js`: at 1100px across a wide
+corner pantry a jar is about forty pixels, near the floor of what an image
+model can pick up and put back as a recognisable object. 1568 is Gemini's tile
+size.
+
+Its e2e test (`tests/e2e/render-input-resolution.spec.mjs`) is not one of the
+vacuous ones — a 1744x1882 source, asserting on the bytes that leave the
+browser.
+
+**Still open: object fidelity.** The brief says every object in the result
+"comes out of the original photo: the same products, packaging, colours and
+count". The successful render put a row of matching fabric bins across the top
+shelf where the input had one or two similar baskets elsewhere — so the model
+multiplied a container it found rather than only moving what was there. This
+is why the disclaimer ("shows the feel, not an exact result") is currently the
+honest claim and the button's "See your actual space organized" should not be
+strengthened. Watch the object count on the next few renders.
+
+**Reliability is unmeasured.** One good render on one corner pantry. This app
+also renders garages, closets and workbenches, and nothing yet says the result
+holds across them.
+
+**Reading a render without guessing.** `render-after` logs nothing on success,
+but the platform records the POST body size. A render near 172,174 bytes came
+from a browser serving a cached `js/media.js` and tested nothing; one near
+292,074 sent the 1568px photo:
 
 ```sql
 select timestamp, log_attributes['response.status_code'] as status,
@@ -470,9 +504,8 @@ where source = 'function_edge_logs'
 order by timestamp desc
 ```
 
-Roughly 2x the baseline means the bigger photo went up and the output is about
-the model. Near 172,174 means the browser served cached `js/media.js`, the
-render tested nothing, and it has to be re-run.
+Because it is a *client* change, a warm browser cache silently reverts it —
+hard-refresh before reading anything into a render's quality.
 
 **Refuted — do not re-litigate.** Parts order (`[image, text]` is correct for
 `:generateContent`; the `[text, image]` guidance belongs to the newer
@@ -558,9 +591,9 @@ starting.
    Two pieces of direct evidence the fix holds: #98's own unit job ran at 20:21
    **with** the fix and produced no row, and nothing has been written to the
    table since 19:56.
-6. **`render-after` has produced exactly one image, ever** — 2026-08-20
-   04:34:25Z, 200, 10.8s. Every earlier attempt died on the size cap (#102) or
-   the rate limiter. `GOOGLE_AI_API_KEY` is **fine**: Gemini authenticated on
+6. **`render-after` has produced two images, ever** — 2026-08-20 04:34:25Z
+   (1100px, no re-staging) and 16:57:34Z (1568px, re-staged). Every earlier
+   attempt died on the size cap (#102) or the rate limiter. `GOOGLE_AI_API_KEY` is **fine**: Gemini authenticated on
    every call including that one, and the silent-expiry worry recorded here
    before was a false alarm start to finish. See "The photo preview render
    thread" for what that single render does and does not prove.
@@ -734,12 +767,11 @@ Ordered by whether anyone can act on them today.
 
 ### Actionable now
 
-1. **Run the 1568px render and read the wire size.** #106 is deployed and
-   still untested. Hard-refresh first — it is a *client* change, so a warm cache
-   serves the old 1100px encoder — then generate one preview and compare the
-   POST body against the 172,174-byte baseline. The query and how to read it are
-   in "The photo preview render thread" above. The `GOOGLE_AI_API_KEY` question
-   that used to sit here is settled: the key works.
+1. **Confirm the render holds across space types.** The 1568px fix is proven
+   on one corner pantry (08-20 16:57, 292,074 bytes). Garages, closets and
+   workbenches are unmeasured, and object fidelity — the model multiplied a
+   container rather than only moving what was there — is the open question.
+   See "The photo preview render thread" above.
 2. **Nothing alerts on a broken model path.** The outage in Production health
    #3 ran for around two weeks behind a graceful fallback. A daily check of
    `plan_meta->>'source'` on the newest `spaces` row — or of the
