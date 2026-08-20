@@ -231,3 +231,65 @@ test('categories the reader ticked are not read back as photo findings', async (
   expect(tags.length).toBe(2);
   for (const t of tags) expect(PLAN.categories).not.toContain(t);
 });
+
+/* The sample plan on the landing page is opened by someone who has answered
+   nothing. It arrived carrying a "2 adults" household chip on the masthead —
+   beside the reader's own measurements, in the same row, formatted the same
+   way — and the byline "Personalized plan · based on your selections".
+
+   Both are plain statements of things nobody said. The identical defect was
+   diagnosed and fixed one function away for share links, with the comment "a
+   visitor was shown '2 adults' on someone else's plan"; the demo path was left
+   as it was. */
+
+async function openSample(page) {
+  await page.goto('/index.html');
+  await page.getByRole('button', { name: 'View a sample plan' }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+}
+
+/* Two tests, not one with two assertions: a single test stops at its first
+   failure, so the byline half would never run while the household half was
+   still broken — and each is a separate claim with a separate fix. */
+test('the sample plan carries no household chip', async ({ page }) => {
+  await openSample(page);
+  await expect(page.locator('#chip-household')).toBeHidden();
+});
+
+test('the sample plan does not call itself personalized', async ({ page }) => {
+  await openSample(page);
+  const byline = await page.locator('#res-byline').textContent();
+  expect(byline, 'the sample claims to be built from answers nobody gave')
+    .not.toMatch(/your selections/i);
+  expect(byline).toMatch(/sample/i);
+});
+
+test('a wizard plan still says it was built from the answers given', async ({ page }) => {
+  /* The counterpart, so the fix above cannot be "call everything a sample".
+     This reader answered the wizard, so "based on your selections" is true. */
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.fill('#m-num-w', '3');
+  await page.fill('#m-num-h', '6');
+  await page.fill('#m-num-d', '1.33');
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  const chips = page.locator('#contents-chips > *');
+  await chips.nth(0).click();
+  await page.locator('#flow-next').click();
+  await page.locator('#goal-list .wz-goal').first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+
+  await expect(page.locator('#res-byline')).toHaveText(/based on your selections/i);
+});

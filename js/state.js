@@ -372,7 +372,13 @@ export function prepareDemoPlanState(target=state){
   target.capture='demo';
   target.upgrades=true;
   target.effort=null;
-  target.household={ adults:2, kidCount:0, petCount:0,
+  /* No household. The sample is opened from the landing page by someone who
+     has answered nothing, and the report renders whatever household it finds:
+     two adults became a "2 adults" chip on the masthead, beside the reader's
+     own measurements, as a plain statement of something nobody said. The share
+     view zeroes it for exactly this reason a few lines down; the demo path was
+     left as it was. adults:0 hides the chip. */
+  target.household={ adults:0, kidCount:0, petCount:0,
     kids:{present:null, ages:[]}, pets:{present:null, types:[]}, mobility:[], notes:'' };
   resetPlanRecord(target);
   return target;
