@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { makeLabelSprite } from './labels.js';
 import { LAYOUT_BUILDERS } from './layouts/index.js';
 import { COLORS, ITEM_PALETTE, slug, createMaterials } from './layouts/helpers.js';
@@ -154,6 +155,92 @@ function createOrganizer(type){
 const KIND_MAX_W={garment:14,shoe:11,linen:12,bottle:6,can:6,dish:8,tool:7,food:8,container:13,'small-item':9};
 const KIND_DEPTH={garment:1.2,shoe:4,linen:5,bottle:3.5,can:3.5,dish:2.5,tool:2.5,food:4,container:6,'small-item':4};
 
+/* Metal and glass had nothing to reflect. A MeshStandardMaterial takes almost
+   all of its colour from the environment once metalness climbs, so every metal
+   fitting in the viewer read flat black — worst on the under-sink drain and
+   faucet at metalness 0.75, but visible on all 21 of them. One PMREM pass over
+   three's stock room supplies the reflection.
+
+   The reflection is attached per material rather than through scene.environment,
+   and the reason is measured, not stylistic:
+
+     - scene.environment lights every material there is, and its only dial is
+       scene.environmentIntensity. Every setting of that dial which recovered
+       metal also lifted the diffuse surfaces with it — +10% at the lowest
+       setting that moved metal at all, +28% at the setting that fixed it. That
+       is a relight of the whole scene, not a fix for black metal.
+     - material.envMapIntensity does NOT restrain it. With this build (r166),
+       IBL arriving via scene.environment is scaled by scene.environmentIntensity
+       alone; setting envMapIntensity to 0 on all 85 materials changes the
+       rendered frame by not one byte. A per-material trim on top of
+       scene.environment is inert, and silently so.
+
+   So material.envMap carries it. Only the materials that need a reflection get
+   one, envMapIntensity means what it says again, and a diffuse surface is left
+   exactly as it was before the port. This is still one pass over the built
+   scene — nothing in the thirteen layout builders is touched. */
+const ENV_BLUR=0.04;
+const ENV_METAL=1;      /* metalness>=0.3: the fix. Reflection is all it has. */
+const ENV_GLASS=0.5;    /* the cabinet and fridge doors, so they read as glass */
+const ENV_METAL_MIN=0.3;
+const ENV_GLASS_MAX_OPACITY=0.8;
+
+/* The room does not depend on the plan, the layout or the geometry, so it is
+   built once per canvas and kept. That matters because changing a shelf count
+   rebuilds the whole scene (rebuildScene in js/screens/viewer3d.js) and the
+   PMREM pass is the most expensive single step in a build — 80ms on the
+   software renderer CI uses. Keyed by canvas because the texture belongs to
+   that canvas's GL context and cannot be handed to another one.
+
+   Deliberately outlives the build that first asked for it, and so is NOT
+   released in dispose() below: the viewer's canvas is permanent, one target
+   is a bounded cost, and re-deriving it per rebuild is not. */
+const ENV_BY_CANVAS=new WeakMap();
+
+export function attachEnvironment(renderer, canvas){
+  if(canvas&&ENV_BY_CANVAS.has(canvas)) return ENV_BY_CANVAS.get(canvas);
+  let room=null,pmrem=null,target=null;
+  try{
+    pmrem=new THREE.PMREMGenerator(renderer);
+    room=new RoomEnvironment();
+    target=pmrem.fromScene(room, ENV_BLUR);
+  }catch(err){
+    /* Not fatal: without this the viewer is exactly the pre-port viewer, and
+       every material already carries the look it had then. */
+    console.warn('3D: environment map unavailable, metal will read flat', err);
+    target=null;
+  }finally{
+    if(room) room.dispose();
+    if(pmrem) pmrem.dispose();
+  }
+  if(canvas) ENV_BY_CANVAS.set(canvas, target);
+  return target;
+}
+
+/* Run once the scene is fully built. Adding an organizer rebuilds the scene
+   rather than appending to it (rebuildScene in js/screens/viewer3d.js), so
+   there is no later material for this to miss. */
+export function scopeEnvironment(scene, texture){
+  if(!texture) return;
+  const seen=new Set();
+  scene.traverse(node=>{
+    const list=Array.isArray(node.material)?node.material:node.material?[node.material]:[];
+    list.forEach(material=>{
+      /* Sprites and basic materials have no envMap slot to fill. */
+      if(seen.has(material)||!('envMapIntensity' in material)) return;
+      seen.add(material);
+      const intensity=material.metalness>=ENV_METAL_MIN?ENV_METAL
+        :(material.transparent&&material.opacity<ENV_GLASS_MAX_OPACITY)?ENV_GLASS
+        :0;
+      if(!intensity) return;
+      material.envMap=texture;
+      material.envMapIntensity=intensity;
+      /* envMap changes the compiled program, so this one does need the flag. */
+      material.needsUpdate=true;
+    });
+  });
+}
+
 /* Some machines refuse the fancy context but grant a plainer one — a driver
    that can't do MSAA, or Chrome with hardware acceleration off falling back to
    software. Rather than throw on the first miss, walk down to simpler
@@ -177,7 +264,11 @@ export function createRenderer(canvas){
   throw err;
 }
 
-export function buildScene({ geometry, map, placements, canvas, layout, organizerPlan={}, representativeItems=true }){
+/* environment:false skips the reflection pass entirely. For harnesses that
+   build many throwaway scenes to read geometry out of them — one canvas each,
+   so the per-canvas cache above never hits — where paying for a cubemap
+   nothing will look at is the whole cost. The viewer itself never sets it. */
+export function buildScene({ geometry, map, placements, canvas, layout, organizerPlan={}, representativeItems=true, environment=true }){
   const W=Math.max(8, Number(geometry.width)||30);
   const rawH=Math.max(10, Number(geometry.height)||60);
   const H=layout&&layout.type==='under-sink'?Math.max(28,Math.min(42,rawH)):rawH;
@@ -200,6 +291,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   const scene=new THREE.Scene();
   scene.background=new THREE.Color(COLORS.bg);
   scene.userData.capacityProfile=measuredCapacityProfile({width:W,height:H,depth:D});
+  const envTarget=environment?attachEnvironment(renderer, canvas):null;
 
   const S=Math.max(H, W*0.95, D*1.3);
   const camera=new THREE.PerspectiveCamera(42, 1, 1, S*20);
@@ -573,6 +665,8 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
       if(base) label.scale.set(base.x*k, base.y*k, 1);
     }
   }
+
+  if(envTarget) scopeEnvironment(scene, envTarget.texture);
 
   let raf=0, disposed=false;
   function loop(){

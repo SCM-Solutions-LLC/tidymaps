@@ -4,8 +4,8 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-20. Everything through PR #110 is merged (`main` at
-`2f31a63`); `main` is the single source of truth.
+**Last refreshed:** 2026-08-20. Everything through PR #111 is merged (`main` at
+`68d6d35`); `main` is the single source of truth.
 
 **Correcting the previous refresh, because it was load-bearing and wrong.** The
 2026-08-05 entry said to read the open items knowing that *"all four are waiting
@@ -613,10 +613,10 @@ on the list where the `scene.js`-only scope is not a limitation.
 
 ### The port list, in order
 
-1. **PMREM environment in `js/three/scene.js`.** Fixes metal and glass reading
-   flat black. Vendor `RoomEnvironment.js` first (MIT, same license as the
-   copy already in `vendor/`). Screenshot before and after — this is a pure
-   appearance change and a screenshot is the only proof.
+1. ~~**PMREM environment in `js/three/scene.js`.**~~ **Done** — see "What the
+   PMREM port actually took" below. `RoomEnvironment.js` (r166, MIT) is
+   vendored, and metal went from 0.15 to 0.66 median luminance while the
+   diffuse scene moved 0.1%.
 2. **`LatheGeometry` profiles for the `bottle` and `can` kinds** in
    `createSemanticItem`. Both are boxes today.
 3. **Two-deep shelf packing with depth and yaw jitter**, so a full shelf stops
@@ -626,6 +626,94 @@ on the list where the `scene.js`-only scope is not a limitation.
 
 None of these touches plan data, drag, zones, or persistence, which is why
 they are ports rather than a rewrite.
+
+### What the PMREM port actually took, and the trap in it
+
+Item 1 is done. `vendor/three/addons/environments/RoomEnvironment.js` is the
+r166 addon, matching the `166` revision the vendored core reports, and kept
+**byte-identical to upstream** so it can be re-verified in one command:
+
+```
+curl -s https://raw.githubusercontent.com/mrdoob/three.js/r166/examples/jsm/environments/RoomEnvironment.js \
+  | diff - vendor/three/addons/environments/RoomEnvironment.js
+```
+
+sha256 `e1b92c4dd2d89752293546790bfda9828a630a79700c66f5b736fad7a88cb7e4`. All
+eight symbols it imports are exported by the vendored minified core, which is
+why the bare `from 'three'` resolves.
+
+**`scene.environment` is the obvious way to attach it and it is the wrong one.**
+It reads as the elegant choice — one scene-level assignment reaching all
+thirteen layout builders — and that is exactly the shape of the trap:
+
+- Its only dial is `scene.environmentIntensity`, which lights **everything**.
+  Measured across a sweep: every setting that recovered metal also lifted the
+  diffuse surfaces with it, +10% at the lowest setting that moved metal at all,
+  +28% at the setting that fixed it. That is a relight of the viewer, not a fix
+  for black metal — the wood crates go pale and the carcass goes white.
+- **`material.envMapIntensity` does not restrain it.** On this build, IBL
+  arriving through `scene.environment` is scaled by `scene.environmentIntensity`
+  alone. Setting `envMapIntensity` to 0 on all 85 materials of the cabinet
+  scene changed the rendered frame **by not one byte** — verified by hashing
+  the canvas screenshot, after an hour lost to reading that null result as a
+  stale browser cache. It was not the cache. The knob is inert on that path.
+
+So the reflection is attached per material as `material.envMap` instead, where
+`envMapIntensity` means what it says. Metal (`metalness >= 0.3`) gets it at
+full, the translucent cabinet and fridge doors at 0.5, and every diffuse
+material is left exactly as it was. Still one pass over the built scene in
+`scene.js`; still nothing edited in the thirteen builders. Adding an organizer
+rebuilds the scene rather than appending to it, so the pass cannot miss a
+later material.
+
+Measured on the cabinet layout, lit pixels only:
+
+| | metal median | whole lit scene |
+|---|---|---|
+| before | 0.147 | 0.6668 |
+| metal only (glass off) | 0.656 | 0.6676 |
+| shipped (glass 0.5) | 0.694 | 0.7017 |
+
+The middle row is the point: fixing the metal moves the rest of the scene by
+0.1%. The remaining lift in the shipped row is the door glass itself, which is
+the other half of what the port was for.
+
+`docs/screenshots/viewer3d-metal-before.png` and `-after.png` are the cabinet
+layout either side of this change, captured from the two git states with zone
+labels turned off so the frame is about materials. The shelf-support posts go
+from solid black to silver and the door edges pick up an edge highlight; the
+crates, bins, carcass and ground are the same in both.
+
+**It is built once per canvas, not once per build.** The room does not depend
+on the plan, the layout or the geometry, and the PMREM pass is the most
+expensive single step in a build — 80ms on the software renderer CI uses. A
+shelf-count change rebuilds the entire scene, so without a cache every slider
+nudge re-derived a cubemap identical to the one it had just thrown away. It is keyed by canvas because the texture belongs
+to that canvas's GL context, and it deliberately outlives the build that asked
+for it, so `dispose()` does not release it: the viewer's canvas is permanent
+and one cubemap is a bounded cost.
+
+That cache cannot help a harness that builds each scene on its own canvas, and
+`three-setup-matrix.spec.mjs` builds about sixty of them to read geometry back
+out — it went straight past its 90s budget on the first run of this port.
+`buildScene` therefore takes `environment:false`, which that spec now passes
+and the viewer never does. It reads geometry, layout and item kinds and never
+looks at a material, so the reflection was pure cost there. With it, that spec
+runs in 17s.
+
+`tests/e2e/viewer3d-environment.spec.mjs` pins both halves, and the pair
+discriminates — each mutation is caught by exactly one test:
+
+| Mutation | pixel test | structure test |
+|---|---|---|
+| port reverted | fails | fails |
+| re-attached via `scene.environment` | **passes** | fails |
+| `ENV_METAL` set to ~0 | fails | **passes** |
+
+The middle row is why the structure test exists. A future simplification back
+to `scene.environment` would look tidier, still show bright metal, pass any
+test that only measures metal, and quietly brighten every other surface in the
+viewer.
 
 ### The bug pattern it told us to grep for is not in this repo
 
@@ -973,13 +1061,16 @@ Ordered by whether anyone can act on them today.
    on the 08-19 run; if it stops, the cap needs to move into `checkInvariants`,
    where a violation costs a retry instead of shipping.
 
-5. **Port the four 3D viewer upgrades**, PMREM first. Start by vendoring
-   `three/addons/environments/RoomEnvironment.js` — it is not in `vendor/`
-   today, which is what makes item 1 of the port list a bigger change than the
-   five lines it was scoped as. Screenshot before and after; this is an
-   appearance change and nothing else will prove it. See "The 3D viewer: keep
-   it, port four things" above for the full list and for what has already been
-   checked, so you do not re-verify it.
+5. **Port the remaining three 3D viewer upgrades.** PMREM is done and
+   `RoomEnvironment.js` is now vendored, so the addon question that blocked it
+   is closed. Left: Lathe profiles for `bottle`/`can`, two-deep shelf packing
+   with jitter, and generated canvas packaging labels. All three are scoped to
+   `scene.js`, which is a little over half the drawn geometry — the thirteen
+   builders under `js/three/layouts/` hold the rest. Screenshot before and
+   after; these are appearance changes and nothing else will prove them. Read
+   "What the PMREM port actually took" above first: it records which
+   three.js knob is inert on which path, which is the kind of thing that eats
+   an hour if you rediscover it.
 
 ### Waiting on traffic
 

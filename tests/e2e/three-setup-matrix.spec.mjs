@@ -19,7 +19,12 @@ test('every setup builds its own semantic 3D scene inside measured bounds',async
         canvas.style.cssText='position:fixed;left:-2000px;top:0;width:320px;height:240px';
         document.body.appendChild(canvas);
         const view=buildScene({
-          geometry:ai.geometry,map:ai.map,placements:[],canvas,layout,representativeItems:false,
+          /* environment:false — this spec reads geometry, layout and item kinds
+             out of ~60 throwaway scenes and never looks at a material. Each
+             gets its own canvas, so the reflection map would be built ~60
+             times over to be discarded unlooked-at. Appearance is covered by
+             viewer3d-environment.spec.mjs against the real viewer. */
+          geometry:ai.geometry,map:ai.map,placements:[],canvas,layout,representativeItems:false,environment:false,
           organizerPlan:{
             space,styles:[],prefs:[],productNeeds:ai.productNeeds,
             existingText:(ai.existing||[]).map(entry=>`${entry.ft||''} ${entry.fd||''}`).join(' '),
