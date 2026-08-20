@@ -4,8 +4,8 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-20. Everything through PR #106 is merged; `main` is
-the single source of truth.
+**Last refreshed:** 2026-08-20. Everything through PR #110 is merged (`main` at
+`2f31a63`); `main` is the single source of truth.
 
 **Correcting the previous refresh, because it was load-bearing and wrong.** The
 2026-08-05 entry said to read the open items knowing that *"all four are waiting
@@ -540,6 +540,119 @@ nothing, which errs toward under-refunding. That is the right direction to err.
 Limits themselves are unchanged: signed in 3/hour and 5/day, anonymous 1/hour
 and 1/day, against a 100/day global breaker.
 
+## The 3D viewer: keep it, port four things (2026-08-20)
+
+A parallel session evaluated whether an `img2threejs` agent workflow should
+replace `js/three/scene.js`. The answer is no. That evaluation read the
+**deployed** `js/` with no repo checkout and flagged two things to re-verify
+here; both have now been checked against `main` and the results are below.
+The long-form note lives in Notion as *"TidyMap 3D viewer evaluation —
+2026-08-20"*.
+
+**The decision, settled — do not re-litigate.**
+
+1. `img2threejs` is an *agent* workflow — Claude Code plus vision review
+   iterating on renders — not a runtime library. Roughly fifteen correction
+   passes produced one pantry. It cannot run in a browser against a user
+   upload, and per-user bespoke geometry would be minutes and dollars per
+   space, non-deterministic, and unreviewable at scale.
+2. The existing viewer *is* the product feature. Replacing it deletes
+   drag-and-drop, zone labels, dimension controls, catalog integration,
+   save-arrangement, share read-only mode, and the WebGL fallback path.
+
+### Verified against `main`, so nobody re-derives it
+
+Every line count from the deployed read is exact:
+
+| file | lines | role |
+|---|---|---|
+| `js/screens/viewer3d.js` | 711 | screen wrapper; lazy-loads three.js (~680KB) on open |
+| `js/three/scene.js` | 617 | `buildScene({geometry, map, placements, canvas, layout, organizerPlan})` |
+| `js/three/interact.js` | 138 | `attachDrag` — shelf-to-shelf drag with drop validation |
+| `js/three/organizerKinds.js` | 113 | product-need to organizer mapping |
+| `js/three/viewerOptions.js` | 100 | shelf count / height / L-side normalisation |
+
+Also confirmed: `createSemanticItem(name, kind, color)` with the `KIND_MAX_W` /
+`KIND_DEPTH` tables at `scene.js:154-155`; `createOrganizer(type)` at
+`scene.js:91`; the renderer at `scene.js:195-199` (`SRGBColorSpace`,
+`ACESFilmicToneMapping`, exposure `1.08`, `PCFSoftShadowMap`) and the lighting
+at `228-229` (`HemisphereLight(0xfdfff5, 0x8b9184, 1.05)` plus
+`DirectionalLight(0xffffff, 1.25)`); and **no PMREM or environment map
+anywhere** in `js/three/` or `viewer3d.js`.
+
+Two corrections to that note, neither fatal but both load-bearing if you act on
+it:
+
+- **The geometry vocabulary counts `scene.js` alone.** 37 Box / 6 Cylinder /
+  3 Torus / 1 each Plane, Extrude, Buffer is exactly right for that file — but
+  that file is not the whole viewer. The thirteen builders under
+  `js/three/layouts/` add another 2 Box, 13 Cylinder and 1 Torus, for
+  39 / 19 / 4 across the drawn scene. A change scoped to `scene.js` reaches a
+  little over half the geometry, which matters for items 2–4 below.
+- **The hazard warning is not in `interact.js`.** `attachDrag` validates the
+  drop; the "hazardous item on a kid-safe shelf" warning is raised by the
+  screen's callback, at `js/screens/viewer3d.js:152-154` and `205-207`.
+
+### The flagged blocker, answered: `RoomEnvironment` is not vendored
+
+`vendor/three/` holds exactly two files — `three.module.min.js` and
+`addons/controls/OrbitControls.js`. `vendor/three/addons/environments/` does
+not exist, so the import map's `"three/addons/": "./vendor/three/addons/"`
+resolves nothing for `environments/RoomEnvironment.js`. The PMREM port is
+**not** the five-line change it was scoped as; it needs the addon vendored
+first, or a hand-built gradient environment in its place. `PMREMGenerator`
+itself *is* in the vendored core, so only the room model is missing.
+
+The payoff is real and the diagnosis holds: every metallic material in the
+scene renders near-black without an environment to reflect. The worst cases are
+`under-sink.js`'s drain and faucet at `metalness: 0.75` and the `hook-rack` and
+`door-rack` metal at `0.22`. One point in the port's favour that the evaluation
+did not know: `scene.environment` is set on the scene, so a single assignment
+in `scene.js` reaches every layout builder's materials — this is the one item
+on the list where the `scene.js`-only scope is not a limitation.
+
+### The port list, in order
+
+1. **PMREM environment in `js/three/scene.js`.** Fixes metal and glass reading
+   flat black. Vendor `RoomEnvironment.js` first (MIT, same license as the
+   copy already in `vendor/`). Screenshot before and after — this is a pure
+   appearance change and a screenshot is the only proof.
+2. **`LatheGeometry` profiles for the `bottle` and `can` kinds** in
+   `createSemanticItem`. Both are boxes today.
+3. **Two-deep shelf packing with depth and yaw jitter**, so a full shelf stops
+   reading as a single row of identical fronts.
+4. **Generated 64×96 canvas packaging labels** for the `food` and `container`
+   kinds.
+
+None of these touches plan data, drag, zones, or persistence, which is why
+they are ports rather than a rewrite.
+
+### The bug pattern it told us to grep for is not in this repo
+
+The evaluation hit the same defect twice while building its reference
+diorama — **a solid slab used where a frame belonged**: a window "trim" that
+covered the pane, and a sink "rim" that lidded the basin. It asked that
+`scene.js` be swept for organizers or fixtures built as a plate over an
+opening. It was, and there are none:
+
+- Every bin in `createOrganizer` is a base plus four edge walls. `clear-bin`,
+  `basket` and `divider` all build the walls separately; nothing lids them.
+- The cabinet and fridge doors *are* full-face slabs, but deliberately
+  transparent (`opacity: 0.35` and `0.25`) so the contents read through them.
+  That is the intended look, not the bug.
+- `under-sink.js` builds an open face frame from three bars, with a comment
+  saying why.
+
+The companion note about an explode/separation helper needing
+`pos = home + (home - centre) * f` does not apply: there is no explode helper
+in `js/three/`.
+
+**The reference diorama is not shippable and was never offered as such.** It
+lives outside this repo at `~/Claude/Documents/pantry-diorama/`, is hardcoded
+to one room, and has no plan data, drag, zones, or persistence. It is a
+rendering study to harvest technique from; items 1–4 above are that harvest,
+and the list is finished.
+
 ## Production health as of 2026-08-19
 
 1. ~~Zero saved spaces~~ — fixed 07-28.
@@ -860,9 +973,17 @@ Ordered by whether anyone can act on them today.
    on the 08-19 run; if it stops, the cap needs to move into `checkInvariants`,
    where a violation costs a retry instead of shipping.
 
+5. **Port the four 3D viewer upgrades**, PMREM first. Start by vendoring
+   `three/addons/environments/RoomEnvironment.js` — it is not in `vendor/`
+   today, which is what makes item 1 of the port list a bigger change than the
+   five lines it was scoped as. Screenshot before and after; this is an
+   appearance change and nothing else will prove it. See "The 3D viewer: keep
+   it, port four things" above for the full list and for what has already been
+   checked, so you do not re-verify it.
+
 ### Waiting on traffic
 
-5. **The funnel still has nothing to say.** `plan_rated` and
+6. **The funnel still has nothing to say.** `plan_rated` and
    `feedback_submitted` have never had a row. `plan_created` last fired
    2026-07-30 — and note the 2026-08-19 session produced a plan and *still* no
    `plan_created`, which is not yet explained. Do Not Track / GPC is the
@@ -874,13 +995,13 @@ Ordered by whether anyone can act on them today.
 
 ### Waiting on business input
 
-6. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in
+7. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in
    `js/affiliates.js`. Every entry is still an empty string, so all 30 catalog
    products link plain and no disclosure renders.
 
 ### Known gap, no owner
 
-7. **`docs/HANDOFF.md` went 14 days and 45 PRs stale**, and its headline
+8. **`docs/HANDOFF.md` went 14 days and 45 PRs stale**, and its headline
    framing actively misled (see the correction at the top). If you are reading
    this more than a few merges after the refresh date, distrust the specifics
    and re-derive from `git log` and the tables before acting on them.
