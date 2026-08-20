@@ -513,11 +513,32 @@ Interactions API). `responseModalities` including TEXT. `GOOGLE_AI_API_KEY`.
 A UI bug showing the same image twice on the live path — though it *was* real
 on the reopen path, via `coverUrl()`, and #103 fixed that.
 
-**Iterating is rationed.** `check_and_log_usage` writes the usage row on the
-allow path and nothing refunds it, so a 502 or a timeout spends an allowance
-exactly like a success. Signed in that is 3/hour and 5/day; anonymous callers
-get 1/day, against a 100/day global breaker. Budget the attempts before
-starting.
+**Iterating used to be rationed; #109 fixed that.** `check_and_log_usage`
+writes the usage row on the ALLOW path, before the work is attempted — which is
+correct, because it is what lets the check and the insert share one transaction
+and one advisory lock. The cost was that a request admitted and then failed
+upstream spent an allowance for nothing: at 3/hour and 5/day, a run of Gemini
+502s could burn a signed-in caller's whole day without ever showing an image,
+and on 08-19 it did — four of five renders were eaten by the size-cap bug and
+cleared by hand.
+
+`_shared/usageRefund.js` now removes the row after the fact, wired into
+`render-after` for 500/502/503/504: a Gemini outage, refusal, deadline, or
+fault of ours. **Not** for `403 not_your_space` — that is a caller sending a
+spaceId that is not theirs, and refunding it would let someone probe spaceIds
+without ever meeting the rate limit. A wrong request is the one failure worth
+charging for.
+
+It is best-effort on purpose: every failure is logged and swallowed, so a
+failed refund can never turn a 502 the caller understands into a 500 they do
+not, and it never masks the original error. It deletes the caller's *newest*
+row rather than tracking the id it inserted, because rows are interchangeable —
+`check_and_log_usage` only ever does `count(*)` over them. Under concurrency
+two failing requests can select the same row and the second delete matches
+nothing, which errs toward under-refunding. That is the right direction to err.
+
+Limits themselves are unchanged: signed in 3/hour and 5/day, anonymous 1/hour
+and 1/day, against a 100/day global breaker.
 
 ## Production health as of 2026-08-19
 
@@ -665,9 +686,11 @@ starting.
   `20260728231041 add_analysis_diagnostics`,
   `20260728232808 drop_analysis_diagnostics` (added and removed the same
   evening), and `20260729185333 form_submissions_via_function`.
-- Edge functions live, versions as of 2026-08-20: `analyze-space` v34,
-  `render-after` v28, `get-shared-space` v21, `track-events` v21,
-  `submit-form` v18. All `verify_jwt: false` — they check JWTs themselves so
+- Edge functions live, versions as of 2026-08-20: `analyze-space` v35,
+  `render-after` **v29**, `get-shared-space` v22, `track-events` v22,
+  `submit-form` v19. A version bump alone does not prove a deploy shipped your
+  code — check `ezbr_sha256` changed too. #109 took `render-after` from
+  `2d822988…` to `7c448fba…`. All `verify_jwt: false` — they check JWTs themselves so
   guests can call them. CORS allowlist in `_shared/cors.ts` (Pages,
   scmsolutions.org, tidymaps.ai, localhost:8000/8123). **Note 3000 is not on
   that list**, so a local dev server on that port gets a preflight failure and
@@ -719,6 +742,23 @@ starting.
   feedback screen asking a question already answered, a share view claiming two
   adults, an appbar overflowing at 768px.
 
+### Environment traps in a fresh session
+
+- **`node_modules` starts empty.** `npm run check:types` reports **783 phantom
+  errors** until `npm ci` has run, and they read exactly like a regression from
+  whatever you just changed. Run `npm ci` before believing any gate output.
+- **The sandbox cannot reach the project domain.** The network policy denies
+  `jwubrtaacveavbkosgtf.supabase.co`, so you cannot call `render-after`
+  yourself to test a render — Supabase MCP works, direct HTTPS does not.
+  Renders need the user's browser. Anonymous callers are also capped at 1/day,
+  so an A/B from one IP is impossible regardless.
+- **Repo photos cannot serve as render fixtures.** Everything in
+  `assets/photos/` is 1000px or less on the long edge after the #96 WebP
+  re-encode, so neither the 1100 nor the 1568 cap scales them, and
+  `ex-cab-before.webp` is literally the 418x630 fixture named above.
+  `tests/e2e/render-input-resolution.spec.mjs` uses
+  `assets/product/plan-shopping.png` (1744x1882) for exactly this reason.
+
 ### Prove a new test fails without its fix
 
 This is the single most valuable habit in this repo, and the reason is that
@@ -742,6 +782,36 @@ code:
 Verify by stashing the fix (`git stash push <files>`), running, and restoring.
 **Do not use `git checkout <file>`** — it reverts every change in that file,
 not the one line you edited.
+
+#### Stashing proves the test needs the FILE, not that it discriminates
+
+An eighth example, caught during #109 and worth the technique it took. The
+refund tests were written carefully and all eight passed. Then five realistic
+bugs were written into the implementation to check the suite rejected each:
+
+| Mutation | Caught? |
+| --- | --- |
+| anonymous scope drops `user_id is null` | yes |
+| signed-in caller scoped by `ip_hash` | yes |
+| `order by id` ascending, taking the oldest row | yes |
+| **lookup error not checked** | **no — escaped** |
+| empty-result guard removed | yes |
+
+The escapee was a test named *"a failed lookup is swallowed and deletes
+nothing"*. Its fixture paired the error with `data: null`, so with the error
+check disabled the empty-row guard caught it instead and every assertion still
+held. The test named the error path and never exercised it. Stashing the module
+would not have found this — the test does need the file; it just does not test
+what it says.
+
+The fix was to return a *usable* row alongside the error (`data: [{id: 99}],
+error: {...}`), so only an implementation that actually reads `error` can
+decline to delete it.
+
+**Do this for any test guarding logic that matters:** break the implementation
+in the specific way the test claims to prevent, and confirm it goes red. It is
+cheap, and here it found a vacuous test in a file written with this whole
+section in mind.
 
 ## Closed since the last refresh
 
@@ -771,6 +841,8 @@ Ordered by whether anyone can act on them today.
    on one corner pantry (08-20 16:57, 292,074 bytes). Garages, closets and
    workbenches are unmeasured, and object fidelity — the model multiplied a
    container rather than only moving what was there — is the open question.
+   Check object count against the input on each one. Since #109 refunds a
+   failed render's allowance, this no longer costs a day's quota per failure.
    See "The photo preview render thread" above.
 2. **Nothing alerts on a broken model path.** The outage in Production health
    #3 ran for around two weeks behind a graceful fallback. A daily check of
