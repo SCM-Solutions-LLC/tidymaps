@@ -2093,11 +2093,6 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
    user's own measurements and stays a statement of fact; everything after it
    is introduced as what a space like theirs usually looks like. One clause,
    nothing else reworded, and no sentence left asserting something unseen. */
-const OWNS_PHRASE = [
-  [/\bYou already have\b/g, 'Spaces like this usually have'],
-  [/\bWe noticed you already have\b/g, 'Spaces like this usually have'],
-];
-
 /* "2 baskets" -> "Baskets", "Two shallow drawers" -> "Shallow drawers". The
    leading count is the part that could only come from looking. */
 const COUNT_PREFIX = /^(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+/i;
@@ -2121,10 +2116,23 @@ function speakAsTypical(plan) {
      sentences alone also keeps them readable; twenty of them across sixteen
      scenarios could not be reworded by pattern without reading worse. */
 
-  // The reuse lede claims possession outright; that one is a phrase swap.
-  let lede = plan.existingLede || '';
-  for (const [re, to] of OWNS_PHRASE) lede = lede.replace(re, to);
-  plan.existingLede = lede;
+  /* The reuse lede goes entirely.
+
+     A phrase swap was tried first and only reached the two ledes that say "You
+     already have". The other fourteen assert inventory without that phrase —
+     "Two fabric bins and three wall hooks are already installed", "The pegboard
+     and three cardboard boxes are a starting point", "Three walls, two rods,
+     and a floor run. The hardware is already here." A reader with no wall hooks
+     was told three of them are installed, on a plan built without a photo.
+
+     Counting them out one regex at a time is whack-a-mole across sixteen
+     scenarios, and softening the verbs leaves the numbers, which are the claim
+     (see dropCount below, which says exactly this about the cards). So the
+     lede is dropped and results.js falls back to the generic sentence it
+     already keeps for this purpose — "Start with what is already in the space"
+     — which is true of every space and asserts nothing about this one. The
+     cards underneath still say what to look for, minus their counts. */
+  plan.existingLede = '';
 
   /* The cards under that lede kept counting things nobody counted: "Reuse: 2
      baskets", "3 cardboard boxes", "5 heavy-duty shelves". A softened lede

@@ -25,7 +25,13 @@ export function buildResults(){
   // The contents step is authoritative when the user engaged with it;
   // otherwise the plan's own detected categories stand.
   if(!state.catsTouched || !state.cats.length){
-    state.cats=((A&&A.cats.length)?A.cats:DEMO_CATS).slice();
+    /* DEMO_CATS only when there is no plan at all. A real analysis that
+       returned no categories used to print twelve pantry ones — "Snacks",
+       "Canned goods", "Pasta & grains" — under a heading claiming they were
+       detected, with the KPI reading "12 found". Same rule as the problems and
+       opportunities lists below: a plan that exists speaks for itself, even
+       when what it says is nothing. */
+    state.cats=(A ? (A.cats||[]) : DEMO_CATS).slice();
   }
   const isRealAi = A && state.planMeta && state.planMeta.source==='ai';
   // AI badge on results title
@@ -57,9 +63,16 @@ export function buildResults(){
   if(mastDate) mastDate.textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
   const byline=document.getElementById('res-byline');
   const model=(state.planMeta&&state.planMeta.model)||'';
+  /* "based on your selections" is true of a plan built from the wizard and
+     false of the landing page's sample, which is opened by someone who has
+     made no selections at all. The three states are different claims and now
+     read as three different lines. */
+  const isSample = !isRealAi && state.planMeta && state.planMeta.source==='demo'
+    && !state.setupTouched && !state.catsTouched && !state.shoppingTouched;
   if(byline) byline.textContent = isRealAi
     ? 'Analyzed by Claude'+(modelLabel(model)?' · '+modelLabel(model):'')
-    : 'Personalized plan · based on your selections';
+    : (isSample ? 'Sample plan · not based on your space'
+                : 'Personalized plan · based on your selections');
 
   // masthead answer chips: setup + measurements, household, effort — the
   // wizard's answers round-tripped onto the plan (design contract)
@@ -189,8 +202,13 @@ export function buildResults(){
     ['Time', A?A.time:'45–90 min'],['Cost', costLabel()]
   ];
   document.getElementById('res-kpis').innerHTML=kpis.map(([k,v])=>`<div class="kpi"><div class="k">${escapeHtml(k)}</div><div class="v"${k==='Cost'?' id="kpi-cost"':''}>${escapeHtml(v)}</div></div>`).join('');
-  document.getElementById('res-cat-tags').innerHTML=state.cats.map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('');
+  const catTags=document.getElementById('res-cat-tags');
+  catTags.innerHTML=state.cats.map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('');
+  /* No categories is a real answer now that an empty list is no longer filled
+     in. An empty chip row under a heading is worse than no section. */
+  catTags.classList.toggle('hide', !state.cats.length);
   const catTitle=document.getElementById('res-cat-title');
+  if(catTitle) catTitle.classList.toggle('hide', !state.cats.length);
   if(catTitle) catTitle.textContent = catsObserved ? 'Detected item categories' : 'Item categories you told us about';
   /* The sample lists below stand in for a plan that has not been built yet.
      On a SHARED plan they would be something else: sentences nobody wrote,
@@ -199,7 +217,17 @@ export function buildResults(){
      household — a plan whose only opportunity was the household's note comes
      through with an empty list — but a plan that simply came back without
      problems always had it. Empty stays empty for a visitor. */
-  const sample = (list) => (state.shareView ? [] : list);
+  /* `A ? [] : list` — a plan that EXISTS and returned nothing gets nothing.
+     The guard used to be `A && A.problems.length`, so an empty list from a real
+     analysis took the fallback: a garage plan that came back with no problems
+     printed six invented pantry ones under "Main organization problems". The
+     share view was protected by `sample()` and the owner's view was not, which
+     is backwards — the owner is the one who can tell it is wrong, and the one
+     being lied to about their own space.
+
+     This is the rule activeProductNeeds() already applies in plan.js: only a
+     MISSING plan gets the sample. */
+  const sample = (list) => ((state.shareView || A) ? [] : list);
   const problems = (A&&A.problems.length)?A.problems:sample([
     'Similar items are spread across multiple shelves','Frequently used snacks are too high',
     'Canned goods are hard to see','Loose packets are creating clutter',

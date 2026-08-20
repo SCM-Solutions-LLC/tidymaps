@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 import { SETUP_TYPES } from '../js/wizard-data.js';
 
@@ -480,6 +481,48 @@ test('the kid-safe badge never lands on a zone holding hazards', () => {
         assert.deepEqual(hazards.map(h => h.name), [],
           `${key} / "${row.level}" is badged kid-safe with ages ${JSON.stringify(ages)}`);
       }
+    }
+  }
+});
+
+/* ---------- a plan nobody looked at counts nothing ----------
+
+   speakAsTypical strips the counts off the reuse CARDS, with a comment saying
+   why: "A softened lede over a hard inventory is not softened — the number is
+   the claim." The lede above those cards kept its numbers anyway, because the
+   only softening applied to it was a swap of the exact phrase "You already
+   have", and fourteen of the sixteen ledes never say that.
+
+   What a reader with no wall hooks was told, on a plan built without a photo:
+   "Two fabric bins and three wall hooks are already installed." */
+
+test('no unobserved plan asserts an inventory it never saw', () => {
+  const counts = /\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+\w/i;
+  const owns = /\b(already (?:have|has|installed|here|cover)|you own|your existing)\b/i;
+
+  const HOUSEHOLD = { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' };
+  /* Every scenario the app can reach, read off the module rather than listed
+     here — a scenario added later is covered without anyone remembering. */
+  const src = readFileSync(new URL('../js/demo-scenarios.js', import.meta.url), 'utf8');
+  const block = src.slice(src.indexOf('const SCENARIO_FNS = {'));
+  const keys = [...block.slice(0, block.indexOf('};')).matchAll(/^\s{2}([a-zA-Z0-9_]+)\s*:/gm)].map((m) => m[1]);
+  assert.ok(keys.length >= 10, `expected the scenario table, found ${keys.length} keys`);
+
+  for (const key of keys) {
+    const plan = getDemoScenario(key, 'find', HOUSEHOLD, {}, null);
+    if (plan.observed !== false) continue;
+
+    const lede = plan.existingLede || '';
+    assert.ok(!counts.test(lede), `${key}: the reuse lede counts fittings nobody counted — "${lede}"`);
+    assert.ok(!owns.test(lede), `${key}: the reuse lede claims possession — "${lede}"`);
+
+    /* Leading counts only, which is dropCount's actual contract: "2 baskets"
+       is an inventory, "Keep one zone empty" is an instruction and has to
+       survive. */
+    const leadingCount = /^(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+/i;
+    for (const card of plan.existing || []) {
+      const title = String(card.title || '').replace(/^[^:]*:\s*/, '');
+      assert.ok(!leadingCount.test(title), `${key}: a reuse card counts — "${card.title}"`);
     }
   }
 });
