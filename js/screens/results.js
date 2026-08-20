@@ -8,7 +8,7 @@ import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABE
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
 import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.js';
-import { fileToScaledB64 } from '../media.js';
+import { fileToScaledB64, RENDER_MAX_EDGE } from '../media.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch, persistAnswers } from '../db.js';
 import { classifyAction, motifForSpace, glyphForStep, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
@@ -448,7 +448,7 @@ function beforePhotoSource(target=state){
 
 async function encodeBeforePhoto(src){
   if(!src) throw new Error('No photo to work from.');
-  if(src.kind==='file') return { media_type:'image/jpeg', data: await fileToScaledB64(src.file) };
+  if(src.kind==='file') return { media_type:'image/jpeg', data: await fileToScaledB64(src.file, { maxEdge: RENDER_MAX_EDGE }) };
   if(src.kind==='frame') return { media_type:'image/jpeg', data: src.data };
   const blob=await (await fetch(src.url)).blob();
   const data=await new Promise((res,rej)=>{
