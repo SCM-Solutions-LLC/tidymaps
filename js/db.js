@@ -237,10 +237,26 @@ export async function resumeDeletionTombstones(c, now=new Date()){
   }
 }
 
+/* The space's own photo, for the dashboard card and for the "before" half of
+   the photo comparison.
+
+   It used to take the lowest-sorted row of space_media whatever its kind, and
+   render-after writes its OUTPUT back into that same table as
+   kind:'after_render'. autoSaveSpace saves with {media:false} on purpose, so a
+   signed-in user who generated a preview without pressing Save had exactly one
+   media row: the render. Reopening that space then loaded the AI image as the
+   photo of their space today, and setupAfterPhoto put the identical file on
+   both sides of the slider — a "before" that was not their before, the same
+   defect as the drawn pane removed from the report.
+
+   Kind is filtered here rather than sorted around, because 'photo' and 'frame'
+   both start at sort 0 and would otherwise tie unpredictably. */
 export async function coverUrl(spaceId){
   const { c } = requireClient();
   const { data } = await c.from('space_media')
-    .select('storage_path').eq('space_id',spaceId).order('sort').limit(1);
+    .select('storage_path').eq('space_id',spaceId)
+    .in('kind',['photo','frame'])
+    .order('kind').order('sort').limit(1);
   if(!data || !data.length) return null;
   const { data:signed } = await c.storage.from('space-media').createSignedUrl(data[0].storage_path, 3600);
   return signed ? signed.signedUrl : null;

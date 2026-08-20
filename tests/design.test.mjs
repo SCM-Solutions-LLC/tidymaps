@@ -157,3 +157,45 @@ test('the marketing footer is suppressed inside the wizard flow', () => {
     'router no longer flags flow screens on the body',
   );
 });
+
+/* ---------- the report does not draw a space it has not seen ----------
+
+   "Fake shelf mockups" were already banned from the landing page above, as an
+   AI-template signal. The same graphic survived in the report, where it was
+   doing something worse than looking generic: `.pantry-vis.messy` — five rows
+   of empty <b> elements in a flat grey, byte-identical for every user and
+   every space — sat under the heading "Before · today", beside the real plan.
+
+   So a reader was shown a picture captioned as their own pantry as it stands.
+   It was not. It could not be: nothing about it varies. And its five rows did
+   not correspond to the plan's rows either, so it did not even work as the
+   comparison it was laid out as.
+
+   A reader knows what their space looks like now. The half worth the width is
+   the other one. */
+
+const report = html.slice(html.indexOf('id="ch-after"'), html.indexOf('id="ch-shop"'));
+
+test('the before/after section draws only the plan, never a stand-in "today"', () => {
+  /* Bans the class being applied, not the word being written: the comment in
+     index.html that explains why it went names it, and a test that forbids
+     naming a thing forbids explaining it. */
+  assert.ok(!/class="[^"]*pantry-vis/.test(html),
+    'the generic shelf mockup is back — it describes no actual space');
+  assert.ok(!report.includes('Before &middot; today') && !report.includes('Before · today'),
+    'a pane is captioned as the reader\'s space today');
+  assert.ok(!report.includes('class="before"'),
+    'the fabricated before pane is back beside the plan');
+
+  // The real plan is still what the section renders.
+  assert.ok(report.includes('id="after-cabinet"'), 'the plan drawing is gone from the section');
+});
+
+test('the photo slider keeps its before, because that one is really theirs', () => {
+  /* Not everything labelled "before" was dishonest. The AI photo preview
+     compares the reader's OWN uploaded photo against the edited version, and
+     both halves of that are real. Removing the drawn stand-in must not take
+     the genuine comparison with it. */
+  assert.ok(report.includes('id="ba-before-img"'), 'the photo slider lost its before image');
+  assert.ok(report.includes('id="ba-after-img"'), 'the photo slider lost its after image');
+});
