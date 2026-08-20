@@ -4,7 +4,7 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-19. Everything through PR #99 is merged; `main` is
+**Last refreshed:** 2026-08-20. Everything through PR #106 is merged; `main` is
 the single source of truth.
 
 **Correcting the previous refresh, because it was load-bearing and wrong.** The
@@ -417,6 +417,75 @@ object has a declared `AppState` typedef. Worth knowing: of the 225 type errors
 the first full run produced, **none was a bug** — about 90 were DOM narrowing —
 which is why the config is scoped rather than repo-wide.
 
+## The photo preview render thread (PRs #102, #103, #106) — OPEN
+
+The photorealistic "after" render is the one unresolved product thread. Read
+this before touching the brief, the model, or the input resolution.
+
+**What is known to be fixed.** `MAX_B64_CHARS = 2_100_000` capped the inbound
+request and the model's reply against one constant. Gemini returns 3.2-3.4M
+base64 chars, so the guard rejected 100% of renders and the feature had never
+once produced an image. Split into `MAX_IN_B64_CHARS` / `MAX_OUT_B64_CHARS` in
+#102.
+
+**The evidence base is one render, not three.** This is the correction that
+matters. From `function_edge_logs`, every `render-after` POST in retention:
+
+| Time (UTC) | Status | Request bytes | Note |
+|---|---|---|---|
+| 08-19 21:54 x2 | 502 | 178,989 | size cap, pre-#102 |
+| 08-19 23:07 x2 | 502 | 178,989 | size cap, pre-#102 |
+| 08-20 04:26 x3 | 429 | 172,174 | rate limited |
+| **08-20 04:34:25** | **200** | **172,174** | the only successful render |
+
+#102's edge deploy completed 23:31:20Z and #103's at 03:26:03Z, and **no render
+was attempted between them**. So the single 200 ran the #103 brief at 1100px,
+and there has never been a successful render under the *old* brief to compare
+it against. The `js/media.js` comment describing output that "came back
+globally brightened and straightened" was authored 04:49:04Z — fifteen minutes
+after that render, describing it.
+
+Three briefs were *designed*; one shipped; one output has ever been seen. A
+claim that a brief change "had no effect" is therefore measured against
+expectation, not against a control. **Do not retire the feature on n=1.**
+
+**#106 is deployed but untested.** The render upload went 1100px -> 1568px in
+`js/media.js`; the Pages run finished 2026-08-20 05:10:12Z and no render has
+run since. Because it is a client change, hard-refresh before testing. Its e2e
+test (`tests/e2e/render-input-resolution.spec.mjs`) is not one of the vacuous
+ones — it uses a 1744x1882 source and asserts on the bytes that leave the
+browser, so the 1568px path is genuinely covered.
+
+**Reading the next result without guessing.** `render-after` logs nothing on
+success, but the platform records the POST body size. Compare against the
+172,174-byte baseline:
+
+```sql
+select timestamp, log_attributes['response.status_code'] as status,
+       log_attributes['request.headers.content_length'] as req_bytes
+from logs
+where source = 'function_edge_logs'
+  and log_attributes['function_id'] = '8aad167e-1e6d-4a9e-ac19-2c500c2c8d20'
+  and log_attributes['request.method'] = 'POST'
+order by timestamp desc
+```
+
+Roughly 2x the baseline means the bigger photo went up and the output is about
+the model. Near 172,174 means the browser served cached `js/media.js`, the
+render tested nothing, and it has to be re-run.
+
+**Refuted — do not re-litigate.** Parts order (`[image, text]` is correct for
+`:generateContent`; the `[text, image]` guidance belongs to the newer
+Interactions API). `responseModalities` including TEXT. `GOOGLE_AI_API_KEY`.
+A UI bug showing the same image twice on the live path — though it *was* real
+on the reopen path, via `coverUrl()`, and #103 fixed that.
+
+**Iterating is rationed.** `check_and_log_usage` writes the usage row on the
+allow path and nothing refunds it, so a 502 or a timeout spends an allowance
+exactly like a success. Signed in that is 3/hour and 5/day; anonymous callers
+get 1/day, against a 100/day global breaker. Budget the attempts before
+starting.
+
 ## Production health as of 2026-08-19
 
 1. ~~Zero saved spaces~~ — fixed 07-28.
@@ -489,10 +558,12 @@ which is why the config is scoped rather than repo-wide.
    Two pieces of direct evidence the fix holds: #98's own unit job ran at 20:21
    **with** the fix and produced no row, and nothing has been written to the
    table since 19:56.
-6. **`analyze-space` has been called 22 times ever**, last 2026-08-19 16:16:56.
-   `render-after` has been called 4 times ever and remains the least-exercised
-   path in production; its `GOOGLE_AI_API_KEY` has **not** been checked since
-   the Anthropic key expired, and the same silent-expiry failure mode applies.
+6. **`render-after` has produced exactly one image, ever** — 2026-08-20
+   04:34:25Z, 200, 10.8s. Every earlier attempt died on the size cap (#102) or
+   the rate limiter. `GOOGLE_AI_API_KEY` is **fine**: Gemini authenticated on
+   every call including that one, and the silent-expiry worry recorded here
+   before was a false alarm start to finish. See "The photo preview render
+   thread" for what that single render does and does not prove.
 7. **Telemetry from the owner's own browser may be suppressed.** Do Not Track
    and Global Privacy Control both switch it off (Brave, DuckDuckGo and Firefox
    send GPC by default), and `telemetryStatus()` on `window` says which in one
@@ -561,9 +632,9 @@ which is why the config is scoped rather than repo-wide.
   `20260728231041 add_analysis_diagnostics`,
   `20260728232808 drop_analysis_diagnostics` (added and removed the same
   evening), and `20260729185333 form_submissions_via_function`.
-- Edge functions live, versions as of 2026-08-19: `analyze-space` v31,
-  `render-after` v25, `get-shared-space` v18, `track-events` v18,
-  `submit-form` v15. All `verify_jwt: false` — they check JWTs themselves so
+- Edge functions live, versions as of 2026-08-20: `analyze-space` v34,
+  `render-after` v28, `get-shared-space` v21, `track-events` v21,
+  `submit-form` v18. All `verify_jwt: false` — they check JWTs themselves so
   guests can call them. CORS allowlist in `_shared/cors.ts` (Pages,
   scmsolutions.org, tidymaps.ai, localhost:8000/8123). **Note 3000 is not on
   that list**, so a local dev server on that port gets a preflight failure and
@@ -663,30 +734,22 @@ Ordered by whether anyone can act on them today.
 
 ### Actionable now
 
-1. **Check `GOOGLE_AI_API_KEY` has not expired too.** `render-after` has been
-   called 4 times ever and not at all since the Anthropic key died, so nobody
-   would know. The cheapest test is to generate a photo preview from a report
-   and watch for a 502 in the edge logs within the retention window.
+1. **Run the 1568px render and read the wire size.** #106 is deployed and
+   still untested. Hard-refresh first — it is a *client* change, so a warm cache
+   serves the old 1100px encoder — then generate one preview and compare the
+   POST body against the 172,174-byte baseline. The query and how to read it are
+   in "The photo preview render thread" above. The `GOOGLE_AI_API_KEY` question
+   that used to sit here is settled: the key works.
 2. **Nothing alerts on a broken model path.** The outage in Production health
    #3 ran for around two weeks behind a graceful fallback. A daily check of
    `plan_meta->>'source'` on the newest `spaces` row — or of the
    `analyze-space` error rate while the logs still hold it — would have caught
    it on day one. This is the highest-value piece of unbuilt work in the repo.
-3. **The AI photo preview may be undiscoverable.** Reported as missing from the
-   report. The button lives in `#after-photo`, which `setupAfterPhoto()`
-   (`js/screens/results.js:302`) unhides whenever a photo is in memory — but
-   its chapter `#ch-after` ships `class="chapter collapsed"` under the heading
-   "What it could look like", while the TOC calls it "Before & after". Unproven
-   either way; settle it in a browser on a report with a photo:
-
-   ```js
-   [document.getElementById('after-photo').className,
-    document.getElementById('after-gen-row').className]
-   ```
-
-   Neither containing `hide` → it is present and merely folded, and the fix is
-   discoverability. `after-photo` containing `hide` → the photo left memory,
-   which is a different and worse bug.
+3. ~~The AI photo preview may be undiscoverable.~~ **Settled, and fixed in
+   #101.** The button was present and 0px tall: `#ch-after` ships `collapsed`
+   and `.chapter.collapsed .ch-sub` is `display:none`, so nothing inside the
+   chapter could advertise itself. A flag in the chapter head now survives the
+   fold.
 4. **Step-length caps are unvalidated server-side.** `planSchema.js` checks step
    *count* (line ~272) and nothing about length, so a model that ignores the
    8-word cap ships a plan that passes validation and renders long. It behaved
