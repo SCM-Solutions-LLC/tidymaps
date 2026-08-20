@@ -66,7 +66,32 @@ export function formatTime(sec){
    no way out but a reload. Every path out of here now settles. */
 const ENCODE_TIMEOUT_MS = 20000;
 
-export function fileToScaledB64(file){
+/* How big a photo leaves the browser.
+
+   ANALYSIS is the long-standing 1100px. Up to five photos go to analyze-space
+   in one request, under a 100s budget, and the model is reading the space
+   rather than redrawing it.
+
+   RENDER is one photo, and the job is different: gemini-2.5-flash-image has to
+   pick up individual jars and boxes and put them back somewhere else. At
+   1100px across a wide corner pantry a jar is roughly forty pixels, which is
+   near the floor of what can be re-staged as a recognisable object — the first
+   renders came back globally brightened and straightened rather than
+   rearranged. 1568 is the tile size Gemini works in, and the upload has room:
+   1100px at q0.82 runs 0.2-0.4MB against the function's 2.1M-character
+   inbound cap.
+
+   Raised for the render path only, so the analysis keeps its current cost and
+   latency and the experiment moves one variable. */
+export const ANALYSIS_MAX_EDGE = 1100;
+export const RENDER_MAX_EDGE = 1568;
+
+/**
+ * @param {File|Blob} file
+ * @param {{maxEdge?: number}} [opts]
+ * @returns {Promise<string>} base64 JPEG, no data: prefix
+ */
+export function fileToScaledB64(file, { maxEdge = ANALYSIS_MAX_EDGE } = {}){
   return new Promise((resolve,reject)=>{
     const img=new Image();
     let url=null, timer=null, done=false;
@@ -80,7 +105,7 @@ export function fileToScaledB64(file){
     };
     img.onload=()=>{
       try{
-        const max=1100, scale=Math.min(1, max/Math.max(img.width,img.height));
+        const max=maxEdge, scale=Math.min(1, max/Math.max(img.width,img.height));
         const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
         const c=document.createElement('canvas'); c.width=w; c.height=h;
         c.getContext('2d').drawImage(img,0,0,w,h);
