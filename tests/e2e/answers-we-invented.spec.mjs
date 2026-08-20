@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { fileURLToPath } from 'node:url';
 
 /* Two of the twelve wizard steps arrived with an answer already given.
 
@@ -147,4 +148,86 @@ test('the Edit links are big enough to hit on a phone', async ({ page, browser }
     .map((r) => `${Math.round(r.width)}x${Math.round(r.height)}`));
   expect(small, 'Edit targets under 30px tall').toEqual([]);
   await ctx.close();
+});
+
+/* The same complaint, one screen later: the report read the user's own answers
+   back to them as findings.
+
+   "Detected item categories" and "N found" describe a photo being looked at.
+   The scoping that fixed the no-photo case keyed on `observed` alone — but on
+   the real backend the normal case is a photo that WAS read and a list that is
+   still the user's, because buildResults keeps the contents-step taps whenever
+   the user engaged with that step and discards the model's categories entirely.
+
+   So the reader ticked chips, and the report told them those chips had been
+   detected in their photograph. */
+
+const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.webp', import.meta.url));
+
+const PLAN = {
+  spaceType: 'Pantry',
+  summary: 'A test plan from the mocked backend.',
+  // The model's own categories, which the report deliberately does NOT use
+  // once the user has touched the contents step.
+  categories: ['Cleaning supplies', 'Paper goods', 'Pet food'],
+  map: [{
+    level: 'Top shelf', icon: 'up', zone: 'Backstock', why: 'Rarely reached.',
+    eye: false, shelfIndex: 0, safety: { flag: null, why: null },
+    items: [{ name: 'Canned goods', size: 'm', flags: [] }], surface: 'shelf',
+  }],
+  geometry: { unit: 'in', width: 36, height: 72, depth: 16, shelfCount: 1, shelfYFracs: [0.1], estimated: false },
+  layout: null, safetyNotes: [], productNeeds: [],
+  steps: Array.from({ length: 7 }, (_, i) => ({ task: `Step ${i + 1}`, time: '5 min', why: 'Because.' })),
+  time: '45-60 min', cost: '$0', observed: true,
+};
+
+test('categories the reader ticked are not read back as photo findings', async ({ page }) => {
+  await page.route('**/functions/v1/analyze-space', (route) => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ plan: PLAN, model: 'test-model', requestId: 'test' }),
+  }));
+
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.fill('#m-num-w', '3');
+  await page.fill('#m-num-h', '6');
+  await page.fill('#m-num-d', '1.33');
+  await page.locator('#flow-next').click();                 // measure -> photos
+  /* A photo is the whole point: without one the plan comes back observed:false
+     and the old wording was already correct, so this test passed against the
+     unfixed code on the first attempt. The bug only exists when a photo WAS
+     read and the category list is still the reader's. */
+  await page.setInputFiles('#photo-input', PHOTO);
+  await expect(page.locator('#photo-tiles .wz-photo')).toHaveCount(1);
+  await page.locator('#flow-next').click();                 // photos -> household
+  await page.locator('#flow-next').click();                 // household
+  // Contents: tick two chips, which is what makes the list theirs.
+  const chips = page.locator('#contents-chips > *');
+  await chips.nth(0).click();
+  await chips.nth(1).click();
+  await page.locator('#flow-next').click();                 // contents -> goals
+  await page.locator('#goal-list .wz-goal').first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();
+  await page.locator('#flow-next').click();                 // review -> build
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+
+  await expect(page.locator('#res-cat-title')).toHaveText('Item categories you told us about');
+
+  const kpi = await page.locator('#res-kpis .kpi', { hasText: 'Categories' }).textContent();
+  expect(kpi, 'the reader\'s own taps are counted as a discovery').toContain('listed');
+  expect(kpi).not.toContain('found');
+
+  /* And the chips shown are the reader's, so labelling them "detected" would
+     have been claiming the photo produced them. */
+  const tags = await page.locator('#res-cat-tags .tag').allTextContents();
+  expect(tags.length).toBe(2);
+  for (const t of tags) expect(PLAN.categories).not.toContain(t);
 });

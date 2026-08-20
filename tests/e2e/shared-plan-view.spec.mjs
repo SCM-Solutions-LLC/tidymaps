@@ -229,3 +229,39 @@ test('a shared plan never fills its gaps with sample content', async ({ page }) 
   expect(report, 'the sample plan’s prose reached a visitor as the owner’s')
     .not.toContain('Frequently used snacks are too high');
 });
+
+/* The hero illustration is picked by space type, and for the whole life of the
+   share view it was picked wrong. applySharedSpace read `payload.space_type`
+   while sharedSpacePayload emits `spaceType`, so the read was always undefined,
+   `areaFor(null)` fell through to the first kitchen area, and EVERY shared plan
+   — garage, closet, workbench — was illustrated with a drawn pantry under a
+   title naming the real space.
+
+   The comment above that line describes the bug it was meant to fix, which is
+   the tell: the fix was written and wired to a key that does not exist.
+
+   Every other test in this file uses a pantry fixture, which is also the
+   fallback, so none of them could ever have caught it. This one is deliberately
+   not a pantry. */
+const WORKBENCH = {
+  space: {
+    ...PAYLOAD.space,
+    name: 'Workbench',
+    spaceType: 'workbench',
+    plan: { ...PAYLOAD.space.plan, spaceType: 'Workbench' },
+  },
+};
+
+test('a shared plan is illustrated as the space it is about, not as a pantry', async ({ page }) => {
+  await openShared(page, WORKBENCH);
+
+  const hero = page.locator('#plan-hero-img');
+  await expect(hero).toBeVisible();
+
+  const shown = await hero.evaluate((img) => ({
+    space: img.dataset.space || '', alt: img.alt || '',
+  }));
+  expect(shown.space || shown.alt.toLowerCase(),
+    `the workbench plan is illustrated as: ${JSON.stringify(shown)}`).not.toMatch(/pantry/i);
+  expect(`${shown.space} ${shown.alt}`.toLowerCase()).toMatch(/workbench/);
+});
