@@ -678,6 +678,12 @@ The middle row is the point: fixing the metal moves the rest of the scene by
 0.1%. The remaining lift in the shipped row is the door glass itself, which is
 the other half of what the port was for.
 
+`docs/screenshots/viewer3d-metal-before.png` and `-after.png` are the cabinet
+layout either side of this change, captured from the two git states with zone
+labels turned off so the frame is about materials. The shelf-support posts go
+from solid black to silver and the door edges pick up an edge highlight; the
+crates, bins, carcass and ground are the same in both.
+
 **It is built once per canvas, not once per build.** The room does not depend
 on the plan, the layout or the geometry, and the PMREM pass is the most
 expensive single step in a build — 80ms on the software renderer CI uses. A
