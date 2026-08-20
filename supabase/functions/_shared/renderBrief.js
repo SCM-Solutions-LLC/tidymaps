@@ -44,11 +44,42 @@ export function normalizeZones(input) {
   return out;
 }
 
-const TASK = 'TASK: dramatically reorganize everything in this photo. The output must look like a completely different, professionally organized version of this exact space. If your result would look nearly identical to the input photo, you have failed the task; the transformation must be unmistakable at a glance.\n\n'
-  + 'Physically rearrange the items: pick up every visible object and place it in its mapped zone below. Stand containers upright in straight front-facing rows, group like items together, stack neatly, clear ALL loose clutter off the floor and surfaces, and leave visible empty breathing room on every shelf. Straighten anything tilted. Brighten the scene slightly so the result reads clean and well lit.';
+/* What the model is asked to draw.
 
-const CLOSE = '\n\nReuse the photo\'s own items: the SAME products, packaging, and colors that appear in the original, just relocated and tidied. Do not invent new products, people, or text overlays.\n'
-  + 'Keep unchanged: the room itself, camera angle, walls, floor, and shelf architecture. Everything ON the shelves and floor must visibly move.';
+   The previous brief was a paragraph of emphasis — "dramatically reorganize",
+   "if your result would look nearly identical to the input photo, you have
+   failed" — wrapped around two preservation clauses. Its only concrete,
+   checkable statements were the things that must NOT change, so returning
+   something very close to the input scored well against its own constraints
+   while satisfying nothing, and the highest-attention position in the prompt
+   went to a meta-threat that describes no picture.
+
+   This states the finished photograph instead, then names the operations that
+   have to be visible in it. Every added token buys a claim about the
+   arrangement of movable objects, which is the only axis that is allowed to
+   move. The nouns are deliberately generic: this app renders garages, closets
+   and workbenches as well as pantries, and naming jars and tins primes one of
+   them. */
+const TASK = 'TASK: re-stage every object in this photo into an organized version of the same space. Photograph the same shelving from the same spot, after someone has sorted the contents and put them all back properly.\n\n'
+  + 'Carry out every one of these operations, and make each visible in the result:\n'
+  + '1. Work through the unit one level at a time, giving each level a single purpose. Where a zone plan is listed below, each level holds what its own line assigns to it and nothing else.\n'
+  + '2. Stand every container and package upright on its base, printed label turned to the camera.\n'
+  + '3. Arrange each level as one straight row: front faces flush with the shelf edge, even gaps between neighbours, matching items in square vertical stacks.\n'
+  + '4. Group like with like, so similar items sit together as one solid block on their own level.\n'
+  + '5. Leave empty shelf visible on every level: bare space at the end of each row, clear air above the tallest item.\n'
+  + '6. Leave the floor and surfaces in front of the unit bare and swept, open right up to its base.\n'
+  + '7. Set everything level and square: uprights vertical, nothing tilted, every item resting fully inside its shelf.\n\n'
+  + 'Light the finished room brightly and evenly, in sharp focus across the whole unit.';
+
+/* "the same ... count" is the load-bearing phrase: it is what stops a tidy
+   render becoming a showroom with half the contents quietly deleted. The two
+   negatives that remain are the two worth their budget — the model is handed a
+   list of zone LABELS, so it needs telling not to draw them, and "no one has
+   been added" is scoped to invention rather than asking it to paint people out
+   of a photo that has some. */
+const CLOSE = '\n\nEvery object in the result comes out of the original photo: the same products, packaging, colours and count, moved and turned rather than replaced. Draw only what already appears in the frame; any writing in the picture is writing already printed on that packaging, and no one has been added to the room.\n'
+  + 'Keep unchanged: the room itself, the camera position, angle and crop, the walls, floor and shelving architecture — the number of shelves, their spacing, depth and material. Everything resting on those shelves or standing in front of them has moved: every shelf in the frame ends up loaded differently from the way it started.\n'
+  + 'A plain photograph, with no added text, arrows, or labels.';
 
 /* The guard is the same idea as INJECTION_GUARD in promptContext.js, in the
    terms an image model works in: the zone list is a description of a room, and

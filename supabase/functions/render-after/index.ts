@@ -125,7 +125,13 @@ Deno.serve(async (req) => {
               { text: instructions },
             ],
           }],
-          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+          /* IMAGE only. With TEXT permitted the model has a legal way to
+             answer an edit it finds ambiguous by narrating what it would do
+             and handing back something close to the input alongside the
+             prose. Google's current guidance for this surface is to ask for
+             the modality you actually want. Nothing here consumed the text
+             part: the parse below scans for the first inline_data. */
+          generationConfig: { responseModalities: ['IMAGE'] },
         }),
       },
     );
@@ -157,7 +163,15 @@ Deno.serve(async (req) => {
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
     const imagePart = parts.find((p: Record<string, unknown>) => p.inline_data || p.inlineData);
-    if (!imagePart) return json(req, 502, { error: 'no_image_returned' });
+    if (!imagePart) {
+      /* The model's only channel for explaining a refusal — a safety block, a
+         truncated candidate — and this branch used to log nothing at all, so a
+         silent 502 left no trace of why. */
+      console.error('gemini returned no image',
+        'finishReason=', data?.candidates?.[0]?.finishReason ?? 'none',
+        'promptFeedback=', JSON.stringify(data?.promptFeedback ?? null).slice(0, 300));
+      return json(req, 502, { error: 'no_image_returned' });
+    }
     const inline = imagePart.inline_data ?? imagePart.inlineData;
     const outMime: string = inline.mime_type ?? inline.mimeType ?? 'image/png';
     const outB64: unknown = inline.data;

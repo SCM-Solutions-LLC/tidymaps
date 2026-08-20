@@ -29,8 +29,16 @@ test('an old client’s free text is ignored, not obeyed, and not rejected', () 
      with an error breaks a button that worked a minute ago; obeying it is the
      hole this closes. It gets a generic render of its own room instead. */
   const brief = buildRenderBrief(undefined);
-  assert.match(brief, /TASK: dramatically reorganize/);
+  /* Anchored on the shape, not the sentence: this test exists to prove the
+     brief is composed here rather than taken from the caller, and pinning the
+     opening prose made it fail whenever the wording was tuned — which is a
+     test failing for a reason it does not care about. */
+  assert.match(brief, /^TASK: /, 'the server-composed brief is not what came back');
   assert.doesNotMatch(brief, /Zone plan/, 'no zone list was sent, so none is claimed');
+  for (const smuggled of ['draw a car', 'ignore', 'instructions']) {
+    assert.ok(!brief.toLowerCase().includes(smuggled),
+      `caller-supplied text reached the brief: ${smuggled}`);
+  }
 });
 
 test('the zone list is fenced as data, with the job stated before it', () => {
@@ -63,13 +71,28 @@ test('a zone that tries to give orders travels as a label, defanged', () => {
 });
 
 test('the list cannot be longer or wider than a plan', () => {
-  const many = Array.from({ length: 40 }, (_, i) => ({ level: `Level ${i}`, zone: 'x'.repeat(500) }));
+  /* Both halves at the cap, not just the zone. The fixture used to read
+     `level: \`Level ${i}\`` — six characters where 120 are reachable — so it
+     probed 3827 of a true ceiling of 5181 and asserted a bound of 4000 that
+     the real worst case had already passed. A guard measured against a
+     friendly fixture rather than the reachable input is the same mistake as
+     the render-after size cap two tests down, which rejected 100% of real
+     renders while its test confirmed it existed. */
+  const many = Array.from({ length: 40 }, () => ({ level: 'L'.repeat(500), zone: 'z'.repeat(500) }));
   const rows = normalizeZones(many);
   assert.equal(rows.length, MAX_ZONES, 'a plan is 12 rows at most');
-  for (const row of rows) assert.ok(row.zone.length <= MAX_ZONE_CHARS);
+  for (const row of rows) {
+    assert.ok(row.zone.length <= MAX_ZONE_CHARS);
+    assert.ok(row.level.length <= MAX_ZONE_CHARS, 'the level half is capped too');
+  }
 
   const brief = buildRenderBrief(many);
-  assert.ok(brief.length < 4000, `the composed brief ran to ${brief.length} characters`);
+  /* 6000 is a design guard on the prose, not a wire limit — nothing in
+     render-after caps the composed brief, and the model's context dwarfs it.
+     It exists so the fixed text cannot grow unboundedly unnoticed: today's
+     reachable worst case is 5181, and a change that clears 6000 wants a look
+     rather than a silent pass. */
+  assert.ok(brief.length < 6000, `the composed brief ran to ${brief.length} characters`);
 });
 
 test('malformed entries are dropped rather than rendered as holes', () => {

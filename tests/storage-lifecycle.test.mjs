@@ -323,3 +323,33 @@ test('the unload flush is registered on import, not left to a caller', () => {
   assert.doesNotMatch(main, /flushBeforeUnload/,
     'the listener must not need wiring from main.js');
 });
+
+/* ---------- the space's cover is the space's own photo ----------
+
+   coverUrl feeds two things: the dashboard card, and the "before" half of the
+   photo comparison on a reopened plan. It selected the lowest-sorted row of
+   space_media whatever its kind — and render-after writes its OUTPUT back into
+   that same table as kind 'after_render'.
+
+   autoSaveSpace saves with {media:false} deliberately, so a signed-in user who
+   generated a preview without ever pressing Save had exactly one media row:
+   the render. Reopening loaded the AI image as the photo of their space today,
+   and setupAfterPhoto then put that identical file on BOTH sides of the
+   slider. Which is precisely the reported symptom — "no difference between the
+   before and after" — arrived at without the model doing anything wrong.
+
+   The same defect as the drawn "before" pane removed from the report: a before
+   that is not the reader's before. */
+
+test('coverUrl asks the database for photo kinds only', () => {
+  /* Asserted on the query the function builds, because that is where the bug
+     was: no .in('kind', ...) at all, so an after_render row was eligible. */
+  const src = readFileSync(new URL('../js/db.js', import.meta.url), 'utf8');
+  const fn = src.slice(src.indexOf('export async function coverUrl'), src.indexOf('export async function fetchSpace'));
+  assert.match(fn, /\.in\('kind',\s*\['photo','frame'\]\)/,
+    'coverUrl can still return the AI render as the space photo');
+  assert.ok(!/after_render/.test(fn), 'the render kind must not be selectable as a cover');
+  /* photo and frame both start at sort 0, so sort alone leaves the winner to
+     whatever order the database happens to return. */
+  assert.match(fn, /\.order\('kind'\)/, 'ties between photo and frame are undecided');
+});
