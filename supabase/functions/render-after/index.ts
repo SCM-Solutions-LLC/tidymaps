@@ -3,6 +3,7 @@ import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 import { buildRenderBrief } from '../_shared/renderBrief.js';
+import { refundUsage } from '../_shared/usageRefund.js';
 
 const GEMINI_MODEL = 'gemini-2.5-flash-image';
 /* Two limits, because they are two different questions.
@@ -90,6 +91,20 @@ Deno.serve(async (req) => {
     return json(req, 500, { error: 'internal' });
   }
 
+  /* From here on the caller has been charged an allowance. Any exit that does
+     not hand back a render gives it back — a Gemini outage, a refusal, a
+     deadline, or a fault of ours is not something they should pay 1 of 3 per
+     hour for.
+
+     Deliberately NOT used for `not_your_space` below: that is a caller sending
+     a spaceId that is not theirs, and refunding it would let someone probe
+     spaceIds without ever meeting the rate limit. A wrong request is the one
+     kind of failure worth charging for. */
+  const spent = async (status: number, body: Record<string, unknown>) => {
+    await refundUsage(admin, 'render-after', caller);
+    return json(req, status, body);
+  };
+
   // Ownership check up front so we fail before spending on the render
   let spaceOwned = false;
   let previousRenderPath: string | null = null;
@@ -99,7 +114,7 @@ Deno.serve(async (req) => {
       .eq('user_id', caller.userId).is('deleting_at', null).maybeSingle();
     if (error) {
       console.error('ownership check failed', error);
-      return json(req, 500, { error: 'internal' });
+      return await spent(500, { error: 'internal' });
     }
     if (!data) return json(req, 403, { error: 'not_your_space' });
     spaceOwned = true;
@@ -150,15 +165,15 @@ Deno.serve(async (req) => {
         // Keep the public response stable even if Google returns non-JSON.
       }
       if (reason.includes('API_KEY') || /api[-\s]?key/i.test(message)) {
-        return json(req, 503, { error: 'preview_misconfigured' });
+        return await spent(503, { error: 'preview_misconfigured' });
       }
       if (res.status === 429 || reason === 'RATE_LIMIT_EXCEEDED') {
-        return json(req, 503, { error: 'upstream_quota' });
+        return await spent(503, { error: 'upstream_quota' });
       }
       if (res.status === 400) {
-        return json(req, 502, { error: 'upstream_invalid_request' });
+        return await spent(502, { error: 'upstream_invalid_request' });
       }
-      return json(req, 502, { error: 'upstream', status: res.status });
+      return await spent(502, { error: 'upstream', status: res.status });
     }
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
@@ -170,7 +185,7 @@ Deno.serve(async (req) => {
       console.error('gemini returned no image',
         'finishReason=', data?.candidates?.[0]?.finishReason ?? 'none',
         'promptFeedback=', JSON.stringify(data?.promptFeedback ?? null).slice(0, 300));
-      return json(req, 502, { error: 'no_image_returned' });
+      return await spent(502, { error: 'no_image_returned' });
     }
     const inline = imagePart.inline_data ?? imagePart.inlineData;
     const outMime: string = inline.mime_type ?? inline.mimeType ?? 'image/png';
@@ -185,15 +200,15 @@ Deno.serve(async (req) => {
        phone. Checked before any of that happens. */
     if (!ALLOWED_MIME.has(outMime)) {
       console.error('gemini returned an unusable type', outMime);
-      return json(req, 502, { error: 'bad_upstream_image' });
+      return await spent(502, { error: 'bad_upstream_image' });
     }
     if (typeof outB64 !== 'string' || !outB64 || !B64_RE.test(outB64)) {
       console.error('gemini returned a malformed image payload');
-      return json(req, 502, { error: 'bad_upstream_image' });
+      return await spent(502, { error: 'bad_upstream_image' });
     }
     if (outB64.length > MAX_OUT_B64_CHARS) {
       console.error('gemini returned an oversized image', outB64.length);
-      return json(req, 502, { error: 'upstream_image_too_large' });
+      return await spent(502, { error: 'upstream_image_too_large' });
     }
 
     let storagePath: string | null = null;
@@ -252,9 +267,9 @@ Deno.serve(async (req) => {
        preview took too long rather than that the service is unreachable. */
     if (e instanceof Error && (e.name === 'TimeoutError' || e.name === 'AbortError')) {
       console.error('render-after timed out after', RENDER_BUDGET_MS, 'ms');
-      return json(req, 504, { error: 'upstream_timeout' });
+      return await spent(504, { error: 'upstream_timeout' });
     }
     console.error('render-after failed', e);
-    return json(req, 502, { error: 'upstream_unreachable' });
+    return await spent(502, { error: 'upstream_unreachable' });
   }
 });
