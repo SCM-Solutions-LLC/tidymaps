@@ -500,7 +500,12 @@ export function applySharedSpace(payload){
      space this plan is for: areaFor(null) falls through to the first kitchen
      area, so every shared plan was illustrated with a pantry regardless of what
      it was actually about. Keep the type separately, for display only. */
-  state.sharedSpaceId=payload.space_type||null;
+  /* payload.spaceType, not payload.space_type. sharedSpacePayload emits
+     camelCase (sharePayload.js), so this read was always undefined and the
+     fallback above ran on every shared plan — the exact bug the comment says
+     it fixes. Every shared plan was illustrated with a pantry, whatever it was
+     about, for as long as this line has existed. */
+  state.sharedSpaceId=payload.spaceType||null;
   state.upgrades=false;                  // sanitized plans carry no product needs
   state.dims=payload.dims||null;
   state.sharedName=payload.name||'A TidyMap plan';

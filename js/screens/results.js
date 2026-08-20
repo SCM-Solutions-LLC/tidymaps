@@ -167,20 +167,31 @@ export function buildResults(){
     document.getElementById('res-summary').textContent=sumText;
     if(sumPoints) sumPoints.innerHTML='';
   }
+  /* "N found" and "Detected item categories" describe a photo being read. Two
+     separate things can make that untrue, and only one of them was checked.
+
+     `unobserved` covers "there was no photo". It does not cover "there was a
+     photo, but this list is not what came back from it" — and on the real
+     backend that is the normal case: buildResults above keeps the user's own
+     taps whenever they engaged with the contents step, and discards the
+     model's categories entirely. So a reader who ticked three chips saw
+     "Categories 3 found" under "Detected item categories", with none of the
+     model's actual detections anywhere on the page.
+
+     Observation is only claimed when a photo was read AND the list is the
+     photo's. */
+  const catsAreTheirs = !!state.catsTouched;
+  const catsObserved = !unobserved && !catsAreTheirs;
   // kpis
   const kpis=[
-    /* "2 found" and "Detected item categories" describe a photo being read.
-       With no photo those two categories are the user's own answers from step 7
-       being read back to them as a discovery, which is the same lie the summary
-       scoping fixed one section up. */
     ['Space type', A?A.spaceType:'Pantry'],
-    ['Categories', state.cats.length + (unobserved ? ' listed' : ' found')],
+    ['Categories', state.cats.length + (catsObserved ? ' found' : ' listed')],
     ['Time', A?A.time:'45–90 min'],['Cost', costLabel()]
   ];
   document.getElementById('res-kpis').innerHTML=kpis.map(([k,v])=>`<div class="kpi"><div class="k">${escapeHtml(k)}</div><div class="v"${k==='Cost'?' id="kpi-cost"':''}>${escapeHtml(v)}</div></div>`).join('');
   document.getElementById('res-cat-tags').innerHTML=state.cats.map(c=>`<span class="tag">${escapeHtml(c)}</span>`).join('');
   const catTitle=document.getElementById('res-cat-title');
-  if(catTitle) catTitle.textContent = unobserved ? 'Item categories you told us about' : 'Detected item categories';
+  if(catTitle) catTitle.textContent = catsObserved ? 'Detected item categories' : 'Item categories you told us about';
   /* The sample lists below stand in for a plan that has not been built yet.
      On a SHARED plan they would be something else: sentences nobody wrote,
      rendered to a visitor as the owner's findings about their own space. The
@@ -720,7 +731,12 @@ function itemsRow(m){
     const title=flags.length?` title="${escapeHtml(flags.map(f=>ITEM_FLAG_LABEL[f]).join(', '))}"`:'';
     return `<span class="mi${flags.length?' mi-flag':''}"${title}>${escapeHtml(it.name)}</span>`;
   }).join('');
-  return `<div class="map-items" aria-label="Items identified here">${chips}</div>`;
+  /* "Items in this zone", not "identified here". applyCategoryEdits pushes the
+     user's own contents-step taps into these same rows (personalize.js), so a
+     reader who ticked "Camping gear" was shown it on a shelf as something the
+     analysis had identified in their photo. The new name is true whichever
+     source a chip came from. */
+  return `<div class="map-items" aria-label="Items in this zone">${chips}</div>`;
 }
 
 /* ---------- Animated step illustrations ----------
