@@ -855,7 +855,16 @@ and the list is finished.
      record of the outcome, and they retain **24 hours**.
    - The cheapest standing check is `plan_meta->>'source'` on recent `spaces`
      rows. `demo-fallback` where you expected `ai` means the model path is
-     broken, and it survives longer than the logs do.
+     broken, and it survives longer than the logs do. **This is now the check
+     to run by hand; the automated one is the canary in open item 2**, which
+     calls the model rather than waiting for a user to.
+
+   **Confirmed working again 2026-08-21.** Three `analyze-space` POSTs on
+   08-20 (04:25, 16:56, 19:17) all returned 200, no 502s anywhere in the 24h
+   retention window, and the `spaces` row created 19:17:12 carries
+   `plan_meta = {"source":"ai","model":"claude-sonnet-4-6"}`. The outage
+   signature — 502s completing in 0.3-1.1s, far too fast to have reached the
+   model — is absent.
 4. **The unit suite was posting telemetry to production.** `telemetry_events`
    held 68 `space_saved` rows with a null `anon_id` that no user created.
    `optedOut()` disabled telemetry under automation via `navigator.webdriver`,
@@ -1126,11 +1135,38 @@ Ordered by whether anyone can act on them today.
    Check object count against the input on each one. Since #109 refunds a
    failed render's allowance, this no longer costs a day's quota per failure.
    See "The photo preview render thread" above.
-2. **Nothing alerts on a broken model path.** The outage in Production health
-   #3 ran for around two weeks behind a graceful fallback. A daily check of
-   `plan_meta->>'source'` on the newest `spaces` row — or of the
-   `analyze-space` error rate while the logs still hold it — would have caught
-   it on day one. This is the highest-value piece of unbuilt work in the repo.
+2. ~~**Nothing alerts on a broken model path.**~~ **Built.**
+   `.github/workflows/model-path-canary.yml` calls `analyze-space` for real
+   every day at 06:20 UTC and fails the workflow if it does not get a plan
+   back. The failing run IS the alert — GitHub emails the owner on a failed
+   scheduled run, so there is no secret, no third party and nothing else to
+   keep alive. **If those notifications are ever turned off this alert stops
+   existing**, which is the one thing to keep true about it.
+
+   **Why it calls the model instead of reading the database.** The cheap check
+   this entry used to recommend — `plan_meta->>'source'` on the newest `spaces`
+   row — is free and it is still the right thing to read by hand. It is the
+   wrong thing to *alert* on: it only says anything when somebody uses the app,
+   and at this app's traffic an outage can run for weeks with no new rows at
+   all. Silence there is indistinguishable from health, and that silence is
+   exactly what let the last outage run two weeks. So the check generates its
+   own traffic. It costs one real Sonnet call a day and uses 1 of the
+   anonymous allowance of 6/day on `analyze-space`.
+
+   **It reports two different failures on purpose.** A 5xx from `analyze-space`
+   is the outage, and says so. Anything else — a rejected request, an
+   unreachable host, a contract that moved — says the *canary* could not run,
+   because announcing "model path broken" for a misconfigured check sends
+   somebody to rotate a perfectly good key. Both exit non-zero: a check that
+   could not run must never report success. That distinction was not
+   hypothetical — the first run of the script hit a 403 from this sandbox's
+   egress proxy and confidently announced the model was down.
+
+   Every branch was proven against a local stub rather than assumed: 200 with
+   a plan passes; 502 (carrying the real `authentication_error` body) and 504
+   fail as the outage; 400, a 200 with no plan, and a twice-rate-limited run
+   all fail as the canary. Run it by hand any time with
+   `npm run check:model-path`.
 3. ~~The AI photo preview may be undiscoverable.~~ **Settled, and fixed in
    #101.** The button was present and 0px tall: `#ch-after` ships `collapsed`
    and `.chapter.collapsed .ch-sub` is `display:none`, so nothing inside the
