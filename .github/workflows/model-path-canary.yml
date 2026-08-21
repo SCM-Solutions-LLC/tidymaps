@@ -1,0 +1,34 @@
+# Is the AI plan path alive?
+#
+# The outage this watches for ran about two weeks unnoticed: the API key
+# expired, every analyze-space call 502'd, and the client fell back to a demo
+# plan behind an honest banner. Nothing looked broken, so nothing alerted.
+#
+# The signal is this workflow failing. GitHub emails the repo owner on a failed
+# scheduled run, which is the whole notification mechanism — no secrets, no
+# third party, nothing else to keep alive. If these emails are ever turned off,
+# this alert stops existing, so that is the one thing to keep true.
+#
+# Deliberately NOT run on pull_request or push. Every run makes a real,
+# paid model call, so it fires on a schedule and by hand only.
+name: Model path canary
+on:
+  schedule:
+    # 06:20 UTC daily. Off the hour because a scheduled run at :00 queues
+    # behind everyone else's, and this one has a 155s client timeout.
+    - cron: '20 6 * * *'
+  workflow_dispatch:
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    # A hung request should not hold a runner for six hours.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # No `npm ci`: the script imports only node builtins and js/config.js,
+      # which is committed. Nothing to install, so nothing to break.
+      - name: Call analyze-space for real
+        run: node scripts/model-path-canary.mjs
