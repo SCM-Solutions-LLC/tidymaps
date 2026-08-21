@@ -682,6 +682,12 @@ a box of any colour. No lettering and no brand art — type at this scale is a
 few pixels of grey mush, and invented packaging is a claim about a product the
 user never named.
 
+Four frames in `docs/screenshots/`, each pair captured from the two git states:
+`viewer3d-items-*` is the cabinet, where the lathed bottles and the labelled
+boxes show, and `viewer3d-packing-*` is the workbench, where the second rank
+does. The workbench pair is the one to look at for ranking — the cabinet holds
+no multi-unit item at all, which is the measurement above made visible.
+
 ### What the PMREM port actually took, and the trap in it
 
 Item 1 is done. `vendor/three/addons/environments/RoomEnvironment.js` is the
