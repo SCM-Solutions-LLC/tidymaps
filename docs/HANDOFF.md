@@ -4,8 +4,10 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-20. Everything through PR #112 is merged (`main` at
-`969e521`); `main` is the single source of truth.
+**Last refreshed:** 2026-08-21. Everything through PR #113 is merged (`main` at
+`c224470`) and **deployed** — Pages run 118 went green at 01:28:35Z, so the four
+viewer ports below are live on the site, not merely landed. `main` is the single
+source of truth.
 
 **Correcting the previous refresh, because it was load-bearing and wrong.** The
 2026-08-05 entry said to read the open items knowing that *"all four are waiting
@@ -540,14 +542,32 @@ nothing, which errs toward under-refunding. That is the right direction to err.
 Limits themselves are unchanged: signed in 3/hour and 5/day, anonymous 1/hour
 and 1/day, against a 100/day global breaker.
 
-## The 3D viewer: keep it, port four things (2026-08-20)
+## The 3D viewer: keep it — all four ports shipped (2026-08-21)
 
 A parallel session evaluated whether an `img2threejs` agent workflow should
-replace `js/three/scene.js`. The answer is no. That evaluation read the
-**deployed** `js/` with no repo checkout and flagged two things to re-verify
-here; both have now been checked against `main` and the results are below.
-The long-form note lives in Notion as *"TidyMap 3D viewer evaluation —
-2026-08-20"*.
+replace `js/three/scene.js`. The answer was no, and the four upgrades it
+proposed porting instead are **all done and deployed** — #112 (PMREM) and #113
+(lathe, two-rank packing, labels). The long-form note lives in Notion as
+*"TidyMap 3D viewer evaluation — 2026-08-20"*.
+
+**Read this before trusting any note written without a checkout.** That
+evaluation read the **deployed** `js/` and never opened the repo. It flagged
+two things for a later session to re-verify; in the event, **four** of its
+claims were wrong:
+
+| Claim | Reality |
+|---|---|
+| `RoomEnvironment.js` is vendored, so PMREM is ~5 lines | Not vendored at all. Item 1 needed the addon first |
+| geometry vocabulary is 37 Box / 6 Cylinder / 3 Torus | That counts `scene.js` alone; the 13 builders hold the rest |
+| the kid-safe hazard warning lives in `interact.js` | It is in `js/screens/viewer3d.js:152-154` and `205-207` |
+| `bottle` and `can` "are boxes today" | Both were already `CylinderGeometry` |
+
+Every one of the four was **directionally useful and factually wrong** — the
+problems it named were real, the specifics it gave were not. That is the shape
+to expect from a note written against deployed output: treat its diagnoses as
+leads and re-derive its facts. Two of the four would have caused real work if
+acted on unchecked (a five-line PMREM change that cannot resolve its import,
+and a `scene.js`-only edit assumed to cover geometry it does not reach).
 
 **The decision, settled — do not re-litigate.**
 
@@ -580,8 +600,8 @@ at `228-229` (`HemisphereLight(0xfdfff5, 0x8b9184, 1.05)` plus
 `DirectionalLight(0xffffff, 1.25)`); and **no PMREM or environment map
 anywhere** in `js/three/` or `viewer3d.js`.
 
-Two corrections to that note, neither fatal but both load-bearing if you act on
-it:
+Two of those corrections in full, because acting on either unchecked costs
+real work:
 
 - **The geometry vocabulary counts `scene.js` alone.** 37 Box / 6 Cylinder /
   3 Torus / 1 each Plane, Extrude, Buffer is exactly right for that file — but
@@ -1122,12 +1142,16 @@ Ordered by whether anyone can act on them today.
    on the 08-19 run; if it stops, the cap needs to move into `checkInvariants`,
    where a violation costs a retry instead of shipping.
 
-5. ~~**Port the four 3D viewer upgrades.**~~ **All four are done.** See "The
-   3D viewer: keep it, port four things" above for what each took and for the
-   two traps recorded there — the three.js knob that is inert on the
-   `scene.environment` path, and the fact that a hash rather than
-   `Math.random` is what keeps a screenshot usable as evidence. Nothing from
-   that evaluation is left open.
+5. ~~**Port the four 3D viewer upgrades.**~~ **All four are done and live**
+   (#112, #113; Pages run 118). See "The 3D viewer: keep it — all four ports
+   shipped" above for what each took, for the two traps recorded there — the
+   three.js knob that is inert on the `scene.environment` path, and the hash
+   rather than `Math.random` that keeps a screenshot usable as evidence — and
+   for the four-row table of what that evaluation got wrong. Nothing from it is
+   left open. The one judgment call still open to revision is whether the
+   second rank should exist at all: it changes 21% of items and nothing in the
+   pantry most users see, and it comes out by deleting the `depthRankStep` call
+   in `reflow`, which takes its containment test with it.
 
 ### Waiting on traffic
 
