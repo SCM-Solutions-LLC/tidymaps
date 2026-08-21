@@ -7,7 +7,7 @@ import { COLORS, ITEM_PALETTE, slug, createMaterials } from './layouts/helpers.j
 import { semanticItemHeight, semanticItemKind } from './itemKinds.js';
 import { organizerSpecFor, needKeyFor, isVisualNeed } from './organizerKinds.js';
 import { measuredCapacityProfile, naturalItemWidth, naturalOrganizerWidth, visualUnitCount } from './capacity.js';
-import { ITEM_NORMAL_OFFSET, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
+import { ITEM_NORMAL_OFFSET, depthRankStep, displayJitter, hashString, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
 /* Schematic 3D of the organized space: carcass + shelves from the plan's
    geometry, one zone per map row, items as draggable blocks. World units
@@ -22,6 +22,116 @@ function extrudedShape(points){
   const geometry=new THREE.ExtrudeGeometry(shape,{depth:0.16,bevelEnabled:true,bevelSize:0.035,bevelThickness:0.035,bevelSegments:2});
   geometry.translate(0,0,-0.08);
   return geometry;
+}
+
+/* A bottle and a can were a cone frustum and a straight cylinder with a torus
+   stuck on the rim — the evaluation that asked for this port recorded them as
+   boxes, which they were not, but the complaint underneath it was right: both
+   read as tubes. No shoulder, no neck, no seam.
+
+   A lathe turns one profile into the whole silhouette, which is what these two
+   shapes actually are. It also costs a mesh rather than adding one, because
+   the taper and the rim stop being separate children.
+
+   Profiles run bottom to top in the unit box every item is authored in: y from
+   -0.5 to 0.5, radius at most 0.5, so reflow's scale(w, itemH, itemD) lands
+   them exactly where the cylinders were. A point at radius 0 caps that end. */
+const BOTTLE_PROFILE=[
+  [0,-0.5],[0.34,-0.5],[0.44,-0.45],[0.46,-0.31],[0.46,-0.02],
+  [0.43,0.08],[0.32,0.21],[0.22,0.30],[0.19,0.35],[0.19,0.40],[0,0.40],
+];
+const CAN_PROFILE=[
+  [0,-0.5],[0.38,-0.5],[0.47,-0.45],[0.48,-0.40],[0.48,0.40],[0.47,0.45],
+  [0.40,0.48],[0.40,0.50],[0,0.50],
+];
+const LATHE_SEGMENTS=20;
+
+/* How far a display copy may stray from its slot. Small on purpose: enough
+   that the eye stops reading a machined row, not so much that the shelf looks
+   knocked over. Depth is a fraction of the item's own depth; yaw is radians. */
+const WOBBLE_DEPTH=0.10;
+const WOBBLE_YAW=0.10;
+
+function lathed(profile){
+  return new THREE.LatheGeometry(
+    profile.map(([x,y])=>new THREE.Vector2(x,y)), LATHE_SEGMENTS);
+}
+
+/* ---------- packaging labels ----------
+
+   A boxed good and a lidded container each carried one flat white strip
+   standing in for a label. At any distance a shelf of them reads as a row of
+   blank cartons.
+
+   These draw a real label instead: a 64x96 canvas of horizontal colour bands
+   derived from the item's own colour, so the label belongs to the box it is
+   on. Bands only — no lettering and no brand art. Type at this scale is a few
+   pixels of grey mush, and invented packaging is a claim about a product the
+   user never named.
+
+   Deterministic from the item's name, like the shelf wobble: the same tin
+   gets the same label in every render, which is what lets a screenshot be
+   evidence. */
+const LABEL_W=64;
+const LABEL_H=96;
+
+export function makePackagingLabel(name,color){
+  if(typeof document==='undefined') return null;
+  const canvas=document.createElement('canvas');
+  canvas.width=LABEL_W;
+  canvas.height=LABEL_H;
+  const g=canvas.getContext&&canvas.getContext('2d');
+  /* No 2d context is a real possibility on a locked-down or software stack.
+     The item keeps its plain face rather than failing to build. */
+  if(!g) return null;
+
+  const hash=hashString(name);
+  const base=new THREE.Color(color);
+  const hsl={h:0,s:0,l:0};
+  base.getHSL(hsl);
+
+  /* Paper dominates and the colour is a header band, which is the way round
+     a real label works — and the only way round that reads at all here, since
+     the label sits on a box of its own hue. Bands the same colour as the box
+     they are stuck to disappear into it; that was the first attempt. */
+  g.fillStyle='#f6f2e8';
+  g.fillRect(0,0,LABEL_W,LABEL_H);
+
+  const header=new THREE.Color().setHSL(hsl.h,Math.min(0.62,Math.max(0.34,hsl.s*1.5)),0.42);
+  const headerH=Math.round((0.26+((hash>>>2)&7)/70)*LABEL_H);
+  g.fillStyle=`#${header.getHexString()}`;
+  g.fillRect(0,0,LABEL_W,headerH);
+
+  /* One accent rule, placed from the hash, so two tins of the same colour are
+     still telling apart. */
+  const accent=new THREE.Color().setHSL(hsl.h,Math.min(0.7,hsl.s*1.6),0.3);
+  const ruleY=Math.round((0.52+((hash>>>6)&7)/60)*LABEL_H);
+  g.fillStyle=`#${accent.getHexString()}`;
+  g.fillRect(0,ruleY,LABEL_W,Math.max(3,Math.round(LABEL_H*0.045)));
+
+  /* A grey block low down reads as the printed panel every package carries,
+     without pretending to be words. */
+  g.fillStyle='rgba(94,90,82,0.20)';
+  g.fillRect(8,Math.round(LABEL_H*0.72),LABEL_W-16,Math.round(LABEL_H*0.11));
+
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  return texture;
+}
+
+/* The label is its own thin plane sitting just proud of the face, rather than
+   a texture on the item: the item is scaled non-uniformly per shelf, and a
+   map on the body would stretch with it. */
+function addLabel(mesh,name,color,{width,height,z}){
+  const texture=makePackagingLabel(name,color);
+  if(!texture) return null;
+  const material=new THREE.MeshStandardMaterial({map:texture,roughness:0.86,metalness:0});
+  const label=new THREE.Mesh(new THREE.PlaneGeometry(width,height),material);
+  label.position.set(0,0,z);
+  label.castShadow=false;
+  label.receiveShadow=true;
+  mesh.add(label);
+  return label;
 }
 
 function itemMaterial(color){
@@ -55,11 +165,15 @@ function createSemanticItem(name,kind,color){
   }else if(kind==='shoe'){
     mesh=new THREE.Mesh(extrudedShape([[-0.5,-0.28],[-0.2,-0.28],[-0.05,0.12],[0.18,0.2],[0.34,0.02],[0.5,-0.08],[0.46,-0.3]]),mat);
   }else if(kind==='bottle'){
-    mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.46,1,18),mat);
-    addChild(mesh,new THREE.CylinderGeometry(0.2,0.2,0.16,14),itemMaterial(0xf1eadf),[0,0.58,0]);
+    mesh=new THREE.Mesh(lathed(BOTTLE_PROFILE),mat);
+    /* The cap is still a separate part in the real object, so it keeps its own
+       colour. It sits on the neck the profile ends at, not above the item. */
+    addChild(mesh,new THREE.CylinderGeometry(0.21,0.21,0.1,LATHE_SEGMENTS),
+      itemMaterial(0xf1eadf),[0,0.45,0]);
   }else if(kind==='can'){
-    mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.48,0.48,1,20),mat);
-    addChild(mesh,new THREE.TorusGeometry(0.34,0.025,6,20),itemMaterial(0xd7d1c7),[0,0.505,0],[Math.PI/2,0,0]);
+    /* The rolled rims are in the profile now, top and bottom, so the torus
+       that used to fake the top one is gone rather than doubled. */
+    mesh=new THREE.Mesh(lathed(CAN_PROFILE),mat);
   }else if(kind==='dish'){
     mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,0.16,24),mat);
     mesh.rotation.x=Math.PI/2;
@@ -70,7 +184,7 @@ function createSemanticItem(name,kind,color){
     mesh=new THREE.Mesh(extrudedShape([
       [-0.42,-0.5],[0.42,-0.5],[0.38,0.34],[0.27,0.5],[-0.27,0.5],[-0.38,0.34],
     ]),mat);
-    addChild(mesh,new THREE.BoxGeometry(0.6,0.08,0.2),itemMaterial(0xf3eadc),[0,0.08,0.13]);
+    addLabel(mesh,name,color,{width:0.66,height:0.6,z:0.125});
   }else{
     mesh=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),mat);
     if(kind==='linen'){
@@ -79,6 +193,7 @@ function createSemanticItem(name,kind,color){
     }else if(kind==='container'){
       addChild(mesh,new THREE.BoxGeometry(1.06,0.09,1.06),itemMaterial(0xf0e5d6),[0,0.46,0]);
       addChild(mesh,new THREE.BoxGeometry(0.36,0.05,1.08),itemMaterial(0xf8f4ec),[0,0.06,0.01]);
+      addLabel(mesh,name,color,{width:0.52,height:0.42,z:0.505});
     }else{
       addChild(mesh,new THREE.BoxGeometry(0.82,0.06,1.04),itemMaterial(0xf2eadf),[0,0.32,0]);
     }
@@ -565,12 +680,29 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         const itemLift=organizer?(type==='riser'?2.8:type==='turntable'?0.75:type==='divider'?0.28:0.45):0;
         const visuals=ensureDisplayCopies(m,unitCount);
         const visualStep=w+unitGap;
+        /* Two ranks where the shelf is deep enough for one, so a stocked shelf
+           reads as depth rather than as a line of identical fronts. Odd copies
+           go to the back rank, which puts them in the gaps the even ones leave
+           — the lateral spacing is unchanged, so no extra maths is needed to
+           make them peek through. */
+        const rankStep=depthRankStep({
+          surface:sh,shelfDepth:shelfD,itemDepth:itemD,unitCount,inOrganizer:!!organizer,
+        });
         visuals.forEach((visual,visualIndex)=>{
           const visualOffset=offset+(visualIndex-(unitCount-1)/2)*visualStep;
-          const visualPosition=pointOnSurface(sh,visualOffset,ITEM_NORMAL_OFFSET);
+          /* Copy 0 IS the draggable item. It stays canonical — front rank,
+             no wobble — so dragging and every test that reads an item's
+             position see exactly what they saw before. Only display copies
+             move. */
+          const wobble=visualIndex?displayJitter(m.userData.itemId||m.userData.name,visualIndex):null;
+          const back=visualIndex&&rankStep&&visualIndex%2?rankStep:0;
+          const normalOffset=ITEM_NORMAL_OFFSET-back
+            +(wobble?wobble.depth*itemD*WOBBLE_DEPTH:0);
+          const visualPosition=pointOnSurface(sh,visualOffset,normalOffset);
           visual.scale.set(w,itemH,itemD);
           visual.position.set(visualPosition.x,itemYForSurface(sh,itemH)+itemLift,visualPosition.z);
-          visual.rotation.y=surfaceRotationY(sh);
+          visual.rotation.y=surfaceRotationY(sh)+(wobble?wobble.yaw*WOBBLE_YAW:0);
+          visual.userData.depthRank=back?1:0;
         });
         m.userData.visualUnitCount=unitCount;
         if(organizer){

@@ -4,8 +4,8 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-20. Everything through PR #111 is merged (`main` at
-`68d6d35`); `main` is the single source of truth.
+**Last refreshed:** 2026-08-20. Everything through PR #112 is merged (`main` at
+`969e521`); `main` is the single source of truth.
 
 **Correcting the previous refresh, because it was load-bearing and wrong.** The
 2026-08-05 entry said to read the open items knowing that *"all four are waiting
@@ -617,15 +617,76 @@ on the list where the `scene.js`-only scope is not a limitation.
    PMREM port actually took" below. `RoomEnvironment.js` (r166, MIT) is
    vendored, and metal went from 0.15 to 0.66 median luminance while the
    diffuse scene moved 0.1%.
-2. **`LatheGeometry` profiles for the `bottle` and `can` kinds** in
-   `createSemanticItem`. Both are boxes today.
-3. **Two-deep shelf packing with depth and yaw jitter**, so a full shelf stops
-   reading as a single row of identical fronts.
-4. **Generated 64×96 canvas packaging labels** for the `food` and `container`
-   kinds.
+2. ~~**`LatheGeometry` profiles for the `bottle` and `can` kinds.**~~ **Done.**
+3. ~~**Two-deep shelf packing with depth and yaw jitter.**~~ **Done.**
+4. ~~**Generated 64×96 canvas packaging labels** for `food` and `container`.~~
+   **Done.**
 
-None of these touches plan data, drag, zones, or persistence, which is why
-they are ports rather than a rewrite.
+The list is finished. None of the four touched plan data, drag, zones, or
+persistence, which is why they were ports rather than a rewrite.
+
+### What ports 2–4 took, and one more thing the evaluation got wrong
+
+**`bottle` and `can` were never boxes.** The evaluation's reason for item 2 —
+"both are boxes today" — was wrong. They were a `CylinderGeometry` cone frustum
+with a cap child, and a straight `CylinderGeometry` with a `TorusGeometry` stuck
+on the rim. That is the third claim from that note to miss (after the geometry
+vocabulary and the hazard-warning location), and it is the last of them, since
+the list is now closed.
+
+The complaint underneath it was still right: both read as tubes, with no
+shoulder, no neck and no seam. A lathe is the correct primitive for a
+surface of revolution, and here it *removes* a mesh rather than adding one,
+because the taper and the rim stop being separate children. Profiles are
+authored in the same unit box as every other item — y from -0.5 to 0.5, radius
+at most 0.5 — so `reflow`'s `scale(w, itemH, itemD)` lands them exactly where
+the cylinders were.
+
+**A full shelf is rarer than the note implied, and worth measuring before
+building.** Two-deep packing only does anything where an item has more than one
+representative copy, and `visualUnitCount` caps that at three. Swept across all
+33 demo setups: **75 of 353 items are multi-unit, on 14 of the 33 setups.** The
+pantry the sample plan opens on has none at all — every item there is a single
+unit — so the layout most people see is untouched, and screenshotting the port
+there proves nothing. Workbench, garage, walk-in closet and bathroom are where
+it shows; workbench is 9 of 9.
+
+Copies now sit in two ranks with a small deterministic wobble. Three rules
+matter:
+
+- **Copy 0 is the draggable item and never moves.** Only display copies rank or
+  wobble, so dragging and every spec that reads an item's position see exactly
+  what they saw before.
+- **The wobble is a hash, not `Math.random`.** `displayJitter` in
+  `surfaceMath.js` is seeded from the item's name and copy index. Randomness
+  here would make two renders of one plan differ, which costs the only thing
+  this repo checks appearance with — a screenshot — and turns any pixel
+  assertion into a coin flip.
+- **A back rank is refused where it would be wrong rather than merely tight**:
+  inside an organizer the bin decides the arrangement, a rod hangs its contents
+  in one plane, and a pegboard has no depth to use.
+
+The failure mode worth knowing is that the second rank is measured from the
+first, so an arithmetic slip pushes copies *through* the back of the carcass —
+where, at the angle the viewer opens at, they are simply not visible and
+nothing looks wrong. `depthRankStep` is swept over every shelf-and-item depth
+pair in `tests/three-surface.test.mjs`, and
+`tests/e2e/viewer3d-item-detail.spec.mjs` re-checks containment from where the
+renderer actually put each copy rather than from the function that decided it.
+
+**The labels had to be paper-dominant, and the first attempt was not.** Bands
+derived from the item's own colour is the obvious reading of "generated colour
+bands", and on screen it disappears: a blue band on a blue bin is a blue bin.
+Real packaging is paper with a coloured header, and that is what reads against
+a box of any colour. No lettering and no brand art — type at this scale is a
+few pixels of grey mush, and invented packaging is a claim about a product the
+user never named.
+
+Four frames in `docs/screenshots/`, each pair captured from the two git states:
+`viewer3d-items-*` is the cabinet, where the lathed bottles and the labelled
+boxes show, and `viewer3d-packing-*` is the workbench, where the second rank
+does. The workbench pair is the one to look at for ranking — the cabinet holds
+no multi-unit item at all, which is the measurement above made visible.
 
 ### What the PMREM port actually took, and the trap in it
 
@@ -1061,16 +1122,12 @@ Ordered by whether anyone can act on them today.
    on the 08-19 run; if it stops, the cap needs to move into `checkInvariants`,
    where a violation costs a retry instead of shipping.
 
-5. **Port the remaining three 3D viewer upgrades.** PMREM is done and
-   `RoomEnvironment.js` is now vendored, so the addon question that blocked it
-   is closed. Left: Lathe profiles for `bottle`/`can`, two-deep shelf packing
-   with jitter, and generated canvas packaging labels. All three are scoped to
-   `scene.js`, which is a little over half the drawn geometry — the thirteen
-   builders under `js/three/layouts/` hold the rest. Screenshot before and
-   after; these are appearance changes and nothing else will prove them. Read
-   "What the PMREM port actually took" above first: it records which
-   three.js knob is inert on which path, which is the kind of thing that eats
-   an hour if you rediscover it.
+5. ~~**Port the four 3D viewer upgrades.**~~ **All four are done.** See "The
+   3D viewer: keep it, port four things" above for what each took and for the
+   two traps recorded there — the three.js knob that is inert on the
+   `scene.environment` path, and the fact that a hash rather than
+   `Math.random` is what keeps a screenshot usable as evidence. Nothing from
+   that evaluation is left open.
 
 ### Waiting on traffic
 
