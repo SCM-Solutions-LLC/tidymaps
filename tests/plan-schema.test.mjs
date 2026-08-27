@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validatePlan, EFFORT_STEP_RANGES, ARCHETYPES, SURFACES, PLACES, usableShelfDepth } from '../supabase/functions/_shared/planSchema.js';
+import { validatePlan, EFFORT_STEP_RANGES, ARCHETYPES, SURFACES, PLACES, usableShelfDepth,
+         STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS } from '../supabase/functions/_shared/planSchema.js';
 import {
   ARCHETYPES as CLIENT_ARCHETYPES,
   SURFACES as CLIENT_SURFACES,
@@ -116,6 +117,74 @@ test('step count outside the effort-scaled range is rejected, not silently trunc
   assert.equal(result.ok, false);
   const [min, max] = EFFORT_STEP_RANGES['Quick 30-minute reset'];
   assert.match(result.errors.join('\n'), new RegExp(`expected ${min}-${max} steps`));
+});
+
+/* Step COUNT was validated and step LENGTH was not, so a plan whose model
+   ignored the 8-word ask validated cleanly and then rendered three lines deep
+   beside its animation. */
+test('a step whose task runs past the cap is rejected, and the error names which step', () => {
+  const long = Array.from({ length: 7 }, () => (
+    { task: 'Empty the shelves', time: '10 min', why: 'Start from a clean slate.' }
+  ));
+  long[3] = {
+    task: 'Take all of the canned goods and group them together by what kind they are',
+    time: '15 min',
+    why: 'Grouping helps.',
+  };
+  const result = validatePlan(basePlan({ steps: long }), noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /steps\[3\]\.task is 15 words/,
+    'the retry has to be told which step to shorten, not that "the steps" are long');
+  assert.match(result.errors.join('\n'), new RegExp(`limit is ${STEP_TASK_MAX_WORDS}`));
+});
+
+test('a step whose why runs past the cap is rejected', () => {
+  const steps = Array.from({ length: 7 }, () => (
+    { task: 'Empty the shelves', time: '10 min', why: 'Start from a clean slate.' }
+  ));
+  steps[0] = {
+    task: 'Empty the shelves',
+    time: '10 min',
+    why: 'Starting from a clean slate is the only way to see what you actually own and what can go, so do it first.',
+  };
+  const result = validatePlan(basePlan({ steps }), noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /steps\[0\]\.why is \d+ words/);
+});
+
+/* The cap exists to catch a runaway line, not to enforce the prompt's style
+   target. A validator stricter than its own prompt spends the user's 80 seconds
+   and returns a demo plan, which is how three earlier invariant bugs here were
+   made — so a step one word over the ask must still pass. */
+test('a step at the prompt ask plus one word still passes', () => {
+  const steps = Array.from({ length: 7 }, () => (
+    { task: 'Group all the cans by type and size today', time: '10 min', why: 'Keeps like with like.' }
+  ));
+  assert.equal(steps[0].task.trim().split(/\s+/).length, 9, 'fixture must be one past the prompt ask of 8');
+  assert.equal(validatePlan(basePlan({ steps }), noKidsContext).ok, true);
+});
+
+/* The fallback a rejected plan lands on is this app's own reference prose. If
+   the cap rejects that, it is set below what the product itself considers a
+   good step, and every model plan is being held to a standard the deterministic
+   engine does not meet. */
+test('the caps clear the deterministic scenarios the fallback ships', () => {
+  const src = readFileSync(new URL('../js/demo-scenarios.js', import.meta.url), 'utf8');
+  const words = (t) => t.trim().split(/\s+/).filter(Boolean).length;
+  let seen = 0;
+  for (const m of src.matchAll(/\{task: '((?:[^'\\]|\\.)*)', time: '[^']*', why: '((?:[^'\\]|\\.)*)'\}/g)) {
+    seen += 1;
+    assert.ok(words(m[1]) <= STEP_TASK_MAX_WORDS, `scenario task over cap: "${m[1]}"`);
+    assert.ok(words(m[2]) <= STEP_WHY_MAX_WORDS, `scenario why over cap: "${m[2]}"`);
+  }
+  assert.ok(seen > 20, `expected to have read the scenario steps, matched ${seen}`);
+});
+
+test('the enforced-limits block states the step-length caps the validator applies', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /\$\{STEP_TASK_MAX_WORDS\} words or fewer/,
+    'the prompt must interpolate the constant, not retype the number');
+  assert.match(fn, /\$\{STEP_WHY_MAX_WORDS\} or fewer/);
 });
 
 test('two map rows claiming the same shelfIndex are rejected instead of double-counted', () => {
@@ -744,7 +813,11 @@ test('the preselected "Use what I have" is not an answer, so it constrains nothi
 test('the enforced-limits block states the safety rules the validator applies', () => {
   const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
   // Derived from the validator's own constants, never retyped.
-  assert.match(fn, /KID_REACH_IN, YOUNG_KID_MAX_AGE \} from '\.\.\/_shared\/planSchema\.js'/);
+  const planSchemaImport = fn.match(/import \{([^}]*)\} from '\.\.\/_shared\/planSchema\.js'/);
+  assert.ok(planSchemaImport, 'the function must import its constants from planSchema');
+  for (const name of ['KID_REACH_IN', 'YOUNG_KID_MAX_AGE']) {
+    assert.ok(planSchemaImport[1].includes(name), `${name} must come from planSchema, not be retyped`);
+  }
   assert.match(fn, /\$\{KID_REACH_IN\}in of the floor/);
   assert.match(fn, /aged \$\{YOUNG_KID_MAX_AGE\} or under/);
   // Every flagged row needs a reason, and kid-frequent items are not locked away.
