@@ -966,14 +966,24 @@ and the list is finished.
     enough to alert on, the canary needs a heartbeat — something that notices
     the absence of a run, not just a failing one.
 
-11. **The Supabase advisor list had never been read.** Checked 2026-08-27; one
-    real item, three that are working as designed, and one false positive worth
-    recording so nobody re-opens it.
+11. **The Supabase advisor list had never been read.** Checked 2026-08-27. One
+    real item, since fixed; the rest are working as designed, plus one false
+    positive worth recording so nobody re-opens it. Re-read the list before
+    trusting this entry: it is a snapshot like everything else here.
     - `function_search_path_mutable` on `public.touch_updated_at` — real but
-      minor, and fixed in migration `0009`. It is SECURITY INVOKER, so the
-      search_path buys an attacker nothing; the reason to fix it is that an
+      minor. Migration `0009` fixes it and **has been applied** (2026-08-27), so
+      the notice is gone from the live list. It is SECURITY INVOKER, so the
+      search_path bought an attacker nothing; the reason to fix it is that an
       advisor list which is always slightly red stops being read, which is the
       same failure mode as the expired key.
+
+      **Pinning `search_path` was verified to still work, not assumed to.**
+      `set search_path = ''` is exactly the change that silently breaks a
+      function body which resolves any unqualified name. This one resolves
+      none — `now()` is in `pg_catalog`, always searched — and that was proved
+      by attaching the function to a throwaway temp table and confirming an
+      update moved `updated_at` off its default. `spaces_touch` on
+      `public.spaces` is still present, still enabled, still bound to it.
     - `rls_enabled_no_policy` on `feedback`, `invite_requests`,
       `telemetry_events`, `usage_events` — **intended.** RLS on with no policies
       is how the anon key is denied everything; PR #45 and migration `0008`
@@ -984,9 +994,20 @@ and the list is finished.
       `search_path = ''`, its return type is `trigger`, and calling it directly
       on this database returns `sqlstate=0A000 :: trigger functions can only be
       called as triggers` with `public.profiles` unchanged.
+    - `extension_in_public` — `pg_net` is installed in the `public` schema.
+      Left alone: it is a Supabase default rather than something this project
+      chose, and relocating an installed extension is invasive for no gain
+      here. Named explicitly because the first pass through this list missed it,
+      and an advisor entry nobody has accounted for is how the whole list starts
+      getting skimmed.
     - Auth's leaked-password protection is off. Left off: sign-in is magic-code
       only, so there is no password for HaveIBeenPwned to check. Revisit only if
       password auth is ever enabled.
+
+    So the live list is now four `rls_enabled_no_policy`, two on
+    `handle_new_user`, `pg_net`, and leaked-password protection: eight notices,
+    every one of them a decision. That is the state to compare against, and a
+    ninth appearing means something actually changed.
 
 ## Architecture crib sheet
 
