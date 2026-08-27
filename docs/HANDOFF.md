@@ -4,10 +4,25 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-21. Everything through PR #113 is merged (`main` at
-`c224470`) and **deployed** — Pages run 118 went green at 01:28:35Z, so the four
+**Last refreshed:** 2026-08-27. Everything through PR #115 is merged (`main` at
+`0bec7a0`) and **deployed** — Pages run 120 went green on 08-21, so the four
 viewer ports below are live on the site, not merely landed. `main` is the single
 source of truth.
+
+**Nothing shipped between 08-21 and 08-27.** That week was a memory-and-health
+review, not a build: the repo was already green, and what it turned up was two
+signals nobody was watching. Both are in "Production health" below, and both
+sharpen open items rather than adding new ones. The one code change from it is
+the step-length cap (open item 4), plus this repo's first `CLAUDE.md`.
+
+**The other memory stores about this project are all stale.** An Obsidian vault
+(mirrored to Dropbox, and one-way into a Notion "Vault Mirror" database) and
+several standalone Notion pages describe TidyMap. As of 2026-08-27 every one of
+them predated this architecture — the vault's own venture page still called the
+product a BYOK single-file prototype on `scmsolutions.org/tidymap.html`, six
+weeks and a hundred PRs after that stopped being true. They were refreshed on
+08-27 to point here. Treat this file as the only current memory: the others are
+snapshots, and a snapshot of a fast-moving repo ages into a lie.
 
 **Correcting the previous refresh, because it was load-bearing and wrong.** The
 2026-08-05 entry said to read the open items knowing that *"all four are waiting
@@ -51,7 +66,7 @@ shared-plan view.
 | 4 | Step-media pipeline | ✅ shipped; **134 clips rendered 08-10** | #21, #64–#79 |
 | 5 | Products | ⏸ code done; blocked on business inputs | — |
 | 6 | Persistence: share links + photo promise | ✅ shipped + deployed + **proven in production** | #23 |
-| 7 | Automated QA | ✅ shipped; now lint + types + 504 unit + 183 e2e, all gating | #22, #90 |
+| 7 | Automated QA | ✅ shipped; now lint + types + 528 unit + 199 e2e, all gating | #22, #90 |
 | 8 | Telemetry + feedback loop | ✅ shipped; **pipeline fixed 08-19**, funnel still silent | #24, #98 |
 
 ### #1 Plan engine (PR #19)
@@ -822,7 +837,7 @@ to one room, and has no plan data, drag, zones, or persistence. It is a
 rendering study to harvest technique from; items 1–4 above are that harvest,
 and the list is finished.
 
-## Production health as of 2026-08-19
+## Production health as of 2026-08-27
 
 1. ~~Zero saved spaces~~ — fixed 07-28.
 2. ~~`analyze-space` timing out~~ — fixed 07-30, and the timing has not
@@ -914,6 +929,64 @@ and the list is finished.
    send GPC by default), and `telemetryStatus()` on `window` says which in one
    line. Check `usage_events` before reading a quiet week as low usage — but
    read #3 above first, because "broken" and "unused" look the same from here.
+
+8. **The funnel is not quiet, it is switched off — and CORS is now ruled out.**
+   Measured 2026-08-27. `telemetry_events` has had **no row since 2026-08-04
+   16:16**, but real sessions ran well after that: five `analyze-space` calls on
+   08-18, two on 08-19, three on 08-20, plus three `render-after` and the
+   `spaces` row created 08-20 19:17 carrying `plan_meta.source = ai`. Across
+   those same days `usage_events` shows **zero `track-events` calls**.
+
+   That last number is the whole finding. `track-events` logs its usage row
+   before it can reject anything, and a CORS rejection is applied by the
+   *browser* to a response the function already produced — so a blocked-by-CORS
+   post would still leave a usage row. There are none. Nothing left the browser
+   at all, which is `optedOut()` returning true, not a wire problem. Open item 6
+   named DNT/GPC and the CORS origin list as co-equal candidates; the second is
+   now excluded. Check `telemetryStatus()` in that browser first.
+
+9. **Nobody has opened the app since 2026-08-21.** Every backend call in the six
+   days to 08-27 is the daily canary — one `analyze-space` per day, no
+   `render-after`, no `track-events`, no new `spaces` row. This is not a funnel
+   conversion problem and no amount of waiting fixes it. Open items 1 and 6 both
+   need a human to run the app once, and item 1 is about twenty minutes of that.
+
+10. **The canary missed 2026-08-27, and a miss is silent.** Runs 1-7 fired on
+    time (07:04-07:32 UTC against a 06:20 schedule) and all passed. As of
+    15:28 UTC on 08-27 there is no run and no `analyze-space` usage row for that
+    day, with the workflow still `state: active` — so this is GitHub dropping a
+    scheduled run, which it is documented to do on a best-effort basis.
+
+    The design in open item 2 is "the failing run IS the alert." That covers a
+    model outage and does not cover the alert not running: a `schedule` that
+    never fires sends no email, so the failure mode of the monitor is
+    indistinguishable from a healthy day. Two things follow. GitHub also
+    disables scheduled workflows after 60 days without repo activity, which at
+    the current commit rate is a live risk, not a footnote. And if this matters
+    enough to alert on, the canary needs a heartbeat — something that notices
+    the absence of a run, not just a failing one.
+
+11. **The Supabase advisor list had never been read.** Checked 2026-08-27; one
+    real item, three that are working as designed, and one false positive worth
+    recording so nobody re-opens it.
+    - `function_search_path_mutable` on `public.touch_updated_at` — real but
+      minor, and fixed in migration `0009`. It is SECURITY INVOKER, so the
+      search_path buys an attacker nothing; the reason to fix it is that an
+      advisor list which is always slightly red stops being read, which is the
+      same failure mode as the expired key.
+    - `rls_enabled_no_policy` on `feedback`, `invite_requests`,
+      `telemetry_events`, `usage_events` — **intended.** RLS on with no policies
+      is how the anon key is denied everything; PR #45 and migration `0008`
+      closed those direct paths deliberately. Adding a policy to silence the
+      linter would reopen them.
+    - `anon_security_definer_function_executable` on `handle_new_user` — a
+      **false positive**, measured not assumed: it already pins
+      `search_path = ''`, its return type is `trigger`, and calling it directly
+      on this database returns `sqlstate=0A000 :: trigger functions can only be
+      called as triggers` with `public.profiles` unchanged.
+    - Auth's leaked-password protection is off. Left off: sign-in is magic-code
+      only, so there is no password for HaveIBeenPwned to check. Revisit only if
+      password auth is ever enabled.
 
 ## Architecture crib sheet
 
@@ -1018,8 +1091,8 @@ and the list is finished.
   schema, and two unit files fail with `ERR_MODULE_NOT_FOUND` without it.
 - **Four gates, all of them in CI on every PR** (`.github/workflows/test.yml`):
   `npm run lint` (ESLint 9 flat config), `npm run check:types`
-  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**504 tests**
-  across 41 files), and `npx playwright test` (**183 tests** across 38 files).
+  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**528 tests**
+  across 42 files), and `npx playwright test` (**199 tests** across 42 files).
   Pages deploy and the edge-function deploy both run on push to `main`.
 - In this sandbox the Playwright-managed browser isn't installed; run with
   `CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
@@ -1135,6 +1208,14 @@ Ordered by whether anyone can act on them today.
    Check object count against the input on each one. Since #109 refunds a
    failed render's allowance, this no longer costs a day's quota per failure.
    See "The photo preview render thread" above.
+
+   **This is the top of the list as of 08-27, because it is the only open item
+   that does not depend on anyone else.** Nobody has opened the app since
+   08-21 (Production health #9), so nothing on the "waiting on traffic" list can
+   move until somebody runs it — and running it once is exactly what this item
+   asks for. Twenty minutes of one person's browser closes item 1, produces the
+   `telemetryStatus()` reading item 6 needs, and generates the first funnel rows
+   in three weeks.
 2. ~~**Nothing alerts on a broken model path.**~~ **Built.**
    `.github/workflows/model-path-canary.yml` calls `analyze-space` for real
    every day at 06:20 UTC and fails the workflow if it does not get a plan
@@ -1172,11 +1253,25 @@ Ordered by whether anyone can act on them today.
    and `.chapter.collapsed .ch-sub` is `display:none`, so nothing inside the
    chapter could advertise itself. A flag in the chapter head now survives the
    fold.
-4. **Step-length caps are unvalidated server-side.** `planSchema.js` checks step
-   *count* (line ~272) and nothing about length, so a model that ignores the
-   8-word cap ships a plan that passes validation and renders long. It behaved
-   on the 08-19 run; if it stops, the cap needs to move into `checkInvariants`,
-   where a violation costs a retry instead of shipping.
+4. ~~**Step-length caps are unvalidated server-side.**~~ **Built.**
+   `checkInvariants` now checks every step's `task` and `why`, reporting per
+   step so a retry is told which one to shorten. The prompt's enforced-limits
+   block interpolates the same two constants, so the pair cannot drift.
+
+   **The limits are 12 and 18, not the prompt's 8 and 12, and that gap is the
+   whole design.** Validating at the number the prompt asks for would throw away
+   an 80-second analysis over a ninth word — the same mistake as the three
+   earlier invariant bugs, and the same shape as the safety rule that would have
+   put heavy bins overhead. The numbers were measured against this app's own
+   deterministic scenarios, which are the closest thing here to house-authored
+   reference prose and the answer a rejected plan lands on: `js/demo-scenarios.js`
+   runs up to **11** words of task ("Group mugs on the lower shelf with a riser
+   if available") and **16** of why. A cap at 8 would have rejected the fallback.
+   Re-measure before lowering either number.
+
+   The two behavioural tests were checked by neutering the loop with the
+   constants and the prompt line left in place, so they discriminate the check
+   rather than the file.
 
 5. ~~**Port the four 3D viewer upgrades.**~~ **All four are done and live**
    (#112, #113; Pages run 118). See "The 3D viewer: keep it — all four ports
@@ -1189,17 +1284,31 @@ Ordered by whether anyone can act on them today.
    pantry most users see, and it comes out by deleting the `depthRankStep` call
    in `reflow`, which takes its containment test with it.
 
+9. **The canary has no heartbeat, and it already missed a day.** It dropped the
+   2026-08-27 run (Production health #10). A failing run emails; a run that
+   never happens is silent, so the monitor's own failure mode looks exactly like
+   a healthy day. Two smallest-thing-that-works options, neither of them a new
+   service: have the workflow write a timestamp somewhere the next run reads and
+   fails on if it is more than ~30 hours old, or check `usage_events` for an
+   `analyze-space` row per day, which is free and already recorded. Also worth
+   knowing: GitHub disables `schedule` workflows after 60 days with no repo
+   activity, so a quiet period silently ends the alert. Whatever is built, the
+   thing to keep true is that a check which could not run must never read as
+   success — the same rule the canary already applies to itself.
+
 ### Waiting on traffic
 
-6. **The funnel still has nothing to say.** `plan_rated` and
-   `feedback_submitted` have never had a row. `plan_created` last fired
-   2026-07-30 — and note the 2026-08-19 session produced a plan and *still* no
-   `plan_created`, which is not yet explained. Do Not Track / GPC is the
-   leading candidate (`telemetryStatus()` on `window` reports it in one line),
-   but rule out the CORS origin too: only the hosts in `_shared/cors.ts` can
-   post, and `localhost:3000` is not among them. Read `plan_rated` before
-   `feedback_submitted` — the first is one tap on the report, the second needs
-   three more screens.
+6. **The funnel is switched off, not quiet — and this is now actionable, not a
+   waiting item.** `plan_rated` and `feedback_submitted` have never had a row,
+   `plan_created` last fired 2026-07-30, and `telemetry_events` has had nothing
+   at all since 2026-08-04 despite real sessions on 08-18, 08-19 and 08-20.
+   Production health #8 rules out the CORS origin by measurement — no
+   `track-events` usage rows on those days means no request left the browser —
+   so `optedOut()` is the remaining candidate. **Do this first:** open the site
+   in the browser those sessions used and read `telemetryStatus()` on `window`;
+   it names DNT or GPC in one line. Brave, DuckDuckGo and Firefox send GPC by
+   default. Then read `plan_rated` before `feedback_submitted`: the first is one
+   tap on the report, the second needs three more screens.
 
 ### Waiting on business input
 
@@ -1209,10 +1318,18 @@ Ordered by whether anyone can act on them today.
 
 ### Known gap, no owner
 
-8. **`docs/HANDOFF.md` went 14 days and 45 PRs stale**, and its headline
-   framing actively misled (see the correction at the top). If you are reading
-   this more than a few merges after the refresh date, distrust the specifics
-   and re-derive from `git log` and the tables before acting on them.
+8. **Every memory store about this project drifts, this one included.** This
+   file went 14 days and 45 PRs stale once, and its headline framing actively
+   misled (see the correction at the top). If you are reading this more than a
+   few merges after the refresh date, distrust the specifics and re-derive from
+   `git log` and the tables before acting on them.
+
+   The vault and Notion copies drift *worse*, because nothing merges into them:
+   on 08-27 the venture page was six weeks and a hundred PRs behind, and the
+   3D-viewer handoff still listed four shipped ports as next actions. They were
+   corrected that day and each now points here rather than restating state, so
+   there is one place to update instead of five. Keep it that way — a second
+   copy of the status is a second thing to be wrong.
 
 ## Session conventions
 

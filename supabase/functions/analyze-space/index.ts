@@ -3,7 +3,7 @@ import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth, ARCHETYPES,
-         KID_REACH_IN, YOUNG_KID_MAX_AGE } from '../_shared/planSchema.js';
+         KID_REACH_IN, YOUNG_KID_MAX_AGE, STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -265,6 +265,7 @@ Deno.serve(async (req) => {
       '- productNeeds vs steps: if any step tells the user to use a turntable, riser, airtight container, door rack, hook rack or drawer organizer, that item MUST also appear in productNeeds — checked per item, so listing one product does not cover the others. A plan that instructs a purchase it does not list gives the user a shopping list missing the thing the step needs, and a cost that does not add up. Either list what they need to buy, or write the step to work with what is already in the space.',
     ] : []),
     `- steps: return between ${minSteps} and ${maxSteps} steps, matching the effort level this user chose.`,
+    `- step length: every steps[].task must be ${STEP_TASK_MAX_WORDS} words or fewer and every steps[].why ${STEP_WHY_MAX_WORDS} or fewer. Aim well under both, at 8 and 12, because each step renders as one line beside a picture. Checked per step, so one long task rejects the whole plan.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
     /* Every clause below is a rule checkInvariants applies to the answer. The
        numbers come from planSchema so the two cannot drift: a validator that

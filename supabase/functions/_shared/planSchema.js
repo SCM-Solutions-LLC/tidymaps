@@ -26,6 +26,36 @@ export const EFFORT_STEP_RANGES = {
 };
 export const DEFAULT_STEP_RANGE = [4, 10];
 
+/* The prompt asks for a task of at most 8 words and a why of at most 12; these
+   are the lengths at which the answer is REJECTED, and they sit deliberately
+   above the ask.
+
+   The report renders each step as one line beside its animation, so a runaway
+   task is a real defect — "Take all of the canned goods and group them together
+   by what kind they are" is seventeen words and wraps to three lines. But
+   validating at the number the prompt requests would throw away an 80-second
+   analysis over a ninth word, and a validator stricter than its own prompt is
+   how the last three invariant bugs here were made. So the style target stays
+   in the prompt and the hard limit is the point where the line stops fitting.
+
+   The numbers are measured, not guessed. This app's own deterministic
+   scenarios in js/demo-scenarios.js — the fallback a rejected plan lands on,
+   and the closest thing here to house-authored reference prose — run up to 11
+   words of task ("Group mugs on the lower shelf with a riser if available") and
+   16 of why. A cap at the prompt's 8 would reject the answer this app ships
+   when the model fails, which is the same trap that nearly put heavy bins
+   overhead: enforcing the prompt as written against work that was already
+   right. Re-measure before lowering either number.
+
+   A word is a run of non-space characters, which counts "10-15 minutes" as one
+   the way a reader does. */
+export const STEP_TASK_MAX_WORDS = 12;
+export const STEP_WHY_MAX_WORDS = 18;
+
+export function wordCount(s) {
+  return String(s == null ? '' : s).trim().split(/\s+/).filter(Boolean).length;
+}
+
 const safetySchema = z.object({
   flag: z.enum(SAFETY_FLAGS).nullable(),
   why: z.string().nullable(),
@@ -272,6 +302,22 @@ function checkInvariants(plan, context) {
   if (plan.steps.length < minSteps || plan.steps.length > maxSteps) {
     errors.push(`steps: expected ${minSteps}-${maxSteps} steps for effort "${(context && context.effort) || 'unspecified'}", got ${plan.steps.length}`);
   }
+
+  /* Step COUNT was checked above and step LENGTH was not, so a model that
+     ignored the 8-word ask shipped a plan that validated and then rendered
+     three lines deep next to its animation. Checked per step and reported per
+     step, so the retry is told which one to shorten rather than being handed
+     "the steps are too long" for a list of nine. */
+  plan.steps.forEach((step, i) => {
+    const task = wordCount(step.task);
+    if (task > STEP_TASK_MAX_WORDS) {
+      errors.push(`steps[${i}].task is ${task} words ("${step.task}"); the limit is ${STEP_TASK_MAX_WORDS}. Rewrite it as an instruction that starts with a verb and stops.`);
+    }
+    const why = wordCount(step.why);
+    if (why > STEP_WHY_MAX_WORDS) {
+      errors.push(`steps[${i}].why is ${why} words ("${step.why}"); the limit is ${STEP_WHY_MAX_WORDS}. One short sentence.`);
+    }
+  });
 
   /* A plan that tells you to buy something must say WHAT to buy.
 
