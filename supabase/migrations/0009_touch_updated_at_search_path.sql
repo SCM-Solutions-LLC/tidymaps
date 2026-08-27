@@ -14,7 +14,7 @@
 -- assigns to a column of the row already handed to it, and now() is in
 -- pg_catalog, which is always searched regardless.
 --
--- The other four advisor notices on this project are NOT bugs and are
+-- Every other advisor notice on this project is a decision, not a bug, and is
 -- deliberately left alone:
 --   * `rls_enabled_no_policy` on feedback, invite_requests, telemetry_events
 --     and usage_events is the intended design. RLS on with zero policies means
@@ -28,6 +28,10 @@
 --     `trigger`, so a direct call fails closed. Calling it on this database
 --     returns `sqlstate=0A000 :: trigger functions can only be called as
 --     triggers`, and public.profiles was unchanged afterwards.
+--   * `extension_in_public` for pg_net: a Supabase default rather than a choice
+--     made here, and relocating an installed extension is invasive for no gain.
+--   * Auth leaked-password protection off: sign-in is magic-code only, so there
+--     is no password to check against HaveIBeenPwned.
 create or replace function public.touch_updated_at() returns trigger
 language plpgsql
 set search_path = ''
