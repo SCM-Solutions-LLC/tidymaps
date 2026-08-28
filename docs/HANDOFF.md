@@ -951,20 +951,39 @@ and the list is finished.
    conversion problem and no amount of waiting fixes it. Open items 1 and 6 both
    need a human to run the app once, and item 1 is about twenty minutes of that.
 
-10. **The canary missed 2026-08-27, and a miss is silent.** Runs 1-7 fired on
-    time (07:04-07:32 UTC against a 06:20 schedule) and all passed. As of
-    15:28 UTC on 08-27 there is no run and no `analyze-space` usage row for that
-    day, with the workflow still `state: active` — so this is GitHub dropping a
-    scheduled run, which it is documented to do on a best-effort basis.
+10. **The canary's firing time swings by up to eleven hours, and that is the
+    real finding.** An earlier version of this entry said the canary *missed*
+    2026-08-27. **It did not.** It fired at **17:41:42Z** that day, succeeded,
+    and left its `analyze-space` row in `usage_events` at 17:41:50. The entry
+    was written from a check at 15:28Z and called a run that had not happened
+    *yet* a run that never happened. Corrected 2026-08-28.
 
-    The design in open item 2 is "the failing run IS the alert." That covers a
-    model outage and does not cover the alert not running: a `schedule` that
-    never fires sends no email, so the failure mode of the monitor is
-    indistinguishable from a healthy day. Two things follow. GitHub also
-    disables scheduled workflows after 60 days without repo activity, which at
-    the current commit rate is a live risk, not a footnote. And if this matters
-    enough to alert on, the canary needs a heartbeat — something that notices
-    the absence of a run, not just a failing one.
+    Every observed firing against a 06:20 UTC schedule:
+
+    | Date | Fired | Late by |
+    |---|---|---|
+    | 08-21 | 07:12 | 52m |
+    | 08-22 | 07:04 | 44m |
+    | 08-23 | 07:07 | 47m |
+    | 08-24 | 07:32 | 1h 12m |
+    | 08-25 | 07:13 | 53m |
+    | 08-26 | 07:13 | 53m |
+    | 08-27 | 17:41 | **11h 21m** |
+
+    So the alert works and has never failed. What it does not do is run at a
+    predictable hour: GitHub schedules `cron` on a best-effort queue, and this
+    workflow has now been seen anywhere from 44 minutes to 11 hours late. **A
+    same-day absence is therefore not evidence of anything** until roughly a
+    full day has passed. Do not conclude "missed" from a morning check, which is
+    exactly the mistake this entry used to record.
+
+    The gap in the design is still real, just smaller than it was written up as.
+    Open item 2's principle is "the failing run IS the alert", which covers a
+    model outage and not the alert failing to run at all: a `schedule` that
+    never fires sends no email. GitHub also disables `schedule` workflows after
+    60 days with no repo activity, which at this repo's rate is a live risk. But
+    no dropped run has actually been observed, so a heartbeat is a precaution,
+    not a repair.
 
 11. **The Supabase advisor list had never been read.** Checked 2026-08-27. One
     real item, since fixed; the rest are working as designed, plus one false
@@ -1305,17 +1324,27 @@ Ordered by whether anyone can act on them today.
    pantry most users see, and it comes out by deleting the `depthRankStep` call
    in `reflow`, which takes its containment test with it.
 
-9. **The canary has no heartbeat, and it already missed a day.** It dropped the
-   2026-08-27 run (Production health #10). A failing run emails; a run that
-   never happens is silent, so the monitor's own failure mode looks exactly like
-   a healthy day. Two smallest-thing-that-works options, neither of them a new
-   service: have the workflow write a timestamp somewhere the next run reads and
-   fails on if it is more than ~30 hours old, or check `usage_events` for an
-   `analyze-space` row per day, which is free and already recorded. Also worth
-   knowing: GitHub disables `schedule` workflows after 60 days with no repo
-   activity, so a quiet period silently ends the alert. Whatever is built, the
-   thing to keep true is that a check which could not run must never read as
-   success — the same rule the canary already applies to itself.
+9. **The canary has no heartbeat. It has not missed a day — correct the earlier
+   claim that it had.** This item first said the 08-27 run was dropped; it was
+   not, it ran 11 hours late (Production health #10). Every run so far has
+   fired and passed, so this is a precaution rather than a repair, and it drops
+   below open item 1 accordingly.
+
+   The gap is real anyway: a failing run emails, a run that never happens is
+   silent, so the monitor's own failure mode looks exactly like a healthy day.
+   Two smallest-thing-that-works options, neither a new service: have the
+   workflow write a timestamp the next run reads and fails on if it is stale, or
+   check `usage_events` for an `analyze-space` row per day, which is free and
+   already recorded. GitHub also disables `schedule` workflows after 60 days
+   with no repo activity, so a quiet period silently ends the alert.
+
+   **Whatever is built must tolerate the observed jitter.** Firings have landed
+   between 44 minutes and 11 hours 21 minutes after the scheduled 06:20, so any
+   staleness threshold has to sit well past a day. A 30-hour window is the
+   smallest that would not have false-alarmed on 08-27; anything tighter
+   re-creates the same wrong conclusion in code that a human already reached by
+   hand. And a check which could not run must never read as success, the same
+   rule the canary applies to itself.
 
 ### Waiting on traffic
 
