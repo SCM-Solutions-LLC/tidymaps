@@ -1241,11 +1241,11 @@ function dresserScenario() {
       {type: 'clear-bin', qty: 2, purpose: 'Box off-season overflow so it stops crowding daily drawers', targetZone: 'Bottom drawer', maxDims: {w_in: 16, h_in: 8, d_in: 16}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label each drawer so clothes go back to the right one', targetZone: 'Every drawer', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'The dresser already has the right drawer sizes for this system — the change is how clothes stand inside them.',
+    existingLede: 'The dresser already has the right drawer sizes for this system. The change is how clothes stand inside them.',
     existing: [
       {icon: 'drawer', title: 'Deep lower drawers', detail: 'Perfect height for file-folded jeans and sweaters.'},
       {icon: 'horizontal', title: 'Top surface', detail: 'Becomes a single-tray landing zone.'},
-      {icon: 'vertical', title: 'Drawer depth', detail: 'Enough for upright folding — no product required.'}
+      {icon: 'vertical', title: 'Drawer depth', detail: 'Enough for upright folding, no product required.'}
     ],
     dontBuy: 'Skip drawer perfume sachets and specialty folding boards. A basic fold and a divider do the work.',
     steps: [
@@ -1301,7 +1301,7 @@ function workbenchScenario() {
         safety: {flag: 'keep-high', why: 'Paint and chemicals stay up and contained, away from the work zone.'},
         items: [{name: 'Paint & supplies', size: 'm', flags: ['chemical']}, {name: 'Tape & adhesives', size: 's', flags: []}], surface: 'shelf'},
       {level: 'Bench surface', icon: 'horizontal', zone: 'Active project only',
-        why: 'The bench is a work area, not storage — only the current project lives here.',
+        why: 'The bench is a work area, not storage. Only the current project lives here.',
         eye: false, shelfIndex: 2,
         safety: {flag: null, why: null},
         items: [{name: 'Active project', size: 'l', flags: []}], surface: 'worktop'},
@@ -1320,7 +1320,7 @@ function workbenchScenario() {
     layout: {type: 'workbench', sections: [{id: 'wall', label: 'Wall', place: 'wall', rows: [0, 1]}, {id: 'bench', label: 'Bench', place: 'bench', rows: [2, 3, 4]}]},
     safetyNotes: [
       'Paint, solvents, and adhesives live on the upper shelf, above kid reach.',
-      'Sharp tools hang on the pegboard or sit in drawers — never loose on the bench where small hands explore.'
+      'Sharp tools hang on the pegboard or sit in drawers, never loose on the bench where small hands explore.'
     ],
     productNeeds: [
       {type: 'hook-rack', qty: 1, purpose: 'Outline a visible pegboard home for every hand tool', targetZone: 'Pegboard wall', maxDims: null, priority: 'high'},
@@ -1328,14 +1328,14 @@ function workbenchScenario() {
       {type: 'clear-bin', qty: 2, purpose: 'Corral safety gear and cords below the bench', targetZone: 'Below the bench', maxDims: {w_in: 20, h_in: 12, d_in: 22}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label drawers, jars, and bins so parts return to the right spot', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
     ],
-    existingLede: 'The pegboard, shelf, and drawers already cover every zone this plan needs — they are just underused.',
+    existingLede: 'The pegboard, shelf, and drawers already cover every zone this plan needs. They are just underused.',
     existing: [
       {icon: 'hook', title: 'Empty pegboard', detail: 'Hang the tools you reach for weekly, one spot each.'},
       {icon: 'up', title: 'Upper shelf', detail: 'Becomes the single chemicals-and-adhesives zone.'},
       {icon: 'drawer', title: 'Bench drawers', detail: 'Take the small parts once they are compartmentalized.'},
       {icon: 'down', title: 'Space below the bench', detail: 'Stores the heavy tools at a safe lifting height.'}
     ],
-    dontBuy: 'Skip the rolling tool chest for now. Empty the bench and use the drawers you have first — buy storage only for what remains.',
+    dontBuy: 'Skip the rolling tool chest for now. Empty the bench and use the drawers you have first, and buy storage only for what remains.',
     steps: [
       {task: 'Clear the bench surface completely', time: '15 min', why: 'The bench must end the day as a work area, so it starts the plan empty.'},
       {task: 'Sort tools into keep, fix, and donate piles', time: '15 min', why: 'Duplicates and broken tools take space the working set needs.'},
@@ -1696,7 +1696,7 @@ function applyPets(plan, household) {
   plan.opportunities = (plan.opportunities || []).map(decat);
   plan.steps = (plan.steps || []).map(s => ({ ...s, task: decat(s.task), why: decat(s.why) }));
   (plan.productNeeds || []).forEach(p => { p.purpose = decat(p.purpose); });
-  const caveat = 'A cat can get to any shelf, so height is not what keeps this closed — a door or a latch is.';
+  const caveat = 'A cat can get to any shelf, so height is not what keeps this closed. A door or a latch is.';
   (plan.map || []).forEach(m => {
     m.why = decat(m.why);
     if (!m.safety || !m.safety.why) return;
@@ -1917,8 +1917,8 @@ function applyKidAges(plan, household) {
    placement is still right — low is where weight belongs — so only the claim
    about ease is rewritten, never the position. */
 const EASE_OF_ACCESS = [
-  [/ where it is easy to grab and return\b/gi, ', which is where its weight belongs — though it is not the easiest level for you to reach'],
-  [/ where they are easy to grab and return\b/gi, ', which is where their weight belongs — though it is not the easiest level for you to reach'],
+  [/ where it is easy to grab and return\b/gi, ', which is where its weight belongs, though it is not the easiest level for you to reach'],
+  [/ where they are easy to grab and return\b/gi, ', which is where their weight belongs, though it is not the easiest level for you to reach'],
 ];
 
 /** @type {{match: RegExp, task: string, why: string, cite: string, rewrite?: [RegExp, string][]}[]} */
@@ -1942,7 +1942,7 @@ const MOBILITY_RULES = [
   },
   {
     match: /wheelchair/i,
-    task: 'Keep everything you use weekly between 15 and 48 inches from the floor — the seated reach band',
+    task: 'Keep everything you use weekly between 15 and 48 inches from the floor, the seated reach band',
     why: 'Above and below that band needs a helper or a grabber, so keep those levels for things you need a few times a year.',
     cite: 'You told us this space is used from a wheelchair.',
     rewrite: /** @type {[RegExp, string][]} */ ([[/\b(?:on|to) the (?:lowest|bottom) shelf\b/gi, 'within seated reach'],

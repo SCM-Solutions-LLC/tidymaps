@@ -6,6 +6,15 @@ export function toast(msg){
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
 }
 
+/* The hamburger menu is an overlay on the site pages. Closing it has two
+   halves, the class on body and the toggle's aria-expanded, and the second was
+   forgotten by every caller that only knew about the first. */
+export function closeSiteNav(){
+  document.body.classList.remove('nav-open');
+  const toggle=document.getElementById('nav-toggle');
+  if(toggle) toggle.setAttribute('aria-expanded','false');
+}
+
 export function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* The CSS honours prefers-reduced-motion carefully, but scrolling is driven

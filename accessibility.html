@@ -39,12 +39,12 @@
   <p class="legal-lede">TidyMap aims to meet <strong>WCAG 2.1 Level AA</strong>. This page says how we hold ourselves to that, and names the places we currently fall short.</p>
 
   <h2>What we check on every change</h2>
-  <p>Accessibility here is a test that fails the build, not a promise in a document. Every change to TidyMap runs an automated WCAG 2.0 and 2.1 A/AA scan across the whole reachable surface — every step of the planner, the finished report, the screens past it, the sign-in dialog, and these legal pages. <strong>That scan currently reports zero violations, and a change that introduces one does not ship.</strong></p>
+  <p>Accessibility here is a test that fails the build, not a promise in a document. Every change to TidyMap runs an automated WCAG 2.0 and 2.1 A/AA scan across the whole reachable surface: every step of the planner, the finished report, the screens past it, the sign-in dialog, and these legal pages. <strong>That scan currently reports zero violations, and a change that introduces one does not ship.</strong></p>
   <p>Automated scanning catches perhaps a third of real accessibility problems, so a few things a scanner cannot see are tested separately: that every confirmation and error is announced through a live region rather than appearing silently, and that a selected card reports its state to a screen reader instead of only looking chosen.</p>
 
   <h2>What that means in practice</h2>
   <ul>
-    <li><strong>Keyboard.</strong> The planner runs end to end without a mouse, and focus is always visible — a consistent outline on every focusable thing, never removed for looks.</li>
+    <li><strong>Keyboard.</strong> The planner runs end to end without a mouse, and focus is always visible: a consistent outline on every focusable thing, never removed for looks.</li>
     <li><strong>Screen readers.</strong> Headings are ordered, controls are labelled, the sign-in dialog is a real dialog, and toasts announce politely without stealing focus.</li>
     <li><strong>Contrast.</strong> Text and interface colors are checked against AA contrast on every change. The colour system was rebuilt once already to get there.</li>
     <li><strong>Motion.</strong> If your system asks for reduced motion, the illustrations hold still, the step animations stop, and smooth scrolling becomes an ordinary jump. This is honored in both the stylesheets and the scripted scrolling.</li>
@@ -57,14 +57,14 @@
   <ul>
     <li><strong>There is no skip-to-content link.</strong> The header is short, so the cost is small, but it is a standard affordance and we do not have it yet.</li>
     <li><strong>The 3D layout view is a rendered canvas</strong> and is not usable with a screen reader. Nothing in it is exclusive: every zone, product, and move it depicts is also in the written plan and the checklist, which is the accessible path through the same information.</li>
-    <li><strong>Photo upload is central to the product.</strong> Getting a useful plan requires taking photographs of a space, and we have not built a route through that does not — describing a room in text instead is not yet supported.</li>
+    <li><strong>Photo upload is central to the product.</strong> Getting a useful plan requires taking photographs of a space, and we have not built a route through that does not. Describing a room in text instead is not yet supported.</li>
     <li><strong>No independent audit.</strong> Our testing is automated plus our own manual checks. TidyMap has not been reviewed by an accessibility specialist or tested with disabled users, and we do not publish a VPAT. We would like to change this.</li>
     <li><strong>AI-written text is not style-checked for reading level.</strong> Plans are generated, so their wording varies, and we cannot promise a consistent plain-language grade across every plan.</li>
   </ul>
 
   <h2>Tell us when something does not work</h2>
   <div class="legal-note">
-    <p>Email <a href="mailto:contact@scmsolutions.org">contact@scmsolutions.org</a> with &ldquo;accessibility&rdquo; in the subject. Tell us the page, what you were using — screen reader, browser, keyboard only — and what happened. We aim to reply within 5 business days.</p>
+    <p>Email <a href="mailto:contact@scmsolutions.org">contact@scmsolutions.org</a> with &ldquo;accessibility&rdquo; in the subject. Tell us the page, what you were using (screen reader, browser, keyboard only) and what happened. We aim to reply within 5 business days.</p>
     <p><strong>If a barrier stops you finishing something, say so and we will get you the result another way</strong> while we fix the underlying problem. You should not have to wait on our release schedule to get your plan.</p>
   </div>
 

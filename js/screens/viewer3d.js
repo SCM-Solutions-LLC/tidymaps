@@ -55,7 +55,7 @@ let _buildScene=null, _attachDrag=null;
 function webglHelpMessage(reason){
   return 'This browser could not start the 3D view, which needs WebGL. '
     + 'In Chrome, check Settings &rsaquo; System &rsaquo; “Use graphics acceleration when available”, '
-    + 'then reopen the browser. Everything in your plan is on the previous screen — '
+    + 'then reopen the browser. Everything in your plan is on the previous screen. '
     + '<button class="btn btn-ghost btn-sm" type="button" onclick="go(\'results\')" '
     + 'style="margin-left:4px">Back to the plan</button>'
     + (reason ? '<span class="small muted" style="display:block;margin-top:8px">Reported by the browser: '
@@ -75,7 +75,7 @@ function dropAllowed(item, surface){
 
 function rejectReason(item){
   const name=(item.userData&&item.userData.name)||'That item';
-  return '“'+name+'” doesn’t hang on a rod — it went back where it was.';
+  return '“'+name+'” doesn’t hang on a rod, so it went back where it was.';
 }
 
 function organizerPlan(){
@@ -287,7 +287,7 @@ function updateStatus(geometry, resolved, sourceGeometry=geometry){
     ? (sameWord
         ? ` Shown as your ${state.setupLabel.toLowerCase()}.`
         : ` Shown as your ${state.setupLabel.toLowerCase()}, drawn as ${label}.`)
-    : ' Shown as '+label+' — '+(sourceDesc[resolved.source]||sourceDesc.default);
+    : ' Shown as '+label+': '+(sourceDesc[resolved.source]||sourceDesc.default);
   if(resolved.type==='under-sink') note+=sourceGeometry.height!==geometry.height
     ?` Vanity shown at ${geometry.height} inches so the fixture stays realistic.`
     :' Vanity height is limited to a realistic 28–42 inches.';
@@ -308,7 +308,7 @@ export function saveArrangement(){
   /* Defence in depth behind the hidden button: persistGuestDraft early-returns
      in a share view and updateSpacePatch no-ops without an activeSpaceId, so
      reaching here would have toasted success over two silent no-ops. */
-  if(state.shareView){ toast('This is a shared plan — start your own to save changes.'); return; }
+  if(state.shareView){ toast('This is a shared plan. Start your own to save changes.'); return; }
   const {geometry}=currentSceneInput();
   state.arrangement={
     version:2,geometry,placements:view.placements(),
@@ -457,7 +457,7 @@ function populateOrganizers(){
        them at a problem they do not have. Say what happened, and offer the two
        moves that actually change it. */
     fitNote.textContent=unplaced
-      ?`${unplaced} organizer${unplaced===1?'' : 's'} from your list ${unplaced===1?'has':'have'} no spot in this view yet — the levels they were meant for are full. Add a level above, adjust the heights under “Set exact sizes”, or untick ${unplaced===1?'it':'them'} on the plan.`
+      ?`${unplaced} organizer${unplaced===1?'' : 's'} from your list ${unplaced===1?'has':'have'} no spot in this view yet. The levels they were meant for are full. Add a level above, adjust the heights under “Set exact sizes”, or untick ${unplaced===1?'it':'them'} on the plan.`
       :issueCount?`${issueCount} selected organizer group${issueCount===1?' does':'s do'} not fully fit. Check shelf depth and height.`:'';
   }
 }
@@ -518,8 +518,8 @@ function populateZones(map){
     const drawn=(canvas&&canvas.dataset.layout)||'';
     const noun=singularLevel(LEVEL_NOUN[drawn]||'shelves');
     heading.textContent=rows.length===1
-      ? `1 zone — the ${noun.toLowerCase()}`
-      : `${rows.length} zones — one per ${noun.toLowerCase()}`;
+      ? `1 zone: the ${noun.toLowerCase()}`
+      : `${rows.length} zones, one per ${noun.toLowerCase()}`;
   }
   rows.forEach((row,i)=>{
     const zone=row.zone||row.lv||'Zone '+(i+1);

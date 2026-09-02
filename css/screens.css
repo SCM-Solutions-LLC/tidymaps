@@ -122,6 +122,21 @@
 .v3d-fit-note.danger{background:var(--danger-bg);color:var(--danger-ink);border-color:var(--danger-line)}
 
 .v3d-body{display:grid;gap:24px;margin-top:20px}
+/* On a phone the controls stacked above the drawing pushed the canvas below
+   the fold: "View in 3D" opened onto chips and a slider and no model. There
+   the drawing comes first and the controls, then the zones, follow it.
+   display:contents lifts the two columns out of their grid so each can be
+   ordered on its own; above the breakpoint the grid puts them side by side
+   and none of this applies. */
+@media(max-width:879px){
+  #screen-viewer3d.active{display:flex;flex-direction:column}
+  #screen-viewer3d.active .v3d-badge{align-self:flex-start}
+  .v3d-body{display:contents}
+  .v3d-main{order:1;margin-top:20px}
+  .v3d-controls{order:2;margin-top:24px}
+  .v3d-zones{order:3;margin-top:24px}
+  .v3d-actions{order:4}
+}
 @media(min-width:880px){.v3d-body{grid-template-columns:1fr 280px}}
 
 .v3d-main{min-width:0}

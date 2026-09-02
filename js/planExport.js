@@ -27,7 +27,8 @@ function spaceName() {
 const stepTask = (s) => s && (s.t ?? s.task);
 const stepTime = (s) => {
   const t = s && (s.m ?? s.time);
-  return t && t !== '—' ? t : '';
+  // The placeholder is an en dash now; a plan saved before that carried an em dash.
+  return t && t !== '\u2013' && t !== '\u2014' ? t : '';
 };
 const stepWhy = (s) => s && (s.w ?? s.why);
 
@@ -41,7 +42,7 @@ function planSteps() {
 
 export function checklistText() {
   const name = spaceName();
-  const lines = [`${name} — organizing checklist`, ''];
+  const lines = [`${name}: organizing checklist`, ''];
 
   /* The screen splits the summary into a lede (built from the user's own
      measurements, and true) plus bullets scoped by a heading that says these
@@ -97,7 +98,7 @@ export function checklistText() {
 export function shoppingListText() {
   const name = spaceName();
   const needs = activeProductNeeds();
-  const lines = [`${name} — shopping list`, ''];
+  const lines = [`${name}: shopping list`, ''];
 
   // state.shopping carries the chosen product per need and whether it is still
   // ticked; without it, fall back to describing the need itself.
@@ -119,7 +120,7 @@ export function shoppingListText() {
   }).filter(Boolean);
 
   if (!rows.length) {
-    lines.push('Nothing to buy — this plan uses what you already own.');
+    lines.push('Nothing to buy. This plan uses what you already own.');
     return lines.join('\n');
   }
 
@@ -194,7 +195,7 @@ export async function sendShoppingList() {
   }
   try {
     await navigator.clipboard.writeText(body);
-    toast('Shopping list copied — too long to email directly, so paste it wherever you like.');
+    toast('Shopping list copied. It is too long to email directly, so paste it wherever you like.');
   } catch (_) {
     downloadText(planFileName('shopping-list', 'txt'), body);
     toast('Shopping list downloaded.');

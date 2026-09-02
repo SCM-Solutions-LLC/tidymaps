@@ -1,9 +1,9 @@
 import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_CATS } from '../data.js';
 import { SVG, ICON } from '../icons.js';
-import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent } from '../state.js';
+import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
-import { areaFor, art, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
+import { areaFor, art, fmtFt, fmtIn, optionsForHousehold, SETUP_DIMS } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -67,8 +67,18 @@ export function buildResults(){
      false of the landing page's sample, which is opened by someone who has
      made no selections at all. The three states are different claims and now
      read as three different lines. */
-  const isSample = !isRealAi && state.planMeta && state.planMeta.source==='demo'
-    && !state.setupTouched && !state.catsTouched && !state.shoppingTouched;
+  /* "Answered" has to mean any answer, not the three that carry a touched
+     flag. Someone who typed their measurements and named their household but
+     left the three defaults alone was told the plan was "not based on your
+     space", under chips quoting the measurements they had just typed. */
+  const def=SETUP_DIMS[state.setup];
+  const dimsTyped = !!(state.dimsFt && def
+    && (state.dimsFt.w!==def.w || state.dimsFt.h!==def.h || state.dimsFt.d!==def.d));
+  const answeredAnything = state.setupTouched || state.catsTouched || state.shoppingTouched
+    || state.effortTouched || dimsTyped || householdAnswered()
+    || (state.goals||[]).length>0 || (state.styles||[]).length>0
+    || (state.uploadedFiles||[]).length>0;
+  const isSample = !isRealAi && state.planMeta && state.planMeta.source==='demo' && !answeredAnything;
   if(byline) byline.textContent = isRealAi
     ? 'Analyzed by Claude'+(modelLabel(model)?' · '+modelLabel(model):'')
     : (isSample ? 'Sample plan · not based on your space'
@@ -84,9 +94,13 @@ export function buildResults(){
   if(chipHh){
     const h=state.household;
     const parts=[];
-    if(h.adults) parts.push(h.adults+(h.adults===1?' adult':' adults'));
-    if(h.kidCount) parts.push(h.kidCount+(h.kidCount===1?' kid':' kids'));
-    if(h.petCount) parts.push(h.petCount+(h.petCount===1?' pet':' pets'));
+    /* The counts start at two adults before anyone has touched the step, and
+       a chip is a statement. Until the household step was answered there is
+       nothing here to state; a reach need, listed below, counts as answering. */
+    const answered=householdAnswered();
+    if(answered && h.adults) parts.push(h.adults+(h.adults===1?' adult':' adults'));
+    if(answered && h.kidCount) parts.push(h.kidCount+(h.kidCount===1?' kid':' kids'));
+    if(answered && h.petCount) parts.push(h.petCount+(h.petCount===1?' pet':' pets'));
     /* Mobility belongs here more than the counts do. A plan for a household
        with a reach limitation is built around it — the safety notes argue from
        it, the zones are placed for it — and the chip row listed "2 adults"
@@ -139,7 +153,7 @@ export function buildResults(){
          for a plan that needed none; saying so only when notes were removed
          would itself disclose that this household has some. It reads the same
          on every shared plan, so it says nothing about this one. */
-      shareNote.textContent=`You’re viewing “${state.sharedName||'a shared plan'}” — a read-only plan someone shared with you. Checking off steps here won’t change their copy. Shared plans leave out everything about the owner’s household, including any safety notes written for it, so ask them if that matters here.`;
+      shareNote.textContent=`You’re viewing “${state.sharedName||'a shared plan'}”, a read-only plan someone shared with you. Checking off steps here won’t change their copy. Shared plans leave out everything about the owner’s household, including any safety notes written for it, so ask them if that matters here.`;
     }
   }
   document.querySelectorAll('#screen-results [data-owner-only]')
@@ -195,10 +209,14 @@ export function buildResults(){
      photo's. */
   const catsAreTheirs = !!state.catsTouched;
   const catsObserved = !unobserved && !catsAreTheirs;
+  /* Neither: no photo was read and the reader ticked nothing, so this list is
+     the scenario's idea of what such a space holds. It was headed "categories
+     you told us about" over nine things nobody had mentioned. */
+  const catsTypical = unobserved && !catsAreTheirs;
   // kpis
   const kpis=[
     ['Space type', A?A.spaceType:'Pantry'],
-    ['Categories', state.cats.length + (catsObserved ? ' found' : ' listed')],
+    ['Categories', state.cats.length + (catsObserved ? ' found' : catsTypical ? ' typical' : ' listed')],
     ['Time', A?A.time:'45–90 min'],['Cost', costLabel()]
   ];
   document.getElementById('res-kpis').innerHTML=kpis.map(([k,v])=>`<div class="kpi"><div class="k">${escapeHtml(k)}</div><div class="v"${k==='Cost'?' id="kpi-cost"':''}>${escapeHtml(v)}</div></div>`).join('');
@@ -209,7 +227,8 @@ export function buildResults(){
   catTags.classList.toggle('hide', !state.cats.length);
   const catTitle=document.getElementById('res-cat-title');
   if(catTitle) catTitle.classList.toggle('hide', !state.cats.length);
-  if(catTitle) catTitle.textContent = catsObserved ? 'Detected item categories' : 'Item categories you told us about';
+  if(catTitle) catTitle.textContent = catsObserved ? 'Detected item categories'
+    : catsTypical ? 'What a space like this usually holds' : 'Item categories you told us about';
   /* The sample lists below stand in for a plan that has not been built yet.
      On a SHARED plan they would be something else: sentences nobody wrote,
      rendered to a visitor as the owner's findings about their own space. The
@@ -291,7 +310,7 @@ export function buildResults(){
      else's pantry. */
   const lede = (A && A.existingLede) || '';
   const ledeEl = document.getElementById('res-existing-lede');
-  ledeEl.textContent = lede || 'Start with what is already in the space — the plan below puts it to work before it asks you to buy anything.';
+  ledeEl.textContent = lede || 'Start with what is already in the space. The plan below puts it to work before it asks you to buy anything.';
   /* Same trap as the lede above, one level down: when every reuse card was
      filtered out for naming a fitting this setup lacks, the grid fell back to
      the pantry defaults — so a workbench plan advised reusing "2 baskets… for
@@ -372,6 +391,22 @@ function initTocSpy(){
     }
   };
 
+  /* On a phone the list is a horizontal scroller with its scrollbar hidden,
+     and at 390px only three of the six links fit; the rest gave no sign of
+     being there. `.more` draws a fade on the trailing edge (css/report.css)
+     only while something is past it, so the last link is never veiled. */
+  const ol=/** @type {HTMLElement & {_more?: boolean}} */ (nav.querySelector('ol'));
+  const syncMore=()=>{
+    if(!ol) return;
+    nav.classList.toggle('more', ol.scrollWidth - ol.clientWidth - ol.scrollLeft > 4);
+  };
+  if(ol && !ol._more){
+    ol._more=true;
+    ol.addEventListener('scroll', syncMore, { passive:true });
+    addEventListener('resize', syncMore);
+  }
+  syncMore();
+
   if(tocSpy) tocSpy.disconnect();
   if(typeof IntersectionObserver!=='function') return;
   const mark=(id)=>links.forEach(a=>{
@@ -381,6 +416,8 @@ function initTocSpy(){
   });
   const seen=new Map();
   tocSpy=new IntersectionObserver((entries)=>{
+    // the screen may not have been visible when syncMore first ran
+    syncMore();
     entries.forEach(en=>seen.set(en.target.id, en));
     // the topmost chapter currently on screen wins
     const visible=[...seen.values()].filter(en=>en.isIntersecting)
@@ -488,7 +525,7 @@ export async function generateAfter(){
     state.afterRenderB64=res.image.data;
     setupAfterPhoto();
     track('after_render_requested', { ok:true });
-    toast('Photo preview ready — drag the slider');
+    toast('Photo preview ready. Drag the slider.');
   }catch(e){
     track('after_render_requested', { ok:false });
     // The note sits on the plan that failed. Another plan's screen must not
@@ -605,7 +642,7 @@ function showUpgradesFailed(){
   if(!wrap) return;
   wrap.removeAttribute('aria-busy');
   wrap.innerHTML='<p class="load-failed">We could not load the product list just now. '
-    + 'The plan above is complete without it — everything it asks you to do uses what you already own.</p>';
+    + 'The plan above is complete without it. Everything it asks you to do uses what you already own.</p>';
 }
 
 export function renderUpgrades(){
@@ -683,7 +720,7 @@ export function uncheckAllUpgrades(){
   (state.shopping||[]).forEach(s=>{ s.checked=false; });
   renderUpgrades();
   persistShopping();
-  toast('All upgrades removed — you\'re on the $0 plan');
+  toast('All upgrades removed. You\'re on the $0 plan.');
 }
 /* The Cost tile used to print the scenario's own constant — "$0 / $45–85" —
    over a shopping list the app had pre-selected and pre-ticked to $153, on the
@@ -710,7 +747,7 @@ export function renderShopping(){
   const list=document.getElementById('res-shopping');
   list.innerHTML=picked.length?picked.map(s=>
     `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
-    '<li><span class="muted">No items selected — you\'re on the $0 plan.</span></li>';
+    '<li><span class="muted">No items selected. You\'re on the $0 plan.</span></li>';
   const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
   const unpriced=picked.some(s=>s.price_usd==null);
   document.getElementById('res-shop-total').textContent=(total?'$'+Math.round(total):'$0')+(unpriced?'+':'');
@@ -874,7 +911,7 @@ export function renderSteps(rawList){
      row written before the Adjust-screen shape fix can still carry raw
      {task,time,why} steps — which rendered as "undefined". Accept both. */
   const list=(rawList||[]).map(s=>(s && s.t!==undefined) ? s
-    : {t:(s&&s.task)||'', m:((s&&s.time)||'—'), w:(s&&s.why)||''}).filter(s=>s.t);
+    : {t:(s&&s.task)||'', m:((s&&s.time)||'–'), w:(s&&s.why)||''}).filter(s=>s.t);
   state.stepDone=new Array(list.length).fill(false);
   state.stepSkipped=new Array(list.length).fill(false);
   list.forEach((s,i)=>{
@@ -1010,7 +1047,7 @@ export function skipStep(i){
   const btn=card && card.querySelector('.acts button:nth-of-type(2)');
   if(btn) btn.textContent=state.stepSkipped[i]?'Unskip':'Skip';
   updateProgress();
-  toast(state.stepSkipped[i]?'Step set aside — it is still on the list':'Step back on the list');
+  toast(state.stepSkipped[i]?'Step set aside. It is still on the list.':'Step back on the list');
 }
 export function updateProgress(){
   const done=state.stepDone.filter(Boolean).length;

@@ -1,12 +1,11 @@
 import { CUSTOMIZE, STEPS } from '../data.js';
 import { optionsForHousehold } from '../wizard-data.js';
 import { ICON } from '../icons.js';
-import { state, persistGuestDraft } from '../state.js';
+import { state, persistGuestDraft, currentPlanInstance, planInstanceIsCurrent } from '../state.js';
 import { toast } from '../ui.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { REVISIONS, applyRevision } from '../personalize.js';
-import { getDemoScenario } from '../demo-scenarios.js';
 import { scenarioKeyFor } from '../wizard-data.js';
 import { normalizeAi } from '../plan.js';
 import { renderSteps, setUpgrades, applySavedProgress, buildResults } from './results.js';
@@ -17,8 +16,11 @@ import { renderSteps, setUpgrades, applySavedProgress, buildResults } from './re
    needs instead — the same scenario the plan came from, asked without the
    $0 answer. AI plans keep their productNeeds (applyAnswers never runs on
    them), so this only ever has to rebuild the deterministic path. */
-function restoreProductNeeds(){
+async function restoreProductNeeds(){
   if(!state.ai || (state.ai.productNeeds||[]).length) return;
+  // Loaded on demand: the wizard's build already fetched it for a demo plan,
+  // and an AI plan keeps its own productNeeds and never reaches this line.
+  const { getDemoScenario } = await import('../demo-scenarios.js');
   const scenario=getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, null, state.setup);
   state.ai.productNeeds=normalizeAi(scenario).productNeeds;
   state.ai.cost=scenario.cost||state.ai.cost;
@@ -83,9 +85,12 @@ export function buildCustomize(){
     wrap.appendChild(b);
   });
 }
-export function applyCustomize(id,t,d,b,wrap){
+export async function applyCustomize(id,t,d,b,wrap){
   wrap.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel')); b.classList.add('sel');
   const savedProgress=state.stepDone?state.stepDone.slice():[];
+  // One branch below awaits a module load; the plan must still be this one
+  // when it lands (js/state.js, async ownership).
+  const instance=currentPlanInstance();
   /* The four shopping options change the plan's own productNeeds and cost,
      so the report has to be rebuilt for the Cost KPI and the upgrade list to
      agree with the panel that just appeared or vanished. */
@@ -96,7 +101,11 @@ export function applyCustomize(id,t,d,b,wrap){
   let shoppingChanged=false, shoppingNoop=false;
   if(id==='addprod'){
     if(state.upgrades && (state.ai&&(state.ai.productNeeds||[]).length)) shoppingNoop=true;
-    else { restoreProductNeeds(); setUpgrades(true); shoppingChanged=true; }
+    else {
+      await restoreProductNeeds();
+      if(!planInstanceIsCurrent(instance)) return;
+      setUpgrades(true); shoppingChanged=true;
+    }
   }
   if(id==='own'){
     // the mirror of addprod's check: a plan already down to what you own has

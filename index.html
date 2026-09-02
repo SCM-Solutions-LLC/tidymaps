@@ -20,6 +20,9 @@
 <meta name="twitter:description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own." />
 <meta name="twitter:image" content="https://scmsolutions.org/tidymaps/assets/og.png" />
 <link rel="icon" href="assets/favicon.svg" />
+<!-- The brand face is swapped in on arrival (font-display:swap), so the sooner
+     it is requested the shorter the flash of the fallback. One file, 20KB. -->
+<link rel="preload" href="vendor/fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/components.css" />
@@ -39,7 +42,7 @@
 
 <header class="appbar">
   <div class="appbar-inner">
-    <a class="brand" href="#" onclick="go('landing');return false;" aria-label="TidyMap — home">
+    <a class="brand" href="#" onclick="go('landing');return false;" aria-label="TidyMap home">
       <span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
       <span class="brand-word">TidyMap</span>
     </a>
@@ -122,7 +125,7 @@
     <h2>Pick a space to start</h2>
     <p class="sec-sub">Nine spaces across four rooms. Tap one and the planner opens there.</p>
     <div class="space-groups" id="space-groups"></div>
-    <p class="space-foot">Each one is fitted to your setup &mdash; cabinet, reach-in, walk-in, L-shaped, drawer tower, vanity, utility shelving, workbench &mdash; and to who has to reach it.</p>
+    <p class="space-foot">Each one is fitted to your setup, whether that is a cabinet, reach-in, walk-in, L-shaped run, drawer tower, vanity, utility shelving, or workbench, and to who has to reach it.</p>
   </div>
 
   <!-- Three pieces of a plan, drawn at a size you can read. App screenshots
@@ -134,7 +137,7 @@
       <figure class="product-shot">
         <figcaption>
           <h3>Where things go</h3>
-          <p>Every shelf becomes a zone &mdash; and each one says why.</p>
+          <p>Every shelf becomes a zone, and each one says why.</p>
         </figcaption>
         <div class="wy-vis" aria-hidden="true">
           <div class="wy-zone">
@@ -207,7 +210,7 @@
       </div>
       <div class="how-step">
         <h3><span class="n">2</span>Answer a few questions</h3>
-        <p>Who uses it, what&rsquo;s inside, how much time you&rsquo;ve got. TidyMap pre-fills what it can see from your photos.</p>
+        <p>Who uses it, what&rsquo;s inside, how much time you&rsquo;ve got. Your photos are read when the plan is built, so it can say what is actually on your shelves.</p>
       </div>
       <div class="how-step">
         <h3><span class="n">3</span>Work through the steps</h3>
@@ -246,7 +249,7 @@
     <div class="about-grid">
       <div class="about-lede">
         <p>TidyMap is built by SCM Solutions, a small team, and is free while it&rsquo;s in early access.</p>
-        <p>The rules behind every plan are ordinary professional practice: daily things at eye level, heavy things low, kids&rsquo; things reachable, hazards not. The AI reads your photos and applies them &mdash; its job is narrower than you&rsquo;d think.</p>
+        <p>The rules behind every plan are ordinary professional practice: daily things at eye level, heavy things low, kids&rsquo; things reachable, hazards not. The AI reads your photos and applies them. Its job is narrower than you&rsquo;d think.</p>
       </div>
       <div class="about-facts">
         <div>
@@ -278,7 +281,7 @@
 <section class="screen wide" id="screen-products">
   <div class="prod-mast">
     <h2>Products that help</h2>
-    <p class="sec-sub">Everything TidyMap can suggest, grouped by the space it belongs in. Every plan works at $0 without any of it &mdash; this is the shortcut for when you already know you want the bins.</p>
+    <p class="sec-sub">Everything TidyMap can suggest, grouped by the space it belongs in. Every plan works at $0 without any of it. This is the shortcut for when you already know you want the bins.</p>
   </div>
 
   <div class="prod-filters">
@@ -309,7 +312,7 @@
   <div class="step-head"><span class="step-num">Step 1 of 12</span></div>
   <span class="wiz-badge">Let's begin</span>
   <h2>Which room needs sorting out?</h2>
-  <p class="wz-sub">Pick a room to start &mdash; you can always come back for another.</p>
+  <p class="wz-sub">Pick a room to start. You can always come back for another.</p>
   <div class="room-cards" id="room-cards"></div>
 </section>
 
@@ -327,7 +330,7 @@
   <div class="step-head"><span class="step-num">Step 3 of 12</span></div>
   <span class="wiz-badge sage">Its shape</span>
   <h2>Which one looks like your pantry?</h2>
-  <p class="wz-sub">Go by the picture &mdash; this shapes your 3D layout and where each zone lands.</p>
+  <p class="wz-sub">Go by the picture. This shapes your 3D layout and where each zone lands.</p>
   <div class="wz-setups" id="setup-cards"></div>
 </section>
 
@@ -336,7 +339,7 @@
   <div class="step-head"><span class="step-num">Step 4 of 12</span></div>
   <span class="wiz-badge">Rough measurements</span>
   <h2>How big is your pantry?</h2>
-  <p class="wz-sub">Close is plenty &mdash; drag the slider or type it in. This sizes your plan and the 3D preview.</p>
+  <p class="wz-sub">Close is plenty: drag the slider or type it in. This sizes your plan and the 3D preview.</p>
   <div class="wz-units" id="measure-units" role="group" aria-label="Measurement units"></div>
   <div class="wz-measures" id="measure-fields"></div>
   <p class="wz-measure-sum" id="measure-summary"></p>
@@ -351,18 +354,18 @@
        to hand reasonably expects to be blocked here. Continue simply moved on
        and said nothing, and the plan that followed was noticeably more generic.
        Say what happens either way. -->
-  <p class="wz-sub">Mid-week mess and all &mdash; that's exactly what helps. A wide shot plus a couple of close-ups is perfect.</p>
-  <p class="wz-sub small">Photos are optional. Without them we build the plan from your measurements and answers, which works &mdash; it just won't describe what's actually on your shelves.</p>
+  <p class="wz-sub">Mid-week mess and all. That's exactly what helps. A wide shot plus a couple of close-ups is perfect.</p>
+  <p class="wz-sub small">Photos are optional. Without them we build the plan from your measurements and answers, which works. It just won't describe what's actually on your shelves.</p>
   <div class="wz-photos" id="photo-tiles"></div>
   <input type="file" id="photo-input" accept="image/*" multiple class="hide">
   <p class="small hide" id="photo-quality-note" style="margin:12px 0 0;color:var(--clay)"></p>
   <div class="wz-analyzing hide" id="photo-analyzing">
     <span class="wz-spin"></span>
-    <span>Looking at your photos&mdash;</span>
+    <span>Looking at your photos&hellip;</span>
   </div>
   <div class="wz-detected hide" id="photo-detected">
     <p class="wd-h">Here's what we spotted</p>
-    <p class="wd-sub">We'll pre-fill your answers with these &mdash; you can fix anything on the next steps.</p>
+    <p class="wd-sub">We'll pre-fill your answers with these. You can fix anything on the next steps.</p>
     <div class="wd-chips" id="photo-detected-chips"></div>
   </div>
   <p class="wz-privacy">
@@ -399,14 +402,14 @@
     <div class="chips" id="constraint-chips"></div>
   </div>
   <div class="wz-kid-ages" id="household-notes-block">
-    <p class="wk-h">Anything else we should know? <span class="muted">(optional)</span></p>
+    <p class="wk-h" id="household-notes-h">Anything else we should know? <span class="muted">(optional)</span></p>
     <!-- Four lines, not two, and the limit is visible. This is where someone
          describes a reach band or a routine no chip covers, and it was the
          least generous field in the wizard: a 300-character answer had already
          scrolled out of sight while it was being typed, against a cap that
          never announced itself. -->
     <textarea id="household-notes" class="wz-notes" rows="4" maxlength="400"
-      aria-describedby="household-notes-count"
+      aria-labelledby="household-notes-h" aria-describedby="household-notes-count"
       placeholder="e.g. the top shelf is hard to reach, or we buy in bulk"></textarea>
     <p class="small wz-notes-count" id="household-notes-count" aria-live="polite">400 characters left</p>
   </div>
@@ -420,7 +423,7 @@
   <p class="wz-sub">Tap everything that lives in this space. We'll group them into zones that make sense together.</p>
   <p class="wz-prefilled hide" id="contents-detected">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>
-    Pre-filled from your photos &mdash; tap to fix anything
+    Pre-filled from your photos. Tap to fix anything
   </p>
   <div class="chips wz-chips" id="contents-chips"></div>
 </section>
@@ -430,7 +433,7 @@
   <div class="step-head"><span class="step-num">Step 8 of 12</span></div>
   <span class="wiz-badge">The real goal</span>
   <h2>What bugs you most about it?</h2>
-  <p class="wz-sub">Be honest &mdash; the plan leans hardest on whatever you pick here.</p>
+  <p class="wz-sub">Be honest. The plan leans hardest on whatever you pick here.</p>
   <div class="wz-goals" id="goal-list"></div>
 </section>
 
@@ -439,7 +442,7 @@
   <div class="step-head"><span class="step-num">Step 9 of 12</span></div>
   <span class="wiz-badge sage">Your taste</span>
   <h2>How do you like things kept?</h2>
-  <p class="wz-sub">Pick as many as feel like you &mdash; together they set the tone of your plan.</p>
+  <p class="wz-sub">Pick as many as feel like you. Together they set the tone of your plan.</p>
   <div class="wz-styles" id="style-cards"></div>
 </section>
 
@@ -528,7 +531,7 @@
     <div class="report-main">
       <!-- 01. Summary -->
       <section class="chapter" id="ch-summary">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Summary</h3></div></div>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-summary-h"><div class="ch-titles"><h3 id="ch-summary-h">Summary</h3></div></div>
         <p class="summary-lede" id="res-summary"></p>
         <p class="small hide" id="res-summary-points-title" style="font-weight:600;margin:14px 0 6px;color:var(--ink-2)"></p>
         <ul class="summary-points" id="res-summary-points"></ul>
@@ -551,14 +554,14 @@
       </section>
 
       <!-- 02. Organization map -->
-      <section class="chapter collapsed" id="ch-map">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Where things go</h3></div></div>
+      <section class="chapter" id="ch-map">
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-map-h"><div class="ch-titles"><h3 id="ch-map-h">Where things go</h3></div></div>
         <div id="res-map"></div>
       </section>
 
       <!-- 03. Use existing first -->
       <section class="chapter collapsed" id="ch-reuse">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Use what you already have first</h3></div></div>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-reuse-h"><div class="ch-titles"><h3 id="ch-reuse-h">Use what you already have first</h3></div></div>
         <div class="card pad" style="background:var(--primary-bg);border-color:var(--primary-line)">
           <p style="margin:0 0 14px;font-size:15px;color:var(--ink-2)" id="res-existing-lede"></p>
           <div class="feat-grid" id="res-existing"></div>
@@ -571,7 +574,7 @@
 
       <!-- 04. Move-by-move -->
       <section class="chapter" id="ch-steps">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Step-by-step</h3>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-steps-h"><div class="ch-titles"><h3 id="ch-steps-h">Step-by-step</h3>
           <p class="ch-sub">Work top to bottom. Mark steps complete as you go.</p></div></div>
         <div class="progwrap">
           <div class="lab"><span id="prog-text">Step 0 of 9 complete</span><span id="prog-pct" class="muted">0%</span></div>
@@ -593,7 +596,7 @@
 
       <!-- 05. Before/After -->
       <section class="chapter collapsed" id="ch-after">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>What it could look like</h3>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-after-h"><div class="ch-titles"><h3 id="ch-after-h">What it could look like</h3>
           <p class="ch-sub">An illustrated layout of the recommended plan. Each shelf is a labeled zone. With a photo of your space, you can also see it edited to match the plan.</p></div>
           <!-- The one thing in this chapter a reader would go looking for is
                the photo preview, and a collapsed chapter shows nothing but its
@@ -655,7 +658,7 @@
       <!-- 06. Optional upgrades + shopping -->
       <section class="chapter collapsed" id="ch-shop">
         <div id="res-upgrades-wrap" class="hide">
-          <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-label="Show or hide this section"><div class="ch-titles"><h3>Optional purchases</h3>
+          <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-shop-h"><div class="ch-titles"><h3 id="ch-shop-h">Optional purchases</h3>
             <p class="ch-sub" id="res-upgrades-sub">Only because you said you&rsquo;re open to buying storage products. The $0 plan above works without any of these.</p></div></div>
           <div id="res-upgrades"></div>
           <div class="callout warn" style="margin-top:8px">
@@ -684,7 +687,7 @@
            two screens past it. See js/screens/feedback.js. -->
       <section class="plan-rate hide" id="res-rate" aria-labelledby="rate-h">
         <div id="rate-ask">
-          <h3 id="rate-h">Is this plan worth doing?</h3>
+          <h3 id="rate-h">How useful is this plan?</h3>
           <p class="muted small" style="margin-top:4px">One tap. Your answer decides what we build next.</p>
           <div class="grid" id="rate-opts" style="margin-top:14px"></div>
         </div>
@@ -694,12 +697,12 @@
           <h4 style="margin-top:22px">What space would you organize next?</h4>
           <div class="chips" id="rate-next" style="margin-top:12px"></div>
           <h4 style="margin-top:22px">What would make this better?</h4>
-          <textarea id="rate-text" placeholder="Optional &mdash; tell us anything&hellip;" style="margin-top:10px"></textarea>
+          <textarea id="rate-text" placeholder="Optional. Tell us anything&hellip;" style="margin-top:10px"></textarea>
           <button class="btn btn-primary" style="margin-top:16px" onclick="sendRate()">Send feedback</button>
         </div>
         <div class="hide rate-thanks" id="rate-thanks">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-          <span>Thanks &mdash; that&rsquo;s genuinely useful. It goes straight into what we build next.</span>
+          <span>Thanks, that&rsquo;s genuinely useful. It goes straight into what we build next.</span>
         </div>
       </section>
 
@@ -767,7 +770,7 @@
   <!-- Answered already on the report. Asking the same four questions again
        reads as though the first answer went nowhere. -->
   <div class="hide" id="fb-sent">
-    <h2>Thanks &mdash; you already sent this</h2>
+    <h2>Thanks, you already sent this</h2>
     <p class="muted" style="margin-top:8px">We have your feedback on this plan. It goes straight into what we build next.</p>
     <div style="margin-top:26px">
       <button class="btn btn-primary btn-block" onclick="go('done')">Continue</button>
@@ -782,7 +785,7 @@
 <section class="screen wide" id="screen-viewer3d">
   <span class="v3d-badge">3D preview</span>
   <h2 id="v3d-title" style="margin-top:10px">Your space, standing up</h2>
-  <p class="muted small" style="margin-top:8px;max-width:60ch">Drag to spin it around, scroll to zoom. The model matches your space&rsquo;s layout and size &mdash; switch types below to compare.</p>
+  <p class="muted small" style="margin-top:8px;max-width:60ch">Drag to spin it around, scroll to zoom. The model matches your space&rsquo;s layout and size. Switch types below to compare.</p>
 
   <!-- Two tiers, deliberately. Someone opening the 3D view met ten range
        sliders at once — width, depth, height, shelf count and one per shelf —
@@ -873,7 +876,7 @@
       <!-- A zone and a shelf are the same row of the plan: the controls above
            set how many shelves there are, and each one gets a zone here. The
            panel used to say neither, so the two words read as two things. -->
-      <p class="small muted" id="v3d-zones-sub" style="margin:4px 0 10px">One per shelf &mdash; what that shelf is for. Hover a zone to spotlight it.</p>
+      <p class="small muted" id="v3d-zones-sub" style="margin:4px 0 10px">One per shelf: what that shelf is for. Hover a zone to spotlight it.</p>
       <label class="v3d-labels-toggle" for="v3d-show-labels">
         <input type="checkbox" id="v3d-show-labels" checked>
         <span>Show zone names in the drawing</span>
@@ -907,7 +910,7 @@
     </aside>
   </div>
 
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+  <div class="v3d-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
     <button class="btn btn-ghost" onclick="go('results')">&larr; Back to plan</button>
     <button class="btn btn-primary" id="v3d-save" data-owner-only disabled onclick="saveArrangement()">Save arrangement</button>
     <button class="btn btn-ghost" data-owner-only onclick="resetArrangement()">Reset to recommended</button>
@@ -959,7 +962,7 @@
 </footer>
 
 <!-- sticky flow footer (shown only on flow screens) -->
-<div class="flow-foot hide" id="flow-foot">
+<nav class="flow-foot hide" id="flow-foot" aria-label="Wizard steps">
   <div class="flow-foot-inner">
     <button class="back" id="flow-back" onclick="goBack()">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
@@ -968,7 +971,7 @@
     <span class="flow-ctx" id="flow-ctx"></span>
     <button class="btn btn-primary" id="flow-next" onclick="goNext()">Continue</button>
   </div>
-</div>
+</nav>
 
 <!-- Every confirmation and every error in the app is announced through this one
      element. Without a live region none of them reached a screen reader. -->

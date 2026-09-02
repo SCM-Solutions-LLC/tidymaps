@@ -106,10 +106,10 @@ export async function persistSpace(c, userId, snapshot, { auto=false }={}){
        THIS plan's row was written, not that some row was. */
     const { data, error } = await c.from('spaces')
       .update(snapshot.row).eq('id', spaceId).select('id').maybeSingle();
-    if(error || !data) throw new Error('Saving failed — please try again.');
+    if(error || !data) throw new Error('Saving failed. Please try again.');
   }else{
     const { data, error } = await c.from('spaces').insert({ ...snapshot.row, user_id:userId }).select('id').single();
-    if(error) throw new Error('Saving failed — please try again.');
+    if(error) throw new Error('Saving failed. Please try again.');
     spaceId = data.id;
     /* The id belongs to the plan that asked for the insert, not to whatever
        is on screen when it lands. Stamping it unconditionally handed the new
@@ -534,7 +534,7 @@ export async function writePatch(c, id, body){
 export async function deleteSpaceData(c, id){
   const { error:markError } = await c.from('spaces')
     .update({ deleting_at:new Date().toISOString(), deletion_files_removed:false }).eq('id', id);
-  if(markError) throw new Error('Could not start deleting this space — please try again.');
+  if(markError) throw new Error('Could not start deleting this space. Please try again.');
 
   try{
     const { data:space, error:spaceError } = await c.from('spaces')
@@ -551,7 +551,7 @@ export async function deleteSpaceData(c, id){
     ].filter(Boolean))];
     if(paths.length){
       const { error:storageError } = await c.storage.from('space-media').remove(paths);
-      if(storageError) throw new Error('Could not delete uploaded files — please try again.');
+      if(storageError) throw new Error('Could not delete uploaded files. Please try again.');
     }
   }catch(error){
     // Storage is still intact, so make the space visible and usable again.
@@ -586,7 +586,7 @@ export async function setShareEnabled(on, spaceId=state.activeSpaceId){
   if(!spaceId) throw new Error('Save this space first, then share it.');
   const shareId = on ? crypto.randomUUID() : null;
   const { error } = await c.from('spaces').update({ share_id: shareId }).eq('id', spaceId);
-  if(error) throw new Error('Sharing failed — please try again.');
+  if(error) throw new Error('Sharing failed. Please try again.');
   return shareId;
 }
 

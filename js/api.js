@@ -58,25 +58,25 @@ async function callFn(name, body, { signal }={}){
        putting "that took longer than expected" over a newer analysis. */
     if(signal && signal.aborted) throw new ApiError('That request was cancelled.', { code:'aborted' });
     if(e && (e.name==='TimeoutError' || e.name==='AbortError')){
-      throw new ApiError('That took longer than expected — showing the demo plan instead.', { code:'timeout' });
+      throw new ApiError('That took longer than expected. Showing the demo plan instead.', { code:'timeout' });
     }
-    throw new ApiError('Could not reach the analysis service — check your connection.', { code:'network' });
+    throw new ApiError('Could not reach the analysis service. Check your connection.', { code:'network' });
   }
   let data = null;
   try{ data = await res.json(); }catch(_){ /* non-JSON error body */ }
   if(!res.ok){
     if(res.status === 429){
-      throw new ApiError('Analysis limit reached for now — try again a little later.', {
+      throw new ApiError('Analysis limit reached for now. Try again a little later.', {
         code:'rate_limited', retryAfterSeconds: data && data.retryAfterSeconds,
       });
     }
-    if(res.status === 413) throw new ApiError('Those photos are too large — try fewer or smaller photos.', { code:'too_large' });
+    if(res.status === 413) throw new ApiError('Those photos are too large. Try fewer or smaller photos.', { code:'too_large' });
     if(res.status === 504){
-      throw new ApiError('The AI took longer than expected — showing the demo plan instead.', {
+      throw new ApiError('The AI took longer than expected. Showing the demo plan instead.', {
         code:(data && data.error) || 'timeout',
       });
     }
-    throw new ApiError('Analysis failed on our side — showing the demo plan instead.', { code:(data && data.error) || 'http_'+res.status });
+    throw new ApiError('Analysis failed on our side. Showing the demo plan instead.', { code:(data && data.error) || 'http_'+res.status });
   }
   return data;
 }
@@ -119,16 +119,16 @@ export function submitForm(payload){
 export function submitFormErrorMessage(error, what){
   const code = error && error.code;
   if(code==='rate_limited'){
-    return `That is a few ${what}s in a row — give it a few minutes and try again.`;
+    return `That is a few ${what}s in a row. Give it a few minutes and try again.`;
   }
   if(code==='network'){
-    return `Your ${what} did not send — check your connection and try again.`;
+    return `Your ${what} did not send. Check your connection and try again.`;
   }
   if(code==='unconfigured'){
     return `${what[0].toUpperCase()}${what.slice(1)} is not connected yet, so this did not reach us.`;
   }
-  if(code==='bad_email') return 'That email address was not accepted — check it and try again.';
-  return `That ${what} did not reach us. Nothing was lost — try again in a moment.`;
+  if(code==='bad_email') return 'That email address was not accepted. Check it and try again.';
+  return `That ${what} did not reach us. Nothing was lost. Try again in a moment.`;
 }
 
 export function renderAfterErrorMessage(error){
@@ -137,10 +137,10 @@ export function renderAfterErrorMessage(error){
     return 'Photo preview is temporarily offline while its AI connection is repaired.';
   }
   if(error && error.code==='upstream_quota'){
-    return 'Photo preview has reached its AI limit for now — try again later.';
+    return 'Photo preview has reached its AI limit for now. Try again later.';
   }
   if(error && error.code==='network'){
-    return 'Could not reach the photo preview service — check your connection and try again.';
+    return 'Could not reach the photo preview service. Check your connection and try again.';
   }
   if(error && error.code==='no_image_returned'){
     return 'The AI could not produce a preview from this photo. Try a clearer, well-lit photo.';
@@ -149,7 +149,7 @@ export function renderAfterErrorMessage(error){
     return 'The photo preview could not process this image. Try another clear JPG, PNG, or WebP photo.';
   }
   if(error && (error.code==='upstream_timeout' || error.code==='timeout')){
-    return 'The photo preview took too long this time — try again in a moment.';
+    return 'The photo preview took too long this time. Try again in a moment.';
   }
   if(error && error.code==='bad_upstream_image'){
     return 'The photo preview came back in a form we could not use. Try again, or try another photo.';
@@ -160,5 +160,5 @@ export function renderAfterErrorMessage(error){
   if(error && error.code==='upstream_image_too_large'){
     return 'The photo preview came back larger than we can handle. Try again, or try another photo.';
   }
-  return 'Photo preview unavailable right now — the illustrated layout below still shows the full plan.';
+  return 'Photo preview unavailable right now. The illustrated layout below still shows the full plan.';
 }

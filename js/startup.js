@@ -50,7 +50,7 @@ export async function initializeRoute({
       if(applySharedPlan) applySharedPlan(payload);
       buildResults();
       go('results');
-      toast('You’re viewing a shared plan — read-only');
+      toast('You’re viewing a shared plan. It is read-only.');
       return { status:'shared-view' };
     }catch(e){
       toast((e && (e.code==='http_404'||e.code==='not_found'))
@@ -82,14 +82,14 @@ export async function initializeRoute({
       buildResults();
       applySavedProgress(savedSteps);
       go('results');
-      toast('Welcome back — we restored your last plan');
+      toast('Welcome back. We restored your last plan.');
       return { status:'restored-draft' };
     }
     /* A reload part-way through the wizard keeps every answer but lands here on
        the landing page, which reads as having lost the session — so people
        start again from scratch on top of answers that were never gone. Say so. */
     if(res && res.restored){
-      toast('Your answers are still here — pick up where you left off');
+      toast('Your answers are still here. Pick up where you left off.');
       return { status:'restored-answers' };
     }
   }

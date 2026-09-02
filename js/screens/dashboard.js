@@ -74,7 +74,7 @@ export async function buildDashboard(){
     card.querySelector('[data-del]').onclick=async ()=>{
       if(!confirm('Delete "'+sp.name+'" and its plan? This cannot be undone.')) return;
       try{ await deleteSpace(sp.id); }
-      catch(e){ toast('Could not delete — please try again.'); return; }
+      catch(e){ toast('Could not delete. Please try again.'); return; }
       buildDashboard();
     };
     grid.appendChild(card);

@@ -10,7 +10,9 @@ import { go, getCurrentScreen } from '../router.js';
 import { autoSaveSpace } from '../db.js';
 import { syncCategoriesToResults } from './results.js';
 import { track } from '../telemetry.js';
-import { getDemoScenario } from '../demo-scenarios.js';
+/* The deterministic engine is 150KB of plan copy and is loaded when a build
+   asks for it: the demo path always, the AI path only as its fallback. */
+const demoScenarios=()=>import('../demo-scenarios.js');
 import { scenarioKeyFor, areaFor } from '../wizard-data.js';
 import { resolveLayout } from '../layout.js';
 import { enforceArchetypeHonesty } from '../setupStructure.js';
@@ -160,13 +162,15 @@ export function runLoading(){
   const fin=document.createElement('div');
   fin.className='load-step'; fin.id='ls-final';
   fin.innerHTML=`<span class="dot">${ICON.check}</span><span>${
-    wantsReal ? 'Waiting for the AI analysis to finish' : 'Finalizing your personalized plan'
+    wantsReal ? 'Writing the plan from your photos (usually one to two minutes)' : 'Finalizing your plan'
   }</span>`;
   wrap.appendChild(fin);
 
   let aiPromise=null;
   if(wantsReal){
-    document.getElementById('load-sub').textContent='Analyzing your space.';
+    /* An analysis runs 70 to 90 seconds. Nothing on this screen used to say
+       so, and a spinner with no horizon is where people give up. */
+    document.getElementById('load-sub').textContent='Reading your photos and writing the plan. This usually takes one to two minutes, so keep this page open.';
     aiPromise = (async ()=>{
       let images;
       if(state.capture==='video'){
@@ -243,14 +247,23 @@ export function runLoading(){
     // (prefs, budget, effort, toggles, dims) — never a bare template. The
     // chosen setup can refine the scenario (a walk-in closet gets the
     // walk-in plan, not the reach-in one).
-    const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
+    /* "Building your personalized plan" used to sit over a plan that the
+       report would then call a sample. Say what is actually happening: the
+       answers are being used, and no photo is. */
+    document.getElementById('load-sub').textContent =
+      backendConfigured() ? 'Building your plan from your answers. No photos were added, so nothing here comes from a look at your space.'
+                          : 'Generating a sample plan from your selections.';
     // Held like the AI plan is, and committed at the same handoff. A demo plan
     // written straight into state was the same abandoned-plan-on-disk problem
-    // with a shorter fuse.
-    run.result = { ai: normalizeAi(scenario), meta:{ model:'demo', source:'demo', analyzedAt: Date.now() } };
-    document.getElementById('load-sub').textContent =
-      backendConfigured() ? 'Building your personalized plan.'
-                          : 'Generating a sample plan from your selections.';
+    // with a shorter fuse. The engine loads on demand; the ticker below takes
+    // several seconds to reach finishLoading, which waits on this promise.
+    aiPromise = demoScenarios().then(({ getDemoScenario })=>{
+      if(!isCurrent()) return;
+      const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
+      run.result = { ai: normalizeAi(scenario), meta:{ model:'demo', source:'demo', analyzedAt: Date.now() } };
+    }).catch(e=>{
+      if(isCurrent()) run.result = { error: readableError(e) };
+    });
   }
 
   let i=0;
@@ -326,10 +339,17 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
          moved on. */
       setTimeout(()=>{
         if(!isCurrent() || getCurrentScreen()!=='loading') return;
-        // Fallback to demo scenario on AI failure too — same personalization
-        const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
-        enterResults({ ai: normalizeAi(scenario), error: result.error,
-                       meta:{ model:'demo', source:'demo-fallback', analyzedAt: Date.now() } });
+        // Fallback to demo scenario on AI failure too, with the same
+        // personalization. The engine is loaded on demand; if even that fails
+        // the report renders its built-in sample rather than spinning forever.
+        demoScenarios().then(({ getDemoScenario })=>{
+          const scenario = getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, buildAnalysisContext(), state.setup);
+          return normalizeAi(scenario);
+        }).catch(()=>null).then(ai=>{
+          if(!isCurrent() || getCurrentScreen()!=='loading') return;
+          enterResults({ ai, error: result.error,
+                         meta:{ model:'demo', source:'demo-fallback', analyzedAt: Date.now() } });
+        });
       }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');

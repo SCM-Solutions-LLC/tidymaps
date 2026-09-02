@@ -60,6 +60,12 @@ test('no two options describe the same change', async ({ page }) => {
 
 test('you can leave without changing anything', async ({ page }) => {
   await openSample(page);
+  /* The product list arrives after the report does (catalog.json is its own
+     fetch), so a snapshot taken the instant the screen activates can predate
+     the rows and then differ from one taken after. Under a loaded parallel
+     run it did. Wait for the list to settle first. */
+  await expect(page.locator('#res-upgrades')).not.toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#res-shopping li').first()).toBeVisible();
   // read it while it is on screen: innerText collapses differently on a
   // hidden section, which would make any comparison meaningless
   const before = await page.locator('#screen-results').innerText();

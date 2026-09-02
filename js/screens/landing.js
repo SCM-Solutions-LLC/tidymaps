@@ -1,9 +1,8 @@
-import { prepareDemoPlanState } from '../state.js';
+import { prepareDemoPlanState, currentPlanInstance, planInstanceIsCurrent } from '../state.js';
 import { state } from '../state.js';
-import { toast, scrollIntoViewSafely } from '../ui.js';
+import { toast, scrollIntoViewSafely, closeSiteNav } from '../ui.js';
 import { go } from '../router.js';
 import { buildResults } from './results.js';
-import { getDemoScenario } from '../demo-scenarios.js';
 import { normalizeAi } from '../plan.js';
 import { submitInviteRequest } from '../db.js';
 import { submitFormErrorMessage } from '../api.js';
@@ -14,8 +13,15 @@ import { productArt } from '../product-art.js';
 import { setArea } from './wizard.js';
 
 /* ---------- Sample plan shortcut ---------- */
-export function runDemo(){
+export async function runDemo(){
   prepareDemoPlanState();
+  /* The scenarios module is 150KB of plan copy that nobody on the landing
+     page has asked for yet, so it loads on this tap rather than with the page.
+     The reset above claims the plan instance first; if another plan is opened
+     while the module is in flight, this one writes nothing. */
+  const instance=currentPlanInstance();
+  const { getDemoScenario } = await import('../demo-scenarios.js');
+  if(!planInstanceIsCurrent(instance)) return;
   const scenario = getDemoScenario('pantry', 'find', state.household);
   state.ai = normalizeAi(scenario);
   state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
@@ -112,7 +118,7 @@ function renderSpaces(){
    another screen is showing. Route back first, then scroll — otherwise the
    anchor resolves to an invisible element and nothing appears to happen. */
 export function navHome(hash){
-  document.body.classList.remove('nav-open');
+  closeSiteNav();
   if(document.body.dataset.screen !== 'landing') go('landing');
   const el = document.querySelector(hash);
   scrollIntoViewSafely(el);

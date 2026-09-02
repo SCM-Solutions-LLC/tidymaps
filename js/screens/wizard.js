@@ -15,7 +15,7 @@ import {
   roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
-import { state, resetPlanRecord, clearGuestMedia, isMetric, setUnits, UNITS } from '../state.js';
+import { state, resetPlanRecord, clearGuestMedia, isMetric, setUnits, UNITS, householdAnswered } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { updateGate } from '../router.js';
 import { renderPhotoTiles } from './capture.js';
@@ -347,7 +347,7 @@ function renderMeasure(){
          crosses back into feet for storage. */
       let shown = toDisplay(inForce, metric), note = '';
       if(raw === '' || !Number.isFinite(typed) || typed <= 0){
-        note = `We kept ${fmtFt(inForce, metric)} — this needs a number.`;
+        note = `We kept ${fmtFt(inForce, metric)}. This needs a number.`;
       }else if(typed < b.min || typed > b.max){
         shown = Math.min(b.max, Math.max(b.min, typed));
         note = `${raw} ${unit} is outside what we can plan for, so we used ${fmtFt(fromDisplay(shown, metric), metric)}.`;
@@ -385,7 +385,7 @@ function refreshMeasure(k, syncRange){
 
 function refreshMeasureSummary(){
   const el = document.getElementById('measure-summary');
-  if(el) el.innerHTML = `About <b>${escapeHtml(measureSummary(state.setup, dimsFtNums(), isMetric()))}</b> — sound right?`;
+  if(el) el.innerHTML = `About <b>${escapeHtml(measureSummary(state.setup, dimsFtNums(), isMetric()))}</b>. Sound right?`;
 }
 
 /* The toggle switches what is displayed, never what is stored, so flipping it
@@ -538,6 +538,7 @@ function renderHouseholdNotes(){
 /* Presence stays the canonical 'yes'/'no' strings the rest of the app expects. */
 function syncHouseholdPresence(){
   const h = state.household;
+  state.householdTouched = true;   // a counter moved: the answer is theirs now
   h.kids.present = (h.kidCount || 0) > 0 ? 'yes' : 'no';
   if(h.kids.present === 'no') h.kids.ages = [];
   h.pets.present = (h.petCount || 0) > 0 ? 'yes' : 'no';
@@ -714,7 +715,7 @@ function renderShopping(){
 
 /* An answer we filled in, said so. Review is headed "Here's what we heard",
    and a default the user never gave is not something we heard. */
-const dflt = (value) => `${value} (our default — tap Edit to change)`;
+const dflt = (value) => `${value} (our default, tap Edit to change)`;
 
 function renderReviewSummary(){
   const wrap = document.getElementById('review-rows');
@@ -730,7 +731,9 @@ function renderReviewSummary(){
     ['Setup', state.setupLabel, 'setup'],
     ['Measurements', measureSummary(state.setup, dimsFtNums(), isMetric()), 'measure'],
     ['Photos', plural(state.uploadedFiles.length, 'photo'), 'capture'],
-    ['Who uses it', people, 'household'],
+    /* Two adults is the wizard's starting count, not something anyone said,
+       and this row presented it as heard. Same treatment as Effort below. */
+    ['Who uses it', householdAnswered() ? people : dflt(people), 'household'],
     /* Mobility, pet types and the free-text note were all collected, all
        forwarded to the model, and none of them appeared here — on the one
        screen headed "Here's what we heard". Someone who had just told us they
@@ -751,12 +754,16 @@ function renderReviewSummary(){
        written two ways, on the screen headed "Here's what we heard". */
     ['Style', state.styles.length ? state.styles.join(', ') : 'Nothing selected yet', 'style'],
     ['Effort', state.effortTouched ? state.effort : dflt(state.effort), 'effort'],
-    ['Products', state.shoppingTouched ? state.shoppingPref : dflt(state.shoppingPref), 'shopping'],
+    /* Untouched, the engine does NOT apply "Use what I have" (see
+       recomputePrefs): it may include optional product ideas, and the report
+       says so. This row used to name the preselected card as our default,
+       which was the opposite of what the plan then did. */
+    ['Products', state.shoppingTouched ? state.shoppingPref : dflt('A few optional product ideas'), 'shopping'],
   ];
   wrap.innerHTML = rows.map(([label, value, target]) => `
     <div class="wz-rev-row">
       <span class="wr-label">${escapeHtml(label)}</span>
-      <span class="wr-value">${escapeHtml(String(value || '—'))}</span>
+      <span class="wr-value">${escapeHtml(String(value || '–'))}</span>
       <button type="button" class="wr-edit" data-goto="${target}">Edit</button>
     </div>`).join('');
   wrap.querySelectorAll('.wr-edit').forEach(btn => {

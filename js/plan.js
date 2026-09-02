@@ -145,7 +145,7 @@ export function normalizeAi(j){
        the report never sees it — the same way `observed` was dropped here and
        the honesty scoping vanished with it. */
     steps: (j.steps||[]).map(st=>({
-      t:s(pick(st.task, st.t)), m:s(pick(st.time, st.m))||'—', w:s(pick(st.why, st.w)),
+      t:s(pick(st.task, st.t)), m:s(pick(st.time, st.m))||'–', w:s(pick(st.why, st.w)),
       ...(st.cite ? { cite:s(st.cite) } : {}),
     })),
     time: s(j.time)||'45–90 min',

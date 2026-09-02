@@ -63,6 +63,7 @@
  * @property {boolean} effortTouched
  * @property {string} shoppingPref              'Use what I have' | 'Open to a few ideas'
  * @property {boolean} shoppingTouched
+ * @property {boolean} householdTouched          a counter on the household step was moved
  * @property {boolean} upgrades
  * @property {string} afterMode
  * @property {Dims|null} dims                   inches — the plan and 3D contract
@@ -132,7 +133,7 @@ export const state = {
      recommendations on the strength of an answer nobody gave.
      Same shape as setupTouched/catsTouched: keep the default, remember that
      it is ours. */
-  effortTouched:false, shoppingTouched:false,
+  effortTouched:false, shoppingTouched:false, householdTouched:false,
   detected:[],     // item labels surfaced on the photos step
   catsTouched:false, // user edited the contents step → their list is authoritative
   prefs:new Set(), budget:null, effort:'Weekend reset',
@@ -295,6 +296,11 @@ const ANSWER_DEFAULTS = {
   goals:[], styles:[], cats:[], catsTouched:false, detected:[], features:[],
   budget:null, effort:'Weekend reset', effortTouched:false,
   shoppingPref:'Use what I have', shoppingTouched:false,
+  /* The household counters start at two adults, and kids/pets present at
+     'no', so nothing in the household object itself says whether anyone has
+     answered. Same shape as the other touched flags: set by the first change
+     to a counter (js/screens/wizard.js), persisted with the answers. */
+  householdTouched:false,
   upgrades:false, afterMode:'Use existing containers',
   dims:null,
 };
@@ -384,9 +390,23 @@ export function prepareDemoPlanState(target=state){
   return target;
 }
 
-export function householdAnswered(){
-  const h=state.household;
-  return h.kids.present!==null || h.pets.present!==null || h.mobility.length>0 || !!(h.notes||'').trim();
+/* Has anyone answered the household step? The flag is the answer for anything
+   saved since it existed; the rest reads the content for rows and drafts from
+   before it, and for the chip pickers, which do not go through the counters.
+   `present` is no use here: the wizard default is 'no', not null, so the old
+   test on it was true before the step was ever shown. */
+export function householdAnswered(target=state){
+  if(target.householdTouched) return true;
+  const h=target.household;
+  if(!h) return false;
+  const named = (h.mobility||[]).length>0 || !!(h.notes||'').trim()
+    || ((h.kids&&h.kids.ages)||[]).length>0 || ((h.pets&&h.pets.types)||[]).length>0;
+  if(named) return true;
+  /* present===null is how the demo and the share view spell "nobody answered"
+     (prepareDemoPlanState, applySharedSpace), and the demo also zeroes the
+     adults, so the counts below must not be read there. */
+  if(h.kids.present===null && h.pets.present===null) return false;
+  return h.adults!==2 || (h.kidCount||0)>0 || (h.petCount||0)>0;
 }
 
 /* ---------- Units ----------

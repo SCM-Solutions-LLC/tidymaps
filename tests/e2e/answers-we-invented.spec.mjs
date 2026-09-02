@@ -52,8 +52,21 @@ test('Review says which answers are ours and which are theirs', async ({ page })
 
   await expect(row('PRODUCTS')).toContainText('our default');
   await expect(row('EFFORT')).toContainText('our default');
+  /* The household counters start at two adults. Untouched, that is a number
+     the wizard chose, and the row said "2 adults" as though it had heard it. */
+  await expect(row('WHO USES IT')).toContainText('our default');
+  /* And what the untouched Products row promises is what the engine does:
+     the preselected card is "Use what I have", but recomputePrefs applies no
+     constraint until it is chosen, so the plan may carry optional ideas. */
+  await expect(row('PRODUCTS')).toContainText('optional');
+  await expect(row('PRODUCTS')).not.toContainText('Use what I have');
 
   // and once answered, it is theirs and says nothing about defaults
+  await gotoStep(page, 'household');
+  await page.locator('#people-rows .wc-btn[data-k="adults"][data-d="-1"]').click();
+  await gotoStep(page, 'review');
+  await expect(row('WHO USES IT')).toContainText('1 adult');
+  await expect(row('WHO USES IT')).not.toContainText('our default');
   await gotoStep(page, 'shopping');
   await page.locator('#shopping-cards .wz-shop', { hasText: 'Open to a few ideas' }).click();
   await gotoStep(page, 'review');
@@ -70,7 +83,7 @@ test('an empty answer reads the same way everywhere on Review', async ({ page })
     label: e.querySelector('.wr-label').textContent.trim(),
     value: e.querySelector('.wr-value').textContent.trim(),
   })));
-  const dashes = rows.filter((r) => r.value === '—' || r.value === '');
+  const dashes = rows.filter((r) => r.value === '—' || r.value === '–' || r.value === '');
   expect(dashes.map((r) => r.label), 'a row says nothing at all instead of saying nothing is chosen').toEqual([]);
 });
 
