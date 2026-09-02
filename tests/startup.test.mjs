@@ -56,7 +56,7 @@ test('restores a ready guest draft when startup remains on landing', async()=>{
     'buildResults',
     ['progress',[true,false,true]],
     ['go','results'],
-    ['toast','Welcome back — we restored your last plan'],
+    ['toast','Welcome back. We restored your last plan.'],
   ]);
 });
 
@@ -105,7 +105,7 @@ test('restores a shared plan when startup remains on landing', async()=>{
     ['applyShared',payload],
     'buildResults',
     ['go','results'],
-    ['toast','You’re viewing a shared plan — read-only'],
+    ['toast','You’re viewing a shared plan. It is read-only.'],
   ]);
 });
 

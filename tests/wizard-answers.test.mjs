@@ -53,6 +53,7 @@ const FILLED = {
   effortTouched: true,
   shoppingPref: 'Open to a few ideas',
   shoppingTouched: true,
+  householdTouched: true,
   upgrades: true,
   afterMode: 'Show suggested products',
   dims: { w_in: 144, h_in: 78, d_in: 24, shelves: 4 },

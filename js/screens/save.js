@@ -39,7 +39,7 @@ async function doShare(){
     const url=shareUrlFor(shareId);
     try{
       await navigator.clipboard.writeText(url);
-      toast('Read-only link copied. It shows the plan for this space — no photos, and nothing about your household or its safety notes.');
+      toast('Read-only link copied. It shows the plan for this space: no photos, and nothing about your household or its safety notes.');
     }catch(_){
       prompt('Copy this read-only link:', url);
     }

@@ -19,7 +19,7 @@ export const ROOMS = [
 /* ---------- Areas within each room (id = production space id) ---------- */
 export const AREAS = {
   kitchen: [
-    { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage — cabinet to walk-in', artKey: 'artPantry' },
+    { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage, cabinet to walk-in', artKey: 'artPantry' },
     { id: 'cabinet', label: 'Cabinets', short: 'cabinets', desc: 'Dishes, pots & counter clutter', artKey: 'artTallCab' },
     { id: 'drawers', label: 'Drawers', short: 'drawers', desc: 'Cutlery, utensils & the junk drawer', artKey: 'artInCounter' },
   ],
@@ -29,7 +29,7 @@ export const AREAS = {
   ],
   bath: [
     { id: 'bathroom', label: 'Vanity & under-sink', short: 'vanity', desc: 'Toiletries, makeup & meds', artKey: 'artVanity' },
-    { id: 'linen', label: 'Linen closet', short: 'linen closet', desc: 'Sheets, towels & spare bedding — usually in the hall', artKey: 'artLinen' },
+    { id: 'linen', label: 'Linen closet', short: 'linen closet', desc: 'Sheets, towels & spare bedding, usually in the hall', artKey: 'artLinen' },
   ],
   garage: [
     { id: 'garage', label: 'Shelving & storage', short: 'garage shelving', desc: 'Bins, tools & seasonal gear', artKey: 'artGarageShelf' },
@@ -118,7 +118,7 @@ export const SPACE_CFG = {
 /* ---------- Per-space organizing styles ---------- */
 export const STYLESETS = {
   pantry: [
-    { label: 'Clear containers', desc: 'Decant into jars — see what’s left at a glance' },
+    { label: 'Clear containers', desc: 'Decant into jars. See what’s left at a glance' },
     { label: 'Baskets & bins', desc: 'Warm woven storage that hides busy packaging' },
     { label: 'Labeled everything', desc: 'A named home for every shelf and bin' },
     { label: 'Keep it simple', desc: 'Work with what’s there, low-maintenance' },
@@ -136,13 +136,13 @@ export const STYLESETS = {
     { label: 'Keep it simple', desc: 'Work with what’s there, low-maintenance' },
   ],
   closet: [
-    { label: 'Matching hangers', desc: 'One hanger style — a calm, even rail' },
+    { label: 'Matching hangers', desc: 'One hanger style for a calm, even rail' },
     { label: 'Baskets & bins', desc: 'Soft storage for folded and small things' },
     { label: 'Labeled shelves & bins', desc: 'Every stack and basket has a name' },
-    { label: 'Capsule & minimal', desc: 'Fewer, better pieces — easier mornings' },
+    { label: 'Capsule & minimal', desc: 'Fewer, better pieces, easier mornings' },
   ],
   dresser: [
-    { label: 'File-folded drawers', desc: 'Clothes stand upright — see every shirt' },
+    { label: 'File-folded drawers', desc: 'Clothes stand upright. See every shirt' },
     { label: 'Drawer dividers', desc: 'Sections that keep folds standing' },
     { label: 'Labeled drawers', desc: 'Everyone puts it back in the right one' },
     { label: 'Keep it simple', desc: 'Work with what’s there, low-maintenance' },
@@ -156,12 +156,12 @@ export const STYLESETS = {
   linen: [
     { label: 'Woven baskets', desc: 'Grab-and-go by room or person' },
     { label: 'Shelf dividers', desc: 'Stacks that stay standing' },
-    { label: 'Labeled shelves', desc: 'Sheets, towels, spares — all named' },
+    { label: 'Labeled shelves', desc: 'Sheets, towels, spares, all named' },
     { label: 'Keep it simple', desc: 'Work with what’s there, low-maintenance' },
   ],
   garage: [
     { label: 'Clear latching totes', desc: 'See contents without pulling bins down' },
-    { label: 'Everything on the wall', desc: 'Hooks and racks — the floor stays a path' },
+    { label: 'Everything on the wall', desc: 'Hooks and racks. The floor stays a path' },
     { label: 'Big readable labels', desc: 'Findable from the doorway' },
     { label: 'Keep it simple', desc: 'Work with what’s there, low-maintenance' },
   ],
@@ -191,7 +191,7 @@ export const SETUP_TYPES = {
   drawers: [
     { id: 'incounter', label: 'In-counter drawers', desc: 'Built into the kitchen counter', artKey: 'artInCounter' },
     { id: 'tower', label: 'Drawer tower', desc: 'A tall, narrow stack of drawers', artKey: 'artTower' },
-    { id: 'sideboard', label: 'Sideboard', desc: 'A wide, low piece — like a buffet or credenza', artKey: 'artSideboard' },
+    { id: 'sideboard', label: 'Sideboard', desc: 'A wide, low piece, like a buffet or credenza', artKey: 'artSideboard' },
   ],
   closet: [
     { id: 'wardrobe', label: 'Wardrobe', desc: 'A freestanding closet with doors', artKey: 'artWardrobe' },
@@ -332,7 +332,7 @@ export const EFFORT_OPTS = [
 ];
 export const SHOPPING_OPTS = [
   { label: 'Use what I have', desc: 'Build the plan around what’s already in my home.' },
-  { label: 'Open to a few ideas', desc: 'Suggest products sized to my shelves — always optional.' },
+  { label: 'Open to a few ideas', desc: 'Suggest products sized to my shelves. Always optional.' },
 ];
 
 /* ---------- Bridges into the existing plan engine ---------- */

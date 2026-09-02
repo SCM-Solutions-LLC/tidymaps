@@ -82,6 +82,18 @@
 .space-group .room-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
 @media(min-width:560px){.space-group .room-cards{gap:16px}}
 .space-group .room-card{flex:1 1 240px;max-width:340px}
+/* One card per row on a phone put nine of them end to end: 3,300px of
+   gallery, with "What you get" starting four and a half screens down. Two
+   across keeps a room to one swipe. Still flex, still centred, so the odd
+   third card in a room sits in the middle rather than in a grid's left cell. */
+@media(max-width:559px){
+  .space-group .room-cards{gap:10px}
+  .space-group .room-card{flex:0 1 calc(50% - 5px);max-width:none;border-radius:16px}
+  .space-group .room-card .rc-img{aspect-ratio:4/3}
+  .space-group .rc-label{padding:10px 12px 12px}
+  .space-group .rc-label h3{font-size:16px}
+  .space-group .rc-label p{font-size:12.5px;line-height:1.4}
+}
 .space-group .room-card{animation:none}
 /* Shallower art than the wizard's cards: nine of them stack up on one page. */
 .space-group .room-card .rc-img{aspect-ratio:3/2}

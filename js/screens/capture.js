@@ -104,7 +104,7 @@ export function handleFiles(fileList){
     }
     return;
   }
-  if(rejected) toast('Added ' + newFiles.length + '. Skipped ' + rejected + ' file' + (rejected>1?'s':'') + ' we can’t read — JPG, PNG or WebP work best.');
+  if(rejected) toast('Added ' + newFiles.length + '. Skipped ' + rejected + ' file' + (rejected>1?'s':'') + ' we can’t read. JPG, PNG or WebP work best.');
   const room = MAX_PHOTOS - state.uploadedFiles.length;
   if(room <= 0){ toast(MAX_PHOTOS + ' photos is plenty. Remove one to add another.'); return; }
   if(newFiles.length > room) toast('Using the first ' + room + '. ' + MAX_PHOTOS + ' photos is plenty.');

@@ -1,6 +1,6 @@
 import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord, resetWizardAnswers } from './state.js';
 import { track } from './telemetry.js';
-import { setFootHeightVar, scrollToTop } from './ui.js';
+import { setFootHeightVar, scrollToTop, closeSiteNav } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll, buildCustomize } from './screens/index.js';
 import { runLoading, cancelAnalysis } from './screens/loading.js';
@@ -179,7 +179,10 @@ export function go(id, opts={}){
   // nav and CTA in the appbar, where flow and report screens show workflow
   // controls instead.
   document.body.dataset.site=SITE_SCREENS.has(id)?'1':'';
-  if(!SITE_SCREENS.has(id)) document.body.classList.remove('nav-open');
+  /* Every screen change, not only the ones that leave the site pages: the
+     product library is itself a site page, and the menu that opened it stayed
+     on screen over its heading. A menu is spent by the tap that uses it. */
+  closeSiteNav();
   track('screen_viewed', { screen:id });   // wizard funnel / drop-off
   setRail();
   // step counter in appbar for wizard screens

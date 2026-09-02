@@ -73,6 +73,16 @@
   scrollbar-width:none;
 }
 .report-toc::-webkit-scrollbar{display:none}
+/* Three of the six links fit at 390px and the rest gave no sign of existing:
+   the scrollbar is hidden and the last visible link ended at the edge. The
+   fade says the row continues. results.js sets .more only while something is
+   past the edge, so the final link is never veiled. */
+@media(max-width:959px){
+  .report-toc.more::after{
+    content:'';position:absolute;top:0;bottom:1px;right:0;width:48px;pointer-events:none;
+    background:linear-gradient(to right,transparent,var(--bg) 70%);
+  }
+}
 .report-toc .toc-h{display:none}
 .report-toc ol{
   list-style:none;margin:0;padding:0;display:flex;gap:0;
@@ -104,6 +114,11 @@
 
 /* ---------- Chapters ---------- */
 .chapter{padding-top:40px}
+/* A chapter link from the nav landed the heading under the sticky appbar and,
+   on a phone, under the sticky nav as well: a fragment jump knows nothing
+   about what floats over the page. .home-sec carries the same allowance. */
+.chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 60px)}
+@media(min-width:960px){.chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 16px)}}
 .ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:16px;border-top:1px solid var(--line-2);padding-top:14px}
 .ch-head .ch-titles{min-width:0}
 .ch-head h3{font-size:clamp(20px,3.2vw,24px);letter-spacing:-.02em}

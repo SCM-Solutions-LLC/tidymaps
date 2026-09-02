@@ -53,10 +53,15 @@ test('Skip sets a step aside instead of recording it as done', async ({ page }) 
 });
 
 test('a plan built from no photos does not call the answers a detection', async ({ page }) => {
+  /* And does not call them the reader's either: the sample's categories come
+     from the scenario, so they are neither found in a photo nor told to us.
+     "Item categories you told us about" over nine things nobody mentioned was
+     the same false attribution pointed the other way. */
   await openSamplePlan(page);
-  await expect(page.locator('#res-cat-title')).toHaveText(/you told us about/i);
-  await expect(kpi(page, 'Categories')).toContainText('listed');
+  await expect(page.locator('#res-cat-title')).toHaveText(/usually holds/i);
+  await expect(kpi(page, 'Categories')).toContainText('typical');
   await expect(kpi(page, 'Categories')).not.toContainText('found');
+  await expect(kpi(page, 'Categories')).not.toContainText('listed');
 });
 
 test('a number we cannot use is replaced visibly, not silently', async ({ page }) => {

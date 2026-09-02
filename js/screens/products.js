@@ -2,7 +2,6 @@ import { ROOMS, AREAS, SETUP_TYPES, fmtIn } from '../wizard-data.js';
 import { isMetric } from '../state.js';
 import { loadCatalog, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
-import { getDemoScenario } from '../demo-scenarios.js';
 import { productArt } from '../product-art.js';
 import { go } from '../router.js';
 import { setArea } from './wizard.js';
@@ -19,6 +18,9 @@ import { setArea } from './wizard.js';
    ============================================================ */
 
 let catalog = null;
+// Read out of demo-scenarios.js, which arrives with the catalog on first open
+// rather than with the landing page (it is 150KB of plan copy).
+let getDemoScenario = null;
 let built = false;
 const filters = { room: 'all', type: 'all' };
 
@@ -171,7 +173,9 @@ export async function buildProducts(){
       </div>`.repeat(2);
   }
   try{
-    catalog = await loadCatalog();
+    const [cat, scenarios] = await Promise.all([loadCatalog(), import('../demo-scenarios.js')]);
+    catalog = cat;
+    getDemoScenario = scenarios.getDemoScenario;
   }catch(e){
     if(groupsEl){
       groupsEl.removeAttribute('aria-busy');

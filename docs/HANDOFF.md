@@ -4,8 +4,9 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-08-27. Everything through PR #115 is merged (`main` at
-`0bec7a0`) and **deployed** — Pages run 120 went green on 08-21, so the four
+**Last refreshed:** 2026-09-02, on the review branch that became the next PR;
+the deployed state it describes is `main` at `1f7993d` (PR #118). Everything
+through PR #115 is merged (`main` at `0bec7a0`) and **deployed** — Pages run 120 went green on 08-21, so the four
 viewer ports below are live on the site, not merely landed. `main` is the single
 source of truth.
 
@@ -40,6 +41,101 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-09-02 session changed (site optimisation review)
+
+A full read of the code, a browser walkthrough at 390px and 1280px with axe,
+and a load audit of the landing page. Every item below was reproduced in a
+browser before it was changed, and the screenshots live in the session
+scratchpad rather than the repo. Nothing here touches the backend, the plan
+schema, or persistence.
+
+**The landing page claimed a pre-fill that production never does.** "TidyMap
+pre-fills what it can see from your photos" was true only with no backend:
+`runLocalDetection()` runs when `backendConfigured()` is false, and the real
+analysis happens at the build, after the contents step. The copy now says
+photos are read when the plan is built. Nothing in the wizard pre-fills from a
+photo today; making it true would need a detection call before step 7.
+
+**Three answers the app invented, said back to the user.** The Review screen
+called "Use what I have" our default when `recomputePrefs()` deliberately
+applies no constraint until the card is chosen, so the report then shipped six
+pre-ticked products under "you didn't tell us either way". The household row
+and the masthead chip said "2 adults" for a step nobody had opened, because
+the wizard default is `present:'no'`, not null, so `householdAnswered()` was
+true before the step was shown. And a sample plan's categories were headed
+"Item categories you told us about". Fixes: a `householdTouched` flag in
+`ANSWER_DEFAULTS` (set by the counters; `householdAnswered()` also reads the
+content for rows saved before it and treats `present===null`, the demo and
+share spelling of "nobody answered", as unanswered); the Review row says what
+the engine does ("A few optional product ideas (our default)"); the chip is
+hidden until the step is answered; scenario categories are headed "What a
+space like this usually holds" with a "typical" count; and `isSample` reads
+every answer (dims typed, household, goals, styles, effort, photos) rather than
+three touched flags.
+
+**The shelf map opens with the report.** "Where things go" is the first of the
+three parts the homepage promises and `#ch-map` shipped `collapsed`. It opens
+now, like the steps; the other three folds are unchanged. Chapter links used
+to land the heading under the sticky appbar (and the sticky nav on a phone):
+`.chapter` and `.plan-rate` carry `scroll-margin-top`. On a phone the nav
+scroller showed three of six links with no sign of the rest; `results.js`
+toggles `.more` on the nav while something is past its edge and the CSS draws
+a trailing fade only then.
+
+**Navigation and accessibility.** The hamburger stayed open over the product
+library because `go()` only closed it when leaving a site page; `closeSiteNav()`
+in `ui.js` closes it (and resets the toggle's `aria-expanded`) on every screen
+change. The six chapter heads all announced as "Show or hide this section";
+they use `aria-labelledby` on their h3 now. `#household-notes` had no label;
+the flow footer is a `<nav>` landmark; the copyright year broke onto its own
+line because `.footer-legal span` matched the nested `data-year` span.
+
+**Phones.** The landing gallery ran nine full-width cards (3,300px; "What you
+get" began 4,548px down); two across under 560px brings the page from 9,197px
+to 7,527px and that section to 2,919px. The 3D viewer opened onto chips and a
+slider with the canvas 572px down; under 880px the section is a flex column
+with `.v3d-body{display:contents}` so the drawing comes first, then the
+controls, then the zones. The loading screen said "Analyzing your space" for
+a 70 to 90 second wait; it now says one to two minutes and to keep the page
+open, and the no-photo path no longer says "personalized".
+
+**Startup weight.** Every visitor fetched supabase-js (216KB) so `getSession()`
+could report no session, and demo-scenarios.js (149KB) so a sample plan could
+be opened. `initAuth()` scans localStorage for an `sb-*-auth-token` key and
+creates the client only then, or on the first sign-in action (`ensureClient()`);
+the four `getDemoScenario` call sites (`landing`, `loading`, `customize`,
+`products`) import the module on demand, each behind the plan-instance guard
+where an await was introduced. The brand woff2 is preloaded. Measured on the
+landing page: 53 requests instead of 57, and neither module is fetched until
+asked for. `tests/e2e/startup-weight.spec.mjs` reads the network for both, and
+for a stored session restoring the account. `personalize.js` and
+`setupStructure.js` stay eager: `data.js` and `wizard-data.js` import the
+first, and the first imports the second, so deferring them means untangling
+that graph, which this session did not do.
+
+**Em dashes.** CLAUDE.md forbids them in user-facing copy and the site had
+about 120 of them across `index.html`, the five legal pages, `404.html`, and
+the strings in `js/`. All replaced with a period, comma, colon, or brackets.
+`tests/copy-conventions.test.mjs` scans the pages (HTML comments removed) and
+every string literal in `js/` (comments blanked, literals walked in order so a
+regex character class does not read as a string) and fails on any that return.
+The two dash placeholders for a missing time (`plan.js`, `results.js`, the
+Review row) became en dashes; `planExport.js` accepts either, since a saved
+plan can still carry the old one. `citeFace` in `personalize.js` splits at the
+first sentence end as well as at a spaced dash, so the step faces stayed
+under 60 characters after the cite sentences lost theirs.
+
+**Not changed, and why.** The rating options ("Somewhat useful") did not fit
+the question "Is this plan worth doing?"; the question changed to "How useful
+is this plan?", the options did not. The room and area steps are two screens
+for a nine-item choice the homepage makes in one grid; merging them changes
+the 12-step design contract and was left as a decision. The 3D viewer's demo
+plan opens with a fit warning ("1 organizer from your list has no spot in
+this view yet"), which is organizer-fit logic, not layout, and was left. The
+unreferenced images under `assets/` (ba-*, ex-drawertower, ex-garage-shelving,
+ex-overhead-rack, ex-pantry-before, ex-storage-*, hero-3d.png, plan-steps.png)
+deploy but are never fetched; repo hygiene, not user cost.
 
 ## Product state in one paragraph
 
@@ -1131,8 +1227,8 @@ and the list is finished.
   schema, and two unit files fail with `ERR_MODULE_NOT_FOUND` without it.
 - **Four gates, all of them in CI on every PR** (`.github/workflows/test.yml`):
   `npm run lint` (ESLint 9 flat config), `npm run check:types`
-  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**528 tests**
-  across 42 files), and `npx playwright test` (**199 tests** across 42 files).
+  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**530 tests**
+  across 43 files), and `npx playwright test` (**211 tests** across 44 files).
   Pages deploy and the edge-function deploy both run on push to `main`.
 - In this sandbox the Playwright-managed browser isn't installed; run with
   `CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.

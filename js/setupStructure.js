@@ -43,9 +43,9 @@ export const ROLE_WHY = {
   low:     'Low and stable, so weight is easy to lift and nothing can fall far.',
   floor:   'Floor level takes the bulky things you slide rather than lift.',
   door:    'Shallow door storage suits small, single-depth items you want in view.',
-  surface: 'A clear working surface — only the active job belongs on top.',
+  surface: 'A clear working surface. Only the active job belongs on top.',
   deck:    'Overhead storage is for light, bulky things needed a few times a year.',
-  bay:     'A shallow rolling bay — flat, foldable things that stay clean and out of sight.',
+  bay:     'A shallow rolling bay for flat, foldable things that stay clean and out of sight.',
   rod:     'Hanging keeps these wrinkle-free and visible at a glance.',
   drawer:  'A closed drawer keeps small things sorted and out of sight.',
 };
@@ -578,7 +578,7 @@ const ARCHETYPE_CONTENT_RULES = {
   'overhead-rack': {
     excludeFlags: ['heavy', 'chemical', 'sharp'],
     excludeZone: /chemical|paint|solvent|hazard|heavy|power tool|automotive|frequently used|daily/i,
-    note: 'Nothing heavy, sharp, or chemical goes on the overhead rack — it is all lifted above your head. Keep those at waist height or lower, and give the rack the light, bulky things you need a few times a year.',
+    note: 'Nothing heavy, sharp, or chemical goes on the overhead rack. It is all lifted above your head. Keep those at waist height or lower, and give the rack the light, bulky things you need a few times a year.',
   },
   'under-bed': {
     excludeFlags: ['chemical'],

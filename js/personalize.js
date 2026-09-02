@@ -91,8 +91,10 @@ function addStep(plan, step) {
 /* The citation is a whole sentence — the answer plus why it matters — and the
    reasoning belongs in the `why` where the rest of the reasoning lives. On the
    step's face it is a label, so it keeps the lead clause only: "You asked for
-   labels and categories", not that sentence plus a clause about households. */
-const citeFace = (cite) => String(cite || '').split(/\s+[—–-]\s+/)[0].trim().replace(/[.,]$/, '');
+   labels and categories", not that sentence plus a clause about households.
+   The break is the first sentence end, or a spaced dash for a cite written
+   before the copy stopped using them (a saved plan can still carry one). */
+const citeFace = (cite) => String(cite || '').split(/\s+[—–-]\s+|(?<=[.!?:])\s+/)[0].trim().replace(/[.,:]$/, '');
 
 /* Does this step INSTRUCT the thing, or merely mention it?
 
@@ -240,7 +242,7 @@ function applyBudget(plan, answers) {
     plan.dontBuy = ((plan.dontBuy || '') + ' ' + cite + ' Every step below works with what is already in the space.').trim();
     if (!hasStep(plan, /shop your (own )?home|repurpose/i)) {
       addStep(plan, {
-        task: 'Shop your own home for containers — shoe boxes, jars, trays, and baskets you already have',
+        task: 'Shop your own home for containers: shoe boxes, jars, trays, and baskets you already have',
         why: cite + ' Repurposed containers do the same job as bought ones.',
       });
     }
@@ -264,7 +266,7 @@ export const PREF_HANDLER_KEYS = [];
 const PREF_HANDLERS = {
   'Keep frequent items easy to reach': (plan) => {
     const eye = plan.map.find(m => m.eye);
-    if (eye) eye.why += ' You asked to keep frequent items easy to reach — this zone is at eye level for exactly that.';
+    if (eye) eye.why += ' You asked to keep frequent items easy to reach. This zone is at eye level for exactly that.';
     ensureCitedStep(plan, /eye level|easy to reach/i,
       { task: 'Move your most-used items to the eye-level zone' },
       'You asked to keep frequent items easy to reach.');
@@ -288,7 +290,7 @@ const PREF_HANDLERS = {
       return;
     }
     const low = lowestUnflaggedZone(plan.map);
-    if (low) low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access — this lower zone stays reachable and hazard-free.' };
+    if (low) low.safety = { flag: 'kid-safe', why: 'You asked for kid-friendly access. This lower zone stays reachable and hazard-free.' };
   },
   'No drilling or permanent installation': (plan) => {
     /* The filter used to look for the word "drill". It missed every phrasing a
@@ -305,7 +307,7 @@ const PREF_HANDLERS = {
     dropNeeds(plan, p => !['door-rack', 'hook-rack'].includes(p.type));
     plan.opportunities = (plan.opportunities || []).filter(o => !FIXED.test(String(o || '')));
     if (FIXED.test(String(plan.dontBuy || ''))) plan.dontBuy = '';
-    plan.opportunities.push('Everything in this plan is freestanding — you asked for no drilling or permanent installation.');
+    plan.opportunities.push('Everything in this plan is freestanding. You asked for no drilling or permanent installation.');
   },
   'Minimal look': (plan) => {
     plan.map.forEach(m => {
@@ -319,7 +321,7 @@ const PREF_HANDLERS = {
     raisePriority(plan, ['label-set']);
     ensureCitedStep(plan, /label/i,
       { task: 'Label every zone and container' },
-      'You asked for labels and categories — labels are what make the system stick for the whole household.');
+      'You asked for labels and categories. Labels are what make the system stick for the whole household.');
   },
   'Wall-mounted storage': (plan) => {
     raisePriority(plan, ['hook-rack', 'door-rack']);
@@ -336,7 +338,7 @@ const PREF_HANDLERS = {
   'Make heavy items safer': (plan) => {
     ensureCitedStep(plan, /heavy/i,
       { task: 'Move heavy items to the lowest shelf' },
-      'You asked to make heavy items safer — low placement means nothing heavy can fall from height.');
+      'You asked to make heavy items safer. Low placement means nothing heavy can fall from height.');
   },
   'Use clear containers': (plan) => {
     raisePriority(plan, ['clear-bin', 'airtight-container']);
@@ -362,7 +364,7 @@ const PREF_HANDLERS = {
     // deliberately narrow: a "group by weekly use" step is NOT a maintenance step
     ensureCitedStep(plan, /weekly reset|maintain|5-minute/i,
       { task: 'Set a 5-minute weekly reset: return strays to their zones', time: '5 min / week' },
-      'You asked for a system that is easy to maintain — a tiny weekly reset keeps the plan alive.');
+      'You asked for a system that is easy to maintain. A tiny weekly reset keeps the plan alive.');
   },
   /* The five below back the style cards that used to resolve to nothing. Each
      follows the rule of the layer: if the space's own checklist already does
@@ -371,17 +373,17 @@ const PREF_HANDLERS = {
     raisePriority(plan, ['drawer-organizer']);
     ensureCitedStep(plan, /divider|one type per compartment|its own slot/i,
       { task: 'Add dividers so each category keeps its own slot and stacks stay upright' },
-      'You asked for dividers — a divided space holds its shape without anyone maintaining it.');
+      'You asked for dividers. A divided space holds its shape without anyone maintaining it.');
   },
   'Matching hangers': (plan) => {
     ensureCitedStep(plan, /hanger/i,
       { task: 'Switch the whole rail to one hanger style, and recycle the rest' },
-      'You asked for matching hangers — one hanger depth is what makes a rail read as a single line.');
+      'You asked for matching hangers. One hanger depth is what makes a rail read as a single line.');
   },
   'File-fold clothes': (plan) => {
     ensureCitedStep(plan, /file[- ]?fold/i,
       { task: 'File-fold so every item stands upright and shows its edge' },
-      'You asked for file-folded drawers — filed upright, nothing gets pulled from under a stack.');
+      'You asked for file-folded drawers. Filed upright, nothing gets pulled from under a stack.');
   },
   'Outline tools on a pegboard': (plan) => {
     raisePriority(plan, ['hook-rack']);
@@ -393,7 +395,7 @@ const PREF_HANDLERS = {
        drawer with cut foam as it is on a wall. */
     ensureCitedStep(plan, /pegboard|shadow.?board|marked spot/i,
       { task: 'Give every tool one marked spot, so an empty outline shows what has not come back' },
-      'You asked for a shadow board — the marked spot is what makes a missing tool obvious.');
+      'You asked for a shadow board. The marked spot is what makes a missing tool obvious.');
   },
   'One category per drawer': (plan) => {
     ensureCitedStep(plan, /one (?:category|type) per drawer|a drawer per/i,
@@ -402,7 +404,7 @@ const PREF_HANDLERS = {
   },
   'Open to buying storage': (plan) => {
     plan.opportunities = plan.opportunities || [];
-    plan.opportunities.push('You are open to buying storage — the shopping list below is sized to your space’s measurements.');
+    plan.opportunities.push('You are open to buying storage. The shopping list below is sized to your space’s measurements.');
   },
   // 'Use only what I already own' is handled in applyBudget (it zeroes purchases)
   'Use only what I already own': () => {},
@@ -434,11 +436,11 @@ export const REVISIONS = {
    existing label step, raising a product's priority) — an invisible change
    under a "Plan revised" toast reads as the button doing nothing. */
 const REVISION_NOTES = {
-  minimal:  'Each zone keeps fewer visible categories — you asked for a more minimal look.',
-  kid:      'A kid-reachable, hazard-free zone is called out on the shelf map — you asked for a more kid-friendly setup.',
-  capacity: 'Risers and stacking reclaim the vertical space — you asked to maximize capacity.',
-  hide:     'Loose items move into opaque bins and baskets — you asked to hide more clutter.',
-  labels:   'Every zone and container gets a label — you asked for more labels.',
+  minimal:  'Each zone keeps fewer visible categories. You asked for a more minimal look.',
+  kid:      'A kid-reachable, hazard-free zone is called out on the shelf map. You asked for a more kid-friendly setup.',
+  capacity: 'Risers and stacking reclaim the vertical space. You asked to maximize capacity.',
+  hide:     'Loose items move into opaque bins and baskets. You asked to hide more clutter.',
+  labels:   'Every zone and container gets a label. You asked for more labels.',
 };
 
 export function applyRevision(plan, id) {
@@ -483,7 +485,7 @@ const GOAL_ADVICE = [
     task: 'Pull everything forward and put the oldest at the front, newest behind',
     why: 'Date-order beats depth-order: what is oldest is what you reach first, so nothing expires unseen.' },
   { match: /restock/i, dedupe: /restock/i,
-    task: 'Write the restock level on the shelf edge — the count that means "buy more"',
+    task: 'Write the restock level on the shelf edge: the count that means "buy more"',
     why: 'A number on the shelf turns restocking into a glance instead of a memory test.' },
   { match: /hard to keep tidy/i, dedupe: /weekly reset|five-minute/i,
     task: 'Set a five-minute weekly reset and put it in the calendar',
@@ -492,7 +494,7 @@ const GOAL_ADVICE = [
     task: 'Give the overflow a named home, and clear it as the last step every day',
     why: 'Things pile up in the open because they have nowhere assigned. A named landing spot is what stops the pile re-forming.' },
   { match: /lids|sets get separated/i, dedupe: /as one unit|lid on its base|inside their own pillowcase/i,
-    task: 'Store each set as one unit — lid on its base, sheets inside their own pillowcase',
+    task: 'Store each set as one unit: lid on its base, sheets inside their own pillowcase',
     why: 'A set stored as one piece cannot come apart, which is what makes the hunt disappear.' },
   { match: /junk drawer/i, dedupe: /catch-all/i,
     task: 'Empty the catch-all completely and give each thing in it a real home elsewhere',
@@ -501,7 +503,7 @@ const GOAL_ADVICE = [
     task: 'Take out enough that the drawer closes with a finger of space to spare',
     why: 'Jamming is a volume problem, not a layout one. Nothing organizes its way out of being too full.' },
   { match: /outfits take forever/i, dedupe: /group by when you wear|by occasion/i,
-    task: 'Group by when you wear it — work, weekend, formal — not by garment type',
+    task: 'Group by when you wear it (work, weekend, formal), not by garment type',
     why: 'You choose clothes by occasion, so grouping by occasion means the decision is made by walking to one section.' },
   { match: /folding never lasts/i, dedupe: /file[- ]?fold/i,
     task: 'File-fold so every item stands upright and shows its edge',
@@ -544,7 +546,7 @@ const GOAL_ADVICE = [
   { match: /running out of room|no room for the car/i, dedupe: /\briser\b/i,
     task: 'Measure the empty air above each level and add a riser or a stacking bin to claim it',
     noBuy: 'Measure the empty air above each level and reuse a sturdy box as a riser to claim it',
-    why: 'Most spaces are short on usable levels, not on volume — the gap above each shelf is the room you already own.' },
+    why: 'Most spaces are short on usable levels, not on volume. The gap above each shelf is the room you already own.' },
   { match: /kids can't reach/i, dedupe: /reach standing flat|zone they can reach/i,
     task: 'Move the things they get for themselves down to the zone they can reach standing flat',
     why: 'Independence is a height question: what a child can reach unaided is what they will put back.' },
@@ -604,7 +606,7 @@ function applyGoals(plan, answers) {
       : quoted[0];
     plan.opportunities = plan.opportunities || [];
     plan.opportunities.push(
-      `${list} ${unplanned.length > 1 ? 'are' : 'is'} not in this checklist — a `
+      `${list} ${unplanned.length > 1 ? 'are' : 'is'} not in this checklist: a `
       + `${String(answers.effort || 'short session').toLowerCase()} only fits so many changes. Choose a longer session to plan `
       + `${unplanned.length > 1 ? 'them' : 'it'} in.`);
   }
@@ -631,7 +633,7 @@ function applyNote(plan, answers) {
   if (plan.opportunities.some(o => o.includes(short))) return;
   plan.opportunities.push(
     `You told us: “${short}”. This plan was built offline from your other answers, `
-    + `so nothing here accounts for it yet — worth a second look once you start.`);
+    + `so nothing here accounts for it yet. Worth a second look once you start.`);
 }
 
 /* A $0 plan promises "every step below works with what is already in the
@@ -731,7 +733,7 @@ function applyPrefs(plan, answers) {
     : quoted[0];
   plan.opportunities = plan.opportunities || [];
   plan.opportunities.push(
-    `${list} ${quiet.length > 1 ? 'are' : 'is'} already how this plan works — `
+    `${list} ${quiet.length > 1 ? 'are' : 'is'} already how this plan works: `
     + `the steps marked below are the ones that answer ${quiet.length > 1 ? 'them' : 'it'}.`);
 }
 
@@ -743,13 +745,13 @@ function applyToggles(plan, answers) {
     PREF_HANDLERS['No drilling or permanent installation'](plan);
     plan.opportunities[plan.opportunities.length - 1] =
       t.rental === 'yes'
-        ? 'Everything in this plan is freestanding — you said this is a rental, so nothing needs drilling.'
-        : 'Everything in this plan is freestanding — you said drilling isn’t an option.';
+        ? 'Everything in this plan is freestanding. You said this is a rental, so nothing needs drilling.'
+        : 'Everything in this plan is freestanding. You said drilling isn’t an option.';
   }
   if (t.heavy === 'yes' && !prefs.has('Make heavy items safer')) {
     ensureCitedStep(plan, /heavy/i,
       { task: 'Move heavy items to the lowest shelf' },
-      'You said this space holds heavy items — low placement keeps them safe to lift and impossible to drop from height.');
+      'You said this space holds heavy items. Low placement keeps them safe to lift and impossible to drop from height.');
   }
   if (t.hidden === 'yes' && !prefs.has('Hide visual clutter')) {
     ensureCitedStep(plan, /opaque|hidden/i,
@@ -759,12 +761,12 @@ function applyToggles(plan, answers) {
   if (t.daily === 'yes' && !prefs.has('Keep frequent items easy to reach')) {
     ensureCitedStep(plan, /eye level|easy to reach|daily/i,
       { task: 'Park daily-use items in the easiest-to-reach zone' },
-      'You said some items are used daily — they earn the prime real estate.');
+      'You said some items are used daily. They earn the prime real estate.');
   }
   if (t.rarely === 'yes') {
     ensureCitedStep(plan, /rarely|top shelf.*(bulk|backup)|seasonal/i,
       { task: 'Move rarely used items to the highest or deepest zone' },
-      'You said some items are rarely used — they shouldn’t occupy prime space.');
+      'You said some items are rarely used. They shouldn’t occupy prime space.');
   }
   if (t.kids === 'yes' && !prefs.has('Kid-friendly access')) {
     PREF_HANDLERS['Kid-friendly access'](plan);
@@ -772,7 +774,7 @@ function applyToggles(plan, answers) {
     // assuming it landed at a fixed index.
     const low = (plan.map || []).find(m => m.safety && m.safety.flag === 'kid-safe');
     if (low) {
-      low.safety.why = 'You said kids will access this space — this lower zone stays reachable and hazard-free.';
+      low.safety.why = 'You said kids will access this space. This lower zone stays reachable and hazard-free.';
     }
   }
 }
@@ -821,7 +823,7 @@ function applyDims(plan, answers) {
     // it; otherwise surface the depth advice as an opportunity.
     const tt = (plan.productNeeds || []).find(p => p.type === 'turntable');
     if (tt) tt.purpose += ` Your ${levelNoun(plan, true)} measure ${measure(d.d_in)} deep, so items at the back are otherwise out of reach.`;
-    else plan.opportunities.push(`Your ${levelNoun(plan, true)} are ${measure(d.d_in)} deep — a turntable or pull-out tray stops things from vanishing at the back.`);
+    else plan.opportunities.push(`Your ${levelNoun(plan, true)} are ${measure(d.d_in)} deep. A turntable or pull-out tray stops things from vanishing at the back.`);
   }
   if (d.w_in && d.w_in <= 24) {
     plan.opportunities.push(`At ${measure(d.w_in)} wide, this space works best with one category per ${levelNoun(plan, false)} instead of side-by-side zones.`);
@@ -1006,7 +1008,7 @@ function applyEffort(plan, answers, archetype) {
   const short = target - plan.steps.length;
   if ((floor && plan.steps.length < floor) || short >= 3) {
     plan.opportunities = plan.opportunities || [];
-    const note = `A ${String(answers.effort).toLowerCase()} of this space comes to ${plan.steps.length} steps, not ${target} — `
+    const note = `A ${String(answers.effort).toLowerCase()} of this space comes to ${plan.steps.length} steps, not ${target}: `
       + `there ${rowCount(plan) === 1 ? 'is one level' : `are ${rowCount(plan)} levels`} here and no more to plan. `
       + 'A longer session will not add to it.';
     if (!plan.opportunities.some(o => /comes to \d+ steps/.test(o))) plan.opportunities.push(note);

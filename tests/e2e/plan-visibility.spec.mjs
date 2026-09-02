@@ -59,7 +59,7 @@ test('Save as PDF keeps the sections that start folded', async ({ page }) => {
   await openSamplePlan(page);
   await page.emulateMedia({ media: 'print' });
 
-  for (const id of ['ch-map', 'ch-reuse', 'ch-shop']) {
+  for (const id of ['ch-reuse', 'ch-after', 'ch-shop']) {
     const hidden = await page.evaluate((chapterId) => {
       const ch = document.getElementById(chapterId);
       if (!ch) return 'missing';
@@ -83,11 +83,23 @@ test('the fold still works on screen', async ({ page }) => {
   /* The print rule must not leak into the screen view and leave every chapter
      permanently open — the report is deliberately short on a phone. */
   await openSamplePlan(page);
-  const map = page.locator('#ch-map');
-  await expect(map).toHaveClass(/collapsed/);
+  const reuse = page.locator('#ch-reuse');
+  await expect(reuse).toHaveClass(/collapsed/);
   const bodyHidden = await page.evaluate(() => {
-    const el = document.querySelector('#ch-map .map-rows, #ch-map > *:not(.ch-head)');
+    const el = document.querySelector('#ch-reuse > *:not(.ch-head)');
     return el ? getComputedStyle(el).display === 'none' : null;
   });
   expect(bodyHidden, 'a collapsed chapter is showing its body on screen').toBe(true);
+});
+
+test('the shelf map opens with the report', async ({ page }) => {
+  /* "Where things go" is the first of the three parts the landing page
+     promises, and it shipped folded: the plan's answer to its own question
+     sat behind a click nobody knew to make, beneath a summary that only
+     describes the problem. It opens with the report now, like the steps. */
+  await openSamplePlan(page);
+  const map = page.locator('#ch-map');
+  await expect(map).not.toHaveClass(/collapsed/);
+  await expect(map.locator('.ch-head')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#res-map .shelf').first()).toBeVisible();
 });

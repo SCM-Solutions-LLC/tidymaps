@@ -65,7 +65,7 @@ try{
   if(localStorage.getItem('tidymap_key')){
     localStorage.removeItem('tidymap_key');
     localStorage.removeItem('tidymap_model');
-    setTimeout(()=>toast('TidyMap now runs its own AI — your saved API key was removed from this browser.'), 800);
+    setTimeout(()=>toast('TidyMap now runs its own AI. Your saved API key was removed from this browser.'), 800);
   }
 }catch(e){ /* no storage available; nothing to clean up */ }
 
