@@ -4,10 +4,10 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-04, on the branch that took up the three
-decisions PR #119 left open; the deployed state it describes is `main` at
-`a790934` (PR #119, Pages run 124 green 09-02 21:11 UTC; the model path canary
-passed on that commit on 09-03). Everything
+**Last refreshed:** 2026-09-04, after PR #120 merged and deployed; the
+deployed state it describes is `main` at `7619fb8` (PR #120, Pages run 125
+green 09-04 00:59 UTC, its e2e step included; the model path canary last
+passed on 09-03 against `a790934`). Everything
 through PR #115 is merged (`main` at `0bec7a0`) and **deployed** — Pages run 120 went green on 08-21, so the four
 viewer ports below are live on the site, not merely landed. `main` is the single
 source of truth.
@@ -43,6 +43,53 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-09-04 session verified (PR #120 in a browser)
+
+PR #120 merged at `7619fb8` and Pages run 125 went green at 00:59 UTC, e2e
+step included. The production domain is not reachable from the sandbox (the
+proxy refuses the CONNECT), so the verification below ran against a local
+serve of the same commit in the sandbox's Chromium 1194, at 390px and 1280px,
+with the edge functions routed to abort so nothing left the browser. The
+screenshots live in the session scratchpad, not the repo.
+
+**The eleven-step wizard holds.** Landing to review is eleven Continue
+presses; every screen's label reads `Step N of 11` in order, `#flow-ctx`
+accumulates room, spot, setup and size as the steps go by, the review screen
+lists Room and Spot as two rows whose Edit buttons both go to the space step,
+and Build lands on the loading screen and then the results screen with no
+page error and no console error at either width. With no photo the analysis
+is never called (no request reached the `functions/v1` route), so the plan is
+the built-in pantry plan, which is what a visitor without a backend sees.
+
+**Both 3D entries open clean.** The sample plan from the landing page and
+the plan the wizard builds both open the viewer with the fit note hidden,
+"Set exact sizes" reading 2′6″ w × 1′2″ d × 7′ h, and the can rack and
+turntable on the middle shelf where the plan sends them. The same script
+against `74f19bf` (the commit before the fix) shows the old note, "2
+organizers from your list have no spot in this view yet", over a 5′ cabinet,
+so the comparison is against the fault and not against nothing.
+
+**Two things the walkthrough turned up, neither a regression of #120.**
+
+- **A stale `area` history entry is dropped before `go()` sees it.** The
+  09-03 entry says a history entry naming `area` "lands on a screen that
+  exists". It does not throw, but it does not land anywhere either: the
+  popstate handler returns early for any screen id without a section
+  (`document.getElementById('screen-'+id)`), and that check runs before
+  `go('area')` could map it to `space`. Measured by pushing
+  `{screen:'area'}` under a setup entry and calling `history.back()`: the
+  URL becomes `#area` and the setup screen stays. One Back press appears
+  dead for a tab that was open across the 09-03 deploy, and the next one
+  works. The `go()` mapping still covers drafts and direct callers. If it is
+  worth fixing, map the id in the popstate handler before the element check;
+  the scenario above is the red test.
+- **The top shelf's item labels sit on the canvas edge at the default
+  camera on desktop.** The cabinet fills the 794×640 canvas top to bottom,
+  so "Bulk overflow · Paper goods · Rarely used" is clipped along its top on
+  first paint. It was clipped the same way at `74f19bf`, before the cabinet
+  grew to seven feet, so this is the framing, not the geometry change. On a
+  phone the whole row is visible.
 
 ## What the 2026-09-03 session changed (the three decisions #119 left open)
 
