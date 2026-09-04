@@ -191,3 +191,29 @@ test('a table-of-contents link scrolls the report instead of leaving it', async 
   await page.goBack();
   expect(await screen(page)).toBe('results');
 });
+
+/* The room and area steps became one space step on 2026-09-03. A tab that was
+   open across that deploy still holds history entries naming `area`, and
+   `go()` maps that id to `space`. But the popstate handler screened out any
+   id without a section BEFORE calling go(), so Back onto such an entry did
+   nothing except put #area in the address bar; the next press worked. Found
+   by the 09-04 browser check. The entry is forged here the way an old tab
+   would carry it: stamped with the live generation, under the current step. */
+test('Back onto a pre-merge "area" entry lands on the space step', async ({ page }) => {
+  await enterWizard(page);
+  await page.locator('#space-cards .room-card', { hasText: 'Closet' }).first().click();
+  await page.locator('#flow-next').click();
+  await expect(page.locator('#screen-setup')).toHaveClass(/active/);
+
+  await page.evaluate(() => {
+    const gen = history.state.gen;
+    history.pushState({ screen: 'area', gen }, '', '#area');
+    history.pushState({ screen: 'setup', gen }, '', '#setup');
+  });
+  await page.goBack();
+  await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  expect(await screen(page)).toBe('space');
+  // The entry is claimed under its new name, so the address bar and a later
+  // Forward both say what is on screen.
+  expect(page.url()).toContain('#space');
+});
