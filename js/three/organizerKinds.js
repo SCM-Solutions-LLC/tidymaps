@@ -18,6 +18,16 @@ function norm(value){
   return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 }
 
+/* Words every level name shares. "Middle shelf" used to score 1 against a
+   "Top shelf" row on the word shelf alone, and because rows are offered in
+   order that was enough to put the sample pantry's can rack on the top shelf
+   (4 inches of headroom) before the middle shelf was ever reached. Only the
+   words that tell one level from another count towards a partial match. */
+const GENERIC_LEVEL_WORDS=new Set([
+  'shelf','shelves','drawer','drawers','zone','zones','level','levels',
+  'wall','walls','cabinet','rack','deck','bay','side','space','area',
+]);
+
 function targetScore(target,row){
   const t=norm(target);
   if(!t) return 0;
@@ -25,7 +35,7 @@ function targetScore(target,row){
   const rowText=norm(`${row&&row.lv||''} ${row&&row.zone||''}`);
   if(!rowText) return 0;
   if(rowText.includes(t)||t.includes(rowText)) return 5;
-  const tokens=t.split(' ').filter(word=>word.length>3);
+  const tokens=t.split(' ').filter(word=>word.length>3&&!GENERIC_LEVEL_WORDS.has(word));
   return tokens.reduce((score,word)=>score+(rowText.includes(word)?1:0),0);
 }
 

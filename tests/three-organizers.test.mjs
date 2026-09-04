@@ -42,3 +42,15 @@ test('unchecked products disappear from 3D product plan',()=>{
   const needs=[{type:'basket',qty:2,targetZone:'Snacks'}];
   assert.deepEqual(selectedProductNeeds(needs,[{needIdx:0,checked:false,qty:2}]),[]);
 });
+
+/* "Middle shelf" scored 1 against a "Top shelf" row on the word shelf alone,
+   and rows are offered in order, so the sample pantry's can rack was placed on
+   the top shelf (4 inches of headroom for a 13.75-inch rack) before the middle
+   shelf was ever reached, and the viewer warned that it did not fit. Words
+   every level name shares say nothing about WHICH level. */
+test('a need for one level is not placed on another because both say shelf',()=>{
+  const needs=[{type:'can-riser',targetZone:'Middle shelf'}];
+  assert.equal(organizerSpecFor({...base,row:{lv:'Top shelf',zone:'Bulk overflow · Rarely used'},productNeeds:needs}),null);
+  assert.equal(organizerSpecFor({...base,row:{lv:'Middle shelf',zone:'Canned goods · Pasta'},productNeeds:needs}).type,'riser');
+  assert.equal(organizerSpecFor({...base,row:{lv:'Back wall: eye level',zone:'Folded knits'},productNeeds:[{type:'basket',targetZone:'Left wall: high shelf'}]}),null);
+});

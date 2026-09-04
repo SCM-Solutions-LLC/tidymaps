@@ -67,17 +67,28 @@ function pantryScenario() {
         safety: {flag: null, why: null},
         items: [{name: 'Spices', size: 's', flags: []}, {name: 'Sauces', size: 's', flags: ['fragile']}, {name: 'Small packets', size: 's', flags: []}], surface: 'door'}
     ],
-    geometry: {unit: 'in', width: 30, height: 60, depth: 14, shelfCount: 5, shelfYFracs: [0.08, 0.30, 0.52, 0.72, 0.90], estimated: true},
+    /* Seven feet, the height of a standard pantry cabinet. At five feet the
+       shelves sat twelve inches apart and the plan's own can rack (every one in
+       the catalog stands 13.75 inches) could not stand on any of them, so the
+       3D view opened with a warning against the sample plan. */
+    geometry: {unit: 'in', width: 30, height: 84, depth: 14, shelfCount: 5, shelfYFracs: [0.08, 0.30, 0.52, 0.72, 0.90], estimated: true},
     layout: {type: 'shelves'},
     safetyNotes: [
       'Kid snacks live on the lower shelf so small hands can reach them without climbing.',
       'Heavy jars and cans stay at waist height or below, so nothing heavy can fall from above.'
     ],
     productNeeds: [
-      {type: 'clear-bin', qty: 4, purpose: 'Corral loose snack packets so they stay visible', targetZone: 'Eye level', maxDims: {w_in: 10.5, h_in: 8, d_in: 14}, priority: 'high'},
+      /* Two, not four: the eye-level shelf of this 30-inch pantry holds two
+         10-inch bins, and the 3D view said so ("2 organizers from your list
+         have no spot in this view yet") every time the sample plan opened. The
+         plan reuses the household's two baskets for the rest of the snacks. */
+      {type: 'clear-bin', qty: 2, purpose: 'Corral loose snack packets so they stay visible', targetZone: 'Eye level', maxDims: {w_in: 10.5, h_in: 8, d_in: 14}, priority: 'high'},
       {type: 'can-riser', qty: 1, purpose: 'See every can without digging', targetZone: 'Middle shelf', maxDims: {w_in: 18, h_in: 14, d_in: 14}, priority: 'high'},
       {type: 'turntable', qty: 1, purpose: 'Reach sauces at the back of the deep shelf', targetZone: 'Middle shelf', maxDims: {w_in: 13, h_in: 6, d_in: 13}, priority: 'nice'},
-      {type: 'shelf-riser', qty: 1, purpose: 'Turn unused vertical space into a second level', targetZone: 'Top shelf', maxDims: {w_in: 14, h_in: 9, d_in: 14}, priority: 'nice'},
+      /* Eye level, where the short boxes and mugs leave the height unused. The
+         top shelf it used to name has four inches of headroom, so the riser
+         could never stand there and the view said so. */
+      {type: 'shelf-riser', qty: 1, purpose: 'Turn unused vertical space into a second level', targetZone: 'Eye level', maxDims: {w_in: 14, h_in: 9, d_in: 14}, priority: 'nice'},
       {type: 'airtight-container', qty: 2, purpose: 'Keep flour and sugar fresh and stackable', targetZone: 'Middle shelf', maxDims: {w_in: 6.5, h_in: 13, d_in: 14}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Make the zones easy for the whole household to keep', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
     ],
