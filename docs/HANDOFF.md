@@ -87,12 +87,23 @@ so the comparison is against the fault and not against nothing.
   claims the entry under its new name so the address bar and Forward agree
   with the screen. The scenario is now a test in
   `tests/e2e/history-navigation.spec.mjs`, seen red against the old handler.
-- **The top shelf's item labels sit on the canvas edge at the default
-  camera on desktop.** The cabinet fills the 794×640 canvas top to bottom,
-  so "Bulk overflow · Paper goods · Rarely used" is clipped along its top on
-  first paint. It was clipped the same way at `74f19bf`, before the cabinet
-  grew to seven feet, so this is the framing, not the geometry change. On a
-  phone the whole row is visible.
+- **The top shelf's item labels drew above the canvas at the default
+  camera.** The cabinet filled the canvas top to bottom, so "Bulk overflow ·
+  Paper goods · Rarely used" was clipped along its top. It was clipped the
+  same way at `74f19bf`, before the cabinet grew to seven feet, so this was
+  the framing, not the geometry change. Two corrections to what the
+  walkthrough first concluded, both from measuring rather than looking:
+  the row is the top shelf's *item* labels, which are hidden until a
+  sidebar row is hovered (the screenshot's pointer had landed on that row),
+  and the phone was not spared, its item labels projected to the same 1.01
+  in normalised device coordinates; the vertical field of view is fixed, so
+  the canvas aspect never came into it. Nearly every setup's scene had the
+  same overhang. Fixed the same day: `fitLabelsInFrame()` in `scene.js`
+  projects every label sprite, shown or hidden, and backs the camera off
+  along its own line of sight until the highest top edge sits at 0.94, only
+  ever moving out. The pantry's camera went from 130 to about 139 inches.
+  `tests/e2e/viewer3d-label-headroom.spec.mjs` holds the sample plan and all
+  33 setups to it; seen red on 32 of 33 setups against the old framing.
 
 ## What the 2026-09-03 session changed (the three decisions #119 left open)
 
