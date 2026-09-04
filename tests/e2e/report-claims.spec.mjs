@@ -70,7 +70,7 @@ test('a number we cannot use is replaced visibly, not silently', async ({ page }
      three-foot one, and the report quoted a measurement nobody entered. */
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  for (let i = 0; i < 3; i++) await page.locator('#flow-next').click();
+  for (let i = 0; i < 2; i++) await page.locator('#flow-next').click();
   await expect(page.locator('#screen-measure')).toHaveClass(/active/);
 
   await page.fill('#m-num-w', '4');
@@ -125,8 +125,8 @@ test('a style answer is readable on the report without opening a disclosure', as
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  // space → area → setup → measure → capture → household → contents → goals → style
-  for (let i = 0; i < 8; i++) await page.locator('#flow-next').click();
+  // space → setup → measure → capture → household → contents → goals → style
+  for (let i = 0; i < 7; i++) await page.locator('#flow-next').click();
   await expect(page.locator('#screen-style')).toHaveClass(/active/);
   const label = await page.locator('#style-cards .wz-style', { hasText: /label/i }).first().innerText();
   await page.locator('#style-cards .wz-style', { hasText: /label/i }).first().click();
