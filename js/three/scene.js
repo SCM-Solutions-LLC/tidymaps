@@ -742,6 +742,51 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
     .reduce((sum,remaining)=>sum+Math.max(0,remaining),0);
   scene.userData.unplacedOrganizerQty=unplacedOrganizerQty;
 
+  /* ---------- headroom for the labels ----------
+
+     The distance chosen above frames the cabinet body, and for a seven-foot
+     pantry that put the top of the cabinet on the top edge of the canvas.
+     Labels sit ABOVE what they name: the zone label above its shelf, the item
+     labels that come up when a sidebar row is hovered above the items on it.
+     So the top shelf's item labels drew off the canvas, clipped along their
+     top edge: measured on the sample plan, their tops projected to 1.01 in
+     normalised device coordinates, where the frame ends at 1. Nearly every
+     other setup's scene had the same overhang; nobody saw it because the
+     item labels are hidden until the hover that reveals them.
+
+     Every label, shown or hidden, is projected here and the camera backed
+     off along its own line of sight until the highest fits with a little
+     margin. It only ever moves out, so a scene that already fits is left
+     alone. The vertical field of view is fixed, so none of this depends on
+     the canvas aspect and it can run before setSize(). Along the line of
+     sight a point `rise` above the centre and `front` in front of the target
+     projects to rise / ((front + d) · tan(fov/2)); the d where that equals
+     the limit is the least the camera can stand back. */
+  function fitLabelsInFrame(){
+    const LABEL_TOP_LIMIT=0.94;
+    const labels=[];
+    scene.traverse(node=>{ if(node.userData && node.userData.isLabel) labels.push(node); });
+    if(!labels.length) return;
+    camera.updateMatrixWorld();
+    const right=new THREE.Vector3(), up=new THREE.Vector3(), back=new THREE.Vector3();
+    camera.matrixWorld.extractBasis(right, up, back);
+    const halfTan=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+    const rel=new THREE.Vector3();
+    let dist=camera.position.distanceTo(controls.target);
+    for(const label of labels){
+      rel.copy(label.position).sub(controls.target);
+      rel.y+=label.scale.y*(1-label.center.y);
+      const rise=rel.dot(up);
+      if(rise<=0) continue;
+      const front=-rel.dot(back);
+      dist=Math.max(dist, rise/(LABEL_TOP_LIMIT*halfTan)-front);
+    }
+    dist=Math.min(dist, controls.maxDistance);
+    camera.position.copy(back).multiplyScalar(dist).add(controls.target);
+    controls.update();
+  }
+  fitLabelsInFrame();
+
   function setSize(){
     const w=canvas.clientWidth||canvas.parentElement.clientWidth||640;
     const h=canvas.clientHeight||Math.min(innerHeight*0.68, 560)||420;
