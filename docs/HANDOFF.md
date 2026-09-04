@@ -81,9 +81,12 @@ so the comparison is against the fault and not against nothing.
   `{screen:'area'}` under a setup entry and calling `history.back()`: the
   URL becomes `#area` and the setup screen stays. One Back press appears
   dead for a tab that was open across the 09-03 deploy, and the next one
-  works. The `go()` mapping still covers drafts and direct callers. If it is
-  worth fixing, map the id in the popstate handler before the element check;
-  the scenario above is the red test.
+  works. The `go()` mapping still covers drafts and direct callers. Fixed
+  the same day: `resolveScreen()` in `router.js` holds the one rename and
+  both `go()` and the popstate handler run ids through it, and the handler
+  claims the entry under its new name so the address bar and Forward agree
+  with the screen. The scenario is now a test in
+  `tests/e2e/history-navigation.spec.mjs`, seen red against the old handler.
 - **The top shelf's item labels sit on the canvas edge at the default
   camera on desktop.** The cabinet fills the 794×640 canvas top to bottom,
   so "Bulk overflow · Paper goods · Rarely used" is clipped along its top on

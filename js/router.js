@@ -72,6 +72,15 @@ let popping=false;
    they are marked dead instead. */
 let generation=0;
 
+/* The area step was folded into the space step on 2026-09-03. A history
+   entry, a #area fragment or a resume path written before that still names
+   it, and a screen id with no section behind it would throw on the first
+   element lookup. Every id that reaches go() or the popstate handler goes
+   through here first; the handler used to check for the section BEFORE go()
+   could rename the id, so Back onto an old tab's `area` entry did nothing. */
+const RENAMED_SCREENS={ area:'space' };
+const resolveScreen=(id)=>RENAMED_SCREENS[id]||id;
+
 const urlFor=(id)=>(id==='landing' ? location.pathname+location.search : '#'+id);
 
 function syncHistory(id, from, replace){
@@ -129,7 +138,10 @@ export function initHistory(){
       history.replaceState({ screen:'landing', gen:generation },'', urlFor('landing'));
       return;
     }
-    const id=e.state.screen;
+    const id=resolveScreen(e.state.screen);
+    // A renamed entry is claimed under its new name, so the address bar and a
+    // later Forward say what is on screen. replaceState does not fire popstate.
+    if(id!==e.state.screen) history.replaceState({ screen:id, gen:e.state.gen },'',urlFor(id));
     if(id===current) return;
     // An entry for a screen this build does not have (an old tab, a hand-edited
     // fragment) is left to the browser rather than throwing on a null element.
@@ -152,11 +164,7 @@ export function setRail(){
   rail.style.width=Math.min(100,pct)+'%';
 }
 export function go(id, opts={}){
-  /* The area step was folded into the space step on 2026-09-03. A history
-     entry, a #area fragment or a resume path written before that still names
-     it, and a screen id with no section behind it would throw on the next
-     line but one. */
-  if(id==='area') id='space';
+  id=resolveScreen(id);
   const from=current;
   /* Leaving the loading screen abandons the analysis, whichever way they left
      — Back, Start over, My spaces. The run is retired here rather than only
