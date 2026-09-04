@@ -262,7 +262,7 @@ export function resetPlanRecord(target=state){
 
 /* ---------- The wizard's answers, in one place ----------
 
-   Every answer the twelve steps collect, with ONE serializer and ONE
+   Every answer the eleven steps collect, with ONE serializer and ONE
    deserializer between them. There used to be two hand-maintained halves per
    storage backend and four halves in total — the guest draft wrote `goals`,
    `styles`, `cats`, `catsTouched` and `afterMode`; the signed-in row did not —

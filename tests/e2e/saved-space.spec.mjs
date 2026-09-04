@@ -75,10 +75,8 @@ async function buildAPlan(page, { room = 'Bedroom', area = 'Closet' } = {}) {
 
 // Everything from the room step onward. Split out so a test can re-enter the
 // wizard from "Edit answers" without starting a new page.
-async function walkWizardFromSpaceStep(page, { room, area }) {
-  await page.locator('#room-cards .room-card', { hasText: room }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: area }).first().click();
+async function walkWizardFromSpaceStep(page, { area }) {
+  await page.locator('#space-cards .room-card', { hasText: area }).first().click();
   await page.locator('#flow-next').click();
   await page.locator('#flow-next').click();              // setup
   await page.fill('#m-num-w', '4');
@@ -115,6 +113,9 @@ test('planning a second space inserts its own row instead of overwriting the fir
 
   await page.getByRole('button', { name: 'Edit answers' }).click();
   await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  /* The space step asks before it discards the typed measurements. The old
+     room card reset them silently on its way to the area step. */
+  page.once('dialog', (d) => d.accept());
   await walkWizardFromSpaceStep(page, { room: 'Kitchen', area: 'Pantry' });
   await page.waitForTimeout(1500);
 

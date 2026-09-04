@@ -10,16 +10,15 @@ import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_ST
 import { closeAuth } from './screens/account.js';
 
 /* ============================================================
-   Flow / routing — the design-contract 12-step wizard:
-   room → area → setup → measurements → photos → household →
+   Flow / routing — the design-contract 11-step wizard:
+   space → setup → measurements → photos → household →
    contents → goals → style → effort → shopping → review → plan
    ============================================================ */
-export const FLOW = ['landing','space','area','setup','measure','capture','household','contents','goals','style','effort','shopping','review','loading','results','customize','save','feedback','done'];
+export const FLOW = ['landing','space','setup','measure','capture','household','contents','goals','style','effort','shopping','review','loading','results','customize','save','feedback','done'];
 // screens that show the sticky Back/Continue footer
 export const FLOW_SCREENS = {
-  space:{next:'area',back:null,label:'Continue'},
-  area:{next:'setup',back:'space',label:'Continue'},
-  setup:{next:'measure',back:'area',label:'Continue'},
+  space:{next:'setup',back:null,label:'Continue'},
+  setup:{next:'measure',back:'space',label:'Continue'},
   measure:{next:'capture',back:'setup',label:'Continue'},
   capture:{next:'household',back:'measure',label:'Continue'},
   household:{next:'contents',back:'capture',label:'Continue'},
@@ -41,7 +40,7 @@ export function getCurrentScreen(){
 /* ============================================================
    Browser history
 
-   There was none. Twelve steps of answers behind a Back button that left the
+   There was none. Eleven steps of answers behind a Back button that left the
    site, on a phone, where Back is how people move — and the swipe gesture is
    the same action. Nothing was lost (the guest draft survives), but landing on
    a marketing page mid-wizard reads as having lost it, which is the same thing
@@ -153,6 +152,11 @@ export function setRail(){
   rail.style.width=Math.min(100,pct)+'%';
 }
 export function go(id, opts={}){
+  /* The area step was folded into the space step on 2026-09-03. A history
+     entry, a #area fragment or a resume path written before that still names
+     it, and a screen id with no section behind it would throw on the next
+     line but one. */
+  if(id==='area') id='space';
   const from=current;
   /* Leaving the loading screen abandons the analysis, whichever way they left
      — Back, Start over, My spaces. The run is retired here rather than only
@@ -195,8 +199,8 @@ export function go(id, opts={}){
     } else {
       stepEl.style.display='none';
       // Also clear the text: `.step-counter:not(:empty) ~ .restart` hides
-      // "Start over" whenever the counter holds anything, so stale "Step 12
-      // of 12" text kept the button hidden for the rest of the session.
+      // "Start over" whenever the counter holds anything, so stale "Step 11
+      // of 11" text kept the button hidden for the rest of the session.
       stepEl.textContent='';
     }
   }
@@ -259,7 +263,7 @@ export function updateGate(){
   // so Continue is enabled whenever the minimal selection exists.
   const btn=document.getElementById('flow-next');
   let ok=true;
-  if(current==='space'||current==='area') ok=!!state.space;
+  if(current==='space') ok=!!state.space;
   if(current==='setup') ok=!!state.setup;
   btn.disabled=!ok;
 }

@@ -95,9 +95,7 @@ test('a number we cannot use is replaced visibly, not silently', async ({ page }
 test('a renter can say the walls are off limits, and the plan listens', async ({ page }) => {
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Garage' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Workbench' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Workbench' }).first().click();
   for (let i = 0; i < 4; i++) await page.locator('#flow-next').click();
   await expect(page.locator('#screen-household')).toHaveClass(/active/);
 

@@ -4,8 +4,10 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-02, on the review branch that became the next PR;
-the deployed state it describes is `main` at `1f7993d` (PR #118). Everything
+**Last refreshed:** 2026-09-04, on the branch that took up the three
+decisions PR #119 left open; the deployed state it describes is `main` at
+`a790934` (PR #119, Pages run 124 green 09-02 21:11 UTC; the model path canary
+passed on that commit on 09-03). Everything
 through PR #115 is merged (`main` at `0bec7a0`) and **deployed** — Pages run 120 went green on 08-21, so the four
 viewer ports below are live on the site, not merely landed. `main` is the single
 source of truth.
@@ -41,6 +43,74 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-09-03 session changed (the three decisions #119 left open)
+
+PR #119 merged and deployed on 09-02 (Pages run 124). It had left three
+things as decisions rather than changes; all three were taken up, and one of
+them turned out to be three bugs, not one.
+
+**The room and area steps are one step.** Step 1 shows all nine spaces,
+grouped under their room the way the homepage gallery does; picking a card
+sets the pair (`setArea(room, area)`) and Continue goes to the setup shapes.
+The wizard is eleven steps: `FLOW` and `WIZARD_STEPS` lost `'area'`,
+`#screen-area` is gone from `index.html`, the step labels were renumbered,
+and `renderSpace` in `wizard.js` replaced `renderRoom`/`renderArea`.
+`go('area')` maps to `'space'` so a stale history entry, `#area` fragment or
+draft written before the change lands on a screen that exists. One behaviour
+changed on purpose: switching to a space in a *different room* used to go
+through `setRoom()`, which reset the spot silently; now every switch is a
+card tap and goes through `confirmAreaChange()`, so typed measurements and
+photos are protected on that path too (`saved-space.spec` accepts the
+dialog). `roomLower()` had no caller left and was removed. Sixteen e2e specs
+drove the two old steps by clicking `#room-cards` then `#area-cards`; they
+click `#space-cards` once now, and the illustration-motion spec reads the nine
+cards on one screen instead of a room pass plus four area passes.
+
+**The sample plan's 3D view opens clean.** "1 organizer from your list has no
+spot in this view yet" was, measured from the real path, "2 organizers", and
+under it sat three separate faults. (1) The pantry scenario asked for four
+10-inch bins at eye level on a 30-inch shelf; two fit. It asks for two. (2)
+`targetScore` in `organizerKinds.js` gave "Middle shelf" one point against a
+"Top shelf" row on the word *shelf*, and because rows are offered in order
+that put the can rack and the turntable on the top shelf, 4 inches of
+headroom, before the middle shelf was ever reached; the fit note then said
+they did not fit, which was true. Words every level name shares
+(`GENERIC_LEVEL_WORDS`) no longer count towards a partial match; the unit
+test was run red against the old scoring first. (3) The scenario's pantry was
+five feet tall with five shelves, so no gap cleared 13 inches and every can
+rack in the catalog stands 13.75; it is seven feet now, a standard pantry
+cabinet, and the riser that targeted the top shelf (six inches of headroom)
+targets eye level. `data.js` mirrors the needs and geometry for the built-in
+fallback plan. `tests/e2e/demo-fit.spec.mjs` walks landing, sample plan, 3D
+view, and asserts the note is hidden; it was seen red with the bins back at
+four and, separately, with the matcher change reverted.
+
+**The matcher change is a trade, and it is recorded here so nobody re-derives
+it.** The partial-match spill-over was never designed; it was an artefact of
+scoring on shared words. It did, though, place leftover units somewhere when
+the target level was full. Strict matching leaves them unplaced instead, and
+the fit note says the level is full, which is what the note was written to
+say. Measured with the `three-setup-matrix` approach (each setup's demo
+scenario built directly with its raw `productNeeds`, so maxDims rather than
+picked products): setups whose demo needs do not all place and fit went from
+23 of 33 to 26 of 33. The remaining ones are hand-written scenarios that ask
+for more than their own geometry holds (four bins plus two baskets on one
+"Top shelf"; hook racks aimed at "Floor / door" rows with a floor surface);
+they need the pantry's treatment one by one, or a second placement pass. Open
+item 10.
+
+**Nine photographs deleted.** `assets/photos/ba-*`, `ex-cab-after`,
+`ex-drawertower`, `ex-garage-shelving`, `ex-overhead-rack`,
+`ex-pantry-before`, `ex-storage-*`: nothing referenced them and two were
+byte-identical to files still in use. The product PNGs stay, because
+`docs/asset-plan.md` records keeping them as a decision and
+`plan-shopping.png` is a test fixture. The 09-02 entry below listed
+`hero-3d.png` and `plan-steps.png` among the unreferenced; the first is the
+WebP's source and the second is one of those kept-on-purpose screenshots.
+
+Gates on this branch: lint clean, `check:types` clean, 531 unit, e2e in the
+PR.
 
 ## What the 2026-09-02 session changed (site optimisation review)
 
@@ -135,7 +205,8 @@ plan opens with a fit warning ("1 organizer from your list has no spot in
 this view yet"), which is organizer-fit logic, not layout, and was left. The
 unreferenced images under `assets/` (ba-*, ex-drawertower, ex-garage-shelving,
 ex-overhead-rack, ex-pantry-before, ex-storage-*, hero-3d.png, plan-steps.png)
-deploy but are never fetched; repo hygiene, not user cost.
+deploy but are never fetched; repo hygiene, not user cost. (All three were
+taken up on 09-03; see the section above.)
 
 ## Product state in one paragraph
 
@@ -143,8 +214,9 @@ Static ES-module site (no build step) served from GitHub Pages, with a Supabase
 backend (project `jwubrtaacveavbkosgtf`): Postgres + RLS, magic-code auth,
 private `space-media` storage, and Deno edge functions that hold the AI keys
 (BYOK was removed; any `tidymap_key` in localStorage is scrubbed at startup).
-The wizard follows the Claude Design 12-step contract: `landing → space (room)
-→ area → setup → measure → capture (photos) → household → contents → goals →
+The wizard follows the Claude Design step contract, eleven steps since
+2026-09-03 (the design's room and area steps are one space picker): `landing
+→ space → setup → measure → capture (photos) → household → contents → goals →
 style → effort → shopping → review → loading → results → customize → save →
 feedback → done` (`js/router.js FLOW`; step data in `js/wizard-data.js`, step
 rendering in `js/screens/wizard.js`). Around it: a marketing homepage that
@@ -1330,6 +1402,9 @@ section in mind.
 - ~~Media production, one remaining slot~~ — `hero-home` still has a working
   declarative `src`, and the photographs are now WebP. Nothing on the site is
   broken for want of art.
+- ~~Room and area as two steps~~, ~~the sample plan's 3D fit warning~~,
+  ~~unreferenced images under `assets/`~~ — the three decisions #119 left
+  open, all taken up on 09-03. See that session's section.
 
 ## Open items / next actions
 
@@ -1441,6 +1516,22 @@ Ordered by whether anyone can act on them today.
    re-creates the same wrong conclusion in code that a human already reached by
    hand. And a check which could not run must never read as success, the same
    rule the canary applies to itself.
+
+10. **26 of the 33 setups' demo scenarios ask for more than their own geometry
+    holds.** Measured on 09-03 by building each setup's demo scenario the way
+    `tests/e2e/three-setup-matrix.spec.mjs` does and reading
+    `scene.userData.unplacedOrganizerQty` and the plan-sourced organizers with
+    `fits===false`. Only the pantry (the sample plan every visitor sees) was
+    fixed. The other scenarios are hand-written: the garage wall cabinet wants
+    four bins and two baskets on one "Top shelf", the closets aim hook racks at
+    "Floor / door" rows whose surface is a floor, the drawers want three
+    organizers in one "Top drawer". Each needs the same treatment the pantry
+    got (quantities, target levels and geometry that agree), or the placer
+    needs a second pass that offers a need's leftovers to other rows on the
+    same surface. Until then a wizard run with no backend opens its 3D view
+    with a true but unflattering fit note on most spaces. Do not fix this by
+    softening the matcher back to shared-word matching; that put organizers
+    on the wrong level and then warned that they did not fit.
 
 ### Waiting on traffic
 

@@ -603,6 +603,19 @@ body[data-flow="1"] .site-footer{display:none}
 .room-cards{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
 @media(min-width:560px){.room-cards{gap:16px}}
 @media(min-width:780px){.room-cards{grid-template-columns:repeat(4,1fr)}}
+/* Step 1 offers all nine spaces at once, grouped under their room the way
+   the homepage gallery does. Rows centre themselves: a room holds two or
+   three cards, and a short row left-aligned under a heading reads as a
+   layout mistake. Two across on a phone, like the gallery. */
+.wiz-space-group{margin-top:26px}
+.wiz-space-group:first-child{margin-top:0}
+.wiz-space-room{
+  font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:-.01em;
+  color:var(--ink);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);
+}
+.wiz-space-group .room-cards{display:flex;flex-wrap:wrap;justify-content:center}
+.wiz-space-group .room-card{flex:1 1 200px;max-width:300px}
+@media(max-width:559px){.wiz-space-group .room-card{flex:0 1 calc(50% - 6px);max-width:none}}
 .room-card{
   position:relative;border-radius:22px;overflow:hidden;cursor:pointer;
   border:2px solid #eee7db;background:#fff;

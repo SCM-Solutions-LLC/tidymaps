@@ -1,6 +1,6 @@
 import { test, expect } from 'playwright/test';
 
-/* The Back button used to leave the site from step 7 of 12. Nothing was lost —
+/* The Back button used to leave the site from step 6 of 11. Nothing was lost —
    the guest draft survives — but a marketing page appearing mid-wizard reads as
    having lost it, and on a phone Back is also the edge-swipe, so it is not a
    button people press by accident. */
@@ -17,15 +17,15 @@ async function enterWizard(page) {
 
 test('Back walks the wizard in reverse instead of leaving the site', async ({ page }) => {
   await enterWizard(page);
-  for (let i = 0; i < 4; i++) await page.locator('#flow-next').click();
+  for (let i = 0; i < 3; i++) await page.locator('#flow-next').click();
   await expect(page.locator('#screen-capture')).toHaveClass(/active/);
 
   const trail = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     await page.goBack();
     trail.push(await screen(page));
   }
-  expect(trail).toEqual(['measure', 'setup', 'area', 'space', 'landing']);
+  expect(trail).toEqual(['measure', 'setup', 'space', 'landing']);
   expect(page.url()).not.toContain('#');
 });
 
@@ -44,10 +44,10 @@ test('Back keeps going past the landing page and leaves the app', async ({ page 
   await page.goto('/index.html');
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.locator('#screen-landing .btn-primary').first().click();
-  for (let i = 0; i < 3; i++) await page.locator('#flow-next').click();
+  for (let i = 0; i < 2; i++) await page.locator('#flow-next').click();
   await expect(page.locator('#screen-measure')).toHaveClass(/active/);
 
-  for (let i = 0; i < 4; i++) await page.goBack();
+  for (let i = 0; i < 3; i++) await page.goBack();
   expect(await screen(page)).toBe('landing');
 
   await page.goBack();
@@ -85,28 +85,26 @@ test('Forward returns along the same path', async ({ page }) => {
   await enterWizard(page);
   await page.locator('#flow-next').click();
   await page.locator('#flow-next').click();
-  await expect(page.locator('#screen-setup')).toHaveClass(/active/);
+  await expect(page.locator('#screen-measure')).toHaveClass(/active/);
 
   await page.goBack();
   await page.goBack();
   expect(await screen(page)).toBe('space');
   await page.goForward();
-  expect(await screen(page)).toBe('area');
-  await page.goForward();
   expect(await screen(page)).toBe('setup');
+  await page.goForward();
+  expect(await screen(page)).toBe('measure');
 });
 
 test('the answers survive the round trip', async ({ page }) => {
   await enterWizard(page);
-  await page.locator('#room-cards .room-card', { hasText: 'Garage' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Workbench' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Workbench' }).first().click();
   await page.locator('#flow-next').click();
   await expect(page.locator('#screen-setup')).toHaveClass(/active/);
 
   await page.goBack();
-  await expect(page.locator('#screen-area')).toHaveClass(/active/);
-  await expect(page.locator('#area-cards .room-card.sel')).toContainText(/workbench/i);
+  await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  await expect(page.locator('#space-cards .room-card.sel')).toContainText(/workbench/i);
   await page.goForward();
   await expect(page.locator('#screen-setup')).toHaveClass(/active/);
   // The setup cards are the workbench's, not the kitchen defaults they would
@@ -119,7 +117,7 @@ test('the URL names the screen, and the landing page keeps a clean one', async (
   await enterWizard(page);
   expect(new URL(page.url()).hash).toBe('#space');
   await page.locator('#flow-next').click();
-  expect(new URL(page.url()).hash).toBe('#area');
+  expect(new URL(page.url()).hash).toBe('#setup');
   await page.goBack();
   await page.goBack();
   expect(new URL(page.url()).hash).toBe('');
@@ -160,7 +158,7 @@ test('Back closes the sign-in modal rather than the screen behind it', async ({ 
 test('Start over puts every cleared step out of Back\'s reach', async ({ page }) => {
   /* History entries cannot be deleted, so the ones below Start over survive.
      Returning to one drops the user into a step whose answers were wiped —
-     a Garage run reappearing as the Pantry default, under "Step 7 of 12". */
+     a Garage run reappearing as the Pantry default, under "Step 6 of 11". */
   await enterWizard(page);
   for (let i = 0; i < 5; i++) await page.locator('#flow-next').click();
   page.once('dialog', (d) => d.accept());
