@@ -22,6 +22,11 @@ async function openSamplePlan(page) {
 test('a plan with something to buy opens the purchases chapter', async ({ page }) => {
   await openSamplePlan(page);
   const shop = page.locator('#ch-shop');
+  /* The product list lands after the report does (catalog.json is its own
+     fetch), so a count taken the instant the screen is active reads zero on a
+     loaded runner and sends this test down the $0 branch of a plan that has
+     purchases. Same race adjust-screen.spec waits out. */
+  await expect(page.locator('#res-upgrades')).not.toHaveAttribute('aria-busy', 'true');
   const hasProducts = await page.locator('#res-upgrades .pname').count();
 
   if (hasProducts > 0) {
