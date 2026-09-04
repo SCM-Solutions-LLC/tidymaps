@@ -56,9 +56,7 @@ test('a walk-in AI plan reaches the 3D view through the button on the plan hero'
 
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await page.locator('#flow-next').click();
   await page.locator('#setup-cards .wz-setup', { hasText: 'Walk-in' }).first().click();
   await page.locator('#flow-next').click();

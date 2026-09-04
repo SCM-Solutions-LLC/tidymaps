@@ -35,8 +35,7 @@ const next = (page) => page.locator('#flow-next').click();
    Re-driving from the landing page per screen costs ~8s a step and buys
    nothing: the DOM at step N is the same either way. */
 const WIZARD_STEPS = [
-  ['space', async (page) => page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click()],
-  ['area', async (page) => page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click()],
+  ['space', async (page) => page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click()],
   ['setup', async (page) => expect(page.locator('#setup-cards .wz-setup.sel')).toHaveCount(1)],
   ['measure', async (page) => {
     await page.fill('#m-num-w', '3');

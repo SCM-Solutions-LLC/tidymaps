@@ -51,12 +51,6 @@ export function areaFor(spaceId) {
   return AREAS.kitchen[0];
 }
 
-/* "Where in the kitchen?" reads naturally; "Bathroom & hall" needs a hand. */
-export function roomLower(roomId) {
-  const room = ROOMS.find(r => r.id === roomId) || ROOMS[0];
-  return room.id === 'bath' ? 'bathroom (or hall)' : room.label.toLowerCase();
-}
-
 /* ---------- Per-space question sets ---------- */
 export const SPACE_CFG = {
   pantry: {
@@ -289,7 +283,7 @@ export const MOBILITY_NEEDS = ['Limited reach', 'Avoid bending', 'Wheelchair use
    plan say "out of the dog's reach" instead of something generic. */
 export const PET_TYPES = ['Dog', 'Cat', 'Other'];
 
-/* The household step (step 6 of 12) asks how many kids live here, and every
+/* The household step (step 5 of 11) asks how many kids live here, and every
    list after it was still offering kid-only options: "Kids' snacks" in the
    contents chips, "Kids can't reach their things" in the goals, "Kid-friendly
    setup" in the after-preview tabs. Answering "no kids" and then being asked

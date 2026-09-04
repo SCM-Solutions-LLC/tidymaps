@@ -100,47 +100,32 @@ function assertDistinct(metrics, where) {
   }
 }
 
-async function openArea(page, room, area) {
+async function openArea(page, area) {
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: room }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: area }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: area }).first().click();
   await page.locator('#flow-next').click();
   await expect(page.locator('#setup-cards .wz-setup').first()).toBeVisible();
   await page.waitForTimeout(350);
 }
 
-test('room card illustrations move enough to read', async ({ page }) => {
+/* All nine spaces sit on one screen since the room and spot steps merged, so
+   one reading covers what used to take a room pass and four area passes. */
+test('space card illustrations move enough to read', async ({ page }) => {
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await expect(page.locator('#room-cards .room-card')).toHaveCount(4);
+  await expect(page.locator('#space-cards .room-card')).toHaveCount(AREAS.length);
   await page.waitForTimeout(650);
 
-  const metrics = await measure(page, '#room-cards .room-card');
-  assertReadable(metrics, 'Room step');
-  assertDistinct(metrics, 'Room step');
-});
-
-test('area card illustrations move enough to read', async ({ page }) => {
-  for (const room of ['Kitchen', 'Bedroom', 'Bathroom & hall', 'Garage']) {
-    await page.goto('/index.html');
-    await page.locator('#screen-landing .btn-primary').first().click();
-    await page.locator('#room-cards .room-card', { hasText: room }).first().click();
-    await page.locator('#flow-next').click();
-    await expect(page.locator('#area-cards .room-card').first()).toBeVisible();
-    await page.waitForTimeout(350);
-
-    const metrics = await measure(page, '#area-cards .room-card');
-    assertReadable(metrics, `Area step (${room})`);
-    assertDistinct(metrics, `Area step (${room})`);
-  }
+  const metrics = await measure(page, '#space-cards .room-card');
+  assertReadable(metrics, 'Space step');
+  assertDistinct(metrics, 'Space step');
 });
 
 /* The coverage gap that let a fully static step ship. */
 for (const [room, area] of AREAS) {
   test(`setup illustrations move enough to read — ${room} / ${area}`, async ({ page }) => {
-    await openArea(page, room, area);
+    await openArea(page, area);
     const metrics = await measure(page, '#setup-cards .wz-setup');
     assertReadable(metrics, `${room} / ${area}`);
     assertDistinct(metrics, `${room} / ${area}`);
@@ -149,7 +134,7 @@ for (const [room, area] of AREAS) {
 
 test('motion is suppressed under prefers-reduced-motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await openArea(page, 'Bedroom', 'Closet');
+  await openArea(page, 'Closet');
   const running = await page.locator('#setup-cards .wz-setup').evaluateAll((cards) =>
     cards.flatMap((card) => [...card.querySelectorAll('.art-motion, .art-motion *')])
       .flatMap((n) => n.getAnimations())

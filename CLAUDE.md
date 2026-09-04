@@ -23,7 +23,8 @@ and re-derive anything the others claim.
 A static ES-module site — no build step — on GitHub Pages, with a Supabase
 backend (project `jwubrtaacveavbkosgtf`): Postgres + RLS, magic-code auth,
 private `space-media` storage, and Deno edge functions that hold the AI keys.
-The wizard follows a 12-step contract in `js/router.js FLOW`.
+The wizard follows an 11-step contract in `js/router.js FLOW` (12 until
+2026-09-03, when the room and area steps became one space picker).
 
 ## Gates
 

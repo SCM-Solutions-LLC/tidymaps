@@ -307,27 +307,20 @@
   </div>
 </section>
 
-<!-- ============================================================ 2. WIZARD · STEP 1 — ROOM -->
+<!-- ============================================================ 2. WIZARD · STEP 1 — SPACE -->
+<!-- Room and spot were two steps for a nine-item choice the homepage makes in
+     one grid. One screen now, grouped by room; js/screens/wizard.js renderSpace. -->
 <section class="screen wizard" id="screen-space">
-  <div class="step-head"><span class="step-num">Step 1 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 1 of 11</span></div>
   <span class="wiz-badge">Let's begin</span>
-  <h2>Which room needs sorting out?</h2>
-  <p class="wz-sub">Pick a room to start. You can always come back for another.</p>
-  <div class="room-cards" id="room-cards"></div>
-</section>
-
-<!-- ============================================================ STEP 2 — AREA -->
-<section class="screen wizard" id="screen-area">
-  <div class="step-head"><span class="step-num">Step 2 of 12</span></div>
-  <span class="wiz-badge sage">Narrow it in</span>
-  <h2>Where in the kitchen?</h2>
-  <p class="wz-sub">Pick the one spot we'll plan first. Small wins stack up.</p>
-  <div class="room-cards" id="area-cards"></div>
+  <h2>Which space needs sorting out?</h2>
+  <p class="wz-sub">Pick the one spot we'll plan first. Small wins stack up, and you can always come back for another.</p>
+  <div class="space-cards" id="space-cards"></div>
 </section>
 
 <!-- ============================================================ STEP 3 — SETUP -->
 <section class="screen wizard" id="screen-setup">
-  <div class="step-head"><span class="step-num">Step 3 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 2 of 11</span></div>
   <span class="wiz-badge sage">Its shape</span>
   <h2>Which one looks like your pantry?</h2>
   <p class="wz-sub">Go by the picture. This shapes your 3D layout and where each zone lands.</p>
@@ -336,7 +329,7 @@
 
 <!-- ============================================================ STEP 4 — MEASUREMENTS -->
 <section class="screen wizard" id="screen-measure">
-  <div class="step-head"><span class="step-num">Step 4 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 3 of 11</span></div>
   <span class="wiz-badge">Rough measurements</span>
   <h2>How big is your pantry?</h2>
   <p class="wz-sub">Close is plenty: drag the slider or type it in. This sizes your plan and the 3D preview.</p>
@@ -347,7 +340,7 @@
 
 <!-- ============================================================ STEP 5 — PHOTOS -->
 <section class="screen wizard" id="screen-capture">
-  <div class="step-head"><span class="step-num">Step 5 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 4 of 11</span></div>
   <span class="wiz-badge">Show us the space</span>
   <h2>Add a few honest photos</h2>
   <!-- The landing page promises plans built from photos, so a visitor with none
@@ -376,7 +369,7 @@
 
 <!-- ============================================================ STEP 6 — HOUSEHOLD -->
 <section class="screen wizard" id="screen-household">
-  <div class="step-head"><span class="step-num">Step 6 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 5 of 11</span></div>
   <span class="wiz-badge">Who lives here</span>
   <h2>Who uses this space?</h2>
   <p class="wz-sub">This decides what goes within easy reach and what gets tucked up high or behind a latch.</p>
@@ -394,7 +387,7 @@
     <div class="chips" id="mobility-chips"></div>
   </div>
   <!-- The plan engine has always known how to build a freestanding plan; there
-       was no way to ask for one. A renter walked all twelve steps without
+       was no way to ask for one. A renter walked every step without
        finding a control for "nothing can be screwed to a wall", and got a
        pegboard zone. -->
   <div class="wz-kid-ages" id="constraints-block">
@@ -417,7 +410,7 @@
 
 <!-- ============================================================ STEP 7 — CONTENTS -->
 <section class="screen wizard" id="screen-contents">
-  <div class="step-head"><span class="step-num">Step 7 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 6 of 11</span></div>
   <span class="wiz-badge sage">What's inside</span>
   <h2>What's kept in here?</h2>
   <p class="wz-sub">Tap everything that lives in this space. We'll group them into zones that make sense together.</p>
@@ -430,7 +423,7 @@
 
 <!-- ============================================================ STEP 8 — GOALS -->
 <section class="screen wizard" id="screen-goals">
-  <div class="step-head"><span class="step-num">Step 8 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 7 of 11</span></div>
   <span class="wiz-badge">The real goal</span>
   <h2>What bugs you most about it?</h2>
   <p class="wz-sub">Be honest. The plan leans hardest on whatever you pick here.</p>
@@ -439,7 +432,7 @@
 
 <!-- ============================================================ STEP 9 — STYLE -->
 <section class="screen wizard" id="screen-style">
-  <div class="step-head"><span class="step-num">Step 9 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 8 of 11</span></div>
   <span class="wiz-badge sage">Your taste</span>
   <h2>How do you like things kept?</h2>
   <p class="wz-sub">Pick as many as feel like you. Together they set the tone of your plan.</p>
@@ -448,7 +441,7 @@
 
 <!-- ============================================================ STEP 10 — EFFORT -->
 <section class="screen wizard" id="screen-effort">
-  <div class="step-head"><span class="step-num">Step 10 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 9 of 11</span></div>
   <span class="wiz-badge">Time you've got</span>
   <h2>How big a project is this?</h2>
   <p class="wz-sub">We'll size the steps to the time you actually have.</p>
@@ -457,7 +450,7 @@
 
 <!-- ============================================================ STEP 11 — SHOPPING -->
 <section class="screen wizard" id="screen-shopping">
-  <div class="step-head"><span class="step-num">Step 11 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 10 of 11</span></div>
   <span class="wiz-badge sage">Products</span>
   <h2>New containers, or work with what you have?</h2>
   <p class="wz-sub">Either way the plan works. Product ideas are always optional and clearly marked.</p>
@@ -466,7 +459,7 @@
 
 <!-- ============================================================ STEP 12 — REVIEW -->
 <section class="screen wizard" id="screen-review">
-  <div class="step-head"><span class="step-num">Step 12 of 12</span></div>
+  <div class="step-head"><span class="step-num">Step 11 of 11</span></div>
   <span class="wiz-badge">Almost there</span>
   <h2>Here's what we heard</h2>
   <p class="wz-sub">Change anything that's off, then build your plan.</p>

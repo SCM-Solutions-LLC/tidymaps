@@ -1,18 +1,23 @@
 /* ============================================================
-   Wizard screens — the design-contract 12-step flow.
+   Wizard screens — the design-contract flow, eleven steps since 2026-09-03.
 
-   room → area → setup → measurements → photos → household →
+   space → setup → measurements → photos → household →
    contents → goals → style → effort → shopping → review
 
-   Screens whose content depends on earlier answers (area list, setup
-   cards, per-space questions, review summary) are re-rendered every
-   time they're entered — the router calls renderWizardScreen(id) from
-   go(). All copy is lifted verbatim from TidyMap Wizard.dc.html.
+   The design's first two steps (room, then a spot in it) are one screen
+   now: the nine spaces, grouped under their room the way the homepage
+   gallery shows them. Two taps and a Continue for a nine-item choice was
+   the wizard's slowest opening, and the homepage already made it in one.
+
+   Screens whose content depends on earlier answers (setup cards,
+   per-space questions, review summary) are re-rendered every time
+   they're entered — the router calls renderWizardScreen(id) from go().
+   All other copy is lifted verbatim from TidyMap Wizard.dc.html.
    ============================================================ */
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   KID_AGES, MOBILITY_NEEDS, PET_TYPES, EFFORT_OPTS, SHOPPING_OPTS,
-  roomFor, areaFor, roomLower, goalIdFor, prefsForStyles, optionsForHousehold,
+  roomFor, areaFor, goalIdFor, prefsForStyles, optionsForHousehold,
   fmtFt, measureSummary, art,
 } from '../wizard-data.js';
 import { state, resetPlanRecord, clearGuestMedia, isMetric, setUnits, UNITS, householdAnswered } from '../state.js';
@@ -23,15 +28,10 @@ import { renderPhotoTiles } from './capture.js';
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
 
 /* Step order — the single source for numbering, progress, and context. */
-export const WIZARD_STEPS = ['space','area','setup','measure','capture','household','contents','goals','style','effort','shopping','review'];
+export const WIZARD_STEPS = ['space','setup','measure','capture','household','contents','goals','style','effort','shopping','review'];
 export function stepNumFor(id){ return WIZARD_STEPS.indexOf(id) + 1; }
 
 /* ---------- selection state transitions ---------- */
-
-export function setRoom(roomId){
-  if(state.room === roomId) return;
-  setArea(roomId, (AREAS[roomId] || [])[0].id);
-}
 
 /* Changing the area resets everything downstream that depends on it:
    setup type, measurements, categories, goals, styles, and detection — and,
@@ -164,59 +164,58 @@ function cardArt(entry){
 }
 
 function markSelected(wrap, active){
-  [...wrap.children].forEach(card => {
+  /* Descendants, not children: on the space step the cards sit inside a
+     group per room. Every card this touches carries aria-pressed. */
+  [...wrap.querySelectorAll('[aria-pressed]')].forEach(card => {
     const selected = card === active;
     card.classList.toggle('sel', selected);
     card.setAttribute('aria-pressed', String(selected));
   });
 }
 
-function renderRoom(){
-  const wrap = document.getElementById('room-cards');
+/* One screen for the nine spaces, grouped under their room the way the
+   homepage gallery is. Both answers are still recorded: the card carries its
+   room, and setArea() sets the pair, so nothing downstream (the setup list,
+   the context string, the review rows, the saved space) knows the step went. */
+function renderSpace(){
+  const wrap = document.getElementById('space-cards');
   if(!wrap) return;
   wrap.innerHTML = '';
-  ROOMS.forEach((room, index) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'room-card' + (state.room === room.id ? ' sel' : '');
-    b.setAttribute('aria-pressed', String(state.room === room.id));
-    b.innerHTML = `
-      <div class="rc-img card-visual tone-${index % 4}">${cardArt(room)}</div>
-      <span class="rc-check">${CHECK}</span>
-      <div class="rc-label"><h3>${room.label}</h3><p>${room.desc}</p></div>`;
-    b.onclick = () => { setRoom(room.id); markSelected(wrap, b); updateGate(); };
-    wrap.appendChild(b);
-  });
-}
-
-function renderArea(){
-  const wrap = document.getElementById('area-cards');
-  if(!wrap) return;
-  const h = document.querySelector('#screen-area h2');
-  if(h) h.textContent = `Where in the ${roomLower(state.room)}?`;
-  wrap.innerHTML = '';
-  (AREAS[state.room] || []).forEach((a, index) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'room-card' + (state.space === a.id ? ' sel' : '');
-    b.setAttribute('aria-pressed', String(state.space === a.id));
-    b.innerHTML = `
-      <div class="rc-img card-visual tone-${index % 4}">${cardArt(a)}</div>
-      <span class="rc-check">${CHECK}</span>
-      <div class="rc-label"><h3>${a.label}</h3><p>${a.desc}</p></div>`;
-    b.onclick = () => {
-      if(state.space !== a.id){
-        /* setArea() clears the uploaded photos and resets the measurements to
-           the new setup's defaults. Both are things the user typed or took, and
-           losing them silently is the worst thing this wizard did — the photo
-           step even went on displaying the old tiles afterwards. Ask first, and
-           only when there is actually something to lose. */
-        if(!confirmAreaChange(a.label)){ markSelected(wrap, wrap.querySelector('.sel')||b); return; }
-        setArea(state.room, a.id);
-      }
-      markSelected(wrap, b); updateGate();
-    };
-    wrap.appendChild(b);
+  ROOMS.forEach(room => {
+    const group = document.createElement('div');
+    group.className = 'wiz-space-group';
+    const heading = document.createElement('h3');
+    heading.className = 'wiz-space-room';
+    heading.textContent = room.label;
+    const cards = document.createElement('div');
+    cards.className = 'room-cards';
+    (AREAS[room.id] || []).forEach((a, index) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'room-card' + (state.space === a.id ? ' sel' : '');
+      b.dataset.room = room.id;
+      b.dataset.area = a.id;
+      b.setAttribute('aria-pressed', String(state.space === a.id));
+      b.innerHTML = `
+        <div class="rc-img card-visual tone-${index % 4}">${cardArt(a)}</div>
+        <span class="rc-check">${CHECK}</span>
+        <div class="rc-label"><h3>${a.label}</h3><p>${a.desc}</p></div>`;
+      b.onclick = () => {
+        if(state.space !== a.id){
+          /* setArea() clears the uploaded photos and resets the measurements to
+             the new setup's defaults. Both are things the user typed or took, and
+             losing them silently is the worst thing this wizard did — the photo
+             step even went on displaying the old tiles afterwards. Ask first, and
+             only when there is actually something to lose. */
+          if(!confirmAreaChange(a.label)){ markSelected(wrap, wrap.querySelector('.sel')||b); return; }
+          setArea(room.id, a.id);
+        }
+        markSelected(wrap, b); updateGate();
+      };
+      cards.appendChild(b);
+    });
+    group.append(heading, cards);
+    wrap.appendChild(group);
   });
 }
 
@@ -727,7 +726,7 @@ function renderReviewSummary(){
     + ((h.kidCount || 0) > 0 && h.kids.ages.length ? ' (' + h.kids.ages.join(', ') + ')' : '');
   const rows = [
     ['Room', room.label, 'space'],
-    ['Spot', area.label, 'area'],
+    ['Spot', area.label, 'space'],
     ['Setup', state.setupLabel, 'setup'],
     ['Measurements', measureSummary(state.setup, dimsFtNums(), isMetric()), 'measure'],
     ['Photos', plural(state.uploadedFiles.length, 'photo'), 'capture'],
@@ -778,8 +777,7 @@ function renderReviewSummary(){
 /* ---------- dispatcher ---------- */
 
 const RENDERERS = {
-  space: renderRoom,
-  area: renderArea,
+  space: renderSpace,
   setup: renderSetup,
   measure: renderMeasure,
   /* The photo step had no renderer, so its tiles were only ever drawn when a

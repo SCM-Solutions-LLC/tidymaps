@@ -101,16 +101,17 @@ export const MAP = [
     shelfIndex:4,safety:{flag:null,why:null},
     items:[{name:'Spices',size:'s',flags:[]},{name:'Sauces',size:'s',flags:['fragile']},{name:'Small packets',size:'s',flags:[]}]}
 ];
-export const DEMO_GEOMETRY = {unit:'in',width:30,height:60,depth:14,shelfCount:5,shelfYFracs:[0.08,0.30,0.52,0.72,0.90],estimated:true};
+export const DEMO_GEOMETRY = {unit:'in',width:30,height:84,depth:14,shelfCount:5,shelfYFracs:[0.08,0.30,0.52,0.72,0.90],estimated:true};
 export const DEMO_SAFETY_NOTES = [
   'Kid snacks live on the lower shelf so small hands can reach them without climbing.',
   'Heavy jars and cans stay at waist height or below, so nothing heavy can fall from above.'
 ];
 export const DEMO_PRODUCT_NEEDS = [
-  {type:'clear-bin',qty:4,purpose:'Corral loose snack packets so they stay visible',targetZone:'Eye level',maxDims:{w_in:10.5,h_in:8,d_in:14},priority:'high'},
+  // Mirrors the pantry scenario in demo-scenarios.js: what fits its shelves.
+  {type:'clear-bin',qty:2,purpose:'Corral loose snack packets so they stay visible',targetZone:'Eye level',maxDims:{w_in:10.5,h_in:8,d_in:14},priority:'high'},
   {type:'can-riser',qty:1,purpose:'See every can without digging',targetZone:'Middle shelf',maxDims:{w_in:18,h_in:14,d_in:14},priority:'high'},
   {type:'turntable',qty:1,purpose:'Reach sauces at the back of the deep shelf',targetZone:'Middle shelf',maxDims:{w_in:13,h_in:6,d_in:13},priority:'nice'},
-  {type:'shelf-riser',qty:1,purpose:'Turn unused vertical space into a second level',targetZone:'Top shelf',maxDims:{w_in:14,h_in:9,d_in:14},priority:'nice'},
+  {type:'shelf-riser',qty:1,purpose:'Turn unused vertical space into a second level',targetZone:'Eye level',maxDims:{w_in:14,h_in:9,d_in:14},priority:'nice'},
   {type:'airtight-container',qty:2,purpose:'Keep flour and sugar fresh and stackable',targetZone:'Middle shelf',maxDims:{w_in:6.5,h_in:13,d_in:14},priority:'nice'},
   {type:'label-set',qty:1,purpose:'Make the zones easy for the whole household to keep',targetZone:'Every zone',maxDims:null,priority:'nice'}
 ];

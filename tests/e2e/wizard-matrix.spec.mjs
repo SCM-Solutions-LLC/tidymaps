@@ -1,7 +1,7 @@
 import { test, expect } from 'playwright/test';
 import { expandChapters } from './helpers.mjs';
 
-/* E2E matrix: drive the real 12-step wizard (room → area → setup → measure →
+/* E2E matrix: drive the real wizard (space → setup → measure →
    photos → household → contents → goals → style → effort → shopping → review)
    to a finished plan for EVERY area and assert the plan actually belongs to
    the chosen area — the "pantry content leaking into garage" regression
@@ -17,7 +17,7 @@ import { expandChapters } from './helpers.mjs';
    bot-blocking makes it flaky; scripts/check-product-links.mjs covers that
    on demand. */
 
-// area id → [room card text, area card text, results masthead label]
+// area id → [room heading on the space step, space card text, results masthead label]
 const MATRIX = {
   pantry: ['Kitchen', 'Pantry', 'Pantry'],
   cabinet: ['Kitchen', 'Cabinets', 'Kitchen cabinet'],
@@ -57,37 +57,35 @@ async function next(page) {
   await page.locator('#flow-next').click();
 }
 
-/* Drive the wizard through all 12 steps. The household step makes no child
+/* Drive the wizard through all 11 steps. The household step makes no child
    assumption; kid variants explicitly add one child. */
 async function driveWizard(page, areaId, { kids = 'no', onContents = null, shopping = null } = {}) {
-  const [roomText, areaText] = MATRIX[areaId];
+  const [, areaText] = MATRIX[areaId];
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
 
-  // 1 room → 2 area → 3 setup (each preselects a valid default)
-  await page.locator('#room-cards .room-card', { hasText: roomText }).first().click();
-  await next(page);
-  await page.locator('#area-cards .room-card', { hasText: areaText }).first().click();
+  // 1 space → 2 setup (each preselects a valid default)
+  await page.locator('#space-cards .room-card', { hasText: areaText }).first().click();
   await next(page);
   await expect(page.locator('#setup-cards .wz-setup.sel')).toHaveCount(1);
   await next(page);
 
-  // 4 measurements: type feet; they must win everywhere downstream.
+  // 3 measurements: type feet; they must win everywhere downstream.
   await page.fill('#m-num-w', DIMS_FT.w);
   await page.fill('#m-num-h', DIMS_FT.h);
   await page.fill('#m-num-d', DIMS_FT.d);
   await next(page);
 
-  // 5 photos: none — the plan builds from the demo scenario.
+  // 4 photos: none — the plan builds from the demo scenario.
   await next(page);
 
-  // 6 household: steppers (defaults 2 adults · 0 kids · 0 pets).
+  // 5 household: steppers (defaults 2 adults · 0 kids · 0 pets).
   if (kids === 'yes') {
     await page.locator('.wz-count', { hasText: 'Kids' }).locator('.wc-btn[data-d="1"]').click();
   }
   await next(page);
 
-  // 7 contents · 8 goals · 9 style · 10 effort · 11 shopping
+  // 6 contents · 7 goals · 8 style · 9 effort · 10 shopping
   if (onContents) await onContents(page);
   await next(page);
   await page.locator('#goal-list .wz-goal').first().click();
@@ -97,7 +95,7 @@ async function driveWizard(page, areaId, { kids = 'no', onContents = null, shopp
   if (shopping) await page.locator('#shopping-cards .wz-shop', { hasText: shopping }).click();
   await next(page);
 
-  // 12 review → build
+  // 11 review → build
   await expect(page.locator('#flow-next')).toContainText('Build my plan');
   await next(page);
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 25_000 });
@@ -141,9 +139,7 @@ test('per-space question branching matches the design contract', async ({ page }
   await page.locator('#screen-landing .btn-primary').first().click();
 
   // Bedroom → Closet asks about hangers and capsule wardrobes…
-  await page.locator('#room-cards .room-card', { hasText: 'Bedroom' }).click();
-  await next(page);
-  await page.locator('#area-cards .room-card', { hasText: 'Closet' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Closet' }).first().click();
   await page.locator('#flow-next').click(); // → setup
   await expect(page.locator('#setup-cards .wz-setup', { hasText: 'Walk-in' })).toBeVisible();
   await page.locator('body').evaluate(() => window.go('style'));
@@ -152,15 +148,13 @@ test('per-space question branching matches the design contract', async ({ page }
 
   // …the garage about latching totes…
   await page.locator('body').evaluate(() => window.go('space'));
-  await page.locator('#room-cards .room-card', { hasText: 'Garage' }).click();
-  await next(page);
-  await page.locator('#area-cards .room-card', { hasText: 'Shelving & storage' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Shelving & storage' }).first().click();
   await page.locator('body').evaluate(() => window.go('style'));
   await expect(page.locator('#style-cards')).toContainText('Clear latching totes');
 
   // …and the workbench about shadow boards. Never one generic style list.
-  await page.locator('body').evaluate(() => window.go('area'));
-  await page.locator('#area-cards .room-card', { hasText: 'Workbench' }).first().click();
+  await page.locator('body').evaluate(() => window.go('space'));
+  await page.locator('#space-cards .room-card', { hasText: 'Workbench' }).first().click();
   await page.locator('body').evaluate(() => window.go('style'));
   await expect(page.locator('#style-cards')).toContainText('Shadow-board pegboard');
 

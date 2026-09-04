@@ -132,7 +132,7 @@ export async function assertResultsCoverage(page) {
 }
 
 /* ---------- driving the wizard ----------
-   Twelve steps stand between the landing page and a plan, and any spec about
+   Eleven steps stand between the landing page and a plan, and any spec about
    what happens AFTER the build has to walk all of them first. Shared so the
    walk is written once: a miscounted Continue click fails in a way that looks
    like the behaviour under test. */
@@ -141,9 +141,7 @@ export async function driveWizardToReview(page, { photo = null } = {}) {
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await page.locator('#flow-next').click();
   await page.locator('#flow-next').click();          // setup
   await page.fill('#m-num-w', '3');

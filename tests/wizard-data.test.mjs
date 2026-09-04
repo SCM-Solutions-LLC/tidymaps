@@ -241,7 +241,7 @@ test('workbench scenario: chemicals stay high; kids add a latch', () => {
   assert.ok(withKids.productNeeds.some(p => p.type === 'safety-latch'), 'chemical space with kids should recommend a latch');
 });
 
-/* The household step is step 6 of 12, and every list after it was still
+/* The household step is step 5 of 11, and every list after it was still
    offering kid-only options: "Kids' snacks" in the contents chips, "Kids can't
    reach their things" in the goals, "Kid-friendly setup" in the after-preview
    tabs. Answering "no kids" and then being asked about them anyway reads as

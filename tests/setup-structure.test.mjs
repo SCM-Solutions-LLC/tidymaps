@@ -16,7 +16,7 @@ function validLevels(archetype, sourceArchetype) {
   return new Set([...ARCHETYPE_LEVELS[archetype], ...variant].map(l => l.level));
 }
 
-/* The wizard spends a whole step (3 of 12) asking which of 33 setups looks
+/* The wizard spends a whole step (2 of 11) asking which of 33 setups looks
    like the user's space, and the plan then ignored it: 18 of the 33 got a
    scenario built for a different piece of furniture. An 18-inch ceiling rack
    was described with an "Eye level" and a "Floor level"; a rolling tool chest

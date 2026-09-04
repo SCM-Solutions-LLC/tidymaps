@@ -1,7 +1,7 @@
 import { test, expect } from 'playwright/test';
 import { fileURLToPath } from 'node:url';
 
-/* Two of the twelve wizard steps arrived with an answer already given.
+/* Two of the wizard's steps arrived with an answer already given.
 
    Effort came pre-ticked on "Weekend reset" and Products on "Use what I
    have", and both then appeared on the Review screen — the one headed
@@ -202,9 +202,7 @@ test('categories the reader ticked are not read back as photo findings', async (
 
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await page.locator('#flow-next').click();
   await page.locator('#flow-next').click();
   await page.fill('#m-num-w', '3');
@@ -282,9 +280,7 @@ test('a wizard plan still says it was built from the answers given', async ({ pa
      This reader answered the wizard, so "based on your selections" is true. */
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await page.locator('#flow-next').click();
   await page.locator('#flow-next').click();
   await page.fill('#m-num-w', '3');

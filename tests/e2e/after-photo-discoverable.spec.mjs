@@ -51,9 +51,7 @@ async function planWithPhoto(page, { photos = 1 } = {}) {
 
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
-  await page.locator('#flow-next').click();
-  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await page.locator('#flow-next').click();
   await page.locator('#flow-next').click();                    // setup
   await page.fill('#m-num-w', '3');

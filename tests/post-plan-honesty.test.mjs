@@ -96,7 +96,7 @@ test('the sanitizer still refuses everything it refused before', () => {
   }
 });
 
-/* A renter walked all twelve steps looking for a way to say "nothing can be
+/* A renter walked every step looking for a way to say "nothing can be
    screwed to a wall" and found none — while the plan engine had handled exactly
    that for as long as the handler has existed. The questions that once set it
    were removed and no style derives it, so the behaviour was live and

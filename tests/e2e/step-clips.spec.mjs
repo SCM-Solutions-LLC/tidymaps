@@ -7,14 +7,12 @@ import { test, expect } from 'playwright/test';
    at all — the CSS stills the inline SVG scenes and a playing clip would
    reintroduce the motion the user opted out of. */
 
-/* Same 12-step drive as wizard-matrix.spec.mjs, pantry path, no photos. */
+/* Same wizard drive as wizard-matrix.spec.mjs, pantry path, no photos. */
 async function driveToResults(page) {
   const next = () => page.locator('#flow-next').click();
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Kitchen' }).first().click();
-  await next();
-  await page.locator('#area-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await next();
   await expect(page.locator('#setup-cards .wz-setup.sel')).toHaveCount(1);
   await next();

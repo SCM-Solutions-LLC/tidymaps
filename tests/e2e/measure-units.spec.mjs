@@ -14,9 +14,7 @@ async function next(page) {
 async function driveToMeasure(page) {
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
-  await page.locator('#room-cards .room-card', { hasText: 'Garage' }).first().click();
-  await next(page);
-  await page.locator('#area-cards .room-card', { hasText: 'Shelving & storage' }).first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Shelving & storage' }).first().click();
   await next(page);
   await page.locator('#setup-cards .wz-setup', { hasText: 'Utility shelving' }).first().click();
   await next(page);
