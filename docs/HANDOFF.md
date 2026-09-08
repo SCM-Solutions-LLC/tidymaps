@@ -1540,7 +1540,7 @@ and the list is finished.
   schema, and two unit files fail with `ERR_MODULE_NOT_FOUND` without it.
 - **Four gates, all of them in CI on every PR** (`.github/workflows/test.yml`):
   `npm run lint` (ESLint 9 flat config), `npm run check:types`
-  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**536 tests**
+  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**537 tests**
   across 43 files), and `npx playwright test` (**222 tests** across 46 files).
   Pages deploy and the edge-function deploy both run on push to `main`.
 - In this sandbox the Playwright-managed browser isn't installed; run with
