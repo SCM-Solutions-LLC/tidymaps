@@ -1,10 +1,10 @@
 /* ============================================================
-   TidyMap — The Home-Economics Manual
-   Two-color offset printing: white stock, one turquoise spot
-   ink laid at page scale, ink black, and a single halftone
-   tint. No grey, no gradients, no shadows; corners are cut
-   square. Archivo sets titles and labels, Source Serif 4 sets
-   the reading text. Figures are inked cupboard elevations.
+   TidyMap — The Home-Economics Manual, bound in linen
+   White stock, warm charcoal ink, one stone tint for fields,
+   and a brass rule for labels and small accents. No grey-on-
+   grey, no gradients, no shadows; corners are cut square.
+   Bodoni Moda sets titles, Archivo sets everything else.
+   Figures are inked cupboard elevations.
    ============================================================ */
 
 /* Self-hosted typefaces (SIL OFL, see vendor/fonts/) */
@@ -24,38 +24,42 @@
   src:url("../vendor/fonts/archivo-latin-wght-italic.woff2") format("woff2-variations");
 }
 @font-face{
-  font-family:"Source Serif 4";
+  font-family:"Bodoni Moda";
   font-style:normal;
-  font-weight:200 900;
+  font-weight:400 900;
   font-display:swap;
-  src:url("../vendor/fonts/source-serif-4-latin-opsz-normal.woff2") format("woff2-variations");
+  src:url("../vendor/fonts/bodoni-moda-latin-opsz-normal.woff2") format("woff2-variations");
 }
 @font-face{
-  font-family:"Source Serif 4";
+  font-family:"Bodoni Moda";
   font-style:italic;
-  font-weight:200 900;
+  font-weight:400 900;
   font-display:swap;
-  src:url("../vendor/fonts/source-serif-4-latin-opsz-italic.woff2") format("woff2-variations");
+  src:url("../vendor/fonts/bodoni-moda-latin-opsz-italic.woff2") format("woff2-variations");
 }
 
 :root{
   color-scheme:light;
   --sans:"Archivo",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
-  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --serif:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
-  /* ---- The two inks and the stock --------------------------------------
-     --spot is the turquoise plate. It is a fill colour: white type sits on it
-     at 4.6:1. Small turquoise type on white uses --spot-ink, the same plate
-     printed at full density, which clears 6:1. --tint is the plate screened
-     to an 18% halftone; it is the only third value on the page. */
+  /* ---- Ink, stock, stone and brass ------------------------------------
+     The ink is a warm charcoal and it is also the plate: buttons, selected
+     states and the running rules print in it, so white type on a field is
+     always ink-on-white inverted (12:1). Fields that carry content sit on
+     stone, a warm off-white; the deeper stone marks the eye-level zone. Brass
+     is the one accent, a rule under a label or the mark inside a figure;
+     small brass text uses --spot-ink, dark enough to clear 5:1 on white. */
   --stock:     #ffffff;
-  --ink:       oklch(0.20 0.01 200);   /* near-black with the plate's cast */
-  --spot:      oklch(0.535 0.100 195); /* turquoise, fields and buttons */
-  --spot-deep: oklch(0.47 0.095 195); /* pressed / hover */
-  --spot-ink:  oklch(0.44 0.095 195);  /* small turquoise text on white */
-  --tint:      oklch(0.945 0.028 195); /* 18% screen of the plate */
-  --tint-2:    oklch(0.905 0.045 195); /* 30% screen, rare */
+  --ink:       oklch(0.27 0.006 60);   /* warm charcoal */
+  --spot:      oklch(0.27 0.006 60);   /* the plate is the ink */
+  --spot-deep: oklch(0.16 0.005 60);   /* pressed / hover */
+  --spot-ink:  oklch(0.50 0.085 78);   /* brass, small text on white */
+  --brass:     oklch(0.68 0.10 82);    /* brass, rules and marks */
+  --band:      oklch(0.90 0.014 80);   /* the chapter band: stone */
+  --tint:      oklch(0.955 0.008 80);  /* stone, content fields */
+  --tint-2:    oklch(0.915 0.014 80);  /* deeper stone, the eye-level zone */
 
   /* ---- Names the stylesheets already speak ------------------------------
      Kept so the wizard, report, viewer and library resolve without a rename

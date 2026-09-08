@@ -812,7 +812,14 @@ function itemsRow(m){
    shelf and a few glyphs standing in for what lives there. It ships as an
    <img>, so the plate's colours are written in by hand rather than taken
    from the stylesheet. */
-const EL_INK='#1f2a2b', EL_SPOT='#0f7f81', EL_TINT='#e2f2f2', EL_TINT2='#c7e6e6';
+/* The plate's colours, read from the stylesheet at draw time so a change to
+   css/tokens.css reaches this drawing too. The fallbacks only matter if the
+   tokens are missing, which the design tests do not allow. */
+function plate(){
+  const cs=getComputedStyle(document.documentElement);
+  const v=(name,fb)=>(cs.getPropertyValue(name)||'').trim()||fb;
+  return { ink:v('--ink','#1f2a2b'), spot:v('--spot','#0f7f81'), tint:v('--tint','#e2f2f2'), tint2:v('--tint-2','#c7e6e6') };
+}
 const EL_GLYPHS={
   jar:'<path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="l"/>',
   can:'<rect x="3" y="4" width="22" height="30"/><path d="M3 9h22M3 29h22"/>',
@@ -824,6 +831,7 @@ const EL_GLYPHS={
 const EL_SIZE={jar:[32,46],can:[28,36],box:[46,72],bottle:[24,64],bag:[44,52],bin:[116,54]};
 const EL_ROWS=[['bag','box','bottle','bag'],['jar','jar','can','can','bag','bottle'],['bin','jar','jar','bottle'],['bin','bin','bag'],['box','box','bag','can'],['bin','jar','bag']];
 function planElevationSvg(map){
+  const { ink:EL_INK, spot:EL_SPOT, tint:EL_TINT, tint2:EL_TINT2 }=plate();
   const rows=(map||[]).slice(0,6); const n=Math.max(rows.length,2);
   const W=760, top=24, left=30, caseW=700, shelfH=Math.round(440/n), H=top+shelfH*n+26;
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one shelf per zone">`
