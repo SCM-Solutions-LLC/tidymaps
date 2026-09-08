@@ -19,21 +19,21 @@ export const ROOMS = [
 /* ---------- Areas within each room (id = production space id) ---------- */
 export const AREAS = {
   kitchen: [
-    { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage, cabinet to walk-in', artKey: 'artPantry' },
-    { id: 'cabinet', label: 'Cabinets', short: 'cabinets', desc: 'Dishes, pots & counter clutter', artKey: 'artTallCab' },
-    { id: 'drawers', label: 'Drawers', short: 'drawers', desc: 'Cutlery, utensils & the junk drawer', artKey: 'artInCounter' },
+    { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage, cabinet to walk-in', artKey: 'elPantry' },
+    { id: 'cabinet', label: 'Cabinets', short: 'cabinets', desc: 'Dishes, pots & counter clutter', artKey: 'elCabinets' },
+    { id: 'drawers', label: 'Drawers', short: 'drawers', desc: 'Cutlery, utensils & the junk drawer', artKey: 'elDrawers' },
   ],
   bedroom: [
-    { id: 'closet', label: 'Closet', short: 'closet', desc: 'Clothes, shoes & accessories', artKey: 'artWardrobe' },
-    { id: 'dresser', label: 'Dresser', short: 'dresser', desc: 'Folded clothes in drawers', artKey: 'artDresser' },
+    { id: 'closet', label: 'Closet', short: 'closet', desc: 'Clothes, shoes & accessories', artKey: 'elCloset' },
+    { id: 'dresser', label: 'Dresser', short: 'dresser', desc: 'Folded clothes in drawers', artKey: 'elDresser' },
   ],
   bath: [
-    { id: 'bathroom', label: 'Vanity & under-sink', short: 'vanity', desc: 'Toiletries, makeup & meds', artKey: 'artVanity' },
-    { id: 'linen', label: 'Linen closet', short: 'linen closet', desc: 'Sheets, towels & spare bedding, usually in the hall', artKey: 'artLinen' },
+    { id: 'bathroom', label: 'Vanity & under-sink', short: 'vanity', desc: 'Toiletries, makeup & meds', artKey: 'elVanity' },
+    { id: 'linen', label: 'Linen closet', short: 'linen closet', desc: 'Sheets, towels & spare bedding, usually in the hall', artKey: 'elLinen' },
   ],
   garage: [
-    { id: 'garage', label: 'Shelving & storage', short: 'garage shelving', desc: 'Bins, tools & seasonal gear', artKey: 'artGarageShelf' },
-    { id: 'workbench', label: 'Workbench', short: 'workbench', desc: 'Tools, hardware & projects', artKey: 'artWorkbench' },
+    { id: 'garage', label: 'Shelving & storage', short: 'garage shelving', desc: 'Bins, tools & seasonal gear', artKey: 'elGarageShelf' },
+    { id: 'workbench', label: 'Workbench', short: 'workbench', desc: 'Tools, hardware & projects', artKey: 'elWorkbench' },
   ],
 };
 
@@ -574,11 +574,94 @@ const ART_MOTION = {
   artLinenLShape: towelMotion(15, 35, 22),
 };
 
+/* ---------- The nine space cards: elevations ----------
+   Drawn the way the landing page draws Figure 1: a front elevation of the
+   cupboard in one thin ink line, square corners, white stock bodies, the
+   plate's tint for a zone, and a short spot rule where a label would sit
+   (class "lbl"; css/components.css inks it). Motion reuses the keyframes the
+   older drawings use, but the moving objects are drawn in this voice. */
+const T = '#f0fae1'; // maps to the tint in css/components.css
+const T2 = '#ffe1d0'; // maps to the deeper tint
+function elCase(x, y, w, h, shelves) {
+  let d = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" class="case"/>`;
+  shelves.forEach((sy) => { d += `<path d="M${x} ${sy}h${w}"/>`; });
+  return d;
+}
+const jar = (x, y, w = 7, h = 10) => `<path d="M${x} ${y + 2}h${w}v${h - 2}H${x}z" fill="#fff"/><path d="M${x + 1} ${y}h${w - 2}v2M${x + 1.5} ${y + h / 2}h${w - 3}" class="lbl"/>`;
+const box = (x, y, w = 8, h = 11) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/><path d="M${x} ${y + 2}h${w}M${x + 1.5} ${y + h / 2}h${w - 3}" class="lbl"/>`;
+const can = (x, y, w = 6, h = 7) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/><path d="M${x} ${y + 1.5}h${w}M${x} ${y + h - 1.5}h${w}"/>`;
+const bottle = (x, y, h = 13) => `<path d="M${x + 1.5} ${y}h3v2l1.5 2v${h - 4}h-6V${y + 4}l1.5-2z" fill="#fff"/><path d="M${x + 1.5} ${y + h / 2}h3" class="lbl"/>`;
+const binShape = (x, y, w, h) => `<path d="M${x} ${y}h${w}l-1.5 ${h}H${x + 1.5}z" fill="${T}"/><path d="M${x} ${y}h${w}"/><path d="M${x + w * .32} ${y + h * .55}h${w * .36}" class="lbl"/>`;
+const stack = (x, y, w, n = 3) => Array.from({ length: n }, (_, i) => `<rect x="${x + (i % 2)}" y="${y + i * 3.2}" width="${w - (i % 2) * 2}" height="3.2" fill="${i === 1 ? T : '#fff'}"/>`).join('');
+const towel = (x, y, w = 14) => `<rect x="${x}" y="${y}" width="${w}" height="4" fill="${T2}"/><path d="M${x + 3} ${y + 2}h${w - 6}"/>`;
+const shirt = (x, y) => `<path d="M${x + 5} ${y + 3}l5-3h4l5 3 6 4-3 6-5-3v16H${x + 7}V${y + 10}l-5 3-3-6z" fill="#fff"/><path d="M${x + 8} ${y + 17}h8" class="lbl"/>`;
+
+const EL_ART = {
+  elPantry: elCase(24, 4, 48, 62, [22, 40, 56])
+    + jar(29, 12) + jar(38, 12) + can(47, 15) + can(55, 15) + bottle(63, 9)
+    + `<rect x="25" y="23" width="46" height="16" fill="${T}"/>` + box(29, 27, 9, 12) + box(40, 27, 9, 12) + jar(52, 29, 8, 10) + jar(62, 29, 7, 10)
+    + box(52, 43, 16, 12) + `<path d="M24 66h48"/>`,
+  elCabinets: `<path d="M10 40h76"/>` + elCase(14, 4, 68, 28, []) + `<path d="M48 4v28"/>`
+    + `<rect x="15" y="5" width="32" height="26" fill="${T}"/>` + stack(20, 10, 12, 3) + stack(34, 10, 10, 3) + stack(20, 21, 22, 2)
+    + `<rect x="14" y="44" width="68" height="20" fill="#fff" class="case"/><path d="M48 44v20"/><path d="M40 54h6M50 54h6"/><path d="M18 64v4M78 64v4"/>`,
+  elDrawers: `<path d="M8 12h80"/><rect x="18" y="14" width="60" height="50" fill="#fff" class="case"/>`
+    + `<rect x="22" y="34" width="52" height="11" fill="#fff"/><path d="M42 39.5h12"/>`
+    + `<rect x="22" y="49" width="52" height="11" fill="#fff"/><path d="M42 54.5h12"/>`
+    + `<path d="M18 64h60"/>`,
+  elCloset: elCase(20, 4, 56, 62, [18]) + `<rect x="21" y="5" width="54" height="12" fill="${T}"/>`
+    + stack(25, 7, 14, 3) + stack(43, 7, 12, 3) + box(60, 6, 11, 10)
+    + `<path d="M24 24h48"/><path d="M52 24v3M64 24v3"/>` + shirt(47, 27)
+    + `<path d="M24 66h52"/><rect x="26" y="58" width="8" height="5" fill="#fff"/><rect x="36" y="58" width="8" height="5" fill="#fff"/><path d="M26 61h8M36 61h8"/>`,
+  elDresser: `<rect x="14" y="16" width="68" height="44" fill="#fff" class="case"/>`
+    + `<rect x="19" y="34" width="58" height="9" fill="#fff"/><path d="M43 38.5h10"/>`
+    + `<rect x="19" y="47" width="58" height="9" fill="#fff"/><path d="M43 51.5h10"/>`
+    + `<path d="M18 60v5M78 60v5"/>` + stack(24, 5.5, 18, 3) + `<rect x="60" y="6" width="9" height="10" fill="${T}"/><path d="M60 6h9M62 11h5" class="lbl"/>`,
+  elVanity: `<rect x="34" y="3" width="28" height="15" fill="${T}" class="case"/><path d="M48 24v-5h5v2"/><path d="M22 24h52v4H22z" fill="#fff" class="case"/>`
+    + `<rect x="24" y="28" width="48" height="34" fill="#fff" class="case"/><path d="M48 28v34"/><path d="M28 62v4M68 62v4"/>`
+    + bottle(50, 32, 12) + bottle(56, 34, 10) + `<rect x="62" y="38" width="6" height="8" fill="${T}"/>`,
+  elLinen: elCase(26, 4, 44, 62, [20, 36, 52])
+    + stack(31, 7, 16, 3) + stack(50, 7, 14, 3)
+    + `<rect x="27" y="21" width="42" height="14" fill="${T}"/>` + stack(31, 23, 15, 3) + stack(49, 24, 15, 3)
+    + stack(31, 39, 16, 3) + stack(50, 39, 14, 3)
+    + `<path d="M26 66h44"/>`,
+  elGarageShelf: `<path d="M18 6v62M78 6v62" class="case"/><path d="M14 22h68M14 40h68M14 58h68"/>`
+    + box(23, 10, 12, 12) + can(38, 14, 8, 8) + `<rect x="50" y="11" width="10" height="11" fill="#fff"/><path d="M50 14h10"/>` + can(63, 15, 7, 7)
+    + `<rect x="23" y="29" width="14" height="11" fill="${T}"/><path d="M23 29h14M27 34h6" class="lbl"/>` + jar(41, 30, 8, 10) + `<rect x="52" y="32" width="18" height="8" fill="#fff"/><path d="M52 32h18"/>`
+    + `<path d="M23 68h55"/>`,
+  elWorkbench: `<rect x="14" y="4" width="68" height="24" fill="${T}"/>`
+    + `<path d="M24 8v3M34 8v3M44 8v3M54 8v3M64 8v3M74 8v3M24 16v3M34 16v3M44 16v3M54 16v3M74 16v3"/>`
+    + `<path d="M30 11v10M26 21h8"/><path d="M45 11v8"/><rect x="42" y="19" width="6" height="4" fill="#fff"/>`
+    + `<path d="M10 32h76v4H10z" fill="#fff" class="case"/><path d="M16 36v30M80 36v30" class="case"/><path d="M16 52h64"/>`
+    + `<rect x="24" y="42" width="20" height="8" fill="#fff"/><path d="M30 46h8"/>` + can(52, 43, 8, 7) + box(64, 40, 10, 10),
+};
+
+/* Moving objects for the elevation cards, in the same voice. */
+const elBin = (x, y, w, h) => `<g class="art-motion motion-bin-pull">${binShape(x, y, w, h)}</g>`;
+const elDrawer = (x, y, w, h) => `<g class="art-motion motion-drawer"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/><path d="M${x + w / 2 - 5} ${y + h / 2}h10"/><path d="M${x + 2} ${y + h + 2}h${w - 4}" class="lbl"/></g>`;
+const elDoor = (x, y, w, h, inside) => `<g class="motion-cabinet-interior"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${T}"/>${inside}</g><g class="art-motion motion-cabinet-door"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/><path d="M${x + w - 5} ${y + h / 2 - 3}v6"/></g>`;
+const elShirt = (x, y) => `<g class="art-motion motion-shirt"><path d="M${x + 10} ${y}v-3"/>${shirt(x, y)}</g>`;
+const elTowel = (x, y, w) => `<g class="art-motion motion-towel-pull">${towel(x, y, w)}</g>`;
+const elTool = (x, y) => `<g transform="translate(${x} ${y})"><g class="art-motion motion-tool"><rect x="-6" y="0" width="12" height="5" fill="${T2}"/><path d="M0 5v26"/><path d="M-3 31h6"/></g></g>`;
+
+const EL_MOTION = {
+  elPantry: elBin(29, 44, 19, 12),
+  elCabinets: elDoor(49, 5, 32, 26, stack(54, 9, 12, 3) + stack(68, 9, 10, 3) + stack(54, 20, 22, 2)),
+  elDrawers: elDrawer(22, 18, 52, 12),
+  elCloset: elShirt(27, 27),
+  elDresser: elDrawer(19, 21, 58, 9),
+  elVanity: elDoor(25, 29, 22, 32, bottle(28, 35, 12) + bottle(35, 38, 9) + `<rect x="41" y="44" width="5" height="6" fill="#fff"/>`),
+  elLinen: elTowel(31, 55, 16),
+  elGarageShelf: elBin(48, 47, 20, 10),
+  elWorkbench: elTool(64, 8),
+};
+Object.assign(ART, EL_ART);
+Object.assign(ART_MOTION, EL_MOTION);
+
 const artCache = {};
 export function art(key) {
   if (!artCache[key]) {
     const motif = ART_MOTION[key] || shelfJarMotion(42, 25);
-    artCache[key] = '<svg class="card-art-svg art-' + key + '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 72" fill="none" stroke="#9a5b2e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="art-scene">' + (ART[key] || '') + '</g>' + motif + '</svg>';
+    artCache[key] = '<svg class="card-art-svg art-' + key + (key.startsWith('el') ? ' art-el' : '') + '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 72" fill="none" stroke="#9a5b2e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="art-scene">' + (ART[key] || '') + '</g>' + motif + '</svg>';
   }
   return artCache[key];
 }
