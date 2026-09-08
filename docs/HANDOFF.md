@@ -78,11 +78,13 @@ the tint, the ink or the stock, so a stylesheet that reads them keeps working.
   the old beige field baked in; they print through a grayscale/contrast/
   multiply filter as one ink on the tint band. Grey mid-tones remain: redraw
   the 147 clips when the world settles, do not fight it in CSS.
-- **Card line art** (`js/wizard-data.js`, `js/product-art.js`) is re-inked by
-  CSS attribute selectors on its baked-in fills and strokes and thinned to a
-  1.7 stroke. The drawings are still icon-voiced (rounded corners) next to
-  Figure 1's square elevations; the finish reviewer scored that partial. A
-  redraw of the nine space cards in the elevation voice is the open design item.
+- **The nine space cards are redrawn as elevations** (`js/wizard-data.js`
+  `EL_ART` / `EL_MOTION`, keys `el*`), in Figure 1's voice: one thin ink
+  line, square corners, stock and tint fills, a short spot rule for a label,
+  and a moving object drawn the same way. The remaining card line art (the
+  ~34 setup cards, `js/product-art.js`) is the old icon-voiced drawing
+  re-inked by CSS attribute selectors and thinned to a 1.7 stroke; redrawing
+  those in the elevation voice is the open design item.
 - Tests moved with the design: `tests/design.test.mjs` now binds the plate,
   the two self-hosted faces, and Figure 1's sort; the mobile menu rows are
   48px; the report appbar actions fall back to icons at 519px because the caps
