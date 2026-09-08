@@ -5,17 +5,17 @@ html{scrollbar-color:var(--ink) var(--stock);scrollbar-width:thin}
 body{
   background:var(--stock);
   color:var(--ink);
-  font-family:var(--serif);font-size:17px;line-height:1.6;
+  font-family:var(--sans);font-size:16px;line-height:1.6;
   font-optical-sizing:auto;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   padding-bottom:env(safe-area-inset-bottom);
-  caret-color:var(--spot);
-  accent-color:var(--spot);
+  caret-color:var(--ink);
+  accent-color:var(--ink);
 }
 /* The browser's own surfaces carry the plate too: the selection is the ink
    on the plate, the caret is the plate, the focus ring is the plate. */
-::selection{background:var(--spot);color:var(--stock)}
-:focus-visible{outline:2px solid var(--spot);outline-offset:2px;border-radius:0}
+::selection{background:var(--ink);color:var(--stock)}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:0}
 /* Headings are focused by script when a screen changes so the new title is
    announced; that focus is for the reader, not a control, so it draws no ring. */
 h1[tabindex="-1"]:focus,h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus{outline:none}
@@ -27,27 +27,27 @@ a{color:inherit;text-decoration:none}
 p a, .small a, .lede a, footer a{text-decoration:underline;text-decoration-color:var(--spot);text-decoration-thickness:1px;text-underline-offset:3px}
 p a:hover, .small a:hover, .lede a:hover, footer a:hover{color:var(--spot-ink)}
 
-/* Titles are set in Archivo, wide and heavy, the way a manual's chapter
-   openers were set in a grotesque while the lessons ran in a book face. */
+/* Titles are set in Bodoni Moda at a book weight; the labels, controls and
+   reading text run in Archivo. A chapter title is quiet and large, not bold. */
 h1,h2,h3,h4{
-  font-family:var(--sans);font-weight:800;
-  letter-spacing:var(--tracking-tight);line-height:1.1;margin:0;
-  font-kerning:normal;
+  font-family:var(--sans);font-weight:700;
+  letter-spacing:var(--tracking-tight);line-height:1.15;margin:0;
+  font-kerning:normal;font-optical-sizing:auto;
   text-rendering:optimizeLegibility;
   text-wrap:balance;
 }
 h1{
-  font-size:clamp(38px,7vw,64px);font-weight:900;font-stretch:var(--display-stretch);
-  letter-spacing:var(--tracking-display);line-height:var(--leading-display);
+  font-family:var(--serif);font-size:clamp(40px,7vw,68px);font-weight:400;
+  letter-spacing:-0.01em;line-height:1.02;
 }
-h2{font-size:clamp(26px,4.4vw,38px);font-weight:900;font-stretch:108%;letter-spacing:-0.022em;line-height:1.02}
-h3{font-size:clamp(18px,3vw,21px);font-weight:800}
+h2{font-family:var(--serif);font-size:clamp(30px,4.6vw,44px);font-weight:400;letter-spacing:-0.005em;line-height:1.06}
+h3{font-size:clamp(17px,3vw,19px);font-weight:700}
 h4{font-size:16px;font-weight:700}
 p{margin:0 0 1em}
 .lede{font-size:clamp(17px,2.4vw,20px);color:var(--ink);line-height:1.5}
 /* A caps label, narrowed and letterspaced: a shelf label, a figure number,
    a column head. Never a kicker above a heading. */
-.label,.eyebrow{
+.label{
   font-family:var(--sans);font-stretch:var(--label-stretch);font-weight:700;
   font-size:12px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);
 }
@@ -68,8 +68,8 @@ p{margin:0 0 1em}
   display:flex;align-items:center;gap:14px;min-width:0;
 }
 .brand{
-  font-weight:900;font-size:19px;letter-spacing:-.02em;min-width:0;color:var(--ink);
-  font-stretch:var(--display-stretch);text-transform:uppercase;
+  font-family:var(--serif);font-weight:500;font-size:22px;letter-spacing:.02em;min-width:0;color:var(--ink);
+  text-transform:uppercase;
   display:inline-flex;align-items:center;gap:9px;flex:none;
 }
 /* The wordmark used to be a bare text node inside the flex row, so the
@@ -80,7 +80,7 @@ p{margin:0 0 1em}
 .brand-word{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:430px){ .brand-word{display:none} }
 .brand-icon{
-  width:30px;height:30px;background:var(--spot);color:var(--stock);
+  width:28px;height:28px;background:var(--ink);color:var(--stock);
   display:inline-flex;align-items:center;justify-content:center;flex:none;
 }
 .brand-icon svg{width:17px;height:17px}
@@ -182,8 +182,8 @@ body[data-screen="viewer3d"] .appbar .restart{display:none}
 }
 
 /* progress rail under the running head: the plate advancing along a rule */
-.rail{height:3px;background:var(--tint);overflow:hidden}
-.rail > i{display:block;height:100%;background:var(--spot);
+.rail{height:3px;background:var(--tint-2);overflow:hidden}
+.rail > i{display:block;height:100%;background:var(--brass);
   width:0%;transition:width .45s var(--ease)}
 
 main{padding:0 var(--pad,18px)}
@@ -217,8 +217,8 @@ main{padding:0 var(--pad,18px)}
   transition:background var(--dur), border-color var(--dur), color var(--dur), transform var(--dur-fast);
 }
 .btn svg{width:17px;height:17px;flex:none}
-.btn-primary{background:var(--spot);color:var(--stock);border-color:var(--ink)}
-.btn-primary:hover{background:var(--spot-deep)}
+.btn-primary{background:var(--ink);color:var(--stock);border-color:var(--ink)}
+.btn-primary:hover{background:var(--spot-deep);border-color:var(--spot-deep)}
 .btn-primary:active{background:var(--ink);transform:translateY(1px)}
 .btn-ghost{background:var(--stock);color:var(--ink);border-color:var(--ink)}
 .btn-ghost:hover{background:var(--tint)}

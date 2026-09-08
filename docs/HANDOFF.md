@@ -191,10 +191,15 @@ truth (interviewed 09-07), `.impeccable/surfaces/index-html.md` holds the
 direction contract, and `DESIGN.md` plus `.impeccable/design.json` were written
 from the shipped build afterwards. Read those three before touching any CSS.
 
-**The world is The Home-Economics Manual**: white stock, one turquoise spot
-ink laid at page scale, ink black, one flat 18% tint. No grey, no gradients,
-no shadows, square corners, 1px black rules. Archivo (wdth axis, self-hosted)
-sets titles and caps labels; Source Serif 4 sets reading text. Figtree is gone.
+**The world is The Home-Economics Manual, bound in linen** (re-inked
+2026-09-08 after the owner asked for the register of neatmethod.com): white
+stock, warm charcoal ink that is also the plate (buttons, selected states,
+rules), stone fields for content, a brass rule for labels and figure marks.
+No gradients, no shadows, square corners, 1px rules. Bodoni Moda (opsz axis,
+self-hosted) sets titles and italic ledes; Archivo (wdth axis) sets labels,
+controls and reading text. The first cut of this world was a turquoise plate
+with Source Serif 4 reading text; both are gone. The chapter band opens on a
+short brass rule, not a numeral: Bodoni's 1 is a bare stem at display size.
 Every surface was re-inked: landing, wizard, report, 3D viewer, product
 library, dashboard, sign-in, legal pages. The old token names still resolve
 (`--primary`, `--sage`, `--honey`, `--surface-*`) but all land on the plate,
@@ -216,11 +221,14 @@ the tint, the ink or the stock, so a stylesheet that reads them keeps working.
   the old beige field baked in; they print through a grayscale/contrast/
   multiply filter as one ink on the tint band. Grey mid-tones remain: redraw
   the 147 clips when the world settles, do not fight it in CSS.
-- **Card line art** (`js/wizard-data.js`, `js/product-art.js`) is re-inked by
-  CSS attribute selectors on its baked-in fills and strokes and thinned to a
-  1.7 stroke. The drawings are still icon-voiced (rounded corners) next to
-  Figure 1's square elevations; the finish reviewer scored that partial. A
-  redraw of the nine space cards in the elevation voice is the open design item.
+- **The nine space cards are redrawn as elevations** (`js/wizard-data.js`
+  `EL_ART` / `EL_MOTION`, keys `el*`), in Figure 1's voice: one thin ink
+  line, square corners, stock and tint fills, a short spot rule for a label,
+  and a moving object drawn the same way. The 28 setup-card drawings on step
+  2 (`SETUP_ART` / `SETUP_MOTION`, same keys the tests bind) are redrawn in
+  the same voice, with walk-ins and L-shapes carrying angled return walls.
+  `js/product-art.js` (product library and shopping-list glyphs) is redrawn
+  the same way, so every drawing on the site is now in one voice.
 - Tests moved with the design: `tests/design.test.mjs` now binds the plate,
   the two self-hosted faces, and Figure 1's sort; the mobile menu rows are
   48px; the report appbar actions fall back to icons at 519px because the caps

@@ -5,7 +5,7 @@
 /* ---------- Masthead ---------- */
 .report-mast{padding:8px 0 26px;border-bottom:var(--rule-2)}
 .dash-count{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--spot-ink);margin:10px 0 0}
-.report-mast h2{font-size:clamp(30px,5.4vw,44px);margin-top:14px;max-width:20ch;letter-spacing:-.025em}
+.report-mast h2{font-size:clamp(30px,5.4vw,44px);margin-top:14px;max-width:20ch}
 .report-byline{
   display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:14px;
   font-size:15px;color:var(--ink-2);line-height:1.6;
@@ -19,7 +19,7 @@
 }
 @media(min-width:880px){.plan-hero{grid-template-columns:46fr 54fr;gap:clamp(36px,4vw,64px)}}
 .plan-hero-copy{min-width:0}
-.plan-hero h2{font-size:clamp(32px,5.2vw,52px);font-weight:900;font-stretch:var(--display-stretch);letter-spacing:-.03em;line-height:1;font-family:var(--sans);max-width:14ch}
+.plan-hero h2{font-size:clamp(34px,5.2vw,56px);font-weight:400;letter-spacing:-.005em;line-height:1.04;font-family:var(--serif);max-width:16ch}
 
 
 .plan-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
@@ -169,7 +169,7 @@
 .ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 0 0 var(--pos,50%))}
 .ba-slider .ba-divider{
   position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;
-  background:var(--stock);box-shadow:0 0 10px rgba(0,0,0,.45);pointer-events:none;
+  background:var(--stock);outline:1px solid var(--ink);pointer-events:none;
 }
 .ba-slider .ba-divider::after{
   content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
