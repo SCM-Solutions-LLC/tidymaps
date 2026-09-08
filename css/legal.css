@@ -9,20 +9,20 @@
 
 .legal{max-width:680px;margin:0 auto;padding:40px 18px 90px}
 .legal h1{font-size:clamp(30px,5vw,42px);margin-bottom:8px}
-.legal .updated{color:var(--ink-3);font-size:14px;margin-bottom:14px}
+.legal .updated{font-family:var(--sans);color:var(--spot-ink);font-size:13px;font-weight:600;margin-bottom:14px}
 .legal h2{font-size:21px;margin:36px 0 10px}
 .legal h3{font-size:16.5px;margin:22px 0 6px}
-.legal p,.legal li{font-size:15.5px;line-height:1.7;color:var(--ink-2)}
+.legal p,.legal li{font-size:16.5px;line-height:1.7;color:var(--ink)}
 .legal ul{padding-left:22px;margin:10px 0}
 .legal li{margin-bottom:8px}
 .legal strong{color:var(--ink)}
-.legal a{color:var(--primary-2);text-decoration:underline;text-underline-offset:3px}
+.legal a{color:var(--spot-ink);text-decoration:underline;text-decoration-color:var(--spot);text-underline-offset:3px}
 
-.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:30px;font-size:14px;font-weight:600;color:var(--ink-2);text-decoration:none}
+.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:30px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);text-decoration:none}
 .back:hover{color:var(--ink)}
 
 /* The lede under the title: what this document is for, before the clauses. */
-.legal-lede{font-size:17px;line-height:1.6;color:var(--ink-2);margin-bottom:8px}
+.legal-lede{font-size:19px;line-height:1.55;color:var(--ink);margin-bottom:8px}
 
 /* Sibling navigation. Someone who lands on the terms from a footer link has no
    other way to reach the security page, so every legal document carries the
@@ -30,25 +30,26 @@
    a row whose items move between pages is harder to scan than a static one. */
 .legal-nav{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 34px;padding:0;list-style:none}
 .legal-nav a{
-  display:block;padding:5px 11px;border:1px solid var(--line);border-radius:100px;
-  font-size:13px;font-weight:600;color:var(--ink-2);text-decoration:none;background:var(--bg);
+  display:block;padding:6px 11px;border:var(--rule);
+  font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink);text-decoration:none;background:var(--stock);
 }
-.legal-nav a:hover{color:var(--ink);border-color:var(--line-2)}
+.legal-nav a:hover{background:var(--tint)}
 .legal-nav a[aria-current="page"]{
-  background:var(--primary-bg);border-color:var(--primary-line);color:var(--primary-ink);
+  background:var(--spot);border-color:var(--ink);color:var(--stock);
 }
 
 /* Callout for the one or two things on a page that carry real consequence —
    the safety disclaimer on the terms, the "what to do first" on security.
    Not decoration: these are the lines a reader skimming past would regret. */
 .legal-note{
-  margin:20px 0;padding:15px 17px;border:1px solid var(--primary-line);
-  border-radius:var(--radius);background:var(--primary-bg);
+  margin:20px 0;padding:15px 17px;border:var(--rule);
+  background:var(--tint);
 }
 .legal-note p{margin:0;color:var(--ink)}
 .legal-note p + p{margin-top:9px}
 .legal-note strong{color:var(--ink)}
 
 /* Contact / effective-date block that closes each document. */
-.legal-foot{margin-top:44px;padding-top:22px;border-top:1px solid var(--line)}
-.legal-foot p{font-size:14px;color:var(--ink-3)}
+.legal-foot{margin-top:44px;padding-top:22px;border-top:var(--rule-2)}
+.legal-foot p{font-size:14.5px;color:var(--ink)}

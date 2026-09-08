@@ -60,7 +60,7 @@ test('the plan engine arrives with the first plan, not with the page', async ({ 
 
 test('the brand face is requested before the stylesheets ask for it', async ({ page }) => {
   const urls = await loadLanding(page);
-  const font = urls.findIndex((u) => /figtree-latin-wght-normal\.woff2/.test(u));
+  const font = urls.findIndex((u) => /archivo-latin-wdth-normal\.woff2/.test(u));
   const firstCss = urls.findIndex((u) => /css\/tokens\.css/.test(u));
   expect(font, 'the preload is missing').toBeGreaterThan(-1);
   expect(font, 'the font is only discovered from inside the stylesheet').toBeLessThan(firstCss + 2);

@@ -3,12 +3,8 @@
    ============================================================ */
 
 /* ---------- Masthead ---------- */
-.report-mast{padding:8px 0 26px;border-bottom:2px solid var(--ink)}
-.report-mast .mast-kicker{
-  font-size:13.5px;font-weight:600;
-  color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;
-}
-.report-mast .mast-kicker .mk-brand{color:var(--primary)}
+.report-mast{padding:8px 0 26px;border-bottom:var(--rule-2)}
+.dash-count{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--spot-ink);margin:10px 0 0}
 .report-mast h2{font-size:clamp(30px,5.4vw,44px);margin-top:14px;max-width:20ch;letter-spacing:-.025em}
 .report-byline{
   display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:14px;
@@ -23,41 +19,33 @@
 }
 @media(min-width:880px){.plan-hero{grid-template-columns:46fr 54fr;gap:clamp(36px,4vw,64px)}}
 .plan-hero-copy{min-width:0}
-.plan-hero h2{font-size:clamp(32px,5.2vw,48px);font-weight:900;letter-spacing:-.03em;line-height:1.08;font-family:var(--serif);max-width:14ch}
+.plan-hero h2{font-size:clamp(32px,5.2vw,52px);font-weight:900;font-stretch:var(--display-stretch);letter-spacing:-.03em;line-height:1;font-family:var(--sans);max-width:14ch}
 
-.plan-badge{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:14px;font-weight:600;color:var(--sage-ink);
-  background:var(--sage-bg);border:1px solid var(--sage-line);
-  border-radius:99px;padding:6px 16px 6px 12px;
-}
-.plan-badge::before{
-  content:"";width:8px;height:8px;border-radius:50%;background:var(--sage);flex:none;
-}
 
 .plan-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
 .plan-chip{
-  font-size:14px;font-weight:500;color:var(--ink-2);
-  background:var(--surface);border:1px solid var(--line-2);
-  border-radius:99px;padding:8px 16px;
+  font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink);
+  background:var(--stock);border:var(--rule);
+  padding:8px 12px;
 }
 
 .plan-hero-photo{position:relative;margin:0;min-width:0}
-.plan-hero-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:16px}
+.plan-hero-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border:var(--rule)}
 .plan-hero-photo.illustrated img{
-  object-fit:contain;padding:clamp(20px,5vw,54px);
-  background:radial-gradient(circle at 72% 22%,#fff 0 12%,transparent 38%),var(--surface-2);
-  border:1px solid var(--line);
+  object-fit:contain;padding:0;aspect-ratio:auto;
+  background:var(--stock);
+  border:none;
 }
 .plan-3d-badge{
   position:absolute;bottom:16px;right:16px;
   display:inline-flex;align-items:center;gap:7px;
-  font-size:14px;font-weight:700;color:var(--ink);
-  background:#fff;border:none;border-radius:99px;padding:10px 18px;cursor:pointer;
-  box-shadow:0 2px 10px oklch(0.3 0.05 60 / .2);transition:.15s;
+  font-family:var(--sans);font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);
+  background:var(--stock);border:var(--rule);padding:10px 14px;cursor:pointer;
+  transition:.15s;
 }
-.plan-3d-badge:hover{background:var(--primary-bg);color:var(--primary)}
-.plan-3d-badge svg{color:var(--primary)}
+.plan-hero-photo.illustrated .plan-3d-badge{position:static;display:inline-flex;margin-top:12px}
+.plan-3d-badge:hover{background:var(--tint)}
+.plan-3d-badge svg{color:var(--spot-ink)}
 
 /* ---------- Body grid: sticky TOC + chapters ---------- */
 .report-body{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin-top:8px}
@@ -91,11 +79,12 @@
 }
 .report-toc ol::-webkit-scrollbar{display:none}
 .report-toc a{
-  display:block;padding:11px 14px;font-size:13px;font-weight:600;color:var(--ink-2);
-  white-space:nowrap;transition:color .15s;border-bottom:2px solid transparent;
+  display:block;padding:11px 14px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12.5px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
+  white-space:nowrap;transition:color .15s;border-bottom:3px solid transparent;
 }
-.report-toc a:hover{color:var(--ink)}
-.report-toc a.here{color:var(--primary-2);border-bottom-color:var(--primary)}
+.report-toc a:hover{color:var(--spot-ink)}
+.report-toc a.here{color:var(--spot-ink);border-bottom-color:var(--spot)}
 
 @media(min-width:960px){
   .report-body{grid-template-columns:190px 1fr;gap:56px}
@@ -104,11 +93,11 @@
     align-self:start;padding-top:34px;
     background:none;border-bottom:none;margin:0;padding-left:0;padding-right:0;
   }
-  .report-toc .toc-h{display:block;font-size:12.5px;font-weight:700;color:var(--ink-3);margin-bottom:12px}
+  .report-toc .toc-h{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);margin-bottom:10px;padding-bottom:8px;border-bottom:var(--rule-2)}
   .report-toc ol{display:grid;gap:2px;overflow:visible}
   .report-toc a{
     display:flex;gap:10px;align-items:baseline;padding:7px 2px;font-size:13.5px;font-weight:500;
-    border-top:1px solid var(--line);border-bottom:none;
+    border-top:var(--rule);border-bottom:none;text-transform:none;letter-spacing:0;font-stretch:100%;font-weight:600;font-size:13.5px;
   }
 }
 
@@ -119,7 +108,7 @@
    about what floats over the page. .home-sec carries the same allowance. */
 .chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 60px)}
 @media(min-width:960px){.chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 16px)}}
-.ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:16px;border-top:1px solid var(--line-2);padding-top:14px}
+.ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:16px;border-top:var(--rule-2);padding-top:14px}
 .ch-head .ch-titles{min-width:0}
 .ch-head h3{font-size:clamp(20px,3.2vw,24px);letter-spacing:-.02em}
 /* Survives the fold, unlike .ch-sub, because it is the only hint a reader gets
@@ -127,9 +116,9 @@
    it to the right of the head, clear of the chevron. */
 .ch-flag{
   flex:none;margin-left:auto;margin-right:6px;align-self:center;
-  font-size:11.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--primary-2);background:var(--primary-bg);
-  border:1px solid var(--primary);border-radius:100px;padding:4px 10px;white-space:nowrap;
+  font-family:var(--sans);font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--stock);background:var(--spot);
+  padding:4px 8px;white-space:nowrap;
 }
 .ch-head .ch-sub{font-size:13.5px;color:var(--ink-3);margin-top:6px;line-height:1.5}
 
@@ -139,63 +128,59 @@
 /* KPI band: hairline-separated mono figures, no tiles */
 .report .kpis{
   grid-template-columns:repeat(2,1fr);gap:0;margin-top:22px;
-  border-top:1px solid var(--ink);border-bottom:1px solid var(--line);
+  border-top:var(--rule-2);border-bottom:var(--rule);
 }
 @media(min-width:560px){.report .kpis{grid-template-columns:repeat(4,1fr)}}
+.report .kpis{grid-template-columns:1fr}
+@media(min-width:560px){.report .kpis{grid-template-columns:1fr 1fr}}
 .report .kpi{
-  background:none;border:none;border-radius:0;padding:14px 16px 15px 0;
-  border-right:1px solid var(--line);
+  background:none;border:none;border-radius:0;padding:9px 0;
+  border-bottom:var(--rule);display:flex;justify-content:space-between;gap:16px;align-items:baseline;
 }
-.report .kpi:last-child{border-right:none}
-.report .kpi + .kpi{padding-left:16px}
-@media(max-width:559px){
-  .report .kpi:nth-child(2n){border-right:none}
-  .report .kpi:nth-child(2n+1){padding-left:0}
-  .report .kpi:nth-child(n+3){border-top:1px solid var(--line)}
-}
-.report .kpi .v{font-size:22px;margin-top:5px}
+.report .kpi .k{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink)}
+.report .kpi .v{font-family:var(--serif);font-size:17px;font-weight:600;margin:0;font-variant-numeric:tabular-nums;text-align:right}
+@media(min-width:560px){.report .kpi:nth-child(odd){padding-right:20px;border-right:var(--rule)}.report .kpi:nth-child(even){padding-left:20px}}
 
 /* Safety margin notes (populated when the plan carries household flags) */
 .safety-note{
   display:flex;gap:10px;align-items:flex-start;margin-top:14px;
-  padding:12px 14px;border-left:3px solid var(--primary);
-  background:var(--primary-bg);border-radius:0 10px 10px 0;
-  font-size:13.5px;color:var(--ink-2);line-height:1.5;
+  padding:12px 14px;border:var(--rule);
+  background:var(--tint);
+  font-size:14px;color:var(--ink);line-height:1.5;
 }
-.safety-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--primary-2)}
+.safety-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--spot-ink)}
 
 /* Report hero: the user's own photo, photography-forward. The corner tag
    says what it is — the captured "before", not a recommendation. */
-#report-hero{position:relative;margin-top:20px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+#report-hero{position:relative;margin-top:20px;overflow:hidden;border:var(--rule)}
 #report-hero img{width:100%;max-height:420px;object-fit:cover;display:block}
 #report-hero .hero-tag{
   position:absolute;left:12px;bottom:12px;font-size:11.5px;font-weight:600;
-  background:rgba(0,0,0,.55);color:#fff;
-  border-radius:5px;padding:4px 8px;pointer-events:none;
+  background:rgba(0,0,0,.55);color:var(--stock);
+  border-radius:0;padding:4px 8px;pointer-events:none;
 }
 
 /* Before/after slider: the before photo is the base layer and the after
    render is clipped to the right of the divider, so each half sits under
    its own label — "Before" left, "After" right. Dragged via a full-bleed
    invisible range input. */
-.ba-slider{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--surface-2)}
+.ba-slider{position:relative;overflow:hidden;border:var(--rule);background:var(--tint)}
 .ba-slider img{width:100%;display:block;max-height:480px;object-fit:cover}
 .ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 0 0 var(--pos,50%))}
 .ba-slider .ba-divider{
   position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;
-  background:#fff;box-shadow:0 0 10px rgba(0,0,0,.45);pointer-events:none;
+  background:var(--stock);box-shadow:0 0 10px rgba(0,0,0,.45);pointer-events:none;
 }
 .ba-slider .ba-divider::after{
-  content:"\2194";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:34px;height:34px;border-radius:50%;background:#fff;color:var(--ink);
-  display:grid;place-items:center;font-size:15px;box-shadow:0 1px 6px rgba(0,0,0,.35);
+  content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:34px;height:34px;border-radius:50%;background:var(--stock);border:2px solid var(--ink);
 }
 .ba-slider .ba-tag{
   position:absolute;top:10px;font-size:11.5px;font-weight:600;
-  background:rgba(0,0,0,.55);color:#fff;border-radius:5px;padding:4px 8px;pointer-events:none;
+  background:rgba(0,0,0,.55);color:var(--stock);border-radius:0;padding:4px 8px;pointer-events:none;
 }
 .ba-slider .ba-tag.b{left:10px}
-.ba-slider .ba-tag.a{right:10px;background:var(--primary)}
+.ba-slider .ba-tag.a{right:10px;background:var(--spot)}
 .ba-slider input[type=range]{
   position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0;
   -webkit-appearance:none;appearance:none;background:none;border:none;
@@ -204,8 +189,8 @@
 /* The inline feedback ask. Set apart from the report body — it is the one
    thing on this screen asking rather than telling — but without a heavier
    surface than the chapters it follows. */
-.plan-rate{margin-top:48px;padding:24px;border:1.5px solid var(--line-2);border-radius:var(--radius-lg);background:var(--surface)}
-.plan-rate h3{font-family:var(--serif);font-size:20px;line-height:1.25}
+.plan-rate{margin-top:48px;padding:24px;border:var(--rule-2);background:var(--tint)}
+.plan-rate h3{font-family:var(--sans);font-size:22px;line-height:1.15}
 .plan-rate h4{font-size:14px;font-weight:600;color:var(--ink-2)}
 .plan-rate textarea{width:100%;min-height:76px}
 .plan-rate .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
@@ -213,7 +198,7 @@
 @media (max-width:600px){.plan-rate{padding:18px}.plan-rate .grid{grid-template-columns:1fr}}
 
 /* Chapter end actions */
-.report-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:52px;padding-top:22px;border-top:2px solid var(--ink)}
+.report-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:52px;padding-top:22px;border-top:var(--rule-2)}
 
 /* Collapsible chapters: tap the heading to fold a section away */
 .chapter .ch-head{cursor:pointer;position:relative;user-select:none;padding-right:28px}
@@ -230,9 +215,9 @@
 /* The items the plan identified on a level. Quiet by design: this is evidence
    the plan is about the user's own space, not another list to read. */
 .map-items{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.map-items .mi{font-size:12.5px;line-height:1.5;padding:1px 8px;border-radius:999px;
-  background:var(--surface-2);color:var(--ink-3);border:1px solid var(--line)}
-.map-items .mi-flag{border-color:var(--warn-line,var(--line));color:var(--ink-2)}
+.map-items .mi{font-family:var(--sans);font-size:12.5px;line-height:1.5;padding:2px 8px;
+  background:var(--stock);color:var(--ink);border:var(--rule)}
+.map-items .mi-flag{background:var(--tint)}
 
 /* A folded chapter should still say what is inside it. */
 .chapter.collapsed .ch-sub{display:none}

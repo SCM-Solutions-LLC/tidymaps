@@ -1,110 +1,115 @@
 /* ============================================================
-   TidyMap — Household service
-   A nearly flat warm-white canvas, charcoal ink, and one
-   recognizable tomato-red accent. One self-hosted humanist
-   sans for everything. Restrained shadows, tighter radii.
-   Photography and real product output carry the visual weight.
+   TidyMap — The Home-Economics Manual
+   Two-color offset printing: white stock, one turquoise spot
+   ink laid at page scale, ink black, and a single halftone
+   tint. No grey, no gradients, no shadows; corners are cut
+   square. Archivo sets titles and labels, Source Serif 4 sets
+   the reading text. Figures are inked cupboard elevations.
    ============================================================ */
 
-/* Self-hosted brand typeface: Figtree (SIL OFL, see vendor/fonts/) */
+/* Self-hosted typefaces (SIL OFL, see vendor/fonts/) */
 @font-face{
-  font-family:"Figtree";
+  font-family:"Archivo";
   font-style:normal;
-  font-weight:300 900;
+  font-weight:100 900;
+  font-stretch:62% 125%;
   font-display:swap;
-  src:url("../vendor/fonts/figtree-latin-wght-normal.woff2") format("woff2-variations");
+  src:url("../vendor/fonts/archivo-latin-wdth-normal.woff2") format("woff2-variations");
 }
 @font-face{
-  font-family:"Figtree";
+  font-family:"Archivo";
   font-style:italic;
-  font-weight:300 900;
+  font-weight:100 900;
   font-display:swap;
-  src:url("../vendor/fonts/figtree-latin-wght-italic.woff2") format("woff2-variations");
+  src:url("../vendor/fonts/archivo-latin-wght-italic.woff2") format("woff2-variations");
+}
+@font-face{
+  font-family:"Source Serif 4";
+  font-style:normal;
+  font-weight:200 900;
+  font-display:swap;
+  src:url("../vendor/fonts/source-serif-4-latin-opsz-normal.woff2") format("woff2-variations");
+}
+@font-face{
+  font-family:"Source Serif 4";
+  font-style:italic;
+  font-weight:200 900;
+  font-display:swap;
+  src:url("../vendor/fonts/source-serif-4-latin-opsz-italic.woff2") format("woff2-variations");
 }
 
 :root{
   color-scheme:light;
-  --sans:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  --serif:Georgia,"Times New Roman",Times,serif;
+  --sans:"Archivo",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
-  /* materials: flat warm white, soft warm-gray washes */
-  --bg:        oklch(0.977 0.005 90);   /* warm white */
-  --surface:   oklch(0.955 0.006 90);   /* soft wash */
-  --surface-2: oklch(0.935 0.007 90);   /* deeper wash */
-  --surface-3: oklch(0.910 0.008 90);   /* deepest wash */
-  --ink:       oklch(0.235 0.010 110);  /* charcoal with a green cast */
-  --ink-2:     oklch(0.38 0.010 110);
-  --ink-3:     oklch(0.46 0.010 108);
-  --line:      oklch(0.900 0.008 95);
-  --line-2:    oklch(0.840 0.010 95);
+  /* ---- The two inks and the stock --------------------------------------
+     --spot is the turquoise plate. It is a fill colour: white type sits on it
+     at 4.6:1. Small turquoise type on white uses --spot-ink, the same plate
+     printed at full density, which clears 6:1. --tint is the plate screened
+     to an 18% halftone; it is the only third value on the page. */
+  --stock:     #ffffff;
+  --ink:       oklch(0.20 0.01 200);   /* near-black with the plate's cast */
+  --spot:      oklch(0.535 0.100 195); /* turquoise, fields and buttons */
+  --spot-deep: oklch(0.47 0.095 195); /* pressed / hover */
+  --spot-ink:  oklch(0.44 0.095 195);  /* small turquoise text on white */
+  --tint:      oklch(0.945 0.028 195); /* 18% screen of the plate */
+  --tint-2:    oklch(0.905 0.045 195); /* 30% screen, rare */
 
-  /* warm terracotta — the single brand accent */
-  --primary:      oklch(0.555 0.145 55);
-  --primary-2:    oklch(0.495 0.135 55);
-  --primary-bg:   oklch(0.960 0.020 60);
-  --primary-line: oklch(0.870 0.060 58);
-  /* Text sitting ON --primary-bg. The accent itself measures 4.5:1 against its
-     own tint — exactly the AA threshold, and it rounds under, which failed 23
-     nodes in an axe pass (step badges, the hero badge, zone names, "Mark
-     complete"). The accent is unchanged: it is correct for fills and for white
-     text on solid. Small accent-coloured text uses this darker ink instead,
-     mirroring how --sage-ink already relates to --sage. */
-  --primary-ink:  oklch(0.470 0.150 52);
+  /* ---- Names the stylesheets already speak ------------------------------
+     Kept so the wizard, report, viewer and library resolve without a rename
+     sweep. Every one lands on the stock, the tint, an ink, or the plate. */
+  --bg:        var(--stock);
+  --surface:   var(--stock);
+  --surface-2: var(--tint);
+  --surface-3: var(--tint-2);
+  --ink-2:     var(--ink);
+  --ink-3:     var(--spot-ink);   /* secondary text is tinted, never grey */
+  --line:      var(--ink);
+  --line-2:    var(--ink);
 
-  /* olive/sage green — reserved for safety, reuse, and "good" states */
-  --sage:      oklch(0.55 0.065 145);
-  --sage-2:    oklch(0.45 0.072 145);
-  --sage-bg:   oklch(0.948 0.024 148);
-  --sage-line: oklch(0.850 0.042 148);
-  --sage-ink:  oklch(0.40 0.068 150);
+  --primary:      var(--spot);
+  --primary-2:    var(--spot-deep);
+  --primary-bg:   var(--tint);
+  --primary-line: var(--spot);
+  --primary-ink:  var(--spot-ink);
 
-  /* honey — warm highlight, used sparingly */
-  --honey:     oklch(0.885 0.078 90);
-  --honey-2:   oklch(0.72 0.105 82);
+  /* the second colour family the old palette had folds into the plate */
+  --sage:      var(--spot);
+  --sage-2:    var(--spot-deep);
+  --sage-bg:   var(--tint);
+  --sage-line: var(--spot);
+  --sage-ink:  var(--spot-ink);
+  --honey:     var(--tint-2);
+  --honey-2:   var(--spot-ink);
 
-  /* ---- Semantic state roles ----------------------------------------------
-     Four states, four distinct hues. Before this, the palette had three hues
-     covering five jobs: --good and --teal both resolved to sage, so "this
-     succeeded" and "here is some information" were the same colour; --clay and
-     --warn sat 4° apart, two tokens for one amber; and there was no error
-     colour at all, so form validation borrowed the brand terracotta and a
-     failed plan build borrowed the caution amber.
+  /* ---- Semantic states -------------------------------------------------
+     Rule of use stays: never encode state by hue alone; pair every one with
+     an icon or a word. Success and info are the plate. Warning is ink on the
+     tint. Danger is the one exception to two colours: a correction pencil,
+     used for nothing but a failure, so it can never be mistaken for a call
+     to action. */
+  --success:      var(--spot);
+  --success-ink:  var(--spot-ink);
+  --success-bg:   var(--tint);
+  --success-line: var(--spot);
 
-     Each role carries a fill (solid), an -ink (small text on its own tint), a
-     -bg (tint) and a -line (border), so text always has a pairing that clears
-     AA. Rule of use: never encode state by hue alone — pair every one of these
-     with an icon or a word, which is what keeps the system working in
-     forced-colors mode and for colour-blind users. */
+  --warn:      var(--ink);
+  --warn-ink:  var(--ink);
+  --warn-bg:   var(--tint);
+  --warn-line: var(--ink);
 
-  /* success — the space is safe / this is already yours to reuse */
-  --success:      var(--sage);
-  --success-ink:  var(--sage-ink);
-  --success-bg:   var(--sage-bg);
-  --success-line: var(--sage-line);
+  --danger:      oklch(0.52 0.19 28);
+  --danger-ink:  oklch(0.45 0.18 28);
+  --danger-bg:   oklch(0.96 0.025 28);
+  --danger-line: oklch(0.52 0.19 28);
 
-  /* warning — proceed, but check something first */
-  --warn:      oklch(0.60 0.108 76);
-  --warn-ink:  oklch(0.455 0.095 74);
-  --warn-bg:   oklch(0.950 0.034 86);
-  --warn-line: oklch(0.865 0.070 82);
+  --info:      var(--spot);
+  --info-ink:  var(--spot-ink);
+  --info-bg:   var(--tint);
+  --info-line: var(--spot);
 
-  /* danger — this failed, or it will not fit. Hue 25 against the brand's 55:
-     cooler and deeper, so an error can never be mistaken for a call to action.
-     Nothing pointed here before; this role is new. */
-  --danger:      oklch(0.505 0.175 25);
-  --danger-ink:  oklch(0.435 0.165 25);
-  --danger-bg:   oklch(0.958 0.028 25);
-  --danger-line: oklch(0.870 0.078 25);
-
-  /* info — neutral notice: read-only view, restored draft, layout shown */
-  --info:      oklch(0.505 0.062 245);
-  --info-ink:  oklch(0.425 0.060 248);
-  --info-bg:   oklch(0.957 0.018 245);
-  --info-line: oklch(0.872 0.040 245);
-
-  /* Legacy names, now pointed at the roles above rather than at each other.
-     --teal used to alias sage, which is why info and success were identical. */
   --teal:      var(--info);
   --teal-bg:   var(--info-bg);
   --teal-line: var(--info-line);
@@ -112,40 +117,38 @@
   --good:      var(--success);
   --clay:      var(--warn);
   --clay-bg:   var(--warn-bg);
+  --focus:     var(--spot);
 
-  --radius: 12px;
-  --radius-sm: 9px;
-  --radius-lg: 18px;
-
-  /* Depth. One flat shadow for everything is what made the whole page read as
-     a wireframe: nothing sat above anything else, so no element looked
-     touchable. These are layered rather than blurred — a tight contact shadow
-     for the edge plus a wider ambient one — which is what reads as a real
-     object on paper without resorting to gradients or glass. */
-  --shadow-sm: 0 1px 2px oklch(0.30 0.01 100 / .05);
-  --shadow: 0 1px 2px oklch(0.30 0.01 100 / .06), 0 2px 6px oklch(0.30 0.01 100 / .05);
-  --shadow-md: 0 1px 2px oklch(0.30 0.01 100 / .07), 0 4px 12px oklch(0.30 0.01 100 / .08);
-  --shadow-lg: 0 2px 4px oklch(0.30 0.01 100 / .06), 0 12px 32px oklch(0.30 0.01 100 / .11);
+  /* Print has no rounded corners and casts no shadow. */
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-lg: 0;
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --rule: 1px solid var(--ink);
+  --rule-2: 2px solid var(--ink);
   --maxw: 760px;
 
-  /* Motion. One duration and one curve for every kind of movement is why the
-     interface felt mechanical: a button pressing and a panel arriving are not
-     the same gesture. Four tiers, each with the curve that suits it.
-     --ease-physical carries a slight overshoot, for things that represent
-     real objects moving (drawers, doors, bins) and should settle rather than
-     stop dead. */
-  --ease: cubic-bezier(.2,.7,.3,1);
+  /* Motion: inked in one stroke. One exponential ease-out for arrivals, a
+     physical settle for things that stand for objects, and short durations
+     because print does not linger. */
+  --ease: cubic-bezier(.2,.7,.2,1);
   --ease-out: cubic-bezier(.16,.84,.28,1);
   --ease-physical: cubic-bezier(.34,1.32,.48,1);
   --dur-fast: .12s;
   --dur: .18s;
   --dur-slow: .34s;
 
-  /* Type. Large sizes need negative tracking to stop looking loose, and the
-     display serif needs tighter leading than body copy. */
-  --tracking-display: -0.021em;
-  --tracking-tight: -0.011em;
-  --leading-display: 1.08;
+  /* Type. Titles are Archivo at its widest and heaviest; labels are Archivo
+     narrowed, in caps, letterspaced like a shelf label. */
+  --display-stretch: 118%;
+  --label-stretch: 80%;
+  --tracking-display: -0.028em;
+  --tracking-tight: -0.012em;
+  --tracking-label: 0.09em;
+  --leading-display: 0.98;
 
   --paper-grain: none;
 }

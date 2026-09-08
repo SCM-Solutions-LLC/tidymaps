@@ -133,7 +133,38 @@ function fillProductArt(){
   });
 }
 
-/* ---------- Appbar scroll shadow ---------- */
+/* ---------- Figure 1: the sort ----------
+   The items start where the mess left them and slide into their zones once
+   the figure is on screen. One authored moment, played when it can be seen;
+   "Sort it again" replays it. Reduced motion draws the finished figure
+   (css/landing.css), so nothing here has to check the preference. */
+function initFigure(){
+  const fig=document.getElementById('fig-el');
+  if(!fig) return;
+  const sort=()=>fig.classList.add('sorted');
+  // A phone gets the cupboard alone; the notes beside it are re-set as a
+  // list under the figure (index.html .fig-notes) rather than read at 6px.
+  const narrow=window.matchMedia('(max-width:719px)');
+  const frame=()=>fig.setAttribute('viewBox', narrow.matches ? '40 10 740 540' : '0 0 1200 560');
+  frame();
+  if(narrow.addEventListener) narrow.addEventListener('change',frame);
+  if('IntersectionObserver' in window){
+    const io=new IntersectionObserver((entries)=>{
+      if(entries.some(e=>e.isIntersecting)){ setTimeout(sort,350); io.disconnect(); }
+    },{threshold:.35});
+    io.observe(fig);
+  }else{
+    setTimeout(sort,350);
+  }
+  const replay=document.getElementById('fig-replay');
+  if(replay) replay.addEventListener('click',()=>{
+    fig.classList.remove('sorted');
+    // two frames so the removal paints before the class returns
+    requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(sort,500)));
+  });
+}
+
+/* ---------- Appbar scroll rule ---------- */
 function initAppbarScroll(){
   const appbar=document.querySelector('.appbar');
   if(!appbar) return;
@@ -165,5 +196,6 @@ export function initLanding(){
 
   renderSpaces();
   fillProductArt();
+  initFigure();
   initAppbarScroll();
 }
