@@ -169,7 +169,7 @@
 .ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 0 0 var(--pos,50%))}
 .ba-slider .ba-divider{
   position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;
-  background:var(--stock);box-shadow:0 0 10px rgba(0,0,0,.45);pointer-events:none;
+  background:var(--stock);outline:1px solid var(--ink);pointer-events:none;
 }
 .ba-slider .ba-divider::after{
   content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
