@@ -47,7 +47,7 @@ p{margin:0 0 1em}
 .lede{font-size:clamp(17px,2.4vw,20px);color:var(--ink);line-height:1.5}
 /* A caps label, narrowed and letterspaced: a shelf label, a figure number,
    a column head. Never a kicker above a heading. */
-.label,.eyebrow{
+.label{
   font-family:var(--sans);font-stretch:var(--label-stretch);font-weight:700;
   font-size:12px;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);
 }

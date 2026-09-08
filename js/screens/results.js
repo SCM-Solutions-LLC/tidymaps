@@ -818,7 +818,7 @@ function itemsRow(m){
 function plate(){
   const cs=getComputedStyle(document.documentElement);
   const v=(name,fb)=>(cs.getPropertyValue(name)||'').trim()||fb;
-  return { ink:v('--ink','#1f2a2b'), spot:v('--spot','#0f7f81'), tint:v('--tint','#e2f2f2'), tint2:v('--tint-2','#c7e6e6') };
+  return { ink:v('--ink','#3a3936'), spot:v('--brass','#b7924b'), tint:v('--tint','#f3f0ea'), tint2:v('--tint-2','#e8e2d9') };
 }
 const EL_GLYPHS={
   jar:'<path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="l"/>',
