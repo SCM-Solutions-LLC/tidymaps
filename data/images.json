@@ -2,17 +2,6 @@
   "version": 1,
   "note": "Versioned imagery manifest. Every keyed image the app references lives here with its alt text and license/provenance. status 'ready' means the file is present and cleared to ship; 'pending' means the slot is declared and specced but the art has not been produced yet (the UI collapses it gracefully). The build-time guard in tests/images.test.mjs fails CI if a referenced key is missing, a 'ready' file is absent from disk, or an entry lacks alt/license — so a broken key surfaces at build time instead of a runtime 404.",
   "images": {
-    "hero-home": {
-      "file": "assets/photos/hero-pantry.jpg",
-      "alt": "A family pantry mid-week: cereal boxes, labeled bins, and water bottles on ordinary white shelves",
-      "license": {
-        "type": "pending",
-        "owner": "SCM Solutions LLC",
-        "note": "Shoot per docs/asset-plan.md: a real consenting household, written permission before publishing, natural light, no staging."
-      },
-      "status": "pending",
-      "spec": { "orientation": "landscape", "minWidth": 1600, "crop": "4:3" }
-    },
     "sample-after": {
       "file": "assets/photos/ex-pantry-after.webp",
       "alt": "The finished pantry: labeled jars and bins on every shelf, snacks within reach, bulk stock up top",
@@ -27,16 +16,6 @@
       "file": "assets/product/hero-3d.webp",
       "alt": "The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf",
       "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the app's own 3D viewer; interim hero stand-in until real photography lands." },
-      "status": "ready"
-    },
-    "hero-pantry-after": {
-      "file": "assets/photos/pantry-after.webp",
-      "alt": "A family pantry organized with labeled bins, clear containers, and everything in its place",
-      "license": {
-        "type": "first-party",
-        "owner": "SCM Solutions LLC",
-        "note": "Photography from design handoff showing organized pantry result."
-      },
       "status": "ready"
     },
     "og": {

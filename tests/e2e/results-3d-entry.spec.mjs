@@ -80,7 +80,7 @@ test('a walk-in AI plan reaches the 3D view through the button on the plan hero'
 
   // The hero illustration renders, which is what makes its 3D button clickable.
   await expect(page.locator('.plan-hero-photo')).toBeVisible();
-  await expect(page.locator('#plan-hero-img')).toHaveJSProperty('naturalWidth', 200);
+  await expect(page.locator('#plan-hero-img')).toHaveJSProperty('naturalWidth', 760);
   await page.locator('.plan-3d-badge').click();
 
   await expect(page.locator('#screen-viewer3d')).toHaveClass(/active/, { timeout: 20_000 });

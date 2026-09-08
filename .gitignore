@@ -1,2 +1,7 @@
 node_modules/
 test-results/
+.impeccable/review/
+.impeccable/hook.cache.json
+.impeccable/capture.mjs
+.claude/launch.json
+.impeccable/questions/

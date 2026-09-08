@@ -28,7 +28,11 @@ test('no trendy display font or third-party font CDN', () => {
     assert.ok(!html.includes(bad), `font tell present in index.html: ${bad}`);
     assert.ok(!tokens.includes(bad), `font tell present in tokens.css: ${bad}`);
   }
-  assert.ok(tokens.includes('vendor/fonts/figtree'), 'brand typeface is not self-hosted');
+  // Two faces, both self-hosted: Archivo for titles and labels, Source Serif 4
+  // for reading. The preload names the same file the stylesheet does.
+  assert.ok(tokens.includes('vendor/fonts/archivo-latin-wdth-normal.woff2'), 'Archivo is not self-hosted');
+  assert.ok(tokens.includes('vendor/fonts/source-serif-4-latin-opsz-normal.woff2'), 'Source Serif 4 is not self-hosted');
+  assert.ok(html.includes('rel="preload" href="vendor/fonts/archivo-latin-wdth-normal.woff2"'), 'Archivo is not preloaded');
 });
 
 test('AI-template landing patterns stay gone', () => {
@@ -49,6 +53,18 @@ test('exclusivity and invented-product language stays gone', () => {
 test('signup asks plainly, with no exclusivity framing', () => {
   assert.ok(landing.includes('Get occasional product updates and practical organizing ideas'));
   assert.ok(landing.includes('id="signup-email"'));
+});
+
+// The first figure is the mechanism, drawn: the sample pantry's items slide
+// into the plan's zones, and the notes beside them are the plan's reasons.
+test('Figure 1 draws the sort, with reduced motion showing the finished figure', () => {
+  assert.ok(landing.includes('id="fig-el"'), 'Figure 1 is missing');
+  assert.ok(landing.includes('class="f-items"'), 'Figure 1 has no items to sort');
+  assert.ok((landing.match(/class="it/g) || []).length >= 12, 'Figure 1 has too few items to read as a pantry');
+  assert.ok(landing.includes('id="fig-replay"'), 'the replay control is missing');
+  assert.match(landingCss, /\.fig-el\.sorted \.f-items \.it\{transform:none\}/, 'sorted items no longer land in place');
+  const reduced = landingCss.slice(landingCss.indexOf('@media(prefers-reduced-motion:reduce)'));
+  assert.match(reduced, /\.f-items \.it\{transform:none\}/, 'reduced motion does not show the finished figure');
 });
 
 // The homepage sells the whole product, not the pantry it was first built
@@ -117,8 +133,13 @@ test('the plan hero placeholder is a decodable image, not a truncated one', () =
     'results.js sets a good illustration without clearing a stale hide');
 });
 
-test('single terracotta accent, flat canvas, no ambient gradients', () => {
-  assert.ok(tokens.includes('--primary:      oklch(0.555 0.145 55)'), 'brand accent drifted');
+// The Home-Economics Manual: white stock, one turquoise plate, ink, one
+// halftone tint. Print casts no shadow and has no rounded corners.
+test('two-colour offset: one turquoise plate, flat stock, no ambient gradients', () => {
+  assert.ok(tokens.includes('--spot:      oklch(0.535 0.100 195)'), 'the plate colour drifted');
+  assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at the plate');
+  assert.ok(tokens.includes('--radius: 0;'), 'rounded corners are back');
+  assert.ok(tokens.includes('--shadow: none;'), 'shadows are back');
   for (const css of [landingCss, baseCss, tokens]) {
     assert.ok(!css.includes('radial-gradient'), 'ambient gradient present');
     assert.ok(!css.includes('backdrop-filter'), 'glass surface present');

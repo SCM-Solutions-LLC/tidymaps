@@ -4,7 +4,7 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-04, after PR #120 merged and deployed; the
+**Last refreshed:** 2026-09-07, after the whole-site redesign (see the first section below; it was a draft PR, not yet merged). The previous refresh, 2026-09-04, was after PR #120 merged and deployed; the
 deployed state it describes is `main` at `7619fb8` (PR #120, Pages run 125
 green 09-04 00:59 UTC, its e2e step included; the model path canary last
 passed on 09-03 against `a790934`). Everything
@@ -43,6 +43,54 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-09-07 session changed (whole-site visual redesign)
+
+The owner opened the incumbent look (cream stock, serif display, terracotta
+accent) to replacement, with copy and flow free to change and only the backend
+untouched. The redesign ran the Impeccable flow: `PRODUCT.md` records product
+truth (interviewed 09-07), `.impeccable/surfaces/index-html.md` holds the
+direction contract, and `DESIGN.md` plus `.impeccable/design.json` were written
+from the shipped build afterwards. Read those three before touching any CSS.
+
+**The world is The Home-Economics Manual**: white stock, one turquoise spot
+ink laid at page scale, ink black, one flat 18% tint. No grey, no gradients,
+no shadows, square corners, 1px black rules. Archivo (wdth axis, self-hosted)
+sets titles and caps labels; Source Serif 4 sets reading text. Figtree is gone.
+Every surface was re-inked: landing, wizard, report, 3D viewer, product
+library, dashboard, sign-in, legal pages. The old token names still resolve
+(`--primary`, `--sage`, `--honey`, `--surface-*`) but all land on the plate,
+the tint, the ink or the stock, so a stylesheet that reads them keeps working.
+
+- **Landing** is a chapter opener (plate band, display numeral, chapter
+  title), then **Figure 1**: an inked pantry elevation whose thirty items slide
+  from a jumble into four labeled zones once the figure is on screen
+  (`js/screens/landing.js initFigure`; reduced motion draws the finished
+  figure; a phone crops the viewBox and lists the notes under the drawing).
+  Then the ruled exercise box with Plan my space. The photo hero is gone and
+  its pending manifest slot (`hero-home`) with it.
+- **Kickers are gone everywhere** (`.wiz-badge`, `.plan-badge`, `.v3d-badge`,
+  the loading eyebrow, the dashboard kicker). Headings carry their own weight.
+- **Report**: the plan hero is now the plan's own cupboard drawn as an
+  elevation (`results.js planElevationSvg`, one shelf per map level, zone
+  printed on the shelf); the four figures are a ruled table row; each step's
+  numeral is printed inside its square mark. Produced step clips still carry
+  the old beige field baked in; they print through a grayscale/contrast/
+  multiply filter as one ink on the tint band. Grey mid-tones remain: redraw
+  the 147 clips when the world settles, do not fight it in CSS.
+- **Card line art** (`js/wizard-data.js`, `js/product-art.js`) is re-inked by
+  CSS attribute selectors on its baked-in fills and strokes and thinned to a
+  1.7 stroke. The drawings are still icon-voiced (rounded corners) next to
+  Figure 1's square elevations; the finish reviewer scored that partial. A
+  redraw of the nine space cards in the elevation voice is the open design item.
+- Tests moved with the design: `tests/design.test.mjs` now binds the plate,
+  the two self-hosted faces, and Figure 1's sort; the mobile menu rows are
+  48px; the report appbar actions fall back to icons at 519px because the caps
+  labels are wider.
+
+All four gates were green at the end of the session (lint on tracked sources,
+types, 532 node tests, 213 e2e including the axe scans). Nothing was deployed;
+this landed as a draft PR from `claude/home-economics-manual-redesign`.
 
 ## What the 2026-09-04 session verified (PR #120 in a browser)
 
