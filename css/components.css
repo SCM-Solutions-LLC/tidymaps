@@ -655,9 +655,9 @@ body[data-flow="1"] .site-footer{display:none}
 :is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg){stroke:var(--ink);stroke-width:1.7}
 /* The nine space cards are elevations drawn in Figure 1's voice: one thin
    ink line, square corners, and a short spot rule standing in for a label. */
-.card-art-svg.art-el{stroke-width:1}
-.card-art-svg.art-el .lbl{stroke:var(--spot);stroke-width:1.2}
-.card-art-svg.art-el .case{stroke-width:1.6}
+.art-el{stroke-width:1}
+.art-el .lbl{stroke:var(--brass);stroke-width:1.2}
+.art-el .case{stroke-width:1.6}
 :is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke]{stroke:var(--ink)}
 :is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke="#c15f00"],:is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke="#658e89"],:is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke="#7f9862"]{stroke:var(--spot-ink)}
 :is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [fill="#fff"],:is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [fill="#fff8ef"],:is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [fill="#f6efe4"]{fill:var(--stock)}
