@@ -144,11 +144,15 @@ is as true as before and appears only when it is.
 
 **Two things this did not do, on purpose.**
 
-- The walk-in and L-run shelf depth floor went from 8 to 14 inches (a
-  4-foot linen closet had 9.6-inch shelving no basket in the catalog fits;
-  14 is the shallowest closet shelf sold and leaves a 20-inch aisle there).
-  The 72-inch walk-in that `organizer-depth-fit.spec.mjs` measures is
-  unchanged at 14.4.
+- The walk-in and L-run shelf depth floor went from 8 to 14 inches in any
+  room at least 28 inches across (a 4-foot linen closet had 9.6-inch
+  shelving no basket in the catalog fits; 14 is the shallowest closet shelf
+  sold and leaves a 20-inch aisle there). A shallower room keeps the old
+  proportion, capped at half its smaller dimension, because CI caught a
+  12-inch-deep L-run drawing 14-inch shelves outside its own footprint
+  (`three-setup-matrix.spec.mjs`, the scenario geometry with no dims). The
+  72-inch walk-in that `organizer-depth-fit.spec.mjs` measures is unchanged
+  at 14.4.
 - Scenario-authored shelf fractions that start at 0.08 (the pantry, the
   garage, the linen closet) still draw a short top compartment: 5.5 to 7
   inches on their default heights. Nothing tall targets those shelves any
