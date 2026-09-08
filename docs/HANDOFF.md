@@ -81,10 +81,11 @@ the tint, the ink or the stock, so a stylesheet that reads them keeps working.
 - **The nine space cards are redrawn as elevations** (`js/wizard-data.js`
   `EL_ART` / `EL_MOTION`, keys `el*`), in Figure 1's voice: one thin ink
   line, square corners, stock and tint fills, a short spot rule for a label,
-  and a moving object drawn the same way. The remaining card line art (the
-  ~34 setup cards, `js/product-art.js`) is the old icon-voiced drawing
-  re-inked by CSS attribute selectors and thinned to a 1.7 stroke; redrawing
-  those in the elevation voice is the open design item.
+  and a moving object drawn the same way. The 28 setup-card drawings on step
+  2 (`SETUP_ART` / `SETUP_MOTION`, same keys the tests bind) are redrawn in
+  the same voice, with walk-ins and L-shapes carrying angled return walls.
+  Only `js/product-art.js` (the product library and shopping list glyphs)
+  still uses the older drawings, re-inked by CSS attribute selectors.
 - Tests moved with the design: `tests/design.test.mjs` now binds the plate,
   the two self-hosted faces, and Figure 1's sort; the mobile menu rows are
   48px; the report appbar actions fall back to icons at 519px because the caps

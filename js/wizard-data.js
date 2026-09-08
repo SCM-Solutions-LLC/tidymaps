@@ -655,13 +655,109 @@ const EL_MOTION = {
   elWorkbench: elTool(64, 8),
 };
 Object.assign(ART, EL_ART);
+/* ---------- The setup cards: the same elevation voice ----------
+   Every option on wizard step 2, drawn as its cupboard seen from the front.
+   Walk-ins and L-shapes carry their side returns as angled planes, the way a
+   manual's elevation shows a return wall. Keys are the ones the tests bind. */
+const doorPair = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" class="case"/><path d="M${x + w / 2} ${y}v${h}"/><path d="M${x + w / 2 - 5} ${y + h / 2 - 3}v6M${x + w / 2 + 5} ${y + h / 2 - 3}v6"/>`;
+const drawerRow = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/><path d="M${x + w / 2 - 5} ${y + h / 2}h10"/>`;
+const legs = (x1, x2, y) => `<path d="M${x1} ${y}v4M${x2} ${y}v4"/>`;
+const shoes = (x, y) => `<rect x="${x}" y="${y}" width="8" height="5" fill="#fff"/><rect x="${x + 10}" y="${y}" width="8" height="5" fill="#fff"/><path d="M${x} ${y + 3}h8M${x + 10} ${y + 3}h8"/>`;
+const rail = (x, w, y) => `<path d="M${x} ${y}h${w}"/>`;
+// a return wall seen at an angle: left side leans in, right side leans out
+const leftReturn = (x, y, w, h) => `<path d="M${x + w} ${y}L${x} ${y + 6}v${h - 12}l${w} 6z" fill="${T}"/>`;
+const rightReturn = (x, y, w, h) => `<path d="M${x} ${y}l${w} 6v${h - 12}l-${w} 6z" fill="${T}"/>`;
+
+const SETUP_ART = {
+  artTallCab: doorPair(30, 4, 36, 60) + legs(34, 62, 64),
+  artPantryReachIn: elCase(16, 4, 64, 62, [20, 36, 52]) + jar(21, 10) + jar(30, 10) + can(39, 13) + box(48, 9, 8, 11) + bottle(60, 7) + jar(69, 10, 7, 10)
+    + `<rect x="17" y="21" width="62" height="14" fill="${T}"/>` + box(21, 24, 9, 11) + box(32, 24, 9, 11) + jar(44, 25, 8, 10) + jar(55, 25, 8, 10) + can(66, 28)
+    + box(21, 40, 10, 11) + jar(34, 41, 8, 10) + `<path d="M16 66h64"/>`,
+  artPantryWalkIn: leftReturn(6, 4, 14, 62) + rightReturn(76, 4, 14, 62) + elCase(20, 4, 56, 62, [22, 40, 56])
+    + `<path d="M8 20l12-3M8 40l12-2M88 20l-12-3M88 40l-12-2"/>`
+    + jar(25, 12) + jar(34, 12) + can(43, 15) + box(52, 10, 8, 12) + bottle(64, 9)
+    + `<rect x="21" y="23" width="54" height="16" fill="${T}"/>` + box(25, 27, 9, 12) + box(36, 27, 9, 12) + jar(48, 29, 8, 10) + can(58, 32) + jar(66, 29, 7, 10)
+    + box(52, 43, 16, 12) + `<path d="M20 66h56"/>`,
+  artPantryLShape: elCase(8, 6, 34, 58, [22, 40]) + rightReturn(42, 6, 46, 58) + `<path d="M42 22l46 6M42 40l46 4"/>`
+    + jar(12, 12) + jar(21, 12) + can(30, 15) + box(12, 27, 9, 12) + jar(24, 29, 8, 10)
+    + `<path d="M48 26l9 1.5v7l-9-1.5z" fill="#fff"/><path d="M62 30l9 1.5v7l-9-1.5z" fill="${T}"/>`,
+  artCounter: doorPair(12, 4, 72, 22) + `<path d="M8 34h80v4H8z" fill="#fff" class="case"/>` + doorPair(12, 42, 72, 22) + legs(16, 80, 64),
+  artCabinetLShape: doorPair(8, 12, 34, 50) + rightReturn(42, 12, 44, 50) + `<path d="M64 15v43"/><path d="M58 38v6M70 40v6"/>` + `<path d="M6 8h38v4H6z" fill="#fff" class="case"/><path d="M44 8l44 6v4l-44-6z" fill="#fff"/>`,
+  artOpenShelf: `<path d="M14 22h68M14 44h68" class="case"/>` + jar(20, 12) + jar(29, 12) + box(38, 9, 10, 13) + can(51, 15) + `<rect x="60" y="13" width="14" height="9" fill="${T}"/><path d="M60 13h14"/>`
+    + jar(35, 34, 8, 10) + can(46, 37) + `<rect x="56" y="36" width="18" height="8" fill="#fff"/><path d="M56 36h18"/>`,
+  artInCounter: `<path d="M8 12h80"/><rect x="18" y="14" width="60" height="50" fill="#fff" class="case"/>` + drawerRow(22, 34, 52, 11) + drawerRow(22, 49, 52, 11) + `<path d="M18 64h60"/>`,
+  artTower: `<rect x="30" y="4" width="36" height="60" fill="#fff" class="case"/>` + drawerRow(34, 20, 28, 9) + drawerRow(34, 32, 28, 9) + drawerRow(34, 44, 28, 9) + legs(34, 62, 64),
+  artSideboard: `<rect x="10" y="24" width="76" height="32" fill="#fff" class="case"/><path d="M48 36v20"/><path d="M43 46v6M53 46v6"/>` + `<path d="M48 27h34"/>` + legs(14, 82, 56) + `<rect x="40" y="12" width="7" height="12" fill="${T}"/><path d="M43.5 12v-5"/>`,
+  artWardrobe: `<rect x="22" y="4" width="52" height="60" fill="#fff" class="case"/><path d="M22 16h52M48 16v48"/>` + stack(27, 6, 18, 3) + `<path d="M55 40v6"/>` + rail(26, 20, 20) + `<path d="M36 20v3"/>` + legs(26, 70, 64),
+  artClosetReachIn: elCase(16, 4, 64, 62, [18]) + `<rect x="17" y="5" width="62" height="12" fill="${T}"/>` + stack(21, 7, 16, 3) + stack(41, 7, 14, 3) + box(60, 6, 12, 10)
+    + rail(20, 56, 24) + `<path d="M54 24v3M66 24v3"/>` + shirt(50, 27) + shoes(21, 58) + `<path d="M16 66h64"/>`,
+  artClosetWalkIn: leftReturn(6, 4, 14, 62) + rightReturn(76, 4, 14, 62) + elCase(20, 4, 56, 62, [18]) + `<rect x="21" y="5" width="54" height="12" fill="${T}"/>` + stack(25, 7, 14, 3) + stack(43, 7, 12, 3)
+    + `<path d="M8 22l12-3M88 22l-12-3"/>` + rail(24, 48, 24) + `<path d="M58 24v3"/>` + shirt(52, 27) + shoes(25, 58) + `<path d="M20 66h56"/>`,
+  artClosetLShape: elCase(8, 6, 34, 58, [18]) + rightReturn(42, 6, 46, 58) + `<path d="M42 18l46 6M42 56l46 4"/>` + stack(12, 8, 14, 3)
+    + rail(12, 26, 24) + `<path d="M28 24v3"/>` + `<path d="M50 28l4 1v7l-4-1z" fill="#fff"/><path d="M60 30l4 1v7l-4-1z" fill="${T}"/>`,
+  artBuiltinDrawers: elCase(12, 4, 72, 62, [20]) + `<path d="M52 20v46M12 36h40"/>` + `<rect x="13" y="5" width="70" height="14" fill="${T}"/>` + stack(17, 7, 14, 3) + stack(35, 7, 12, 3) + box(58, 6, 14, 12)
+    + rail(16, 32, 26) + `<path d="M28 26v3"/>` + shirt(18, 29).replace('fill="#fff"', 'fill="#fff"') + drawerRow(56, 40, 24, 7) + `<path d="M12 66h72"/>`,
+  artDresser: `<rect x="14" y="16" width="68" height="44" fill="#fff" class="case"/>` + drawerRow(19, 34, 58, 9) + drawerRow(19, 47, 58, 9) + legs(18, 78, 60) + stack(24, 5.5, 18, 3),
+  artUnderbed: `<rect x="10" y="14" width="76" height="14" fill="#fff" class="case"/><path d="M10 28h76"/>` + `<rect x="14" y="17" width="14" height="8" fill="${T}"/>` + drawerRow(50, 34, 30, 12) + `<path d="M14 46v6M82 46v6M8 58h80"/>`,
+  artVanity: `<rect x="34" y="3" width="28" height="15" fill="${T}" class="case"/><path d="M48 24v-5h5v2"/><path d="M22 24h52v4H22z" fill="#fff" class="case"/><rect x="24" y="28" width="48" height="34" fill="#fff" class="case"/><path d="M48 28v34"/>` + legs(28, 68, 62) + bottle(50, 32, 12) + bottle(56, 34, 10) + `<rect x="62" y="38" width="6" height="8" fill="${T}"/>`,
+  artVanityDr: `<rect x="30" y="3" width="24" height="14" fill="${T}" class="case"/><path d="M42 22v-5h5v2"/><path d="M18 22h60v4H18z" fill="#fff" class="case"/><rect x="20" y="26" width="56" height="36" fill="#fff" class="case"/><path d="M52 26v36"/><path d="M47 42v6"/>` + drawerRow(55, 38, 18, 7) + drawerRow(55, 50, 18, 7) + legs(24, 72, 62),
+  artLinenCabinet: doorPair(28, 4, 40, 60) + legs(32, 64, 64),
+  artLinenReachIn: elCase(18, 4, 60, 62, [20, 36, 52]) + stack(23, 7, 18, 3) + stack(45, 7, 16, 3) + `<rect x="64" y="8" width="10" height="11" fill="${T}"/>`
+    + `<rect x="19" y="21" width="58" height="14" fill="${T}"/>` + stack(23, 23, 18, 3) + stack(45, 24, 16, 3)
+    + stack(23, 39, 18, 3) + stack(45, 39, 16, 3) + `<path d="M18 66h60"/>`,
+  artLinenWalkIn: leftReturn(6, 4, 14, 62) + rightReturn(76, 4, 14, 62) + elCase(20, 4, 56, 62, [22, 40, 56]) + `<path d="M8 22l12-3M8 40l12-2M88 22l-12-3M88 40l-12-2"/>`
+    + stack(25, 8, 18, 3) + stack(47, 8, 16, 3) + `<rect x="21" y="23" width="54" height="16" fill="${T}"/>` + stack(25, 26, 18, 3) + stack(47, 27, 16, 3) + stack(25, 44, 18, 3) + `<path d="M20 66h56"/>`,
+  artLinenLShape: elCase(8, 6, 34, 58, [22, 40]) + rightReturn(42, 6, 46, 58) + `<path d="M42 22l46 6M42 40l46 4"/>` + stack(12, 9, 16, 3) + stack(12, 27, 16, 3)
+    + `<path d="M48 25l10 2v4l-10-2z" fill="#fff"/><path d="M62 30l10 2v4l-10-2z" fill="${T}"/>`,
+  artGarageShelf: `<path d="M18 6v62M78 6v62" class="case"/><path d="M14 22h68M14 40h68M14 58h68"/>` + box(23, 10, 12, 12) + can(38, 14, 8, 8) + `<rect x="50" y="11" width="10" height="11" fill="#fff"/><path d="M50 14h10"/>` + can(63, 15, 7, 7)
+    + `<rect x="23" y="29" width="14" height="11" fill="${T}"/><path d="M23 29h14M27 34h6" class="lbl"/>` + jar(41, 30, 8, 10) + `<rect x="52" y="32" width="18" height="8" fill="#fff"/><path d="M52 32h18"/>` + `<path d="M23 68h55"/>`,
+  artWallCab: doorPair(10, 6, 36, 22) + doorPair(50, 6, 36, 22) + `<path d="M8 66h80"/>` + `<rect x="62" y="56" width="16" height="10" fill="${T}"/><path d="M62 56h16"/>` + `<path d="M18 40v18"/><path d="M14 62l4-6 4 6z" fill="#fff"/>`,
+  artOverhead: `<path d="M6 6h84"/><path d="M22 6v18M74 6v18"/><path d="M14 24h68v4H14z" fill="#fff" class="case"/>` + box(28, 12, 12, 12) + `<rect x="44" y="14" width="12" height="10" fill="${T}"/><path d="M44 14h12"/>` + box(60, 12, 12, 12)
+    + `<rect x="30" y="50" width="36" height="12" fill="${T}"/><path d="M30 50h36"/><circle cx="38" cy="65" r="3" fill="#fff"/><circle cx="58" cy="65" r="3" fill="#fff"/>`,
+  artWorkbench: EL_ART.elWorkbench,
+  artToolChest: `<path d="M36 10v-3h24v3"/><rect x="26" y="10" width="44" height="48" fill="#fff" class="case"/>` + drawerRow(31, 28, 34, 8) + drawerRow(31, 40, 34, 8) + `<circle cx="33" cy="63" r="4" fill="#fff"/><circle cx="63" cy="63" r="4" fill="#fff"/>`,
+};
+
+const cabinetInterior = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${T}"/>` + stack(x + 4, y + 5, w - 8, 3) + stack(x + 4, y + h * .6, w - 8, 2);
+const SETUP_MOTION = {
+  artTallCab: elDoor(30, 4, 18, 60, cabinetInterior(30, 4, 18, 60)),
+  artPantryReachIn: elBin(21, 53, 24, 12),
+  artPantryWalkIn: elBin(25, 44, 22, 12),
+  artPantryLShape: elBin(12, 50, 22, 12),
+  artCounter: elDoor(12, 42, 36, 22, cabinetInterior(12, 42, 36, 22)),
+  artCabinetLShape: elDoor(8, 12, 17, 50, cabinetInterior(8, 12, 17, 50)),
+  artOpenShelf: `<g transform="translate(20 31)"><g class="art-motion motion-shelf-jar">${jar(0, 0, 10, 13)}</g></g>`,
+  artInCounter: elDrawer(22, 18, 52, 12),
+  artTower: elDrawer(34, 8, 28, 9),
+  artSideboard: elDrawer(14, 27, 32, 7),
+  artWardrobe: elShirt(28, 23),
+  artClosetReachIn: elShirt(24, 27),
+  artClosetWalkIn: elShirt(28, 27),
+  artClosetLShape: elShirt(8, 27),
+  artBuiltinDrawers: elDrawer(56, 52, 24, 7),
+  artDresser: elDrawer(19, 21, 58, 9),
+  artUnderbed: elDrawer(14, 34, 32, 12),
+  artVanity: `<g class="motion-under-sink-interior"><rect x="25" y="29" width="22" height="32" fill="${T}"/>${bottle(28, 35, 12)}${bottle(35, 38, 9)}<rect x="41" y="44" width="5" height="6" fill="#fff"/></g><g class="art-motion motion-cabinet-door"><rect x="25" y="29" width="22" height="32" fill="#fff"/><path d="M42 42v6"/></g>`,
+  artVanityDr: elDrawer(55, 27, 18, 7),
+  artLinenCabinet: elDoor(28, 4, 20, 60, cabinetInterior(28, 4, 20, 60)),
+  artLinenReachIn: elTowel(23, 55, 18),
+  artLinenWalkIn: elTowel(47, 44, 16),
+  artLinenLShape: elTowel(12, 45, 16),
+  artGarageShelf: elBin(48, 47, 20, 10),
+  artWallCab: elDoor(10, 6, 18, 22, cabinetInterior(10, 6, 18, 22)),
+  artOverhead: `<g class="art-motion motion-overhead-tote">${box(44, 12, 12, 12)}</g>`,
+  artWorkbench: EL_MOTION.elWorkbench,
+  artToolChest: elDrawer(31, 16, 34, 8),
+};
+Object.assign(ART, SETUP_ART);
+Object.assign(ART_MOTION, SETUP_MOTION);
 Object.assign(ART_MOTION, EL_MOTION);
 
 const artCache = {};
 export function art(key) {
   if (!artCache[key]) {
     const motif = ART_MOTION[key] || shelfJarMotion(42, 25);
-    artCache[key] = '<svg class="card-art-svg art-' + key + (key.startsWith('el') ? ' art-el' : '') + '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 72" fill="none" stroke="#9a5b2e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="art-scene">' + (ART[key] || '') + '</g>' + motif + '</svg>';
+    artCache[key] = '<svg class="card-art-svg art-' + key + (key.startsWith('el') || key in SETUP_ART ? ' art-el' : '') + '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 72" fill="none" stroke="#9a5b2e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><g class="art-scene">' + (ART[key] || '') + '</g>' + motif + '</svg>';
   }
   return artCache[key];
 }
