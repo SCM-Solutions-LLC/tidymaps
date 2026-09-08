@@ -191,27 +191,22 @@ truth (interviewed 09-07), `.impeccable/surfaces/index-html.md` holds the
 direction contract, and `DESIGN.md` plus `.impeccable/design.json` were written
 from the shipped build afterwards. Read those three before touching any CSS.
 
-**The world is The Home-Economics Manual, bound in linen** (re-inked
-2026-09-08 after the owner asked for the register of neatmethod.com): white
-stock, warm charcoal ink that is also the plate (buttons, selected states,
-rules), stone fields for content, a brass rule for labels and figure marks.
-No gradients, no shadows, square corners, 1px rules. Bodoni Moda (opsz axis,
-self-hosted) sets titles and italic ledes; Archivo (wdth axis) sets labels,
-controls and reading text. The first cut of this world was a turquoise plate
-with Source Serif 4 reading text; both are gone. The chapter band opens on a
-short brass rule, not a numeral: Bodoni's 1 is a bare stem at display size.
-Every surface was re-inked: landing, wizard, report, 3D viewer, product
-library, dashboard, sign-in, legal pages. The old token names still resolve
-(`--primary`, `--sage`, `--honey`, `--surface-*`) but all land on the plate,
-the tint, the ink or the stock, so a stylesheet that reads them keeps working.
+**The world is The Home-Economics Manual** (re-inked twice on 2026-09-08,
+last under a tasteskill v2 audit the owner ran): white stock, off-black ink,
+warm-grey content fields, and one terracotta accent (`--spot`, under 80%
+saturation, the old brand hue) carrying every button, selected state,
+progress mark and figure label. No gradients, no shadows, square corners, 1px
+rules. Archivo (wdth axis, self-hosted) sets everything; the display serif
+and the reading serif of the earlier cuts are gone, as are the stone band,
+the brass rule and the chapter numeral. The landing hero is a split: headline
+and actions left, Figure 1 right with its legend beneath.
 
-- **Landing** is a chapter opener (plate band, display numeral, chapter
-  title), then **Figure 1**: an inked pantry elevation whose thirty items slide
-  from a jumble into four labeled zones once the figure is on screen
-  (`js/screens/landing.js initFigure`; reduced motion draws the finished
-  figure; a phone crops the viewBox and lists the notes under the drawing).
-  Then the ruled exercise box with Plan my space. The photo hero is gone and
-  its pending manifest slot (`hero-home`) with it.
+- **Landing**: split hero, then **Figure 1** as the hero's picture: an inked
+  pantry elevation whose thirty items slide from a jumble into four labeled
+  zones once the figure is on screen (`js/screens/landing.js initFigure`;
+  reduced motion draws the finished figure). The plan's reasons are a legend
+  under the drawing at every width. "What you get" is a two-column zig-zag.
+  The photo hero is gone and its pending manifest slot (`hero-home`) with it.
 - **Kickers are gone everywhere** (`.wiz-badge`, `.plan-badge`, `.v3d-badge`,
   the loading eyebrow, the dashboard kicker). Headings carry their own weight.
 - **Report**: the plan hero is now the plan's own cupboard drawn as an

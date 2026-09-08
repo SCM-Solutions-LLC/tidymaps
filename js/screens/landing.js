@@ -142,12 +142,6 @@ function initFigure(){
   const fig=document.getElementById('fig-el');
   if(!fig) return;
   const sort=()=>fig.classList.add('sorted');
-  // A phone gets the cupboard alone; the notes beside it are re-set as a
-  // list under the figure (index.html .fig-notes) rather than read at 6px.
-  const narrow=window.matchMedia('(max-width:719px)');
-  const frame=()=>fig.setAttribute('viewBox', narrow.matches ? '40 10 740 540' : '0 0 1200 560');
-  frame();
-  if(narrow.addEventListener) narrow.addEventListener('change',frame);
   if('IntersectionObserver' in window){
     const io=new IntersectionObserver((entries)=>{
       if(entries.some(e=>e.isIntersecting)){ setTimeout(sort,350); io.disconnect(); }
