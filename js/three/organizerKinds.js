@@ -28,7 +28,11 @@ const GENERIC_LEVEL_WORDS=new Set([
   'wall','walls','cabinet','rack','deck','bay','side','space','area',
 ]);
 
-function targetScore(target,row){
+/* How well a need's target names this row. Exported so the scene can rank a
+   need's rows before any row is offered it: rows are walked in order, and a
+   row that merely overlaps the target ("Bench drawers" against "Below the
+   bench") used to claim a need before the row it actually named was reached. */
+export function targetScore(target,row){
   const t=norm(target);
   if(!t) return 0;
   if(/every (shelf|zone|drawer)|whole space/.test(t)) return 1;
@@ -52,6 +56,31 @@ export function isVisualNeed(need){
 export function needKeyFor(need){
   if(!need) return '';
   return need.productId||`${need.type}:${norm(need.targetZone)}:${norm(need.purpose)}`;
+}
+
+/* The visual an organizer is drawn as, or null for a purchase with nothing to
+   draw (a label set, a latch). */
+export function visualTypeFor(need){
+  return TYPE_MAP[need&&need.type]||null;
+}
+
+/* Which surfaces can carry which organizer. Racks hang: a door rack needs a
+   door and a hook rack a door or a pegboard, and those two surfaces take
+   nothing else. A rod takes no organizer at all. */
+export function surfaceAcceptsOrganizer(surface,visualType){
+  if(!visualType) return false;
+  if(surface==='rod') return false;
+  if(visualType==='door-rack') return surface==='door';
+  if(visualType==='hook-rack') return surface==='door'||surface==='pegboard';
+  if(surface==='pegboard'||surface==='door') return false;
+  return true;
+}
+
+/* Racks are mounted on a door or a wall, outside the carcass the scene draws.
+   When no surface in the scene can take one it is not "unplaced", the way a
+   bin with no shelf left is; it simply is not drawn here. */
+export function isMountedOrganizer(visualType){
+  return visualType==='door-rack'||visualType==='hook-rack';
 }
 
 function matchingNeed(productNeeds,row){
@@ -88,10 +117,7 @@ export function organizerSpecFor({surface,row,itemKind,space,styles,prefs,produc
   const need=matchingNeed(productNeeds,row);
   if(need){
     const visualType=TYPE_MAP[need.type];
-    if(visualType==='door-rack'&&surface!=='door') return null;
-    if(visualType==='hook-rack'&&!['door','pegboard'].includes(surface)) return null;
-    if(surface==='pegboard'&&visualType!=='hook-rack') return null;
-    if(surface==='door'&&!['door-rack','hook-rack'].includes(visualType)) return null;
+    if(!surfaceAcceptsOrganizer(surface,visualType)) return null;
     return {
       type:visualType,source:'plan',maxDims:need.maxDims||null,
       qty:Math.max(1,Number(need.qty)||1),label:need.purpose||'',

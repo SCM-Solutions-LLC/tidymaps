@@ -5,7 +5,9 @@ import { makeLabelSprite } from './labels.js';
 import { LAYOUT_BUILDERS } from './layouts/index.js';
 import { COLORS, ITEM_PALETTE, slug, createMaterials } from './layouts/helpers.js';
 import { semanticItemHeight, semanticItemKind } from './itemKinds.js';
-import { organizerSpecFor, needKeyFor, isVisualNeed } from './organizerKinds.js';
+import { organizerSpecFor, needKeyFor, isVisualNeed, targetScore, visualTypeFor,
+  surfaceAcceptsOrganizer, isMountedOrganizer } from './organizerKinds.js';
+import { evenShelfFracs } from './viewerOptions.js';
 import { measuredCapacityProfile, naturalItemWidth, naturalOrganizerWidth, visualUnitCount } from './capacity.js';
 import { ITEM_NORMAL_OFFSET, depthRankStep, displayJitter, hashString, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
@@ -393,8 +395,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   const fracs=(Array.isArray(geometry.shelfYFracs) && geometry.shelfYFracs.length
     ? geometry.shelfYFracs.map(Number).filter(n=>Number.isFinite(n)&&n>=0&&n<=1)
     : []);
-  const shelfFracs=fracs.length?fracs
-    :Array.from({length:NSH},(_,i)=>0.08+0.82*(NSH===1?0.5:i/(NSH-1)));
+  const shelfFracs=fracs.length?fracs:evenShelfFracs(NSH);
 
   const renderer=createRenderer(canvas);
   renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
@@ -502,6 +503,28 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
     const key=needKeyFor(need);
     if(key&&!planOrganizerRemaining.has(key)) planOrganizerRemaining.set(key,Math.max(1,Number(need.qty)||1));
   });
+  /* Rows are walked in order, and until now the first row that overlapped a
+     need's target at all could claim it. "Below the bench" scored one point
+     against the "Bench drawers" row on the word bench, and because that row
+     comes first the bins meant for the floor were filed in a drawer and then
+     reported as not fitting it. The 09-03 change to targetScore stopped the
+     words every level shares from counting; this stops a partial match from
+     pre-empting the exact one further down. Each need's best possible score
+     is taken up front, and a row is only offered a need it scores that well
+     for. Whatever is still owed after every row has had its say goes to the
+     second pass below. */
+  const rowSurfaceKind=row=>(row&&row.surface)||(layout&&layout.surfaceFor&&layout.surfaceFor(row.shelfIndex))||'shelf';
+  const bestScoreByNeed=new Map();
+  (organizerPlan.productNeeds||[]).forEach(need=>{
+    const type=visualTypeFor(need);
+    if(!type) return;
+    let best=0;
+    map.forEach(row=>{
+      if(!surfaceAcceptsOrganizer(rowSurfaceKind(row),type)) return;
+      best=Math.max(best,targetScore(need.targetZone,row));
+    });
+    bestScoreByNeed.set(needKeyFor(need),best);
+  });
   let colorI=0;
   map.forEach(row=>{
     (row.items||[]).forEach((it,idx)=>{
@@ -521,7 +544,8 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
       /* Only needs that still owe something are offered to the matcher, so a
          satisfied need stops shadowing the ones behind it. */
       const availableNeeds=(organizerPlan.productNeeds||[])
-        .filter(need=>(planOrganizerRemaining.get(needKeyFor(need))||0)>0);
+        .filter(need=>(planOrganizerRemaining.get(needKeyFor(need))||0)>0)
+        .filter(need=>targetScore(need.targetZone,row)>=(bestScoreByNeed.get(needKeyFor(need))||0));
       let organizerSpec=organizerSpecFor({
         surface:surfaceKind,row,itemKind:kind,
         space:organizerPlan.space,
@@ -565,6 +589,90 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
       scene.add(label);
       items.push(mesh);
     });
+  });
+
+  /* ---------- second pass: what the named level could not hold ----------
+
+     A need is owed to the level its target names, and the pass above honours
+     that. But a level is one row, and a row has as many organizer slots as it
+     has items and as much width as the builder gave it: three trays for a
+     top drawer on a 24-inch bank leave two with nowhere to go, and the view
+     then warned about them. The plan is a suggestion of where; the view can
+     say "and the rest go here". The leftovers are offered to every other row
+     whose surface can carry the organizer, best-matching row first, and only
+     where the product's own height and depth clear that row. What no row can
+     take stays owed, and the warning below still counts it. */
+  const OPEN_HEADROOM=24;
+  const surfaceClearance=sh=>{
+    const gapRaw=sh.gap||gapAbove[sh.index]||8;
+    const gap=sh.openAbove?Math.max(gapRaw,OPEN_HEADROOM):gapRaw;
+    return Number.isFinite(sh.clearance)?sh.clearance:gap-T;
+  };
+  const surfaceDepth=sh=>Math.max(1,Number(sh.depth)||D);
+  const mountedElsewhere=[];
+  (organizerPlan.productNeeds||[]).forEach(need=>{
+    const type=visualTypeFor(need);
+    const key=needKeyFor(need);
+    if(!type||!key) return;
+    if((planOrganizerRemaining.get(key)||0)<=0) return;
+    const dims=need.productDims||{};
+    const naturalW=Number(dims.w)||naturalOrganizerWidth(type,need.maxDims||{});
+    const wantH=Number(dims.h)||0;
+    const wantD=Number(dims.d)||Number(need.maxDims&&need.maxDims.d_in)||0;
+    const candidates=map
+      .filter(row=>surfaceAcceptsOrganizer(rowSurfaceKind(row),type))
+      .map(row=>({row,score:targetScore(need.targetZone,row)}))
+      .sort((a,b)=>b.score-a.score||a.row.shelfIndex-b.row.shelfIndex);
+    for(const {row} of candidates){
+      const remaining=planOrganizerRemaining.get(key)||0;
+      if(remaining<=0) break;
+      const claim=`${row.shelfIndex}:${key}`;
+      if(claimedPlanOrganizers.has(claim)) continue;
+      const surface=surfaces.find(entry=>entry.index===row.shelfIndex);
+      if(!surface) continue;
+      /* A purchase outranks a bin the plan's vocabulary implied: every item
+         in a drawer is drawn with a divider, and every pantry item with a
+         basket once the plan says "reuse your baskets", so a row is rarely
+         free by that test. An item carrying one of those gives it up. */
+      const free=items.find(m=>m.userData.shelfIndex===row.shelfIndex&&!m.userData.organizer)
+        ||items.find(m=>m.userData.shelfIndex===row.shelfIndex&&m.userData.organizer
+          &&m.userData.organizer.userData.spec.source!=='plan');
+      if(!free) continue;
+      if(wantH&&wantH>surfaceClearance(surface)) continue;
+      if(wantD&&wantD>surfaceDepth(surface)) continue;
+      const capacity=Math.floor(((surface.length||W)+1)/(naturalW+1));
+      if(capacity<1) continue;
+      const assigned=Math.min(remaining,capacity);
+      claimedPlanOrganizers.add(claim);
+      planOrganizerRemaining.set(key,remaining-assigned);
+      const spec={
+        type,source:'plan',maxDims:need.maxDims||null,
+        qty:assigned,requestedTotal:Math.max(1,Number(need.qty)||1),label:need.purpose||'',
+        productId:need.productId||null,productName:need.productName||null,
+        productDims:need.productDims||null,fit:need.fit||'unknown',
+        targetZone:need.targetZone||'',needKey:key,spilled:true,
+      };
+      const organizer=createOrganizer(type);
+      organizer.userData.spec=spec;
+      organizer.userData.displayCopies=[];
+      const displaced=free.userData.organizer;
+      if(displaced){
+        scene.remove(displaced);
+        organizers.splice(organizers.indexOf(displaced),1);
+      }
+      free.userData.organizer=organizer;
+      scene.add(organizer);
+      organizers.push(organizer);
+    }
+    /* Still owed, and nothing in this scene can hold a rack: it hangs on a
+       door or a wall the view does not draw. Reported apart from the
+       shelf-bound leftovers, because "the levels they were meant for are
+       full" is the wrong sentence for it. */
+    const left=planOrganizerRemaining.get(key)||0;
+    if(left>0&&isMountedOrganizer(type)&&!surfaces.some(sh=>surfaceAcceptsOrganizer(sh.kind,type))){
+      mountedElsewhere.push({type,qty:left,label:need.productName||need.purpose||''});
+      planOrganizerRemaining.set(key,0);
+    }
   });
 
   const shelves=surfaces;
@@ -619,7 +727,15 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
       here.forEach((m,i)=>{ m.userData.slot=i; });
       const n=here.length;
       if(!n) return;
-      const maxH=Math.max(1.6,(sh.gap||gapAbove[sh.index]||8)-1.4);
+      /* `gap` is the pitch to the next board, and for a surface with nothing
+         above it (a garage rack's top shelf, a wall shelf) the builder says so
+         and the headroom is open. maxH keeps a little air under the next board
+         so items read as sitting on the shelf; the fit verdict further down
+         asks the physical question and uses the clearance. */
+      const gapRaw=sh.gap||gapAbove[sh.index]||8;
+      const gap=sh.openAbove?Math.max(gapRaw,OPEN_HEADROOM):gapRaw;
+      const maxH=Math.max(1.6,gap-1.4);
+      const clearance=surfaceClearance(sh);
       const usable=sh.length||(W-2*T-2);
       const cell=usable/n;
       here.forEach((m,i)=>{
@@ -637,12 +753,16 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
            builder makes 8 to 18 inches deep. Clamping to D let an organizer
            render far past the shelf it was sitting on. Builders whose surfaces
            differ from the room publish `depth`; the rest are the room. */
-        const shelfD=Math.max(1,Number(sh.depth)||D);
+        const shelfD=surfaceDepth(sh);
+        /* A drawer is drawn pulled out less far than its box is deep, and
+           an organizer with no product behind it is drawn to the surface.
+           Draw it to the drawer as drawn; judge it against the box. */
+        const drawD=Number(sh.drawDepth)||shelfD;
         // What the product actually claims to be, before any clamping.
         const organizerRequestedD=organizer
           ?(Number(productDims.d)||Number(maxDims.d_in)||0):0;
         const organizerD=organizer?(Number(productDims.d)||Math.min(
-          Number(maxDims.d_in)||Math.max(5,(sh.itemDepth||6)*1.28),Math.max(5,shelfD*0.94))):0;
+          Number(maxDims.d_in)||Math.max(5,(sh.itemDepth||6)*1.28),Math.max(5,drawD*0.94))):0;
         const type=organizer&&organizer.userData.type;
         const organizerBaseH=organizer?Math.min(
           Math.max(0.8,type==='turntable'?0.8:type==='riser'?3.5:type==='divider'?2.4:type==='basket'?6.5:6),
@@ -686,7 +806,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
            — the lateral spacing is unchanged, so no extra maths is needed to
            make them peek through. */
         const rankStep=depthRankStep({
-          surface:sh,shelfDepth:shelfD,itemDepth:itemD,unitCount,inOrganizer:!!organizer,
+          surface:sh,shelfDepth:drawD,itemDepth:itemD,unitCount,inOrganizer:!!organizer,
         });
         visuals.forEach((visual,visualIndex)=>{
           const visualOffset=offset+(visualIndex-(unitCount-1)/2)*visualStep;
@@ -712,8 +832,12 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
              the shelf was true by construction and the depth axis could never
              report a misfit. The question is whether the product AS SOLD fits,
              so compare the depth it claims. */
+          /* Height is the same question: does the product clear the board
+             above, not does it clear it with the drawing's air to spare. A
+             drawer says its own interior height here, because there is no
+             board above a drawer's contents, only the drawer box. */
           organizer.userData.fits=requestedQty<=fitQty&&organizerNaturalW<=organizerAvailable&&
-            (!organizerRequestedD||organizerRequestedD<=shelfD)&&organizerH<=maxH;
+            (!organizerRequestedD||organizerRequestedD<=shelfD)&&organizerH<=Math.max(maxH,clearance);
           const organizerVisuals=ensureOrganizerCopies(organizer,visibleQty);
           organizerVisuals.forEach((visual,visualIndex)=>{
             const organizerBaseOffset=spec.source==='plan'?0:offset;
@@ -741,6 +865,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   const unplacedOrganizerQty=[...planOrganizerRemaining.values()]
     .reduce((sum,remaining)=>sum+Math.max(0,remaining),0);
   scene.userData.unplacedOrganizerQty=unplacedOrganizerQty;
+  scene.userData.mountedElsewhere=mountedElsewhere;
 
   /* ---------- headroom for the labels ----------
 
@@ -883,6 +1008,6 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   }
 
   return { scene, renderer, camera, controls, items, organizers, shelves, surfaces, reflow, setSize, dispose,
-    unplacedOrganizerQty, setZoneLabels, zoneLabelsOn(){ return zoneLabelsOn; },
+    unplacedOrganizerQty, mountedElsewhere, setZoneLabels, zoneLabelsOn(){ return zoneLabelsOn; },
     placements(){ return items.map(m=>({ itemId:m.userData.itemId, shelfIndex:m.userData.shelfIndex, slot:m.userData.slot })); } };
 }

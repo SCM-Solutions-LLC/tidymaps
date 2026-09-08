@@ -17,6 +17,10 @@ export async function loadCatalog(){
 }
 export function priceAsOf(){ return catalog ? catalog.priceAsOf : ''; }
 
+// Width lost to the carcass sides and the play inside them: two 0.75-inch
+// panels and two inches, matching `usable` in js/three/layouts/*.js.
+export const CARCASS_WIDTH_ALLOWANCE = 3.5;
+
 // Fit verdicts: 'fits' (≥0.5in clearance on every known axis), 'tight'
 // (positive but <0.5in), 'no-fit', or 'unknown' when nothing is measurable.
 export function fitFor(product, need){
@@ -33,7 +37,11 @@ export function fitFor(product, need){
   const measured = MOUNTS_OUTSIDE.has(need.type) ? {} : (state.dims || {});
   const tighter = (a, b) => (a && b) ? Math.min(a, b) : (a || b || null);
   const limits={
-    w: tighter(md.w_in, measured.w_in),
+    // The measured width is the outside of the carcass. Its sides and the
+    // play a drawer box or a shelf needs come off it, the same 3.5 inches the
+    // 3D builders leave, so an 18-inch drawer tower stops being told a
+    // 16-inch tray fits the 14.5 inches its drawers actually have.
+    w: tighter(md.w_in, measured.w_in ? measured.w_in-CARCASS_WIDTH_ALLOWANCE : null),
     h: tighter(md.h_in, measured.h_in),
     d: tighter(md.d_in, measured.d_in ? measured.d_in-0.5 : null),
   };

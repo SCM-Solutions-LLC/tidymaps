@@ -904,3 +904,54 @@ test('the client and the server agree on what a plan may run to', () => {
   assert.deepEqual(EFFORT_STEP_RANGES, SERVER_RANGES,
     'the client copy of the step ranges has drifted from the one the server validates against');
 });
+
+/* alignTargetZones relocated a need by counting shared words, and counted the
+   words every level shares. "Middle shelf" scored one point against "Upper
+   cabinet: top shelf" on the word shelf, so the pantry's 14-inch can rack was
+   filed on the counter's 7-inch top shelf and the 3D view warned that it did
+   not fit. A relocation now keeps the KIND of level, and a height it cannot
+   keep falls to the next one down rather than the top. */
+test('a projected need keeps the kind of level it was written for', () => {
+  const butler = planFor({ space: 'pantry', id: 'butler' });
+  const targets = Object.fromEntries(butler.productNeeds.map(n => [n.type, n.targetZone]));
+  assert.equal(targets['can-riser'], 'Upper cabinet: eye level', 'a middle-shelf can rack goes to the reachable shelf, not the top sliver');
+  assert.equal(targets['turntable'], 'Upper cabinet: eye level');
+  assert.equal(targets['clear-bin'], 'Upper cabinet: eye level');
+  assert.ok(!butler.productNeeds.some(n => n.targetZone === 'Upper cabinet: top shelf'),
+    'nothing the pantry recommends for its middle or eye-level shelves lands on the top shelf');
+
+  // The garage rack's SECOND high shelf has no twin in a three-shelf wall
+  // cabinet: it falls through to eye level rather than clamping to the top.
+  const wallcab = planFor({ space: 'garage', id: 'wallcab' });
+  const garage = Object.fromEntries(wallcab.productNeeds.map(n => [n.type, n.targetZone]));
+  assert.equal(garage['clear-bin'], 'Eye level');
+  assert.equal(garage['basket'], 'Middle shelf', 'a lower shelf with no lower level goes to the nearest one down, not up');
+
+  // A drawer is a drawer: the dresser's three drawers map onto two bays in
+  // order, and the third clamps to the last bay instead of the first.
+  const underbed = planFor({ space: 'dresser', id: 'underbed' });
+  const bays = Object.fromEntries(underbed.productNeeds.map(n => [n.type, n.targetZone]));
+  assert.equal(bays['drawer-organizer'], 'Front bay');
+  assert.equal(bays['clear-bin'], 'Back bay');
+});
+
+/* Every need is written for its scenario's own furniture, and the scenario
+   is one size. The drawers scenario asks for a 22-inch tray because its bank
+   is 24 inches wide; an 18-inch tower was told to buy it, and the 3D view
+   then said it did not fit the 14.5 inches its drawers have. The measured
+   setup caps the wish, projected or not. */
+test('a need is never wider or deeper than the setup it is recommended for', () => {
+  const tower = planFor({ space: 'drawers', id: 'tower' });   // 18in wide, same archetype: no projection
+  const tray = tower.productNeeds.find(n => n.type === 'drawer-organizer');
+  assert.ok(tray.maxDims.w_in <= 18 - 3.5, `tray width ${tray.maxDims.w_in} exceeds the tower's drawers`);
+
+  const wallshelf = planFor({ space: 'bathroom', id: 'wallshelf' });   // 9in deep, projected onto shelves
+  const turntable = wallshelf.productNeeds.find(n => n.type === 'turntable');
+  assert.ok(turntable.maxDims.d_in <= 9 - 2, `turntable depth ${turntable.maxDims.d_in} exceeds a 9in wall shelf`);
+
+  // Racks hang on a door or wall and are not bounded by the carcass.
+  const wardrobe = planFor({ space: 'closet', id: 'wardrobe' });   // 42in wide
+  const hooks = wardrobe.productNeeds.find(n => n.type === 'hook-rack');
+  assert.ok(hooks, 'the closet still recommends its hook rack');
+  assert.equal(hooks.maxDims.h_in, 60, 'a wall-mounted rack keeps its own size');
+});

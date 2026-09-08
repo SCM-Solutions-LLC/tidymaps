@@ -7,7 +7,7 @@
    ============================================================ */
 import { applyAnswers, sizeToEffort, lowestUnflaggedZone } from './personalize.js';
 import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from './layout.js';
-import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones, scrubSurfaceProse } from './setupStructure.js';
+import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones, scrubSurfaceProse, fitNeedsToSpace } from './setupStructure.js';
 
 /* ---------- Base scenarios keyed by space id ---------- */
 
@@ -245,7 +245,7 @@ function closetScenario() {
         safety: {flag: null, why: null},
         items: [{name: 'Shoes', size: 'm', flags: []}, {name: 'Bags & purses', size: 'm', flags: []}, {name: 'Belts & scarves', size: 's', flags: []}], surface: 'floor'}
     ],
-    geometry: {unit: 'in', width: 48, height: 84, depth: 24, shelfCount: 4, shelfYFracs: [0.08, 0.35, 0.55, 0.90], estimated: true},
+    geometry: {unit: 'in', width: 48, height: 84, depth: 24, shelfCount: 4, shelfYFracs: [0.16, 0.40, 0.60, 0.90], estimated: true},
     layout: {type: 'closet-rod'},
     safetyNotes: [
       'Heavy luggage on the top shelf should be stored toward the back with lighter items in front.',
@@ -781,7 +781,7 @@ function drawersScenario() {
       'The bottom drawer holds only unbreakable, kid-safe items.'
     ],
     productNeeds: [
-      {type: 'drawer-organizer', qty: 3, purpose: 'Give every utensil and tool a fixed slot', targetZone: 'Top drawer', maxDims: {w_in: 22, h_in: 3, d_in: 19}, priority: 'high'},
+      {type: 'drawer-organizer', qty: 3, purpose: 'Give every utensil and tool a fixed slot, one tray per drawer', targetZone: 'Every drawer', maxDims: {w_in: 22, h_in: 3, d_in: 19}, priority: 'high'},
       {type: 'label-set', qty: 1, purpose: 'Label each drawer front so the whole household refiles correctly', targetZone: 'Every drawer', maxDims: null, priority: 'nice'}
     ],
     existingLede: 'Your existing utensil tray still works. It just needs to become one slot inside a full-width system.',
@@ -910,7 +910,7 @@ function bathroomScenario() {
         safety: {flag: null, why: null},
         items: [{name: 'Backstock', size: 'm', flags: []}, {name: 'Hair tools', size: 'm', flags: []}, {name: 'Bulk paper', size: 'l', flags: []}], surface: 'floor'}
     ],
-    geometry: {unit: 'in', width: 30, height: 32, depth: 19, shelfCount: 4, shelfYFracs: [0.12, 0.32, 0.58, 0.86], estimated: true},
+    geometry: {unit: 'in', width: 30, height: 32, depth: 19, shelfCount: 4, shelfYFracs: [0.20, 0.42, 0.64, 0.88], estimated: true},
     layout: {type: 'under-sink', sections: [{id: 'drawers', label: 'Drawers', place: 'upper', rows: [0, 1]}, {id: 'cabinet', label: 'Cabinet', place: 'lower', rows: [2, 3]}]},
     safetyNotes: [
       'Cleaning chemicals live in one caddy on the highest level, behind a latch if small kids are in the house.',
@@ -919,7 +919,7 @@ function bathroomScenario() {
     productNeeds: [
       {type: 'clear-bin', qty: 2, purpose: 'Stackable bins that work around the plumbing', targetZone: 'Cabinet: floor', maxDims: {w_in: 12, h_in: 8, d_in: 18}, priority: 'high'},
       {type: 'turntable', qty: 1, purpose: 'Spin skincare into view in the deep corner', targetZone: 'Cabinet: floor', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
-      {type: 'drawer-organizer', qty: 2, purpose: 'Slot the routines so they stay separated', targetZone: 'Top drawer', maxDims: {w_in: 26, h_in: 2.5, d_in: 17}, priority: 'nice'},
+      {type: 'drawer-organizer', qty: 2, purpose: 'Slot the routines so they stay separated', targetZone: 'Top drawer', maxDims: {w_in: 18, h_in: 2.5, d_in: 17}, priority: 'nice'},
       {type: 'safety-latch', qty: 1, purpose: 'Latch the chemical zone away from small children', targetZone: 'Cabinet: upper zone', maxDims: null, priority: 'high'}
     ],
     existingLede: 'The cabinet has more height than floor. Use what you own to build up, not out.',
@@ -2041,6 +2041,10 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
       archetype, setupId, dims: answers && answers.dims, levelCount: plan.map.length,
       metric: !!(answers && answers.metric),
     }));
+    // And size the products to it: the drawer scenario's 22-inch tray was
+    // written for its own 24-inch bank, and an 18-inch tower was told to
+    // buy it. The projection does the same for the setups it restructures.
+    fitNeedsToSpace(plan, answers && answers.dims);
   }
   /* Hoisted above applyAnswers: the citation layer needs it to avoid pinning an
      answer to a step the scrub below is about to delete. */

@@ -1,7 +1,7 @@
 import { test, expect } from 'playwright/test';
 
 /* A walk-in's measured depth is the ROOM — 72 inches of floor — while the
-   builder makes the shelving along its walls 8 to 18 inches deep. The fit
+   builder makes the shelving along its walls 14 to 18 inches deep. The fit
    check compared the organizer's depth against the room, and the organizer's
    depth had already been clamped to the room, so the test was true by
    construction and the depth axis could never report a misfit. A 20-inch bin
@@ -39,7 +39,7 @@ async function openWalkInWithBin(page, d_in) {
 
 test('a bin deeper than the walk-in shelving is called out; one that fits is not', async ({ page }) => {
   await openWalkInWithBin(page, 20);
-  await expect(page.locator('#v3d-fit-note'), 'a 20in bin cannot fit 8-18in walk-in shelving')
+  await expect(page.locator('#v3d-fit-note'), 'a 20in bin cannot fit 14-18in walk-in shelving')
     .not.toHaveClass(/hide/);
   await expect(page.locator('#v3d-fit-note')).toContainText(/does not fully fit|do not fully fit/);
 

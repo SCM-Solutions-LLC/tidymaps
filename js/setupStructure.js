@@ -803,6 +803,9 @@ function joinUnique(parts, sep) {
    Mutates and returns the plan. Safe to call with an unknown archetype. */
 export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
   if (!plan || !Array.isArray(plan.map) || !ARCHETYPE_LEVELS[archetype]) return plan;
+  // The rows as the scenario wrote them: alignTargetZones reads each need's
+  // target against these to learn what kind of level it was asking for.
+  const sourceRows = plan.map.map(r => ({ ...r }));
   const rewrite = (t) => rewriteForSurfaces(t, archetype);
   const slots = levelsFor(archetype, setupId, opts.sourceArchetype);
   const buckets = bucketRows(plan.map, slots);
@@ -844,6 +847,9 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
       icon: slot.icon,
       surface: slot.surface,
       eye: !!slot.eye,
+      // The template's own word for the level, so alignTargetZones does not
+      // have to guess it back from the name.
+      role: slot.role,
       shelfIndex: i,
     };
   });
@@ -871,10 +877,44 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
     .filter(p => !mentionsMissingSurface(p.purpose, archetype))
     .filter(p => !(p.type === 'door-rack' && !(ARCHETYPE_SURFACES[archetype] || []).includes('door')))
     .filter(p => !(p.type === 'hook-rack' && !(ARCHETYPE_SURFACES[archetype] || []).includes('pegboard')))
-    .map(p => ({ ...p, purpose: rewriteForSurfaces(p.purpose, archetype) }));
-  alignTargetZones(plan);
+    .map(p => ({ ...p, purpose: rewriteForSurfaces(p.purpose, archetype) }))
+    .map(p => fitNeedToSpace(p, opts.dims));
+  alignTargetZones(plan, sourceRows);
 
   return plan;
+}
+
+/* A need carries the size its own scenario had room for, and the scenario was
+   written for one space: the bathroom's turntable is sized for the deep corner
+   of an under-sink cabinet, and projected onto a 9-inch wall shelf it still
+   asked for 10 inches of depth. The report already caps its search links at
+   the measured depth; the 3D view drew the wish and warned that it did not
+   fit. Cap the wish at what the setup can hold. Two inches off the measured
+   depth is the carcass back and a drawer front, the shallowest surface a
+   setup draws; 3.5 off the width is the builders' usable width, the carcass
+   sides and the play inside them. Height is left alone: the level list
+   decides that, and the placer says so per row. */
+export function fitNeedsToSpace(plan, dims) {
+  if (plan && Array.isArray(plan.productNeeds)) plan.productNeeds = plan.productNeeds.map(p => fitNeedToSpace(p, dims));
+  return plan;
+}
+
+function fitNeedToSpace(need, dims) {
+  if (!need || !need.maxDims || !dims) return need;
+  // Racks hang on a door or a wall, outside the carcass; the catalog says the
+  // same when it judges their fit.
+  if (need.type === 'door-rack' || need.type === 'hook-rack') return need;
+  const depth = Number(dims.d_in);
+  const width = Number(dims.w_in);
+  const caps = {
+    d_in: depth > 0 ? Math.max(4, depth - 2) : null,
+    w_in: width > 0 ? Math.max(6, width - 3.5) : null,   // the builders' usable width
+  };
+  let maxDims = need.maxDims;
+  for (const axis of ['d_in', 'w_in']) {
+    if (caps[axis] && Number(maxDims[axis]) > caps[axis]) maxDims = { ...maxDims, [axis]: caps[axis] };
+  }
+  return maxDims === need.maxDims ? need : { ...need, maxDims };
 }
 
 /* Every recommended product is shown under "for: <zone>". Several scenarios
@@ -883,19 +923,94 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
    sent people to a shelf that is not in their plan. Point anything unmatched
    at the eye-level zone. "Every zone" / "Every drawer" mean all of them and
    are left alone. */
-export function alignTargetZones(plan) {
+/* What kind of level a name describes. The surface families come first
+   because they are the stronger claim: a "Top drawer" is a drawer before it is
+   high, and a "Hanging rod: left" is a rod whatever else it says. The height
+   words then place a shelf. Used on both sides of a relocation, the target a
+   need asks for and the levels a plan has, so the two agree on vocabulary. */
+/** @type {Array<[string, RegExp]>} */
+const LEVEL_ROLE_RULES = [
+  ['rod', /\brods?\b|\bhanging\b/],
+  ['door', /\bdoor\b/],
+  ['pegboard', /\bpegboard\b/],
+  ['bay', /\bbays?\b/],
+  ['drawer', /\bdrawers?\b/],
+  ['deck', /\bdeck\b/],
+  ['surface', /\bcounter\b|\bworktop\b|\bbench surface\b|\btop surface\b/],
+  ['floor', /\bfloor\b|\bbelow the bench\b|\brafters?\b/],
+  ['high', /\btop\b|\bupper\b|\bhigh\b/],
+  ['reach', /\beye\b/],
+  ['mid', /\bmiddle\b|\bmid\b|\bcorner\b|\bfull run\b/],
+  ['low', /\blower\b|\blow\b|\bbottom\b/],
+];
+export function levelRole(name) {
+  const text = String(name || '').toLowerCase();
+  const hit = LEVEL_ROLE_RULES.find(([, re]) => re.test(text));
+  return hit ? hit[0] : null;
+}
+
+/* Where a need goes when the level it wanted is not on this plan, by role.
+   A surface family clamps: a drawer is a drawer, and the third of three
+   drawers lands in the last of two bays. A height falls through: the garage
+   rack's second high shelf has no twin in a three-shelf wall cabinet, and
+   sending it to the cabinet's one top shelf would put a foot of bins in the
+   sliver over the top board. */
+const ROLE_LADDER = {
+  high: ['high', 'reach', 'mid'],
+  reach: ['reach', 'mid', 'high'],
+  mid: ['mid', 'reach', 'low', 'high'],
+  low: ['low', 'floor', 'mid', 'reach'],
+  floor: ['floor', 'low', 'mid'],
+  drawer: ['drawer', 'bay', 'reach', 'low'],
+  bay: ['bay', 'drawer'],
+  rod: ['rod', 'reach', 'high'],
+  door: ['door'],
+  pegboard: ['pegboard'],
+  deck: ['deck', 'high', 'reach'],
+  surface: ['surface', 'reach', 'mid'],
+};
+const CLAMPING_ROLES = new Set(['drawer', 'bay', 'rod', 'door', 'pegboard', 'deck']);
+
+/* Words every level name shares. The same list the 3D matcher keeps: scoring
+   "Middle shelf" one point against "Upper cabinet: top shelf" on the word
+   shelf is how a 14-inch can rack was filed on a 7-inch top shelf. */
+const GENERIC_LEVEL_WORDS = new Set([
+  'shelf', 'shelves', 'drawer', 'drawers', 'zone', 'zones', 'level', 'levels',
+  'wall', 'walls', 'cabinet', 'rack', 'deck', 'bay', 'side', 'space', 'area', 'the', 'and',
+]);
+
+export function alignTargetZones(plan, sourceRows = null) {
   if (!plan || !Array.isArray(plan.map) || !plan.map.length) return plan;
   const levels = new Set(plan.map.map(m => m.level));
   const eye = (plan.map.find(m => m.eye) || plan.map[0]).level;
-  /* Prefer a level that shares a word with the old target ("Top shelf" ->
-     "Rack deck: front half" is a worse answer than "Top drawer" when one
-     exists). Pointing every unmatched need at the eye zone piled them all
-     onto one level, which the 3D view then renders as a single stack. */
+  const source = Array.isArray(sourceRows) && sourceRows.length ? sourceRows : plan.map;
+  const roleOf = (row) => row.role || levelRole(row.level);
+  /* Keep the KIND of level first: a need written for a middle shelf goes to
+     this plan's middle shelf, or the nearest thing to one, and only then does
+     a shared word get a say. Word overlap used to go first and counted the
+     word "shelf", so the pantry's middle-shelf can rack was sent to the
+     counter's top shelf. Pointing every unmatched need at the eye zone piled
+     them all onto one level, which the 3D view then renders as a single
+     stack, so the eye zone is the last resort. */
   const relocate = (want) => {
-    const words = String(want).toLowerCase().match(/[a-z]+/g) || [];
+    const role = levelRole(want);
+    if (role) {
+      // Which of the source's same-role levels this was: the garage's
+      // "Upper shelf" is its second high shelf.
+      const peers = source.filter(r => roleOf(r) === role).map(r => r.level);
+      const ordinal = Math.max(0, peers.indexOf(want));
+      for (const step of ROLE_LADDER[role] || [role]) {
+        const candidates = plan.map.filter(r => roleOf(r) === step).map(r => r.level);
+        if (!candidates.length) continue;
+        if (ordinal < candidates.length) return candidates[ordinal];
+        if (CLAMPING_ROLES.has(step)) return candidates[candidates.length - 1];
+      }
+    }
+    const words = (String(want).toLowerCase().match(/[a-z]+/g) || [])
+      .filter(w => w.length >= 3 && !GENERIC_LEVEL_WORDS.has(w));
     const scored = plan.map.map(m => {
       const have = String(m.level).toLowerCase();
-      return { level: m.level, score: words.filter(w => w.length >= 3 && have.includes(w)).length };
+      return { level: m.level, score: words.filter(w => have.includes(w)).length };
     }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
     return scored.length ? scored[0].level : eye;
   };

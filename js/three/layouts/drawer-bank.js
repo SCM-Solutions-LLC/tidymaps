@@ -79,11 +79,17 @@ export function build(ctx){
       0, y+drawerH/2, pullOut/2,
       { shelfIndex:i, shelfY:y, row });
 
+    /* `depth` used to be the pull-out distance the drawer is drawn at, and
+       a 12.9-inch tray in an 18-inch-deep dresser was reported as not
+       fitting a 10.8-inch drawer. The drawer box runs the depth of the
+       carcass less its back and front; that is what a tray has to fit, and
+       `clearance` is the box's inside height for the same reason. The
+       drawing keeps its pull-out. */
     surfaces.push({
       index:i, kind:'drawer', row, y, hitbox:hit,
       uDir: new THREE.Vector3(1,0,0),
       normal: new THREE.Vector3(0,0,1),
-      length:usable, gap:drawerH-1, depth:pullOut, itemDepth:Math.min(pullOut*0.8, 8),
+      length:usable, gap:drawerH-1, clearance:drawerH-T, depth:D-T-1, drawDepth:pullOut, itemDepth:Math.min(pullOut*0.8, 8),
     });
   });
 
