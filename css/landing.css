@@ -1,81 +1,166 @@
 /* ============================================================
    TidyMap — landing page. Scoped to #screen-landing.
-   A household service, not a digital atelier: flat canvas,
-   one red accent, real photography and real product output.
-   Photo slots degrade gracefully until the shots exist
-   (see docs/asset-plan.md).
+   The manual's first chapter: a plate-coloured opener, Figure 1,
+   the exercise box, then the lessons. Photo slots degrade
+   gracefully until the shots exist (see docs/asset-plan.md).
    ============================================================ */
 
 /* ---------- Shared section rhythm ---------- */
-.home-sec{padding:clamp(56px,9vh,88px) 0 0;scroll-margin-top:calc(var(--appbar-h,57px) + 18px)}
-.home-sec > h2{
-  font-size:clamp(26px,3.6vw,34px);font-weight:700;letter-spacing:-.02em;line-height:1.15;
-  margin:0;color:var(--ink);text-wrap:balance;
+.home-sec{padding:clamp(64px,10vh,104px) 0 0;scroll-margin-top:calc(var(--appbar-h,57px) + 18px)}
+.home-sec > h2{margin:0;color:var(--ink);padding-top:14px;border-top:4px double var(--ink)}
+.home-sec > .sec-sub{font-size:17px;line-height:1.6;color:var(--ink);margin:12px 0 0;max-width:58ch}
+
+/* a figure number: the manual's smallest label */
+.fig-n{
+  display:inline-block;font-family:var(--sans);font-stretch:var(--label-stretch);font-weight:800;
+  font-size:12px;letter-spacing:var(--tracking-label);text-transform:uppercase;
+  color:var(--stock);background:var(--ink);padding:3px 7px 2px;margin-right:10px;vertical-align:2px;
 }
-.home-sec > .sec-sub{font-size:16.5px;line-height:1.6;color:var(--ink-2);margin:10px 0 0;max-width:58ch}
 
 .home-link{
   background:none;border:none;padding:0;font:inherit;font-weight:600;
-  color:var(--primary);cursor:pointer;text-decoration:none;
+  color:var(--spot-ink);cursor:pointer;
+  text-decoration:underline;text-decoration-color:var(--spot);text-decoration-thickness:1px;text-underline-offset:3px;
 }
-.home-link:hover{color:var(--primary-2);text-decoration:underline;text-underline-offset:3px}
+.home-link:hover{color:var(--ink);text-decoration-color:var(--ink)}
 
-/* ---------- Hero ---------- */
-.home-hero{
-  display:grid;gap:36px;align-items:center;
-  padding:clamp(40px,8vh,80px) 0 16px;
+/* ---------- Chapter opener ----------
+   Full-bleed plate. The band breaks out of main's padding so the ink runs to
+   the page edge like a printed field. */
+.chapter-open{
+  background:var(--spot);color:var(--stock);
+  margin:0 calc(-1 * var(--pad,18px));padding:clamp(28px,6vh,64px) var(--pad,18px) clamp(28px,5vh,52px);
+  /* The plate runs to the page edge like a printed field. A shadow the width
+     of the viewport, clipped to the band's height, paints past the column
+     without adding a pixel of scrollable width. */
+  box-shadow:0 0 0 100vmax var(--spot);clip-path:inset(0 -100vmax);
 }
-@media(min-width:920px){.home-hero{grid-template-columns:46fr 54fr;gap:clamp(40px,5vw,72px)}}
-.home-hero h1{
-  font-size:clamp(38px,5.4vw,56px);font-weight:900;letter-spacing:-.03em;line-height:1.06;
-  margin:0;color:var(--ink);font-family:var(--serif);text-wrap:balance;
+.chapter-open-inner{
+  max-width:1100px;margin:0 auto;
+  display:grid;gap:8px 40px;grid-template-columns:auto minmax(0,1fr);align-items:end;
+  padding:0;
 }
-.home-hero .hero-lede{
-  font-size:clamp(16.5px,2vw,19px);line-height:1.65;color:var(--ink-2);
-  max-width:46ch;margin:20px 0 0;
+.chapter-num{
+  font-family:var(--sans);font-weight:900;font-stretch:125%;line-height:.78;
+  font-size:clamp(120px,22vw,300px);letter-spacing:-.06em;
+  color:var(--stock);margin-left:-.04em;
+  font-variant-numeric:lining-nums;
 }
-.hero-badge{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:14px;font-weight:600;color:var(--primary-ink);
-  background:var(--primary-bg);border:1px solid var(--primary-line);
-  border-radius:99px;padding:6px 16px 6px 12px;margin-bottom:18px;
+.chapter-title{min-width:0;padding-bottom:.35em}
+.chapter-open h1{color:var(--stock);max-width:14ch}
+.hero-lede{
+  font-family:var(--serif);font-size:clamp(17px,2vw,20px);line-height:1.55;color:var(--stock);
+  max-width:46ch;margin:18px 0 0;
 }
-.badge-dot{
-  width:8px;height:8px;border-radius:50%;background:var(--sage);flex:none;
+@media(max-width:719px){
+  .chapter-open-inner{grid-template-columns:1fr;gap:0;align-items:start}
+  .chapter-num{font-size:clamp(110px,34vw,160px);line-height:.8}
+  .chapter-title{padding-bottom:0}
 }
-.hero-actions{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:30px}
-.hero-actions .btn-primary{padding:15px 28px;font-size:16px;border-radius:var(--radius)}
 
-.hero-photo{margin:0;min-width:0;position:relative}
-.hero-photo img{
-  width:100%;aspect-ratio:4/3;object-fit:cover;display:block;
-  border-radius:16px;
+/* ---------- Figure 1 ---------- */
+.fig{margin:0}
+.fig-1{
+  margin:0 calc(-1 * var(--pad,18px));padding:clamp(18px,3vw,36px) var(--pad,18px) 0;
+  border-bottom:var(--rule);
 }
-.hero-photo figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
-.hero-photo-badge{
-  position:absolute;top:16px;right:16px;
-  font-size:14px;font-weight:700;color:#fff;
-  background:var(--primary);border-radius:99px;padding:8px 18px;
-  box-shadow:0 2px 8px oklch(0.3 0.05 60 / .25);
+.fig-stage{position:relative;max-width:1100px;margin:0 auto}
+.fig-el{display:block;width:100%;height:auto;overflow:visible;font-family:var(--sans)}
+.fig figcaption{
+  max-width:1100px;margin:14px auto 0;padding:0 0 18px;
+  font-family:var(--serif);font-size:15px;line-height:1.5;color:var(--ink);
 }
-.hero-photo .cap-fallback{display:none}
-.home-hero.alt-visual .cap-fallback{display:block}
-.home-hero.alt-visual .hero-photo img{aspect-ratio:auto;background:#fff}
-.home-hero.no-photo{grid-template-columns:1fr;padding-bottom:0}
-.home-hero.no-photo .hero-photo{display:none}
-.home-hero.no-photo h1{max-width:16ch}
+.fig-1 figcaption{max-width:1100px}
+
+/* the cupboard is inked; the items are inked; nothing is filled but the zones */
+.f-case{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round}
+.f-case .f-outer{stroke-width:4}
+.f-items{fill:var(--stock);stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.f-items .f-lbl{stroke:var(--spot);stroke-width:2.6}
+.f-items .f-latch{fill:var(--stock);stroke:var(--spot-ink);stroke-width:2.2}
+.f-hazard use:first-child{fill:var(--tint)}
+/* Each item starts where the mess left it and travels to its zone. The
+   transition is authored once here; the stagger is the item's own index. */
+.f-items .it{
+  transform-box:fill-box;transform-origin:center;
+  transform:translate(var(--jx),var(--jy)) rotate(var(--jr,0deg));
+  transition:transform 1.15s var(--ease-out) calc(var(--i,0) * 55ms);
+}
+.fig-el.sorted .f-items .it{transform:none}
+/* zones screen in after the items land */
+.f-zone{fill:var(--tint);opacity:0;transition:opacity .5s var(--ease) calc(1.1s + var(--i,0) * 90ms)}
+.f-zone-eye{fill:var(--tint-2)}
+.fig-el.sorted .f-zone{opacity:1}
+/* the plan's reasons: leader line draws in, then the words */
+.f-lead{stroke:var(--ink);stroke-width:2;stroke-dasharray:60;stroke-dashoffset:60;transition:stroke-dashoffset .45s var(--ease-out) calc(1.25s + var(--i,0) * 110ms)}
+.f-note text{fill:var(--ink)}
+.f-note-h{font-family:var(--sans);font-weight:800;font-stretch:var(--label-stretch);font-size:19px;letter-spacing:.08em;text-transform:uppercase}
+.f-note-t{font-family:var(--serif);font-size:18px}
+.f-note-eye .f-note-h{fill:var(--spot-ink)}
+.f-note text{opacity:0;transform:translateX(-10px);transition:opacity .45s var(--ease-out) calc(1.5s + var(--i,0) * 110ms),transform .45s var(--ease-out) calc(1.5s + var(--i,0) * 110ms)}
+.fig-el.sorted .f-lead{stroke-dashoffset:0}
+.fig-el.sorted .f-note text{opacity:1;transform:none}
+.fig-replay{
+  position:absolute;right:0;bottom:8px;
+  font-family:var(--sans);font-stretch:var(--label-stretch);font-weight:700;font-size:12px;
+  letter-spacing:var(--tracking-label);text-transform:uppercase;
+  background:var(--stock);color:var(--ink);border:var(--rule);padding:8px 11px;
+  opacity:0;transition:opacity .3s var(--ease) 2.6s,background .15s;
+}
+.fig-el.sorted ~ .fig-replay{opacity:1}
+.fig-replay:hover{background:var(--tint)}
+/* On a phone the figure is the cupboard alone (landing.js crops the viewBox)
+   and the plan's reasons are set as a list beneath it, so one figure still
+   fills one screen and nothing has to be read at 6px. */
+.fig-notes{display:none;list-style:none;margin:14px auto 0;padding:0;max-width:1100px;border-top:var(--rule)}
+.fig-notes li{display:grid;gap:2px;padding:10px 0;border-bottom:var(--rule)}
+.fig-notes .fig-note-h{font-family:var(--sans);font-stretch:var(--label-stretch);font-weight:800;font-size:12px;letter-spacing:var(--tracking-label);text-transform:uppercase}
+.fig-notes .fig-note-eye .fig-note-h{color:var(--spot-ink)}
+.fig-notes .fig-note-t{font-size:15px;line-height:1.45}
+@media(max-width:719px){
+  .fig-el .f-notes{display:none}
+  .fig-notes{display:block}
+  .fig-stage{display:grid;gap:10px;justify-items:start}
+  .fig-replay{position:static}
+}
+@media(prefers-reduced-motion:reduce){
+  .f-items .it,.f-zone,.f-lead,.f-note text,.fig-replay{transition:none}
+  .f-items .it{transform:none}
+  .f-zone{opacity:1}
+  .f-lead{stroke-dashoffset:0}
+  .f-note text{opacity:1;transform:none}
+  .fig-replay{display:none}
+}
+
+/* ---------- The exercise box ---------- */
+.exercise{
+  max-width:1100px;margin:clamp(28px,5vh,48px) auto 0;
+  border:var(--rule-2);display:grid;grid-template-columns:auto minmax(0,1fr);
+}
+.exercise::before{
+  content:"Exercise";
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  font-family:var(--sans);font-stretch:var(--label-stretch);font-weight:800;font-size:13px;
+  letter-spacing:var(--tracking-label);text-transform:uppercase;
+  background:var(--ink);color:var(--stock);padding:14px 9px;text-align:center;
+}
+.exercise-body{padding:clamp(20px,3.5vw,34px) clamp(20px,3.5vw,36px)}
+.exercise-q{font-family:var(--serif);font-size:clamp(17px,2.2vw,21px);line-height:1.5;color:var(--ink);max-width:52ch;margin:0}
+.hero-actions{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.hero-actions .btn-primary{padding:16px 28px;font-size:15px}
+.exercise-note{margin:16px 0 0;font-size:14px;color:var(--spot-ink)}
 
 /* ---------- Spaces gallery ----------
    Room-grouped area cards, reusing the wizard's own .room-card styling so the
    homepage preview and step 2 are visibly the same thing. */
-.space-groups{display:grid;gap:30px;margin-top:30px}
+.space-groups{display:grid;gap:40px;margin-top:34px}
 /* The room is the label a visitor scans for, so it reads as a heading rather
    than a caption: same family and weight as the section titles, one step down
    in size, on a rule that separates one room from the next. */
 .space-room{
-  font-size:clamp(22px,2.6vw,26px);font-weight:700;font-family:var(--serif);letter-spacing:-.01em;
-  color:var(--ink);margin:0 0 16px;padding-bottom:12px;text-align:center;
-  border-bottom:1px solid var(--line);
+  font-size:clamp(22px,2.6vw,26px);font-weight:900;font-family:var(--sans);font-stretch:108%;letter-spacing:-.015em;
+  color:var(--ink);margin:0 0 16px;padding-bottom:10px;text-align:center;
+  border-bottom:var(--rule);
 }
 /* Rows centre themselves: rooms hold two or three spaces, and a short row
    left-aligned under a centred heading reads as a layout mistake. */
@@ -88,45 +173,51 @@
    third card in a room sits in the middle rather than in a grid's left cell. */
 @media(max-width:559px){
   .space-group .room-cards{gap:10px}
-  .space-group .room-card{flex:0 1 calc(50% - 5px);max-width:none;border-radius:16px}
+  .space-group .room-card{flex:0 1 calc(50% - 5px);max-width:none}
   .space-group .room-card .rc-img{aspect-ratio:4/3}
   .space-group .rc-label{padding:10px 12px 12px}
   .space-group .rc-label h3{font-size:16px}
-  .space-group .rc-label p{font-size:12.5px;line-height:1.4}
+  .space-group .rc-label p{font-size:13px;line-height:1.4}
 }
 .space-group .room-card{animation:none}
 /* Shallower art than the wizard's cards: nine of them stack up on one page. */
 .space-group .room-card .rc-img{aspect-ratio:3/2}
 .space-group .rc-label{padding:12px 16px 14px}
-.space-group .rc-label p{font-size:14px;color:var(--ink-2)}
-.space-foot{font-size:14.5px;line-height:1.6;color:var(--ink-3);margin:26px 0 0;max-width:62ch}
+.space-group .rc-label p{font-size:14px;color:var(--ink)}
+.space-foot{font-size:15px;line-height:1.6;color:var(--ink);margin:28px 0 0;max-width:62ch}
 
 /* ---------- One finished plan ---------- */
-.story-grid{display:grid;gap:28px;margin-top:30px;align-items:start}
-@media(min-width:700px){.story-grid{grid-template-columns:300px minmax(0,1fr);gap:44px}}
+.story-grid{display:grid;gap:28px;margin-top:34px;align-items:start}
+@media(min-width:700px){.story-grid{grid-template-columns:320px minmax(0,1fr);gap:48px}}
 .story-photo{margin:0;min-width:0}
 .story-photo img{
   /* height:auto keeps the intrinsic width/height attributes (there for CLS)
      from overriding the crop */
   width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;display:block;
-  border-radius:var(--radius);border:1px solid var(--line);
+  border:var(--rule);
 }
-.story-photo figcaption{font-size:12.5px;color:var(--ink-3);padding:8px 2px 0}
+.story-photo figcaption,.story-3d figcaption{font-family:var(--serif);font-size:14.5px;line-height:1.5;color:var(--ink);padding:10px 0 0}
 .story-grid.no-photo{grid-template-columns:minmax(0,1fr)}
 .story-grid.no-photo .story-photo{display:none}
 
-.story-label{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 4px}
-.story-table{width:100%;border-collapse:collapse;font-size:14.5px}
+.story-label{
+  font-family:var(--sans);font-stretch:var(--label-stretch);font-weight:800;font-size:12px;
+  letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);margin:0 0 6px;
+}
+.story-table{width:100%;border-collapse:collapse;font-size:15.5px;border-top:var(--rule-2)}
 .story-table th{
-  text-align:left;font-size:13px;font-weight:700;color:var(--ink);
-  padding:10px 14px 10px 0;border-bottom:1px solid var(--line-2);
+  text-align:left;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;
+  letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);
+  padding:10px 14px 10px 0;border-bottom:var(--rule);
 }
 .story-table td{
-  padding:11px 14px 11px 0;border-bottom:1px solid var(--line);
-  color:var(--ink-2);line-height:1.5;vertical-align:top;
+  padding:12px 14px 12px 0;border-bottom:var(--rule);
+  color:var(--ink);line-height:1.5;vertical-align:top;
 }
-.story-table td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
-.story-foot{margin-top:22px;font-size:14px;color:var(--ink-3)}
+.story-table td:first-child{font-family:var(--sans);font-weight:700;font-size:14.5px;white-space:nowrap}
+.story-foot{margin-top:18px;font-size:15px;color:var(--ink)}
+.story-3d{margin:26px 0 0;max-width:420px}
+.story-3d img{width:100%;height:auto;border:var(--rule);background:var(--stock)}
 
 /* ---------- What a plan contains ----------
    Screenshots of the app, at any size that fits three-across, were unreadable
@@ -134,115 +225,116 @@
    plan drawn at their own scale, in the app's own visual language, using the
    sample plan's real content. The actual screens are one click away via the
    sample plan. */
-.product-shots{display:grid;gap:26px;margin-top:30px;grid-template-columns:1fr}
+.product-shots{display:grid;gap:30px;margin-top:34px;grid-template-columns:1fr}
 @media(min-width:760px){.product-shots{grid-template-columns:repeat(3,1fr);gap:28px}}
-.product-shot{margin:0;display:grid;gap:12px;align-content:start;min-width:0}
+.product-shot{margin:0;display:grid;gap:14px;align-content:start;min-width:0}
+.product-shot figcaption h3{font-size:18px;margin:0;color:var(--ink);display:flex;align-items:center;flex-wrap:wrap}
+.product-shot figcaption p{font-size:15px;line-height:1.55;color:var(--ink);margin:6px 0 0}
 .wy-vis{
-  display:grid;gap:8px;padding:14px;background:#fff;
-  border:1px solid var(--line-2);border-radius:var(--radius);box-shadow:var(--shadow);
+  display:grid;gap:0;background:var(--stock);
+  border:var(--rule);font-family:var(--sans);
 }
 
 /* zones */
-.wy-zone{
-  display:grid;gap:3px;padding:11px 13px;border-radius:var(--radius-sm);
-  background:var(--primary-bg);border:1px solid var(--primary-line);
-}
-.wy-zone.dim{background:var(--surface);border-color:var(--line)}
-.wy-zone-name{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary-ink)}
-.wy-zone.dim .wy-zone-name{color:var(--ink-3)}
-.wy-zone-items{font-size:14px;font-weight:600;color:var(--ink)}
-.wy-why{font-size:13px;line-height:1.45;color:var(--ink-2)}
+.wy-zone{display:grid;gap:4px;padding:12px 14px;border-bottom:var(--rule);background:var(--tint-2)}
+.wy-zone:last-child{border-bottom:none}
+.wy-zone.dim{background:var(--stock)}
+.wy-zone-name{font-size:11.5px;font-weight:800;font-stretch:var(--label-stretch);letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink)}
+.wy-zone-items{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--ink)}
+.wy-why{font-family:var(--serif);font-size:14px;line-height:1.45;color:var(--ink)}
 .wy-flag{
-  justify-self:start;margin-top:3px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;
-  color:var(--sage-ink);background:color-mix(in oklch,var(--sage) 22%,#fff);
-  border:1px solid color-mix(in oklch,var(--sage) 45%,#fff);
+  justify-self:start;margin-top:4px;font-size:11px;font-weight:800;font-stretch:var(--label-stretch);
+  letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;
+  color:var(--stock);background:var(--spot);
 }
 
-/* steps */
-.wy-prog{display:flex;align-items:center;gap:10px;padding:2px 2px 4px}
-.wy-prog-bar{flex:1;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
-.wy-prog-bar i{display:block;height:100%;background:var(--primary)}
-.wy-prog-txt{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
-.wy-step{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm)}
-.wy-tick{
-  width:18px;height:18px;flex:none;border-radius:50%;border:1.5px solid var(--line-2);
-  display:grid;place-items:center;font-size:11px;color:transparent;
-}
-.wy-step.done .wy-tick{background:var(--primary);border-color:var(--primary);color:#fff}
-.wy-step.done .wy-step-txt{color:var(--ink-3);text-decoration:line-through}
-.wy-step-txt{flex:1;font-size:13.5px;line-height:1.4;color:var(--ink)}
-.wy-time{
-  flex:none;font-size:11.5px;font-weight:600;color:var(--ink-3);white-space:nowrap;
-  background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 9px;
-}
+/* steps: printed stage marks, never a hue */
+.wy-prog{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:var(--rule)}
+.wy-prog-bar{flex:1;height:8px;background:var(--stock);border:var(--rule);overflow:hidden}
+.wy-prog-bar i{display:block;height:100%;background:var(--spot)}
+.wy-prog-txt{font-size:12px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wy-step{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:var(--rule)}
+.wy-step:last-child{border-bottom:none}
+.wy-tick{width:16px;height:16px;flex:none;border:2px solid var(--ink);background:var(--stock)}
+.wy-step.doing .wy-tick{background:linear-gradient(to right,var(--spot) 50%,var(--stock) 50%)}
+.wy-step.done .wy-tick{background:var(--spot)}
+.wy-step.done .wy-step-txt{color:var(--spot-ink);text-decoration:line-through;text-decoration-color:var(--ink)}
+.wy-step-txt{flex:1;font-family:var(--serif);font-size:14.5px;line-height:1.4;color:var(--ink)}
+.wy-time{flex:none;font-size:11.5px;font-weight:700;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
 
 /* purchases */
-.wy-buy{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm)}
-.wy-buy.zero{background:var(--surface)}
+.wy-buy{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:var(--rule)}
+.wy-buy:last-child{border-bottom:none}
+.wy-buy.zero{background:var(--tint)}
 .wy-buy-art{position:relative;width:42px;height:34px;flex:none}
 .wy-buy-art svg{position:absolute;inset:0;width:100%;height:100%}
-.wy-buy-name{flex:1;display:grid;gap:2px;font-size:13.5px;font-weight:600;color:var(--ink)}
-.wy-buy-name em{font-style:normal;font-size:12px;font-weight:500;color:var(--sage-ink)}
-.wy-buy.zero em{color:var(--ink-3)}
-.wy-buy-price{flex:none;font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
-.product-shot figcaption h3{font-size:16px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
-.product-shot figcaption p{font-size:14px;line-height:1.55;color:var(--ink-2);margin:5px 0 0}
+.wy-buy-name{flex:1;display:grid;gap:2px;font-family:var(--serif);font-size:14.5px;font-weight:600;color:var(--ink)}
+.wy-buy-name em{font-style:italic;font-size:13px;font-weight:400;color:var(--spot-ink)}
+.wy-buy-price{flex:none;font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ---------- Method ----------
-   Three steps, full width. The screenshot that used to sit beside them was a
-   350px picture of a form — too small to read, and the steps say it better. */
-.how-list{margin-top:26px;display:grid;gap:0}
+   Three steps, full width, numbered because the order is the method. */
+.how-list{margin:30px 0 0;padding:0;list-style:none;counter-reset:how;display:grid;gap:0;border-top:var(--rule)}
 .how-step{
-  display:grid;gap:4px 28px;grid-template-columns:1fr;
-  padding:22px 2px;border-top:1px solid var(--line);
+  counter-increment:how;
+  display:grid;gap:6px 28px;grid-template-columns:52px 1fr;align-items:baseline;
+  padding:22px 2px;border-bottom:var(--rule);
 }
-.how-list .how-step:last-child{border-bottom:1px solid var(--line)}
-@media(min-width:720px){.how-step{grid-template-columns:280px 1fr;align-items:baseline}}
-.how-step h3{font-size:17px;font-weight:700;margin:0;color:var(--ink);letter-spacing:-.01em}
-.how-step h3 .n{color:var(--primary);margin-right:10px;font-variant-numeric:tabular-nums}
-.how-step p{margin:0;font-size:15px;line-height:1.65;color:var(--ink-2);max-width:56ch}
-.how-foot{margin:20px 0 0;font-size:14.5px;color:var(--ink-3)}
+.how-step::before{
+  content:counter(how);grid-row:1/3;
+  font-family:var(--sans);font-weight:900;font-stretch:125%;font-size:40px;line-height:1;color:var(--spot);
+}
+.how-step h3{font-size:19px;margin:0;color:var(--ink)}
+.how-step p{margin:0;font-size:16px;line-height:1.6;color:var(--ink);max-width:56ch;grid-column:2}
+@media(min-width:720px){
+  .how-step{grid-template-columns:52px 280px 1fr}
+  .how-step h3{grid-column:2}
+  .how-step p{grid-column:3;grid-row:1}
+}
+.how-foot{margin:18px 0 0;font-size:15px;color:var(--ink)}
 
-/* ---------- Practical promises ---------- */
-.promise-list{margin-top:26px;display:grid;gap:20px 44px;grid-template-columns:1fr}
+/* ---------- Practical promises: the rules of the house ---------- */
+.promise-list{margin:30px 0 0;display:grid;gap:0 44px;grid-template-columns:1fr}
 @media(min-width:720px){.promise-list{grid-template-columns:1fr 1fr}}
-.promise-list div h3{font-size:16px;font-weight:700;margin:0;color:var(--ink)}
-.promise-list div p{font-size:14.5px;line-height:1.6;color:var(--ink-2);margin:5px 0 0;max-width:44ch}
+.promise-list > div{padding:18px 0;border-bottom:var(--rule)}
+.promise-list dt{font-family:var(--sans);font-size:17px;font-weight:800;margin:0;color:var(--ink)}
+.promise-list dd{font-size:15.5px;line-height:1.6;color:var(--ink);margin:6px 0 0;max-width:44ch}
 
 /* ---------- Credibility ---------- */
-.about-grid{display:grid;gap:32px;margin-top:28px}
+.about-grid{display:grid;gap:32px;margin-top:30px}
 @media(min-width:880px){.about-grid{grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:64px}}
-.about-lede p{font-size:16px;line-height:1.7;color:var(--ink-2);margin:0 0 16px;max-width:56ch}
-.about-facts{display:grid;gap:0;align-self:start}
-.about-facts > div{padding:16px 2px;border-top:1px solid var(--line)}
-.about-facts > div:last-child{border-bottom:1px solid var(--line)}
-.about-facts h3{font-size:14.5px;font-weight:700;margin:0;color:var(--ink)}
-.about-facts p{font-size:14px;line-height:1.6;color:var(--ink-2);margin:4px 0 0}
-.about-facts a{color:var(--primary);font-weight:600}
-.about-facts a:hover{text-decoration:underline;text-underline-offset:3px}
+.about-lede p{font-size:17px;line-height:1.7;color:var(--ink);margin:0 0 16px;max-width:56ch}
+.about-lede p:first-child{font-size:20px;line-height:1.5;font-weight:600}
+.about-facts{display:grid;gap:0;align-self:start;border-top:var(--rule)}
+.about-facts > div{padding:16px 2px;border-bottom:var(--rule)}
+.about-facts h3{font-size:15px;margin:0;color:var(--ink)}
+.about-facts p{font-size:15px;line-height:1.6;color:var(--ink);margin:6px 0 0}
+.about-facts a{color:var(--spot-ink);font-weight:600}
 
-/* ---------- Email signup ---------- */
+/* ---------- Email signup: the reply card ---------- */
 .home-signup{
-  margin-top:clamp(56px,9vh,88px);padding:30px clamp(20px,3.5vw,36px) 34px;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  margin-top:clamp(64px,10vh,104px);padding:clamp(22px,3.5vw,32px) clamp(20px,3.5vw,36px);
+  background:var(--tint);border:var(--rule-2);
+  display:grid;gap:22px 48px;grid-template-columns:1fr;
 }
-.home-signup h2{font-size:20px;font-weight:700;letter-spacing:-.015em;margin:0;color:var(--ink)}
-.home-signup .sec-sub{font-size:15px;color:var(--ink-2);margin:6px 0 0}
-.signup-row{display:flex;gap:10px;flex-wrap:wrap;max-width:520px;margin-top:18px}
+@media(min-width:760px){.home-signup{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}}
+.home-signup h2{font-size:24px;margin:0;color:var(--ink);border:none;padding:0}
+.home-signup .sec-sub{font-size:15.5px;color:var(--ink);margin:8px 0 0}
+.signup-row{display:flex;gap:0;flex-wrap:wrap;max-width:520px}
 .signup-row input{
-  flex:1;min-width:210px;font-family:inherit;font-size:15px;color:var(--ink);
-  background:#fff;border:1px solid var(--line-2);border-radius:var(--radius-sm);
-  padding:12px 14px;transition:border-color .15s;
+  flex:1;min-width:210px;font-family:var(--sans);font-size:15px;color:var(--ink);
+  background:var(--stock);border:var(--rule);border-right:none;padding:13px 14px;transition:background .15s;
 }
-.signup-row input::placeholder{color:var(--ink-3)}
-.signup-row input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px oklch(0.545 0.185 31/.14)}
+.signup-row input::placeholder{color:var(--spot-ink)}
+.signup-row input:focus{outline:2px solid var(--spot);outline-offset:0;z-index:1}
 /* was --primary, which made an invalid email look exactly like a call to
    action — the brand accent and the error state were the same colour */
-.signup-row input.err{border-color:var(--danger);animation:signup-shake .32s}
+.signup-row input.err{border-color:var(--danger);outline-color:var(--danger);animation:signup-shake .32s}
 @keyframes signup-shake{25%{transform:translateX(-5px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
-.signup-done{margin-top:18px;font-size:15px;color:var(--sage-ink)}
-.signup-done strong{color:var(--ink)}
-.signup-fine{font-size:13px;color:var(--ink-3);margin:12px 0 0}
+@media(max-width:479px){.signup-row input{border-right:var(--rule);border-bottom:none}.signup-row .btn{width:100%}}
+.signup-done{margin:0;font-size:15.5px;color:var(--ink)}
+.signup-done strong{color:var(--spot-ink)}
+.signup-fine{font-size:13.5px;color:var(--ink);margin:10px 0 0}
 
 @media (prefers-reduced-motion: reduce){
   .signup-row input.err{animation:none}

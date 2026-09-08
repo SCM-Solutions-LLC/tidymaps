@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-07T00:00:00Z",
+  "title": "Design System: TidyMap",
+  "extensions": {
+    "colorMeta": {
+      "stock": { "role": "neutral", "displayName": "White Stock", "canonical": "#ffffff", "tonalRamp": ["oklch(0.15 0 0)", "oklch(0.27 0 0)", "oklch(0.39 0 0)", "oklch(0.51 0 0)", "oklch(0.63 0 0)", "oklch(0.75 0 0)", "oklch(0.87 0 0)", "oklch(1 0 0)"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.20 0.01 200)", "tonalRamp": ["oklch(0.15 0.01 200)", "oklch(0.20 0.01 200)", "oklch(0.32 0.01 200)", "oklch(0.44 0.01 200)", "oklch(0.56 0.01 200)", "oklch(0.68 0.01 200)", "oklch(0.82 0.01 200)", "oklch(0.95 0.01 200)"] },
+      "spot": { "role": "primary", "displayName": "Turquoise Plate", "canonical": "oklch(0.535 0.100 195)", "tonalRamp": ["oklch(0.15 0.05 195)", "oklch(0.27 0.08 195)", "oklch(0.35 0.09 195)", "oklch(0.44 0.095 195)", "oklch(0.535 0.100 195)", "oklch(0.70 0.08 195)", "oklch(0.905 0.045 195)", "oklch(0.945 0.028 195)"] },
+      "spot-deep": { "role": "primary", "displayName": "Plate, Pressed", "canonical": "oklch(0.47 0.095 195)", "tonalRamp": ["oklch(0.15 0.05 195)", "oklch(0.27 0.08 195)", "oklch(0.35 0.09 195)", "oklch(0.47 0.095 195)", "oklch(0.535 0.100 195)", "oklch(0.70 0.08 195)", "oklch(0.905 0.045 195)", "oklch(0.945 0.028 195)"] },
+      "spot-ink": { "role": "primary", "displayName": "Plate at Full Density", "canonical": "oklch(0.44 0.095 195)", "tonalRamp": ["oklch(0.15 0.05 195)", "oklch(0.27 0.08 195)", "oklch(0.35 0.09 195)", "oklch(0.44 0.095 195)", "oklch(0.535 0.100 195)", "oklch(0.70 0.08 195)", "oklch(0.905 0.045 195)", "oklch(0.945 0.028 195)"] },
+      "tint": { "role": "neutral", "displayName": "Halftone Tint (18%)", "canonical": "oklch(0.945 0.028 195)", "tonalRamp": ["oklch(0.15 0.05 195)", "oklch(0.27 0.08 195)", "oklch(0.35 0.09 195)", "oklch(0.44 0.095 195)", "oklch(0.535 0.100 195)", "oklch(0.70 0.08 195)", "oklch(0.905 0.045 195)", "oklch(0.945 0.028 195)"] },
+      "tint-2": { "role": "neutral", "displayName": "Halftone Tint (30%)", "canonical": "oklch(0.905 0.045 195)", "tonalRamp": ["oklch(0.15 0.05 195)", "oklch(0.27 0.08 195)", "oklch(0.35 0.09 195)", "oklch(0.44 0.095 195)", "oklch(0.535 0.100 195)", "oklch(0.70 0.08 195)", "oklch(0.905 0.045 195)", "oklch(0.945 0.028 195)"] },
+      "danger": { "role": "semantic", "displayName": "Correction Pencil", "canonical": "oklch(0.52 0.19 28)", "tonalRamp": ["oklch(0.15 0.08 28)", "oklch(0.27 0.13 28)", "oklch(0.36 0.16 28)", "oklch(0.45 0.18 28)", "oklch(0.52 0.19 28)", "oklch(0.68 0.14 28)", "oklch(0.84 0.07 28)", "oklch(0.96 0.025 28)"] },
+      "danger-ink": { "role": "semantic", "displayName": "Correction Pencil, Text", "canonical": "oklch(0.45 0.18 28)", "tonalRamp": ["oklch(0.15 0.08 28)", "oklch(0.27 0.13 28)", "oklch(0.36 0.16 28)", "oklch(0.45 0.18 28)", "oklch(0.52 0.19 28)", "oklch(0.68 0.14 28)", "oklch(0.84 0.07 28)", "oklch(0.96 0.025 28)"] },
+      "danger-bg": { "role": "semantic", "displayName": "Correction Pencil, Field", "canonical": "oklch(0.96 0.025 28)", "tonalRamp": ["oklch(0.15 0.08 28)", "oklch(0.27 0.13 28)", "oklch(0.36 0.16 28)", "oklch(0.45 0.18 28)", "oklch(0.52 0.19 28)", "oklch(0.68 0.14 28)", "oklch(0.84 0.07 28)", "oklch(0.96 0.025 28)"] }
+    },
+    "typographyMeta": {
+      "chapter-number": { "displayName": "Chapter Number", "purpose": "The numeral in the chapter-opener band; at 40px, the numerals in the How-it-works list." },
+      "display": { "displayName": "Display", "purpose": "h1 only: chapter titles, white on the plate in the opener." },
+      "headline": { "displayName": "Headline", "purpose": "h2 section heads on a 4px double rule." },
+      "title": { "displayName": "Title", "purpose": "h3: card names, figure titles, list items." },
+      "lede": { "displayName": "Lede", "purpose": "The serif paragraph under a chapter or section title, 46 to 58ch." },
+      "body": { "displayName": "Body", "purpose": "All reading text, Source Serif 4 17px / 1.6." },
+      "label": { "displayName": "Label", "purpose": "Figure numbers, column heads, nav items, step counters, the exercise spine. Narrow Archivo caps." },
+      "button": { "displayName": "Button", "purpose": "Every button label; Archivo 90% width caps." }
+    },
+    "shadows": [
+      { "name": "none", "value": "none", "purpose": "Every shadow token is none; depth is rules and tone." },
+      { "name": "full-bleed-paint", "value": "0 0 0 100vmax var(--spot)", "purpose": "Paints a field past the column edge, clipped with clip-path:inset(0 -100vmax). A paint trick, not elevation." },
+      { "name": "inset-ring-spot", "value": "inset 0 0 0 1px var(--spot)", "purpose": "Selected or hovered card, inside the ink border." },
+      { "name": "inset-ring-ink", "value": "inset 0 0 0 1px var(--ink)", "purpose": "Dashboard card hover." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(.2,.7,.2,1)", "purpose": "State changes." },
+      { "name": "ease-out", "value": "cubic-bezier(.16,.84,.28,1)", "purpose": "Arrivals, Figure 1 sort, card-arrive." },
+      { "name": "ease-physical", "value": "cubic-bezier(.34,1.32,.48,1)", "purpose": "Things that stand for objects." },
+      { "name": "dur-fast", "value": ".12s", "purpose": "Transforms on press." },
+      { "name": "dur", "value": ".18s", "purpose": "Colour and border changes." },
+      { "name": "dur-slow", "value": ".34s", "purpose": "Slow state changes." },
+      { "name": "screen-rise", "value": ".4s", "purpose": "A screen rises 10px into place." },
+      { "name": "fig-sort", "value": "1.15s, 55ms stagger per item", "purpose": "Figure 1 items travel to their zones; zones at 1.1s, leaders at 1.25s, notes at 1.5s, replay at 2.6s." }
+    ],
+    "breakpoints": [
+      { "name": "phone-narrow", "value": "420px" },
+      { "name": "gutter-widen", "value": "560px" },
+      { "name": "opener-collapse", "value": "720px" },
+      { "name": "cards-4up", "value": "780px" },
+      { "name": "nav-collapse", "value": "860px" },
+      { "name": "wizard-rail", "value": "900px" },
+      { "name": "report-toc-column", "value": "960px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The exercise box printed in the plate: ruled box, caps label.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Plan my space</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--ink);border-radius:0;font-family:var(--sans);font-stretch:90%;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px 22px;line-height:1;cursor:pointer;transition:background .18s,border-color .18s,color .18s,transform .12s}.ds-btn-primary{background:var(--spot);color:var(--stock)}.ds-btn-primary:hover{background:var(--spot-deep)}.ds-btn-primary:active{background:var(--ink);transform:translateY(1px)}.ds-btn:focus-visible{outline:2px solid var(--spot);outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "The same box left unprinted.",
+      "html": "<button class=\"ds-btn ds-btn-ghost\">View a sample plan</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--ink);border-radius:0;font-family:var(--sans);font-stretch:90%;font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px 22px;line-height:1;cursor:pointer;transition:background .18s,border-color .18s,color .18s,transform .12s}.ds-btn-ghost{background:var(--stock);color:var(--ink)}.ds-btn-ghost:hover{background:var(--tint)}.ds-btn-ghost:active{background:var(--tint-2);transform:translateY(1px)}.ds-btn:focus-visible{outline:2px solid var(--spot);outline-offset:2px}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Ruled selectable; selection inverts to the plate.",
+      "html": "<span class=\"ds-chips\"><button class=\"ds-chip\">Pantry</button><button class=\"ds-chip ds-chip-sel\">Closet</button></span>",
+      "css": ".ds-chips{display:inline-flex;gap:9px}.ds-chip{background:var(--stock);border:1px solid var(--ink);border-radius:0;padding:9px 16px;font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .16s,background-color .16s,color .16s}.ds-chip:hover{background:var(--tint)}.ds-chip-sel,.ds-chip-sel:hover{background:var(--spot);border-color:var(--spot);color:var(--stock)}.ds-chip:focus-visible{outline:2px solid var(--spot);outline-offset:2px}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "White field, ink rule, plate focus ring sitting on the border.",
+      "html": "<label class=\"ds-field\"><span>Your email</span><input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\"></label>",
+      "css": ".ds-field{display:block;font-family:var(--sans)}.ds-field>span{display:block;font-weight:600;font-size:14px;margin-bottom:6px;color:var(--ink)}.ds-input{width:100%;font-family:var(--sans);font-size:15px;color:var(--ink);background:var(--stock);border:1px solid var(--ink);border-radius:0;padding:12px 14px}.ds-input::placeholder{color:var(--spot-ink)}.ds-input:focus{outline:2px solid var(--spot);outline-offset:0}"
+    },
+    {
+      "name": "Running Head",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Sticky white bar on a 1px rule; plate brand square, narrow caps nav with a plate underline on hover.",
+      "html": "<nav class=\"ds-appbar\"><a class=\"ds-brand\" href=\"#\"><span class=\"ds-brand-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M4 10h16M4 16h16\"/></svg></span>TidyMap</a><a class=\"ds-navlink\" href=\"#\">Spaces</a><a class=\"ds-navlink\" href=\"#\">What you get</a><span class=\"ds-spacer\"></span><button class=\"ds-cta\">Plan my space</button></nav>",
+      "css": ".ds-appbar{display:flex;align-items:center;gap:22px;padding:12px 18px;background:var(--stock);border-bottom:1px solid var(--ink);font-family:var(--sans)}.ds-brand{display:inline-flex;align-items:center;gap:9px;font-weight:900;font-size:19px;font-stretch:118%;letter-spacing:-.02em;text-transform:uppercase;color:var(--ink);text-decoration:none}.ds-brand-icon{width:30px;height:30px;background:var(--spot);color:var(--stock);display:inline-flex;align-items:center;justify-content:center}.ds-brand-icon svg{width:17px;height:17px}.ds-navlink{font-stretch:80%;font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink);text-decoration:underline;text-decoration-color:transparent;text-underline-offset:5px;text-decoration-thickness:2px;transition:color .15s}.ds-navlink:hover{color:var(--spot-ink);text-decoration-color:var(--spot)}.ds-spacer{flex:1}.ds-cta{background:var(--spot);color:var(--stock);border:1px solid var(--ink);border-radius:0;font-family:var(--sans);font-stretch:90%;font-weight:800;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;padding:11px 14px;cursor:pointer}.ds-cta:hover{background:var(--spot-deep)}.ds-navlink:focus-visible,.ds-cta:focus-visible{outline:2px solid var(--spot);outline-offset:2px}"
+    },
+    {
+      "name": "Space Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Ruled card, tint image area, inset plate ring on hover and selection.",
+      "html": "<button class=\"ds-room-card\"><span class=\"ds-rc-img\"></span><span class=\"ds-rc-label\"><span class=\"ds-rc-h\">Pantry</span><span class=\"ds-rc-p\">Food storage, cabinet to walk-in</span></span></button>",
+      "css": ".ds-room-card{display:flex;flex-direction:column;width:240px;text-align:left;padding:0;border:1px solid var(--ink);border-radius:0;background:var(--stock);cursor:pointer;transition:transform .25s cubic-bezier(.2,.7,.2,1),border-color .2s,box-shadow .2s}.ds-rc-img{display:block;aspect-ratio:4/3;background:var(--tint);border-bottom:1px solid var(--ink)}.ds-rc-label{display:block;padding:12px 16px 14px;font-family:var(--sans)}.ds-rc-h{display:block;font-size:18px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}.ds-rc-p{display:block;font-size:14px;line-height:1.45;color:var(--ink);margin-top:3px}.ds-room-card:hover{transform:translateY(-3px);border-color:var(--spot);box-shadow:inset 0 0 0 1px var(--spot)}.ds-room-card:active{transform:translateY(-1px)}.ds-room-card:focus-visible{outline:2px solid var(--spot);outline-offset:3px}"
+    },
+    {
+      "name": "Figure Number",
+      "kind": "custom",
+      "refersTo": "figure-number",
+      "description": "The ink tab that captions a drawing; lives inside the caption or h3.",
+      "html": "<p class=\"ds-cap\"><span class=\"ds-fig-n\">Fig. 1</span> The sample pantry, before and after its plan.</p>",
+      "css": ".ds-cap{font-family:var(--serif);font-size:15px;line-height:1.5;color:var(--ink);margin:0}.ds-fig-n{display:inline-block;font-family:var(--sans);font-stretch:80%;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--stock);background:var(--ink);padding:3px 7px 2px;margin-right:10px;vertical-align:2px}"
+    },
+    {
+      "name": "Exercise Box",
+      "kind": "custom",
+      "refersTo": "exercise-box",
+      "description": "The call to action: a 2px-ruled frame with the word Exercise printed down an ink spine.",
+      "html": "<div class=\"ds-exercise\"><div class=\"ds-exercise-body\"><p class=\"ds-exercise-q\">Which space is running your day? Photograph it as it is, mid-week mess and all.</p><div class=\"ds-exercise-acts\"><button class=\"ds-btn ds-btn-primary\">Plan my space</button><a class=\"ds-home-link\" href=\"#\">View a sample plan</a></div></div></div>",
+      "css": ".ds-exercise{border:2px solid var(--ink);display:grid;grid-template-columns:auto minmax(0,1fr);max-width:560px}.ds-exercise::before{content:\"Exercise\";writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--sans);font-stretch:80%;font-weight:800;font-size:13px;letter-spacing:.09em;text-transform:uppercase;background:var(--ink);color:var(--stock);padding:14px 9px;text-align:center}.ds-exercise-body{padding:24px 26px}.ds-exercise-q{font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--ink);margin:0}.ds-exercise-acts{display:flex;gap:26px;align-items:center;flex-wrap:wrap;margin-top:22px}.ds-btn{display:inline-flex;align-items:center;border:1px solid var(--ink);border-radius:0;font-family:var(--sans);font-stretch:90%;font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase;padding:16px 28px;line-height:1;cursor:pointer;transition:background .18s,transform .12s}.ds-btn-primary{background:var(--spot);color:var(--stock)}.ds-btn-primary:hover{background:var(--spot-deep)}.ds-btn-primary:active{background:var(--ink);transform:translateY(1px)}.ds-home-link{font-family:var(--serif);font-weight:600;color:var(--spot-ink);text-decoration:underline;text-decoration-color:var(--spot);text-underline-offset:3px}.ds-home-link:hover{color:var(--ink);text-decoration-color:var(--ink)}.ds-btn:focus-visible,.ds-home-link:focus-visible{outline:2px solid var(--spot);outline-offset:2px}"
+    },
+    {
+      "name": "Stage Marks",
+      "kind": "custom",
+      "refersTo": "option-selected",
+      "description": "Printed progress: empty, half, and filled squares; done rows struck through.",
+      "html": "<ul class=\"ds-steps\"><li class=\"ds-step ds-done\"><i class=\"ds-tick\"></i><span>Empty your shelf at a time</span><b>10 min</b></li><li class=\"ds-step ds-doing\"><i class=\"ds-tick\"></i><span>Group what's used together</span><b>10 min</b></li><li class=\"ds-step\"><i class=\"ds-tick\"></i><span>Move kid snacks within reach</span><b>5 min</b></li></ul>",
+      "css": ".ds-steps{list-style:none;margin:0;padding:0;border:1px solid var(--ink);font-family:var(--sans);max-width:420px}.ds-step{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--ink)}.ds-step:last-child{border-bottom:none}.ds-tick{width:16px;height:16px;flex:none;border:2px solid var(--ink);background:var(--stock)}.ds-doing .ds-tick{background:linear-gradient(to right,var(--spot) 50%,var(--stock) 50%)}.ds-done .ds-tick{background:var(--spot)}.ds-step span{flex:1;font-family:var(--serif);font-size:14.5px;line-height:1.4;color:var(--ink)}.ds-done span{color:var(--spot-ink);text-decoration:line-through;text-decoration-color:var(--ink)}.ds-step b{font-size:11.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Home-Economics Manual",
+    "overview": "TidyMap is set the way a mid-century home-economics textbook was printed: white stock, one turquoise spot plate, black ink, and a single halftone screen of the plate. A plan is a lesson. The landing page opens as Chapter 1 with the chapter number at display scale on a full-bleed turquoise band; Figure 1 is an inked pantry elevation whose jumbled items slide into labeled zones; the call to action is an exercise box, a ruled frame with \"Exercise\" printed down its spine. Wizard steps read as lessons with a step counter in the running head; the results screen is the Plan chapter with a contents column, figure tables, and printed stage marks; the products page is the appendix; legal pages are back-matter.\n\nDensity is that of a printed page rather than a dashboard: generous section rhythm (64 to 104px between chapters), a 760px reading measure for lessons and 1100px for figures and spreads, 1px black rules doing the work that borders, shadows, and cards would do elsewhere. Everything that is not the plate or the ink is a rule, a tint, or white space. Depth is refused: no shadows, no gradients as surfaces, no rounded corners.\n\nConfirmed visual rejections: grey as a colour (secondary text is the plate printed dark, never a neutral grey); hue as the only carrier of state; the photo-left, headline-right, three-feature-card arrangement; kickers above headings; drop shadows and lifted cards.",
+    "keyCharacteristics": [
+      "Two inks and one screen: white, turquoise plate, ink black, 18% tint. Nothing else except a correction-pencil red for failure.",
+      "Titles in Archivo pushed wide and black; labels in Archivo narrowed, capped, and letterspaced; reading text in Source Serif 4.",
+      "Figures are inked cupboard elevations, numbered \"Fig. n\", with 2.5px ink strokes and tint-filled zones.",
+      "Rules, not boxes: 1px and 2px black rules separate, frame, and underline; corners are square.",
+      "State is a printed mark (empty square, half-filled square, filled square) or a word, never a colour alone.",
+      "Motion is one stroke: exponential ease-out, 120 to 340ms for UI, one long 1.15s sort for Figure 1."
+    ],
+    "rules": [
+      { "name": "The Two-Ink Rule", "body": "Every surface resolves to stock, ink, the plate, or a screen of the plate. A new colour is a new plate and needs a press run; do not add one.", "section": "colors" },
+      { "name": "The No-Grey Rule", "body": "Secondary text is spot-ink, borders are ink, disabled state is opacity 0.45 on the full-colour element. There is no neutral grey token and none may be introduced.", "section": "colors" },
+      { "name": "The Correction-Pencil Rule", "body": "Red appears only on a failure, never on a call to action, badge, or highlight, so it can never be mistaken for one.", "section": "colors" },
+      { "name": "The Marked-State Rule", "body": "Never encode state by hue alone. Pair every state with a printed mark (empty, half, filled square), a strikethrough, or a word.", "section": "colors" },
+      { "name": "The Two-Width Rule", "body": "Archivo is used at two ends of its width axis and nowhere in between: wide (108 to 125%) for titles and numerals, narrow (80 to 90%) for labels and buttons. Regular width Archivo appears only in card names and metadata at 700 to 800.", "section": "typography" },
+      { "name": "The Serif Reads Rule", "body": "Anything a reader reads as a sentence is Source Serif 4. Archivo is for things that are looked up, not read: titles, labels, numbers, buttons.", "section": "typography" },
+      { "name": "The Figure-Number Rule", "body": "A figure is captioned \"Fig. n\" in a white-on-ink label tab; the number is the only kicker-shaped element the system has, and it sits inside the caption or the h3, never above a heading.", "section": "typography" },
+      { "name": "The Rule-Not-Shadow Rule", "body": "To separate or frame, add a rule (1px ink, 2px ink, or 4px double). Never a shadow, never a gradient, never a radius.", "section": "elevation" },
+      { "name": "The Inset-Ring Rule", "body": "A selected or hovered card marks itself with inset 0 0 0 1px of the plate inside its ink border, so the mark stays within the box and the layout does not shift.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do resolve every colour to stock, ink, the plate, or a screen of the plate; use the correction pencil only for a failure.",
+      "Do separate with rules: 1px ink between rows, 2px ink to frame a panel, 4px double under a section title.",
+      "Do set titles in Archivo wide (108 to 125%) and black (900), labels in Archivo narrow (80%) caps at 12px with 0.09em tracking, and reading text in Source Serif 4 at 17px / 1.6.",
+      "Do caption every drawing \"Fig. n\" in the ink tab and draw it in the elevation voice: white-filled items, 2.2 to 2.5px round-capped ink strokes, flat tint zones.",
+      "Do mark state with a printed square (empty, half, full), a strikethrough, or a word, and pair any hue with one of those.",
+      "Do keep focus rings 2px plate outlines with square corners, and keep touch targets at 44px minimum."
+    ],
+    "donts": [
+      "Don't introduce grey text, grey borders, or a neutral grey token; secondary text is spot-ink.",
+      "Don't add a box-shadow, a gradient surface, or a corner radius; the only allowed shadow is the 100vmax full-bleed paint trick on a field.",
+      "Don't put a kicker or eyebrow above a heading; the figure number lives inside the caption or the h3.",
+      "Don't use red, the plate, or any hue as the sole carrier of a state.",
+      "Don't arrange a section as photo-left, headline-right, three feature cards.",
+      "Don't set Archivo at its default width for a title or a label; the width axis is the family's voice here."
+    ]
+  }
+}

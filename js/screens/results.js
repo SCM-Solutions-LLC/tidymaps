@@ -3,7 +3,7 @@ import { SVG, ICON } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
-import { areaFor, art, fmtFt, fmtIn, optionsForHousehold, SETUP_DIMS } from '../wizard-data.js';
+import { areaFor, fmtFt, fmtIn, optionsForHousehold, SETUP_DIMS } from '../wizard-data.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -49,7 +49,10 @@ export function buildResults(){
   if(resTitle) resTitle.textContent = `The ${spaceLabel.toLowerCase()}, with a place for everything`;
   const hero=document.getElementById('plan-hero-img');
   if(hero){
-    const svg=art(resultArea.artKey).replace('aria-hidden="true"','role="img"');
+    /* The drawing goes in as an <img>, where the stylesheet's re-inking of
+       the card art (css/components.css .card-art-svg) cannot reach it, so the
+       same plate is applied to the markup before it is encoded. */
+    const svg=planElevationSvg((A&&A.map.length)?A.map:MAP);
     hero.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
     hero.alt=`Illustrated ${resultArea.label.toLowerCase()} organization plan`;
     hero.dataset.space=resultArea.id;
@@ -804,6 +807,54 @@ function itemsRow(m){
   return `<div class="map-items" aria-label="Items in this zone">${chips}</div>`;
 }
 
+/* The plan's own cupboard, drawn the way the landing page draws Figure 1: an
+   inked elevation, one shelf per level of the map, the zone printed on the
+   shelf and a few glyphs standing in for what lives there. It ships as an
+   <img>, so the plate's colours are written in by hand rather than taken
+   from the stylesheet. */
+const EL_INK='#1f2a2b', EL_SPOT='#0f7f81', EL_TINT='#e2f2f2', EL_TINT2='#c7e6e6';
+const EL_GLYPHS={
+  jar:'<path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="l"/>',
+  can:'<rect x="3" y="4" width="22" height="30"/><path d="M3 9h22M3 29h22"/>',
+  box:'<rect x="3" y="3" width="40" height="66"/><path d="M3 14h40"/><path d="M10 30h26M10 40h18" class="l"/>',
+  bottle:'<path d="M8 3h8v9l5 8v40a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V20l5-8Z"/><path d="M7 32h10M7 40h10" class="l"/>',
+  bag:'<path d="M6 12l4-8h24l4 8v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M6 12h32"/><path d="M14 26h16M14 34h10" class="l"/>',
+  bin:'<path d="M4 8h108l-6 42H10Z"/><path d="M4 8h108"/><path d="M44 30h28" class="l"/>',
+};
+const EL_SIZE={jar:[32,46],can:[28,36],box:[46,72],bottle:[24,64],bag:[44,52],bin:[116,54]};
+const EL_ROWS=[['bag','box','bottle','bag'],['jar','jar','can','can','bag','bottle'],['bin','jar','jar','bottle'],['bin','bin','bag'],['box','box','bag','can'],['bin','jar','bag']];
+function planElevationSvg(map){
+  const rows=(map||[]).slice(0,6); const n=Math.max(rows.length,2);
+  const W=760, top=24, left=30, caseW=700, shelfH=Math.round(440/n), H=top+shelfH*n+26;
+  let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one shelf per zone">`
+    +`<style>.c{fill:none;stroke:${EL_INK};stroke-width:2.5;stroke-linejoin:round}.o{stroke-width:4}.g{fill:#fff;stroke:${EL_INK};stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.g .l{stroke:${EL_SPOT};stroke-width:2.6}`
+    +`.z{font:800 16px Archivo,Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;fill:${EL_INK}}.e{fill:${EL_SPOT}}</style>`;
+  rows.forEach((m,i)=>{ out+=`<rect x="${left+2}" y="${top+shelfH*i+2}" width="${caseW-4}" height="${shelfH-4}" fill="${m.eye?EL_TINT2:EL_TINT}"/>`; });
+  out+=`<rect class="c o" x="${left}" y="${top}" width="${caseW}" height="${shelfH*n}"/>`;
+  rows.forEach((m,i)=>{
+    const base=top+shelfH*(i+1);
+    if(i<n-1) out+=`<line class="c" x1="${left}" y1="${base}" x2="${left+caseW}" y2="${base}"/>`;
+    // The zone is printed along the top of its shelf, full width, so nothing
+    // is cut off; a long name gets a second line rather than an ellipsis.
+    const words=String(m.zone||m.lv||'').replace(/[<>&]/g,'').split(/\s+/);
+    const lines=[]; let cur='';
+    words.forEach(w=>{ if((cur+' '+w).trim().length>52){ lines.push(cur.trim()); cur=w; } else cur=(cur+' '+w); });
+    if(cur.trim()) lines.push(cur.trim());
+    const scale=Math.min(1.2,(shelfH-34-(lines.length>1?16:0))/72);
+    let x=left+22;
+    EL_ROWS[i%EL_ROWS.length].forEach(k=>{
+      const [w,h]=EL_SIZE[k]; const gw=w*scale, gh=h*scale;
+      if(x+gw>left+caseW-24) return;
+      out+=`<g class="g" transform="translate(${x} ${base-gh-4}) scale(${scale})">${EL_GLYPHS[k]}</g>`;
+      x+=gw+10;
+    });
+    lines.slice(0,2).forEach((ln,li)=>{
+      out+=`<text class="z${m.eye?' e':''}" x="${left+14}" y="${top+shelfH*i+24+li*18}">${ln}</text>`;
+    });
+  });
+  return out+'</svg>';
+}
+
 /* ---------- Animated step illustrations ----------
    Each step gets a small looping motion graphic matched to what the step asks
    for, so the checklist reads at a glance. Classification lives in
@@ -918,7 +969,7 @@ export function renderSteps(rawList){
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;
     const art=stepScene(s, state.space);
     t.innerHTML=`
-      <button type="button" class="check" onclick="toggleStep(${i})" aria-label="Mark step ${i+1} complete" aria-pressed="false">${ICON.check}</button>
+      <button type="button" class="check" data-n="${i+1}" onclick="toggleStep(${i})" aria-label="Mark step ${i+1} complete" aria-pressed="false">${ICON.check}</button>
       <div>
         <div class="num">Step ${i+1}</div>
         <div class="tname">${escapeHtml(s.t)}</div>
