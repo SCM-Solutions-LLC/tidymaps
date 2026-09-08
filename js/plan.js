@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { evenShelfFracs } from './three/viewerOptions.js';
 import { iconFor } from './icons.js';
 import { MAP, DEMO_GEOMETRY, DEMO_SAFETY_NOTES, DEMO_PRODUCT_NEEDS } from './data.js';
 import { normalizeLayout, surfaceFromIcon, SURFACES, SETUP_ARCHETYPE } from './layout.js';
@@ -50,9 +51,7 @@ function normalizeGeometry(g, mapLen){
   const userShelves = state.dims && state.dims.shelves;
   const shelfCount = Math.max(1, Math.min(12, Math.round(positive(userShelves, positive(g&&g.shelfCount, mapLen||5)))));
   let fracs = Array.isArray(g&&g.shelfYFracs) ? g.shelfYFracs.map(Number).filter(n=>Number.isFinite(n)&&n>=0&&n<=1) : [];
-  if(fracs.length!==shelfCount){
-    fracs = Array.from({length:shelfCount},(_,i)=>0.08+0.82*(shelfCount===1?0:i/(shelfCount-1)));
-  }
+  if(fracs.length!==shelfCount) fracs = evenShelfFracs(shelfCount);
   const geo = {
     unit:'in',
     width: positive(g&&g.width, 30),

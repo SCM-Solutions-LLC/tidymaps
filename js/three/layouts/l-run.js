@@ -34,7 +34,8 @@ function addRod(scene,length,x,y,z,axis,mat){
 export function build(ctx){
   const {scene,geo,rowsByShelf,mats,layout}=ctx;
   const {W,H,D,T,NSH,shelfYs,gapAbove}=geo;
-  const shelfDepth=Math.max(8,Math.min(18,Math.min(W,D)*0.22));
+  // Same floor as the walk-in, for the same reason: see walkin-u.js.
+  const shelfDepth=Math.max(14,Math.min(18,Math.min(W,D)*0.22));
   const sideSign=layout&&layout.lSide==='left'?-1:1;
   const rodMat=new THREE.MeshStandardMaterial({color:0x8d9490,metalness:0.7,roughness:0.24});
 

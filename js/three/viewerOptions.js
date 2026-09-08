@@ -1,8 +1,20 @@
 function clamp(value,min,max){ return Math.max(min,Math.min(max,value)); }
 
+/* Where n boards go when nothing better is known. A fraction is measured
+   from the top, the bottom board sits on the floor (scene.js snaps anything
+   past 0.86 there), and the compartments between are equal.
+
+   The old spacing ran from 0.08 to 0.90, which put the top board eight
+   percent of the height below the top and made the top compartment a
+   sliver: three inches in a 30-inch wall cabinet, seven in an 8-foot
+   walk-in, with the other compartments sharing the rest. Every projected
+   plan's "Top shelf" or "Top drawer" was that sliver, and a wide sideboard
+   drawn as two drawers got a 3-inch top drawer over a 31-inch one. Scenario
+   authors who set their own fractions still get exactly those. */
 export function evenShelfFracs(count){
   const n=clamp(Math.round(Number(count)||1),1,12);
-  return Array.from({length:n},(_,i)=>0.08+0.82*(n===1?0.5:i/(n-1)));
+  if(n===1) return [0.5];
+  return Array.from({length:n},(_,i)=>0.92*(i+1)/n);
 }
 
 export function normalizeViewerGeometry(geometry,layoutType){

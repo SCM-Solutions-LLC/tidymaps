@@ -48,10 +48,13 @@ export function buildGarageRack(ctx){
         0, y+Math.max(3, H/NSH*0.42), 0,
         { shelfIndex:i, shelfY:y, row });
 
+      /* The rack has no top: whatever stands on its highest shelf has the
+         garage above it, not a board. */
+      const openAbove=!shelfYs.some((other,j)=>j!==i&&other>y+0.5);
       surfaces.push({
         index:i, kind:'shelf', row, y, hitbox:hit,
         uDir: new THREE.Vector3(1,0,0), normal: new THREE.Vector3(0,0,1),
-        length:usable, gap:gapAbove[i], itemDepth:Math.min(D*0.55, 8),
+        length:usable, gap:gapAbove[i], openAbove, itemDepth:Math.min(D*0.55, 8),
       });
     }
   });
@@ -61,7 +64,7 @@ export function buildGarageRack(ctx){
 
 export function buildOverheadRack(ctx){
   const { scene, geo, rowsByShelf, mats }=ctx;
-  const { W, H, D, T, shelfYs, gapAbove }=geo;
+  const { W, H, D, T, shelfYs }=geo;
 
   const strutMat=new THREE.MeshStandardMaterial({ color:0x666666, metalness:0.5, roughness:0.4 });
   const strutW=1;
@@ -94,10 +97,14 @@ export function buildOverheadRack(ctx){
       0, shelfY+y*0.1+2.5, 0,
       { shelfIndex:i, shelfY:shelfY+y*0.1, row });
 
+    /* Both halves are one deck, and the measured height IS the drop from
+       the ceiling to it, so that is the headroom over either half. gapAbove
+       was computed as if the halves were stacked shelves and gave the front
+       half three inches under a ceiling eighteen inches up. */
     surfaces.push({
       index:i, kind:'shelf', row, y:shelfY+y*0.1, hitbox:hit,
       uDir: new THREE.Vector3(1,0,0), normal: new THREE.Vector3(0,0,1),
-      length:usable, gap:gapAbove[i]||6, itemDepth:Math.min(D*0.55, 8),
+      length:usable, gap:Math.max(6,H-2), itemDepth:Math.min(D*0.55, 8),
     });
   });
 

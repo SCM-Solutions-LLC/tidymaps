@@ -5,7 +5,7 @@ import { addBox, addShelfLabel, accentFor, makeHitbox } from './helpers.js';
    drawer bays instead of a tall drawer tower. */
 export function build(ctx){
   const { scene, geo, rowsByShelf, mats }=ctx;
-  const { W, H, D, T, NSH, gapAbove }=geo;
+  const { W, H, D, T, NSH }=geo;
   const frameH=Math.max(7,Math.min(H*0.72,12));
   const mattressH=Math.max(3,Math.min(6,H-frameH+2));
   const frontZ=D/2;
@@ -30,10 +30,14 @@ export function build(ctx){
     if(row) addShelfLabel(scene,row,x-bayW/2,frameH+2.2,frontZ+1);
     const hit=makeHitbox(scene,bayW-1.5,frameH-1,D*0.7,x,frameH/2,D*0.12,
       {shelfIndex:i,shelfY:T,row});
+    /* The bays sit side by side at one height. gapAbove is computed as if
+       the rows were stacked shelves, which gave the front bay a 3-inch
+       ceiling and the back bay a 7-inch one under the same mattress. Every
+       bay is as tall as the frame less its rails, and as deep as the bed. */
     surfaces.push({
       index:i,kind:'drawer',row,y:T,hitbox:hit,
       uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),
-      length:bayW-2,gap:Math.max(4,(gapAbove&&gapAbove[i])||frameH-2),itemDepth:Math.min(D*0.5,8),
+      length:bayW-2,gap:frameH-2,clearance:frameH-2,depth:D-2,itemDepth:Math.min(D*0.5,8),
     });
   }
   return { surfaces };

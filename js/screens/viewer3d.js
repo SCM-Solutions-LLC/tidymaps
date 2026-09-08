@@ -347,6 +347,10 @@ export function disposeViewer3d(){
 }
 
 const ZONE_COLORS=['var(--honey)','var(--primary-bg)','var(--sage-bg)','var(--surface-3)','var(--primary-line)'];
+// The two organizers that hang rather than sit, singular and plural, for the
+// sentence that says they are not in the drawing.
+const MOUNTED_NOUNS={'door-rack':['a door rack','door racks'],'hook-rack':['a hook rack','hook racks']};
+
 const ORGANIZER_LABELS={
   'clear-bin':'Clear bins','basket':'Woven baskets','divider':'Drawer dividers',
   'turntable':'Turntables','riser':'Shelf risers','door-rack':'Door racks','hook-rack':'Hook racks',
@@ -449,6 +453,21 @@ function populateOrganizers(){
   }).join('');
   const issueCount=entries.reduce((sum,entry)=>sum+entry.issues,0);
   const unplaced=Math.max(0,Number(view.unplacedOrganizerQty)||0);
+  /* A door rack or a hook rack hangs on a door or a wall, and most layouts
+     draw neither. Those used to be counted with the leftovers, under a note
+     that said the levels they were meant for were full and offered to add a
+     shelf, which is not where a hook rack goes. Say what they are and where
+     they go instead. */
+  const mounted=document.getElementById('v3d-mounted-note');
+  if(mounted){
+    const racks=(view.mountedElsewhere||[]);
+    const total=racks.reduce((sum,rack)=>sum+(Number(rack.qty)||0),0);
+    mounted.classList.toggle('hide',!total);
+    const noun=(type,qty)=>qty===1?MOUNTED_NOUNS[type][0]:`${qty} ${MOUNTED_NOUNS[type][1]}`;
+    mounted.textContent=total
+      ?`Not drawn: ${racks.map(rack=>noun(rack.type,rack.qty)).join(', ')}. ${total===1?'It mounts':'They mount'} on a door or wall, outside this view.`
+      :'';
+  }
   if(fitNote){
     fitNote.classList.toggle('hide',!issueCount&&!unplaced);
     /* "Does not fit" asserted a cause the view cannot know. Most of these are

@@ -4,10 +4,11 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-04, after PR #120 merged and deployed; the
-deployed state it describes is `main` at `7619fb8` (PR #120, Pages run 125
-green 09-04 00:59 UTC, its e2e step included; the model path canary last
-passed on 09-03 against `a790934`). Everything
+**Last refreshed:** 2026-09-08, on the branch that closes open item 10 (every
+setup's demo scenario fits its own 3D view); the deployed state it describes
+is `main` at `c26eac3` (PRs #121 to #123 merged 09-04; Pages run 125 green
+09-04 00:59 UTC for #120, the later two are one-line fixes with their own
+e2e guards). Everything
 through PR #115 is merged (`main` at `0bec7a0`) and **deployed** — Pages run 120 went green on 08-21, so the four
 viewer ports below are live on the site, not merely landed. `main` is the single
 source of truth.
@@ -43,6 +44,135 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-09-08 session changed (open item 10: 33 setups, one 3D view each)
+
+**The measurement first, because the item's own number was a proxy.** Item
+10 said 26 of 33 setups overfilled their geometry, measured by building each
+setup's demo scenario the way `three-setup-matrix.spec.mjs` does: scenario
+geometry, no dims, needs with their `maxDims`. That is not what a visitor
+sees. The wizard seeds `state.dims` from `SETUP_DIMS` for every setup, the
+shopping list swaps each need for a catalog product with real dimensions,
+and the fit note only shows when `state.upgrades` is on (the default when
+the shopping step is left alone). Walking the real wizard for all 33 setups
+with the defaults and no backend, at `c26eac3`: **25 of 33 opened the 3D
+view with the fit note showing.** After this session: **0 of 33.** The walk
+is now `tests/e2e/demo-fit.spec.mjs` (one test per space, nine in all), and
+it is the only guard that measures the thing the item was about.
+
+**Six causes, none of them the visitor's.** In the order they were found:
+
+1. **A partial match claimed a need before the row it named was reached.**
+   `targetScore("Below the bench", "Bench drawers")` is 1 on the word
+   bench, that row comes first, and rows are offered needs in order, so the
+   workbench's floor bins were filed in a drawer and then reported as not
+   fitting it. The 09-03 change stopped generic words from counting; this
+   one takes each need's best possible score up front (`bestScoreByNeed` in
+   `buildScene`) and only offers a row a need it scores that well for.
+2. **The projection aligner relocated by shared words, generic ones
+   included.** `alignTargetZones` scored "Middle shelf" one point against
+   "Upper cabinet: top shelf" on the word shelf, so the pantry's 14-inch can
+   rack went to the butler's 7-inch top shelf on every projected setup. It
+   now keeps the *kind* of level (`levelRole()` reads rod, door, drawer,
+   bay, deck, surface, floor, high, reach, mid, low off a name; projected
+   rows carry the template's `role`), walks a ladder when the kind is
+   missing (a height falls through, a drawer clamps to the last drawer),
+   and matches ordinals among same-role peers so the garage rack's second
+   high shelf lands at a wall cabinet's eye level rather than in the sliver
+   over its top board. Word overlap, minus the generic words, is the
+   fallback, and the eye zone the last resort. `projectOntoArchetype` passes
+   the source rows in so the ordinal is known.
+3. **Builders reported drawing conventions as physical dimensions.** A
+   drawer's `depth` was the distance it is drawn pulled out (0.6 of the
+   carcass), so a 12.9-inch tray in an 18-inch dresser "did not fit" 10.8
+   inches; its `gap` was the pitch less a rail less a margin, and the fit
+   verdict took 1.4 more off, so a 1.9-inch tray failed a 4.3-inch top
+   drawer. Under-bed bays used stacked-shelf gaps though they sit side by
+   side; the overhead rack's deck had three inches of headroom under a
+   ceiling eighteen inches up. Drawer surfaces now publish `clearance`
+   (the box's inside height) and `depth` (the carcass less back and front);
+   the garage rack's top shelf and the top wall shelf say `openAbove`; the
+   overhead deck's gap is the measured drop. `reflow` keeps the visual
+   `maxH` (items still sit with air under the next board) and judges fit
+   against the clearance.
+4. **Regenerated shelf spacing made every top compartment a sliver.**
+   `evenShelfFracs` ran 0.08 to 0.90: the top board eight percent of the
+   height below the top, the rest shared. A 30-inch wall cabinet drawn with
+   three shelves got a 3.2-inch top compartment (the `H-T-3.2` clamp in
+   `buildScene` is exactly that minimum); a sideboard drawn as two drawers
+   got a 3-inch drawer over a 31-inch one. Eighteen of the 33 setups are
+   projected and take this spacing. It is now `0.92 * (i+1) / n`: n
+   compartments of one height with the bottom board on the floor. Scenario
+   authors' own fractions are untouched, so the sample pantry looks exactly
+   as it did on 09-04; the three copies of the old formula (viewerOptions,
+   plan.js, scene.js) are one function now.
+5. **Racks were counted as leftovers.** A hook rack on a closet door, in a
+   layout that draws no door, was "1 organizer from your list has no spot in
+   this view yet. The levels they were meant for are full. Add a level
+   above", which is not where a hook rack goes. `isMountedOrganizer` types
+   with no accepting surface in the scene go to `view.mountedElsewhere` and
+   the panel says "Not drawn: a hook rack. It mounts on a door or wall,
+   outside this view." (`#v3d-mounted-note`). A rack the scene *could* hang
+   but has no room for is still a leftover.
+6. **Three scenarios asked for the impossible, and every scenario was one
+   size.** The drawers scenario wanted three 22-inch trays in one top
+   drawer of a 24-inch bank (now one per drawer: `targetZone: 'Every
+   drawer'`); the closet's top shelf was 8 percent of the height with
+   12-inch baskets on it (fractions now `[0.16, 0.40, 0.60, 0.90]`, which
+   also gives the two rods a double-hang); the bathroom's drawers had a
+   3.2-inch pitch and a 26-inch tray (`[0.20, 0.42, 0.64, 0.88]`, tray 18).
+   And a need carries the size its scenario had room for: an 18-inch tower
+   was told to buy the 22-inch tray, and a 9-inch wall shelf a 10-inch
+   turntable. `fitNeedsToSpace()` caps `maxDims` depth at the measured depth
+   less 2 and width at the measured width less 3.5 (the builders' usable
+   width), projected or not; racks are exempt, as in `catalog.js`. The
+   catalog's `fitFor` takes the same 3.5 off the measured width, so the
+   report and the view stop disagreeing about a 16-inch tray in a 14.5-inch
+   drawer.
+
+**The second pass the item suggested is in.** After every row has had its
+say, whatever a need still owes is offered to every other row whose surface
+can carry it, best-scoring row first, and only where the product's own
+height and depth clear that row. An item carrying a vocabulary-implied
+organizer (every drawer item is drawn with a divider; every pantry item with
+a basket once the plan says "reuse your baskets") gives it up to a purchase.
+What no row can take stays owed and the warning still counts it, so the note
+is as true as before and appears only when it is.
+
+**Two things this did not do, on purpose.**
+
+- The walk-in and L-run shelf depth floor went from 8 to 14 inches (a
+  4-foot linen closet had 9.6-inch shelving no basket in the catalog fits;
+  14 is the shallowest closet shelf sold and leaves a 20-inch aisle there).
+  The 72-inch walk-in that `organizer-depth-fit.spec.mjs` measures is
+  unchanged at 14.4.
+- Scenario-authored shelf fractions that start at 0.08 (the pantry, the
+  garage, the linen closet) still draw a short top compartment: 5.5 to 7
+  inches on their default heights. Nothing tall targets those shelves any
+  more, so they pass, but a future author who puts a 12-inch bin on a
+  "Top shelf" in one of those scenarios will see the note again. The
+  `H-T-3.2` clamp and the 0.08 convention are the same decision seen from
+  two sides; changing it changes the sample pantry every visitor sees and
+  the "Set exact sizes" readouts (`shelfHeightInches` does not apply the
+  clamp), which is a session of its own.
+
+**How the tests were checked.** Each new test was run against its own
+behaviour disabled, per the rule below: the role ladder off (unit test red;
+the garage matrix test stays green because the second pass and the new
+spacing cover that space on their own, so the ladder's guard is the unit
+test, not the walk), the old spacing formula (red), the second pass skipped
+(red on "Expected 0, received 2"), the drawer depth back to the pull-out
+(red). The nine matrix tests were seen red at `c26eac3` in the measurement
+above, 25 of 33, using the same walk. One caution about the matrix: it
+walks the wizard 33 times and takes about four minutes across two workers,
+the longest thing in the e2e suite.
+
+**One mistake worth recording.** Mid-session, `git checkout
+js/setupStructure.js` was run to undo a one-line neuter and reverted every
+change in the file, exactly as the rule under "Prove a new test fails
+without its fix" says it will. The edits were re-applied from the session
+transcript and the file diffed against its backup. Copy the file before a
+neuter; never checkout.
 
 ## What the 2026-09-04 session verified (PR #120 in a browser)
 
@@ -1360,8 +1490,8 @@ and the list is finished.
   schema, and two unit files fail with `ERR_MODULE_NOT_FOUND` without it.
 - **Four gates, all of them in CI on every PR** (`.github/workflows/test.yml`):
   `npm run lint` (ESLint 9 flat config), `npm run check:types`
-  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**530 tests**
-  across 43 files), and `npx playwright test` (**211 tests** across 44 files).
+  (`tsc --checkJs` over a scoped `jsconfig.json`), `npm test` (**536 tests**
+  across 43 files), and `npx playwright test` (**222 tests** across 46 files).
   Pages deploy and the edge-function deploy both run on push to `main`.
 - In this sandbox the Playwright-managed browser isn't installed; run with
   `CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
@@ -1466,6 +1596,9 @@ section in mind.
 - ~~Room and area as two steps~~, ~~the sample plan's 3D fit warning~~,
   ~~unreferenced images under `assets/`~~ — the three decisions #119 left
   open, all taken up on 09-03. See that session's section.
+- ~~Open item 10, the 32 other setups' fit notes~~ — closed 09-08. Every
+  setup's wizard run with no backend opens its 3D view clean, and
+  `demo-fit.spec.mjs` walks all 33 to hold it there.
 
 ## Open items / next actions
 
@@ -1578,8 +1711,11 @@ Ordered by whether anyone can act on them today.
    hand. And a check which could not run must never read as success, the same
    rule the canary applies to itself.
 
-10. **26 of the 33 setups' demo scenarios ask for more than their own geometry
-    holds.** Measured on 09-03 by building each setup's demo scenario the way
+10. ~~**26 of the 33 setups' demo scenarios ask for more than their own geometry
+    holds.**~~ **Closed 2026-09-08.** The real number was 25 of 33 on the
+    path a visitor takes, and it is 0 now; see that session's section for
+    the six causes and the one convention deliberately left alone.
+    The original entry, for the record: measured on 09-03 by building each setup's demo scenario the way
     `tests/e2e/three-setup-matrix.spec.mjs` does and reading
     `scene.userData.unplacedOrganizerQty` and the plan-sourced organizers with
     `fits===false`. Only the pantry (the sample plan every visitor sees) was

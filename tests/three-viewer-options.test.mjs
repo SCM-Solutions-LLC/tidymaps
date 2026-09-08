@@ -66,3 +66,21 @@ test('changing the shelf count keeps hand-set heights instead of discarding them
   const evened=geometryWithShelfCount(custom,4,{ preserveSpacing:false });
   assert.deepEqual(evened.shelfYFracs,evenShelfFracs(4));
 });
+
+/* The regenerated spacing ran 0.08 to 0.90 and made the top compartment a
+   sliver: three inches in a 30-inch wall cabinet, with the other two
+   compartments sharing the remaining 27. Every projected plan's "Top shelf"
+   was that sliver, and a wide sideboard drawn as two drawers got a 3-inch top
+   drawer over a 31-inch one. n levels are n compartments of one height, with
+   the bottom board on the floor. */
+test('even shelf spacing gives every compartment the same height, top one included',()=>{
+  for(const n of [2,3,4,5,6,8]){
+    const fracs=evenShelfFracs(n);
+    assert.equal(fracs.length,n);
+    const pitch=fracs[0];   // the top compartment: from the top down to the first board
+    for(let i=1;i<n;i++) assert.ok(Math.abs((fracs[i]-fracs[i-1])-pitch)<1e-9,`n=${n}: compartment ${i} is not the same height as the top one`);
+    assert.ok(fracs[n-1]>=0.86,`n=${n}: the bottom board is not on the floor`);
+    assert.ok(fracs.every((v,i)=>i===0||v>fracs[i-1]));
+  }
+  assert.deepEqual(evenShelfFracs(1),[0.5]);
+});

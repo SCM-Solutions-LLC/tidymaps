@@ -49,6 +49,8 @@ export function build(ctx){
       normal: new THREE.Vector3(0,0,1),
       length: usable,
       gap: gapAbove[i],
+      // Wall shelves have no top board: the highest one is open above.
+      openAbove: floating&&!shelfYs.some((other,j)=>j!==i&&other>y+0.5),
       itemDepth: Math.min(D*0.55, 8),
     });
   });

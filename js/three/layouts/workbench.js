@@ -102,7 +102,7 @@ export function build(ctx){
       surfaces.push({
         index:idx, kind:'drawer', row, y, hitbox:hit,
         uDir: new THREE.Vector3(1,0,0), normal: new THREE.Vector3(0,0,1),
-        length:usable, gap:drawerH-1, itemDepth:Math.min(pullOut*0.8, 8),
+        length:usable, gap:drawerH-1, clearance:drawerH-T, depth:D-T-1, drawDepth:pullOut, itemDepth:Math.min(pullOut*0.8, 8),
       });
     } else {
       if(isWorktop){

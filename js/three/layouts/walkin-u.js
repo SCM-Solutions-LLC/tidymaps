@@ -33,7 +33,11 @@ function addRod(scene,length,x,y,z,axis,material){
 export function build(ctx){
   const {scene,geo,rowsByShelf,mats,layout}=ctx;
   const {W,H,D,T,NSH,shelfYs,gapAbove}=geo;
-  const shelfDepth=Math.max(8,Math.min(18,Math.min(W,D)*0.2));
+  /* A fifth of the smaller room dimension, held between 14 and 18 inches.
+     The floor used to be 8, which gave a 4-foot linen closet 9.6-inch
+     shelving that no basket in the catalog fits; 14 is the shallowest
+     closet shelf sold, and leaves a 20-inch aisle in that closet. */
+  const shelfDepth=Math.max(14,Math.min(18,Math.min(W,D)*0.2));
   const rodMat=new THREE.MeshStandardMaterial({color:0x8d9490,metalness:0.7,roughness:0.24});
 
   addBox(scene,W,T,D,0,T/2,0,mats.carcass);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {organizerSpecFor,ORGANIZER_TYPES,selectedProductNeeds} from '../js/three/organizerKinds.js';
+import {organizerSpecFor,ORGANIZER_TYPES,selectedProductNeeds,targetScore,surfaceAcceptsOrganizer,isMountedOrganizer} from '../js/three/organizerKinds.js';
 
 const base={surface:'shelf',row:{lv:'Eye level',zone:'Snacks'},itemKind:'food',space:'pantry',styles:[],prefs:[],existingText:''};
 
@@ -53,4 +53,28 @@ test('a need for one level is not placed on another because both say shelf',()=>
   assert.equal(organizerSpecFor({...base,row:{lv:'Top shelf',zone:'Bulk overflow · Rarely used'},productNeeds:needs}),null);
   assert.equal(organizerSpecFor({...base,row:{lv:'Middle shelf',zone:'Canned goods · Pasta'},productNeeds:needs}).type,'riser');
   assert.equal(organizerSpecFor({...base,row:{lv:'Back wall: eye level',zone:'Folded knits'},productNeeds:[{type:'basket',targetZone:'Left wall: high shelf'}]}),null);
+});
+
+/* The scene ranks a need's rows before any row is offered it, and it needs
+   the same scorer the matcher uses. "Below the bench" against a "Bench
+   drawers" row is a partial match; against the row that IS "Below the bench"
+   it is exact, and the exact one has to outscore it. */
+test('the row a target names outscores a row that merely overlaps it',()=>{
+  const exact=targetScore('Below the bench',{lv:'Below the bench',zone:'Safety gear · Cords'});
+  const partial=targetScore('Below the bench',{lv:'Bench drawers',zone:'Screws & fasteners'});
+  assert.ok(exact>partial&&partial>0,`exact ${exact} should beat partial ${partial}`);
+  assert.equal(targetScore('Every drawer',{lv:'Third drawer',zone:'Towels'}),1);
+});
+
+test('racks hang on doors and pegboards; nothing else goes there, and rods take nothing',()=>{
+  assert.equal(surfaceAcceptsOrganizer('door','door-rack'),true);
+  assert.equal(surfaceAcceptsOrganizer('shelf','door-rack'),false);
+  assert.equal(surfaceAcceptsOrganizer('pegboard','hook-rack'),true);
+  assert.equal(surfaceAcceptsOrganizer('door','hook-rack'),true);
+  assert.equal(surfaceAcceptsOrganizer('floor','hook-rack'),false);
+  assert.equal(surfaceAcceptsOrganizer('pegboard','clear-bin'),false);
+  assert.equal(surfaceAcceptsOrganizer('rod','basket'),false);
+  assert.equal(surfaceAcceptsOrganizer('drawer','divider'),true);
+  assert.equal(isMountedOrganizer('hook-rack'),true);
+  assert.equal(isMountedOrganizer('basket'),false);
 });
