@@ -1,23 +1,24 @@
-/* Design tokens mirrored from ../../css/tokens.css. The clips are baked
+/* Design tokens mirrored from ../../css/tokens.css (the one-accent world:
+   warm stone field, the drawings' own line, terracotta accent). The clips are baked
    video, so the site's CSS variables can't reach them — these constants ARE
    those variables, and a palette change in tokens.css means re-rendering.
    Chrome (Remotion's renderer) parses oklch() natively, so the values are
    copied verbatim rather than approximated in hex. */
 
 export const color = {
-  bg:        'oklch(0.935 0.007 90)',   // --surface-2: the .step-art band the clip sits on
-  surface3:  'oklch(0.910 0.008 90)',   // --surface-3: dust, recessed panels
-  ink:       'oklch(0.235 0.010 110)',  // --ink
-  ink2:      'oklch(0.38 0.010 110)',   // --ink-2
-  ink3:      'oklch(0.46 0.010 108)',   // --ink-3: the .step-art currentColor — main stroke
-  line:      'oklch(0.900 0.008 95)',   // --line
-  line2:     'oklch(0.840 0.010 95)',   // --line-2
-  primary:   'oklch(0.555 0.145 55)',   // terracotta accent
-  primaryBg: 'oklch(0.960 0.020 60)',
-  honey:     'oklch(0.885 0.078 90)',
-  honey2:    'oklch(0.72 0.105 82)',
-  sage:      'oklch(0.55 0.065 145)',
-  sageBg:    'oklch(0.948 0.024 148)',
+  bg:        'oklch(0.95 0.014 65)',    // --tint: the .step-art band the clip sits on
+  surface3:  'oklch(0.93 0.032 45)',    // --tint-2: dust, recessed panels
+  ink:       'oklch(0.25 0.012 45)',    // --ink
+  ink2:      'oklch(0.25 0.012 45)',    // --ink-2
+  ink3:      'oklch(0.40 0.022 45)',    // --draw: the drawings' line, the main stroke
+  line:      'oklch(0.40 0.022 45)',    // structure prints in the drawing line too
+  line2:     'oklch(0.62 0.018 50)',    // the floor and the staging items: the drawing line, lighter
+  primary:   'oklch(0.56 0.13 36)',     // --spot: terracotta accent
+  primaryBg: 'oklch(0.93 0.032 45)',    // --tint-2
+  honey:     'oklch(0.93 0.032 45)',    // --honey is the accent tint now
+  honey2:    'oklch(0.49 0.125 36)',    // --honey-2 is the accent's small-text cut
+  sage:      'oklch(0.56 0.13 36)',     // --sage is the accent
+  sageBg:    'oklch(0.95 0.014 65)',    // --sage-bg is the field
 } as const;
 
 /* One loop length per action, matching the CSS animation durations of the

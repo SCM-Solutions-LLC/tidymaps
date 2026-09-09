@@ -450,13 +450,15 @@ body[data-flow="1"] .site-footer{display:none}
 /* contain, not cover: clips are wide-format with the band's own surface color
    baked in, so letterboxing is invisible and nothing gets cropped (matches the
    inline style the loader sets in js/stepMedia.js) */
-.step-art video{width:100%;height:100%;object-fit:contain;filter:grayscale(1) contrast(2.4) brightness(1.12);mix-blend-mode:multiply}
+/* The clips are rendered in the site's own palette (remotion/src/tokens.ts
+   mirrors css/tokens.css), so they need no correction here. */
+.step-art video{width:100%;height:100%;object-fit:contain}
 @media(max-width:419px){.step-art{height:96px}.step-art .sa{width:88px;height:88px}}
 @media(prefers-reduced-motion:reduce){.step-art .sa *{animation:none!important}}
 
 /* The furniture the scene stands on: present, but never louder than the thing
    that is moving. */
-.sa .sa-fx{stroke:var(--ink-3);opacity:.8}
+.sa .sa-fx{stroke:var(--draw);opacity:.8}
 /* Every item glyph. Thinner than the furniture on purpose — a 10-unit object
    drawn at the 2px scene weight reads as a blob at 78px. */
 .sa .sa-it{fill:var(--surface);stroke:currentColor;stroke-width:1.55}

@@ -26,8 +26,8 @@ const only = onlyArg ? new Set((process.argv[process.argv.indexOf(onlyArg) + 1] 
 
 // The pre-installed Playwright Chromium; Remotion must not try to download
 // its own browser here (the sandbox blocks that fetch).
-const browserExecutable = process.env.REMOTION_BROWSER || '/opt/pw-browsers/chromium';
-const chromeMode = 'chrome-for-testing';
+const browserExecutable = process.env.REMOTION_BROWSER || null;
+const chromeMode = process.env.REMOTION_CHROME_MODE || 'chrome-for-testing';
 
 const keys = enumerateKeys()
   .map(({ key }) => key)
@@ -45,16 +45,25 @@ for (const key of keys) {
   const outPath = join(outDir, `${key}.webm`);
   if (!force && existsSync(outPath)) { skipped++; continue; }
   const inputProps = parseMediaKey(key);
-  const composition = await selectComposition({
-    serveUrl, id: 'StepClip', inputProps, browserExecutable, chromeMode,
-  });
-  await renderMedia({
-    serveUrl, composition, inputProps, browserExecutable, chromeMode,
-    codec: 'vp9', crf: 32, outputLocation: outPath,
-    // the clips are silent; muted keeps ffmpeg from writing an audio track
-    enforceAudioTrack: false, muted: true,
-    logLevel: 'warn',
-  });
+  // The headless browser occasionally fails to open its first page; a key is
+  // retried a few times before the whole run gives up on it.
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const composition = await selectComposition({
+        serveUrl, id: 'StepClip', inputProps, browserExecutable, chromeMode,
+      });
+      await renderMedia({
+        serveUrl, composition, inputProps, browserExecutable, chromeMode, concurrency: 2,
+        codec: 'vp9', crf: 32, outputLocation: outPath,
+        // the clips are silent; muted keeps ffmpeg from writing an audio track
+        enforceAudioTrack: false, muted: true,
+        logLevel: 'warn',
+      });
+      lastErr = null; break;
+    } catch (e) { lastErr = e; console.log(`  retry ${attempt} ${key}: ${String(e.message).split('\n')[0]}`); }
+  }
+  if (lastErr) throw lastErr;
   rendered++;
   console.log(`  ${String(rendered + skipped).padStart(3)}/${keys.length}  ${key}.webm`);
 }

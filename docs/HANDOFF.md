@@ -213,10 +213,13 @@ and actions left, Figure 1 right with its legend beneath.
 - **Report**: the plan hero is now the plan's own cupboard drawn as an
   elevation (`results.js planElevationSvg`, one shelf per map level, zone
   printed on the shelf); the four figures are a ruled table row; each step's
-  numeral is printed inside its square mark. Produced step clips still carry
-  the old beige field baked in; they print through a grayscale/contrast/
-  multiply filter as one ink on the tint band. Grey mid-tones remain: redraw
-  the 147 clips when the world settles, do not fight it in CSS.
+  numeral is printed inside its square mark. The produced step clips are
+  re-rendered in the site's own palette (`remotion/src/tokens.ts` mirrors
+  `css/tokens.css`: warm stone field, the drawings' line, terracotta accent),
+  so the grayscale/contrast/multiply filter that used to correct them is gone.
+  A palette change in tokens.css means updating tokens.ts and running
+  `node render-steps.mjs --force` from `remotion/` (about 25 minutes; the
+  script pins Remotion to port 3939 because 3000 is usually held).
 - **The nine space cards are redrawn as elevations** (`js/wizard-data.js`
   `EL_ART` / `EL_MOTION`, keys `el*`), in Figure 1's voice: one thin ink
   line, square corners, stock and tint fills, a short spot rule for a label,
