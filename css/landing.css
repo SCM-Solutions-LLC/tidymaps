@@ -31,9 +31,11 @@
   display:grid;gap:28px 48px;grid-template-columns:minmax(0,1fr);align-items:center;
   padding:clamp(28px,5vh,56px) 0 0;
 }
-@media(min-width:960px){.hero{grid-template-columns:minmax(0,10fr) minmax(0,13fr);gap:64px}}
+/* Half and half from 960px: the headline needs the width to hold two lines
+   at its own size, and the figure still reads at half the page. */
+@media(min-width:960px){.hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px}}
 .hero-copy{min-width:0}
-.hero h1{max-width:20ch}
+.hero h1{max-width:22ch}
 .hero-lede{font-size:clamp(16px,1.6vw,18px);line-height:1.6;color:var(--ink);max-width:44ch;margin:18px 0 0}
 .hero-actions{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-top:26px}
 .hero-actions .btn-primary{padding:15px 24px;font-size:14px}
