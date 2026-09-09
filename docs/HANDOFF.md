@@ -4,7 +4,10 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-09, after PR #130 merged (`main` at `9296f3f`): the
+**Last refreshed:** 2026-09-09, after PR #132 merged (`main` at `40b874e`): the 143
+step clips re-rendered in the site's own palette, the correcting CSS filter
+gone. That closes the last open design item from the redesign. Earlier the
+same day, PR #130 merged (`main` at `9296f3f`): the
 warmer cut of the one-accent redesign, with every drawing printed in its own
 softer line (`--draw`) rather than the type ink. That is what the live site
 shows. Before it, PR #128 (`5480b5b`, 03:43 UTC) landed the one-accent cut,
