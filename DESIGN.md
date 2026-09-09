@@ -203,7 +203,7 @@ A one-ink job on two papers with a terracotta accent: warm off-black on white st
 
 Two measures: lessons read at 760px (`--maxw`; legal text at 680px); the landing page, report, and dashboard spread to 1100px. Page gutter is 18px, rising to 24px at 560px. The running head (sticky, 1px rule beneath, thickening to 2px on scroll) and the flow footer (fixed, 2px rule above) are the page furniture; the progress rail under the running head is a 3px warm-grey track with the accent advancing along it.
 
-The hero is a split spread from 960px: copy in 10fr, Figure 1 in 13fr, 64px between; below that it stacks with the figure beneath the copy. Figure 1 carries its legend as a two-column ruled list (one column below 520px) and its caption last.
+The hero is a split spread from 960px: copy and Figure 1 in equal halves, 56px between, so the headline holds two lines at its own size; below that it stacks with the figure beneath the copy. Figure 1 carries its legend as a two-column ruled list (one column below 520px) and its caption last.
 
 Section rhythm on the landing page is `clamp(64px, 10vh, 104px)` above each h2. Inside a section: 30 to 34px to the first block, 12 to 16px between cards, 10 to 12px inside lists. Rules do the separating: lists and tables are stacks of rows with a 1px rule beneath each and a 1px or 2px rule on top of the whole.
 
