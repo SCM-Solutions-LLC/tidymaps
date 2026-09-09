@@ -4,16 +4,15 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-08, after PR #125 (open item 10: every setup's
-demo scenario fits its own 3D view) merged and deployed; the deployed state
-it describes is `main` at `9de99b6` (merged 15:39 UTC, Pages run 130 green
-15:54 UTC). The same day's earlier merge, PR #124 (the whole-site redesign,
-`main` at `02736ba`, Pages run 129 green 03:47 UTC), is deployed under it,
-and the model path canary last passed on 09-08 11:28 UTC against `02736ba`.
-The refresh before this one, 2026-09-07, was after the redesign as a draft
-PR, and the one before that, 2026-09-04, was after PR #120 merged and
-deployed (`main` at `7619fb8`, Pages run 125 green 09-04 00:59 UTC, its e2e
-step included). Everything
+**Last refreshed:** 2026-09-09, after PR #128 merged (`main` at `5480b5b`, 03:43
+UTC): the warm one-accent cut of the redesign, Archivo alone on a terracotta
+accent. That is what the live site shows. PR #127 (`65ff9cb`, 09-08 19:48 UTC)
+merged the linen cut and the elevation drawings for every space, setup and
+product card; PR #128 carries the three commits that followed it on the same
+branch and missed the merge, the same way #124's follow-ups had. PR #124
+(`02736ba`, 09-08 03:47 UTC) was the first cut of the redesign. Before that,
+2026-09-08 after PR #125 (`9de99b6`), and 2026-09-04 after PR #120
+(`7619fb8`). Everything
 through PR #115 is merged (`main` at `0bec7a0`) and **deployed** — Pages run 120 went green on 08-21, so the four
 viewer ports below are live on the site, not merely landed. `main` is the single
 source of truth.
