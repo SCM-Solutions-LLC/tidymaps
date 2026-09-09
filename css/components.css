@@ -458,7 +458,7 @@ body[data-flow="1"] .site-footer{display:none}
 
 /* The furniture the scene stands on: present, but never louder than the thing
    that is moving. */
-.sa .sa-fx{stroke:var(--ink-3);opacity:.8}
+.sa .sa-fx{stroke:var(--draw);opacity:.8}
 /* Every item glyph. Thinner than the furniture on purpose — a 10-unit object
    drawn at the 2px scene weight reads as a blob at 78px. */
 .sa .sa-it{fill:var(--surface);stroke:currentColor;stroke-width:1.55}
