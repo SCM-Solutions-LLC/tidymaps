@@ -37,14 +37,15 @@
      white type on it clears 4.6:1 and its darker cut, --spot-ink, clears
      5:1 as small text on white. The accent's own tint marks the eye-level
      zone in a figure, the one place a field is not grey. */
-  --stock:     #ffffff;
-  --ink:       oklch(0.24 0.006 50);   /* off-black, warm */
-  --spot:      oklch(0.56 0.125 40);   /* terracotta: buttons, marks */
-  --spot-deep: oklch(0.48 0.12 40);    /* pressed / hover */
-  --spot-ink:  oklch(0.49 0.12 40);    /* small accent text on white */
+  --stock:     oklch(0.992 0.004 75);  /* warm white, a shade off pure */
+  --ink:       oklch(0.25 0.012 45);   /* off-black, warm */
+  --draw:      oklch(0.40 0.022 45);   /* the drawings' line: softer than type ink */
+  --spot:      oklch(0.56 0.13 36);    /* terracotta: buttons, marks */
+  --spot-deep: oklch(0.48 0.125 36);   /* pressed / hover */
+  --spot-ink:  oklch(0.49 0.125 36);   /* small accent text on white */
   --brass:     var(--spot);            /* figure label rule: the accent */
-  --tint:      oklch(0.955 0.004 60);  /* warm grey, content fields */
-  --tint-2:    oklch(0.935 0.028 45);  /* accent tint, the eye-level zone */
+  --tint:      oklch(0.95 0.014 65);   /* warm stone, content fields */
+  --tint-2:    oklch(0.93 0.032 45);   /* accent tint, the eye-level zone */
 
   /* ---- Names the stylesheets already speak ------------------------------
      Kept so the wizard, report, viewer and library resolve without a rename
