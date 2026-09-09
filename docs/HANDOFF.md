@@ -4,9 +4,11 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-09, after PR #128 merged (`main` at `5480b5b`, 03:43
-UTC): the warm one-accent cut of the redesign, Archivo alone on a terracotta
-accent. That is what the live site shows. PR #127 (`65ff9cb`, 09-08 19:48 UTC)
+**Last refreshed:** 2026-09-09, after PR #130 merged (`main` at `9296f3f`): the
+warmer cut of the one-accent redesign, with every drawing printed in its own
+softer line (`--draw`) rather than the type ink. That is what the live site
+shows. Before it, PR #128 (`5480b5b`, 03:43 UTC) landed the one-accent cut,
+Archivo alone on a terracotta accent. PR #127 (`65ff9cb`, 09-08 19:48 UTC)
 merged the linen cut and the elevation drawings for every space, setup and
 product card; PR #128 carries the three commits that followed it on the same
 branch and missed the merge, the same way #124's follow-ups had. PR #124
