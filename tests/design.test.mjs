@@ -31,7 +31,7 @@ test('no trendy display font or third-party font CDN', () => {
   // Two faces, both self-hosted: Archivo for titles and labels, Source Serif 4
   // for reading. The preload names the same file the stylesheet does.
   assert.ok(tokens.includes('vendor/fonts/archivo-latin-wdth-normal.woff2'), 'Archivo is not self-hosted');
-  assert.ok(tokens.includes('vendor/fonts/bodoni-moda-latin-opsz-normal.woff2'), 'Bodoni Moda is not self-hosted');
+  assert.ok(!tokens.includes('@font-face{\n  font-family:"Bodoni'), 'a display serif is back');
   assert.ok(html.includes('rel="preload" href="vendor/fonts/archivo-latin-wdth-normal.woff2"'), 'Archivo is not preloaded');
 });
 
@@ -133,12 +133,11 @@ test('the plan hero placeholder is a decodable image, not a truncated one', () =
     'results.js sets a good illustration without clearing a stale hide');
 });
 
-// The Home-Economics Manual, bound in linen: white stock, warm charcoal ink
-// that is also the plate, stone fields, a brass rule. Print casts no shadow
-// and has no rounded corners.
-test('charcoal plate, stone fields, brass rule, no ambient gradients', () => {
-  assert.ok(tokens.includes('--spot:      oklch(0.27 0.006 60)'), 'the plate colour drifted');
-  assert.ok(tokens.includes('--brass:     oklch(0.68 0.10 82)'), 'the brass accent drifted');
+// The Home-Economics Manual: white stock, off-black ink, warm-grey fields,
+// one terracotta accent. Print casts no shadow and has no rounded corners.
+test('one terracotta accent, grey fields, no ambient gradients', () => {
+  assert.ok(tokens.includes('--spot:      oklch(0.56 0.125 40)'), 'the accent colour drifted');
+  assert.ok(tokens.includes('--brass:     var(--spot)'), 'a second accent is back');
   assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at the plate');
   assert.ok(tokens.includes('--radius: 0;'), 'rounded corners are back');
   assert.ok(tokens.includes('--shadow: none;'), 'shadows are back');

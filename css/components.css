@@ -337,7 +337,7 @@ textarea{resize:vertical;min-height:84px}
 .ai-dot{width:7px;height:7px;border-radius:0;background:var(--line-2);display:inline-block;margin-right:6px;vertical-align:middle;transition:.2s}
 .ai-dot.on{background:var(--good);box-shadow:0 0 0 3px color-mix(in oklch,var(--good) 25%,transparent)}
 #ai-status-btn{display:inline-flex;align-items:center}
-.modal-backdrop{position:fixed;inset:0;z-index:100;background:oklch(0.27 0.006 60 / .6);display:flex;align-items:center;justify-content:center;padding:18px}
+.modal-backdrop{position:fixed;inset:0;z-index:100;background:oklch(0.24 0.006 50 / .6);display:flex;align-items:center;justify-content:center;padding:18px}
 .modal{background:var(--stock);border:var(--rule-2);max-width:460px;width:100%;padding:clamp(22px,4vw,30px);animation:rise 0.38s cubic-bezier(.2,.7,.3,1);position:relative}
 .modal-x{position:absolute;top:8px;right:8px;width:44px;height:44px;border:none;background:none;color:var(--ink);display:grid;place-items:center;transition:.15s}
 .modal-x:hover{background:var(--surface-2);color:var(--ink)}
@@ -369,6 +369,8 @@ body[data-flow="1"] .site-footer{display:none}
 .footer-logo svg{width:20px;height:20px}
 .footer-links{font-size:13px;color:var(--ink-3);line-height:1.7}
 .footer-links > span{display:block}
+.footer-nav{display:flex;flex-wrap:wrap;gap:4px 14px}
+@media(min-width:680px){.footer-nav{justify-content:flex-end}}
 .footer-links a{color:var(--ink-2)}
 .footer-links a:hover{color:var(--ink)}
 .footer-legal{font-size:12px;color:var(--ink-3);line-height:1.7}
@@ -656,7 +658,7 @@ body[data-flow="1"] .site-footer{display:none}
 /* The nine space cards are elevations drawn in Figure 1's voice: one thin
    ink line, square corners, and a short spot rule standing in for a label. */
 .art-el{stroke-width:1}
-.art-el .lbl{stroke:var(--brass);stroke-width:1.2}
+.art-el .lbl{stroke:var(--spot);stroke-width:1.2}
 .art-el .case{stroke-width:1.6}
 :is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke]{stroke:var(--ink)}
 :is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke="#c15f00"],:is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke="#658e89"],:is(.card-art-svg,.pc-art-svg,.wy-buy-art svg,.pic-ico svg) [stroke="#7f9862"]{stroke:var(--spot-ink)}

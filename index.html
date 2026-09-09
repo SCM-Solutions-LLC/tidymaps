@@ -6,7 +6,7 @@
 <title>TidyMap: A practical plan for the space that keeps getting away from you</title>
 <meta name="description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own. No tidying up first." />
 <link rel="canonical" href="https://scmsolutions.org/tidymaps/" />
-<meta name="theme-color" content="#3a3936" />
+<meta name="theme-color" content="#b5522f" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="TidyMap" />
 <meta property="og:title" content="TidyMap: A practical plan for the space that keeps getting away from you" />
@@ -23,7 +23,6 @@
 <!-- The two faces are swapped in on arrival (font-display:swap), so the sooner
      they are requested the shorter the flash of the fallback. -->
 <link rel="preload" href="vendor/fonts/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="vendor/fonts/bodoni-moda-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/components.css" />
@@ -48,7 +47,7 @@
       <span class="brand-word">TidyMap</span>
     </a>
     <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="document.body.classList.toggle('nav-open');this.setAttribute('aria-expanded',document.body.classList.contains('nav-open'))">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l16 0M4 12l16 0M4 18l16 0"/></svg>
     </button>
     <nav class="site-nav" aria-label="Site">
       <a href="#spaces" onclick="return navHome('#spaces')">Spaces</a>
@@ -73,7 +72,7 @@
 <div class="modal-backdrop hide" id="auth-modal" onclick="if(event.target===this)closeAuth()">
   <div class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <button class="modal-x" onclick="closeAuth()" aria-label="Close sign-in">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12M6 6l12 12"/></svg>
     </button>
     <h3 class="auth-title" id="auth-title">Save your spaces</h3>
     <p class="small muted auth-sub">Enter your email and we&rsquo;ll send an 8-digit code. Nothing to remember.</p>
@@ -100,18 +99,16 @@
 <!-- ============================================================ 1. LANDING -->
 <section class="screen wide active" id="screen-landing">
 
-  <!-- Chapter opener. The manual's first page: a plate-coloured band with the
-       chapter number and title, then Figure 1, then the exercise box. -->
-  <div class="chapter-open">
-    <div class="chapter-open-inner">
-      <span class="chapter-num" aria-hidden="true">1</span>
-      <div class="chapter-title">
-        <h1>Bring order to the room that runs your day.</h1>
-        <p class="hero-lede">Photograph one space. Get a step-by-step plan built around your shelves, your household, and everything you already own.</p>
+  <!-- Hero: headline and actions on the left, Figure 1 on the right. -->
+  <div class="hero" id="start">
+    <div class="hero-copy">
+      <h1>Bring order to the room that runs your day.</h1>
+      <p class="hero-lede">Photograph one space. Get a step-by-step plan built around your shelves, your household, and everything you already own.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="go('space')">Plan my space</button>
+        <button class="home-link" onclick="runDemo()">View a sample plan</button>
       </div>
     </div>
-  </div>
-
   <!-- Figure 1: the sample pantry, drawn as a cupboard elevation. The items
        start where a mid-week pantry leaves them and slide into the zones the
        plan assigns; the labels on the right are the plan's own reasons.
@@ -119,7 +116,7 @@
        about anyone's real shelves. -->
   <figure class="fig fig-1" id="fig-1">
     <div class="fig-stage">
-      <svg class="fig-el" id="fig-el" viewBox="0 0 1200 560" role="img" aria-labelledby="fig-1-title fig-1-desc">
+      <svg class="fig-el" id="fig-el" viewBox="40 10 740 540" role="img" aria-labelledby="fig-1-title fig-1-desc">
         <title id="fig-1-title">Figure 1. A pantry elevation, before and after the plan.</title>
         <desc id="fig-1-desc">Thirty jars, boxes, bottles, spice jars and bins scattered across four shelves slide into four labeled zones: seldom-used and hazards on the top shelf, daily food at eye level, kids' snacks and heavy jars on the lower shelf, bulk bins on the floor.</desc>
         <defs>
@@ -186,51 +183,17 @@
           <g class="it" style="--jx:-32px;--jy:-122px;--jr:-20deg;--i:29"><use href="#f-box" x="480" y="410" width="62" height="98"/></g>
         </g>
 
-        <!-- the plan's reasons, with leader lines -->
-        <g class="f-notes">
-          <g class="f-note" style="--i:0">
-            <line x1="762" y1="90" x2="812" y2="90" class="f-lead"/>
-            <text x="826" y="84" class="f-note-h">Top shelf</text>
-            <text x="826" y="110" class="f-note-t">Seldom used. Hazards go high or behind a latch.</text>
-          </g>
-          <g class="f-note f-note-eye" style="--i:1">
-            <line x1="762" y1="210" x2="812" y2="210" class="f-lead"/>
-            <text x="826" y="204" class="f-note-h">Eye level</text>
-            <text x="826" y="230" class="f-note-t">Daily. Reached every morning, so it sits where hands land first.</text>
-          </g>
-          <g class="f-note" style="--i:2">
-            <line x1="762" y1="330" x2="812" y2="330" class="f-lead"/>
-            <text x="826" y="324" class="f-note-h">Lower shelf</text>
-            <text x="826" y="350" class="f-note-t">Kids' snacks within reach. Heavy jars low, so nobody climbs.</text>
-          </g>
-          <g class="f-note" style="--i:3">
-            <line x1="762" y1="450" x2="812" y2="450" class="f-lead"/>
-            <text x="826" y="444" class="f-note-h">Floor</text>
-            <text x="826" y="470" class="f-note-t">Bulk overflow in the bins you already own.</text>
-          </g>
-        </g>
       </svg>
       <button type="button" class="fig-replay" id="fig-replay" aria-controls="fig-el">Sort it again</button>
     </div>
-    <ol class="fig-notes" aria-hidden="true">
+    <ol class="fig-notes">
       <li><span class="fig-note-h">Top shelf</span><span class="fig-note-t">Seldom used. Hazards go high or behind a latch.</span></li>
       <li class="fig-note-eye"><span class="fig-note-h">Eye level</span><span class="fig-note-t">Daily. Reached every morning, so it sits where hands land first.</span></li>
       <li><span class="fig-note-h">Lower shelf</span><span class="fig-note-t">Kids' snacks within reach. Heavy jars low, so nobody climbs.</span></li>
       <li><span class="fig-note-h">Floor</span><span class="fig-note-t">Bulk overflow in the bins you already own.</span></li>
     </ol>
-    <figcaption><span class="fig-n">Fig. 1</span> The sample pantry, before and after its plan. Every space gets the same treatment: each shelf becomes a zone, and each zone says why.</figcaption>
+    <figcaption>The sample pantry, before and after its plan. Every space gets the same treatment: each shelf becomes a zone, and each zone says why.</figcaption>
   </figure>
-
-  <!-- The exercise box -->
-  <div class="exercise" id="start">
-    <div class="exercise-body">
-      <p class="exercise-q">Which space is running your day? Photograph it as it is, mid-week mess and all, and answer about ten minutes of questions.</p>
-      <div class="hero-actions">
-        <button class="btn btn-primary" onclick="go('space')">Plan my space</button>
-        <button class="home-link" onclick="runDemo()">View a sample plan</button>
-      </div>
-      <p class="exercise-note">No account needed to try it. Free while TidyMap is in early access.</p>
-    </div>
   </div>
 
   <!-- Every space TidyMap plans, rendered from the wizard's own data so the
@@ -247,30 +210,30 @@
   <div class="home-sec" id="product">
     <h2>What you get</h2>
     <p class="sec-sub">Three parts, in every plan.</p>
-    <div class="product-shots">
+    <div class="product-shots zigzag">
       <figure class="product-shot">
         <figcaption>
-          <h3><span class="fig-n">Fig. 2</span>Where things go</h3>
+          <h3>Where things go</h3>
           <p>Every shelf becomes a zone, and each one says why.</p>
         </figcaption>
         <div class="wy-vis" aria-hidden="true">
           <div class="wy-zone">
             <span class="wy-zone-name">Eye level</span>
-            <span class="wy-zone-items">Daily snacks &middot; Breakfast &middot; Coffee</span>
+            <span class="wy-zone-items">Daily snacks, breakfast, coffee</span>
             <span class="wy-why">Reached every morning, so it sits where hands land first.</span>
             <span class="wy-flag">Kid safe</span>
           </div>
-          <div class="wy-zone dim"><span class="wy-zone-name">Lower shelf</span><span class="wy-zone-items">Kid snacks &middot; Heavy jars</span></div>
+          <div class="wy-zone dim"><span class="wy-zone-name">Lower shelf</span><span class="wy-zone-items">Kid snacks, heavy jars</span></div>
           <div class="wy-zone dim"><span class="wy-zone-name">Top shelf</span><span class="wy-zone-items">Bulk overflow</span></div>
         </div>
       </figure>
       <figure class="product-shot">
         <figcaption>
-          <h3><span class="fig-n">Fig. 3</span>Step-by-step</h3>
+          <h3>Step-by-step</h3>
           <p>Short, timed steps. Do one tonight or the lot on Saturday.</p>
         </figcaption>
         <div class="wy-vis" aria-hidden="true">
-          <div class="wy-prog"><span class="wy-prog-bar"><i style="width:33%"></i></span><span class="wy-prog-txt">3 of 9 done</span></div>
+          <div class="wy-prog"><span class="wy-prog-marks"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="wy-prog-txt">3 of 9 done</span></div>
           <div class="wy-step done"><span class="wy-tick"></span><span class="wy-step-txt">Empty one shelf at a time</span><span class="wy-time">10 min</span></div>
           <div class="wy-step doing"><span class="wy-tick"></span><span class="wy-step-txt">Group what&rsquo;s used together</span><span class="wy-time">15 min</span></div>
           <div class="wy-step"><span class="wy-tick"></span><span class="wy-step-txt">Move kid snacks within reach</span><span class="wy-time">5 min</span></div>
@@ -278,7 +241,7 @@
       </figure>
       <figure class="product-shot">
         <figcaption>
-          <h3><span class="fig-n">Fig. 4</span>Optional purchases</h3>
+          <h3>Optional purchases</h3>
           <p>Sized to your shelves, only if you ask. The $0 plan works without them.<span id="affil-note" class="hide"> TidyMap may earn a commission on qualifying purchases made through retailer links. Prices stay the same for you.</span> <button class="home-link" onclick="openProducts()">Browse the product library</button></p>
         </figcaption>
         <div class="wy-vis" aria-hidden="true">
@@ -297,7 +260,7 @@
     <div class="story-grid">
       <figure class="story-photo">
         <img data-img="sample-after" src="assets/photos/ex-pantry-after.webp" width="542" height="715" alt="The finished pantry: labeled jars and bins on every shelf, snacks within reach, bulk stock up top" loading="lazy" onerror="this.closest('.story-grid').classList.add('no-photo')">
-        <figcaption><span class="fig-n">Fig. 5</span> The pantry from this plan, after the nine steps.</figcaption>
+        <figcaption>The pantry from this plan, after the nine steps.</figcaption>
       </figure>
       <div class="story-plan">
         <p class="story-label">Plan excerpt</p>
@@ -309,10 +272,10 @@
             <tr><td>Top shelf</td><td>Bulk overflow and rarely used things</td></tr>
           </tbody>
         </table>
-        <p class="story-foot">Nine steps, 45&ndash;90 minutes, $0 to start. <button class="home-link" onclick="runDemo()">Open the full sample plan</button></p>
+        <p class="story-foot">Nine steps, 45-90 minutes, $0 to start. <button class="home-link" onclick="runDemo()">Open the full sample plan</button></p>
         <figure class="story-3d">
           <img data-img="product-hero-3d" src="assets/product/hero-3d.webp" width="522" height="700" alt="The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf" loading="lazy" onerror="this.closest('.story-3d').classList.add('hide')">
-          <figcaption><span class="fig-n">Fig. 6</span> The same plan standing up, in the 3D view. Drag any item to a different shelf to try another arrangement.</figcaption>
+          <figcaption>The same plan standing up, in the 3D view. Drag any item to a different shelf to try another arrangement.</figcaption>
         </figure>
       </div>
     </div>
@@ -435,7 +398,7 @@
 <section class="screen wizard" id="screen-space">
   <div class="step-head"><span class="step-num">Step 1 of 11</span></div>
   <h2>Which space needs sorting out?</h2>
-  <p class="wz-sub">Pick the one spot we'll plan first. Small wins stack up, and you can always come back for another.</p>
+  <p class="wz-sub">Pick the one spot we'll plan first. Small wins stack up, and you can always come back for another. No account needed.</p>
   <div class="space-cards" id="space-cards"></div>
 </section>
 
@@ -773,7 +736,7 @@
             <ul class="shopping" id="res-shopping"></ul>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1.5px solid var(--line)">
               <span style="font-weight:600">Estimated cost</span>
-              <span style="font-weight:600;font-family:var(--serif);font-size:18px" id="res-shop-total">$45&ndash;$85</span>
+              <span style="font-weight:600;font-family:var(--serif);font-size:18px" id="res-shop-total">$45-$85</span>
             </div>
             <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
               <button class="btn btn-ghost btn-sm" onclick="downloadShoppingList()">Download list</button>
@@ -1044,13 +1007,14 @@
       <span>TidyMap</span>
     </div>
     <div class="footer-links">
-      <span>Built by <a href="https://scmsolutions.org">SCM Solutions</a> &middot; <a href="mailto:contact@scmsolutions.org">contact@scmsolutions.org</a></span>
+      <span>Built by <a href="https://scmsolutions.org">SCM Solutions</a></span>
+      <span><a href="mailto:contact@scmsolutions.org">contact@scmsolutions.org</a></span>
       <span>Organizing plans built from photos of your real space, starting with what you already own.</span>
     </div>
     <div class="footer-legal">
       <span>&copy; <span data-year>2026</span> SCM Solutions LLC</span>
       <span>Your photos stay private. We never sell your data.</span>
-      <span><button class="home-link" onclick="openProducts()">Products</button> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="security.html">Security</a> &middot; <a href="cookies.html">Cookies</a> &middot; <a href="accessibility.html">Accessibility</a></span>
+      <span class="footer-nav"><button class="home-link" onclick="openProducts()">Products</button> <a href="privacy.html">Privacy</a> <a href="terms.html">Terms</a> <a href="security.html">Security</a> <a href="cookies.html">Cookies</a> <a href="accessibility.html">Accessibility</a></span>
     </div>
   </div>
 </footer>
