@@ -136,7 +136,7 @@ test('the plan hero placeholder is a decodable image, not a truncated one', () =
 // The Home-Economics Manual: white stock, off-black ink, warm-grey fields,
 // one terracotta accent. Print casts no shadow and has no rounded corners.
 test('one terracotta accent, grey fields, no ambient gradients', () => {
-  assert.ok(tokens.includes('--spot:      oklch(0.56 0.125 40)'), 'the accent colour drifted');
+  assert.ok(tokens.includes('--spot:      oklch(0.56 0.13 36)'), 'the accent colour drifted');
   assert.ok(tokens.includes('--brass:     var(--spot)'), 'a second accent is back');
   assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at the plate');
   assert.ok(tokens.includes('--radius: 0;'), 'rounded corners are back');

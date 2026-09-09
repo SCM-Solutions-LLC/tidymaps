@@ -43,13 +43,15 @@
 /* ---------- Figure 1 ---------- */
 .fig{margin:0;min-width:0}
 .fig-stage{position:relative}
-.fig-el{display:block;width:100%;height:auto;overflow:hidden;font-family:var(--sans);border:var(--rule)}
+.fig-el{display:block;width:100%;height:auto;overflow:hidden;font-family:var(--sans);border:1px solid var(--draw)}
 .fig figcaption{margin:12px 0 0;font-size:14px;line-height:1.5;color:var(--ink)}
 /* the cupboard is inked; the items are inked; nothing is filled but the zones */
-.f-case{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round}
-.f-case .f-outer{stroke-width:4}
-.f-items{fill:var(--stock);stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.f-items .f-lbl{stroke:var(--spot);stroke-width:2.6}
+/* The drawings print in a softer line than the type: a warm dark rather than
+   the ink, and a lighter weight, so a page of them does not shout. */
+.f-case{fill:none;stroke:var(--draw);stroke-width:2;stroke-linejoin:round}
+.f-case .f-outer{stroke-width:3}
+.f-items{fill:var(--stock);stroke:var(--draw);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.f-items .f-lbl{stroke:var(--spot);stroke-width:2.2}
 .f-items .f-latch{fill:var(--stock);stroke:var(--spot-ink);stroke-width:2.2}
 .f-hazard use:first-child{fill:var(--tint)}
 /* Each item starts where the mess left it and travels to its zone. The
