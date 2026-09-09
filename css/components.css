@@ -450,7 +450,9 @@ body[data-flow="1"] .site-footer{display:none}
 /* contain, not cover: clips are wide-format with the band's own surface color
    baked in, so letterboxing is invisible and nothing gets cropped (matches the
    inline style the loader sets in js/stepMedia.js) */
-.step-art video{width:100%;height:100%;object-fit:contain;filter:grayscale(1) contrast(2.4) brightness(1.12);mix-blend-mode:multiply}
+/* The clips are rendered in the site's own palette (remotion/src/tokens.ts
+   mirrors css/tokens.css), so they need no correction here. */
+.step-art video{width:100%;height:100%;object-fit:contain}
 @media(max-width:419px){.step-art{height:96px}.step-art .sa{width:88px;height:88px}}
 @media(prefers-reduced-motion:reduce){.step-art .sa *{animation:none!important}}
 

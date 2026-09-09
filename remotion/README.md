@@ -45,9 +45,22 @@ npm run studio         # live-preview compositions while editing scenes
 A design change to `Stage`, `Ambience`, `motifs` or `glyphs` touches every
 clip, so it needs `--force` and a full ~25-minute re-render.
 
-Rendering uses the pre-installed Playwright Chromium
-(`/opt/pw-browsers/chromium`, override with `REMOTION_BROWSER`) because the
-sandbox blocks Remotion's own browser download.
+Rendering uses a pre-installed browser rather than Remotion's own download
+(the sandbox blocks that fetch). In the sandbox that is
+`/opt/pw-browsers/chromium`; on a Mac with Playwright installed, point
+`REMOTION_BROWSER` at Playwright's chrome-headless-shell and set
+`REMOTION_CHROME_MODE=headless-shell`, which is the combination that renders
+every key without retries (Chrome for Testing 1228 under Node 26 failed most
+keys with "no response" and root-component timeouts):
+
+```sh
+REMOTION_BROWSER="$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1228/chrome-headless-shell-mac-arm64/chrome-headless-shell" \
+REMOTION_CHROME_MODE=headless-shell node render-steps.mjs --force
+```
+
+The script retries each key three times before giving up, and a plain run
+(no `--force`) renders only the keys whose file is missing, so an interrupted
+render resumes where it stopped.
 
 After rendering, `npm test` at the repo root runs
 `tests/step-media.test.mjs`, which fails the build on a manifest entry whose
