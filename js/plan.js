@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { evenShelfFracs } from './three/viewerOptions.js';
-import { iconFor } from './icons.js';
+import { iconKey } from './icons.js';
 import { MAP, DEMO_GEOMETRY, DEMO_SAFETY_NOTES, DEMO_PRODUCT_NEEDS } from './data.js';
 import { normalizeLayout, surfaceFromIcon, SURFACES, SETUP_ARCHETYPE } from './layout.js';
 import { kidAgeYears } from './wizard-data.js';
@@ -79,7 +79,7 @@ function normalizeItems(arr){
   }));
 }
 
-// Derive surface kind from raw icon keyword (must happen before iconFor converts to SVG)
+// Derive surface kind from raw icon keyword (must happen before iconKey canonicalises it)
 function deriveSurface(raw, iconKeyword) {
   if (raw && SURFACES.includes(raw)) return raw;
   return surfaceFromIcon(iconKeyword) || null;
@@ -89,7 +89,13 @@ function deriveSurface(raw, iconKeyword) {
    already-normalized plan (db.js writes state.ai), and the share-link path
    runs it through here again — reading only the raw names blanked every step
    title, zone level and category for every visitor on a shared plan. Each
-   field below accepts the raw name first, then its normalized twin. */
+   field below accepts the raw name first, then its normalized twin.
+
+   Icons are the one field where "accept the normalized twin" was a hole.
+   `ic`/`ico` hold a KEY into the icon table (js/icons.js), and iconKey maps a
+   model keyword, a stored key, or the SVG an older row saved, to one. It never
+   passes a string through, because a share payload is built from a row its
+   owner can write by hand, and the report's innerHTML is where it lands. */
 const pick = (raw, norm) => (raw !== undefined && raw !== null ? raw : norm);
 
 // Convert raw AI JSON into the exact shapes the UI render code expects
@@ -100,11 +106,11 @@ export function normalizeAi(j){
     spaceType: s(j.spaceType)||'Space',
     summary: s(j.summary),
     cats: (pick(j.categories, j.cats)||[]).map(s).filter(Boolean),
-    features: (j.features||[]).map(f=>({ico:iconFor(pick(f.icon, f.ico)), ttl:s(pick(f.title, f.ttl)), sub:s(f.sub)})),
+    features: (j.features||[]).map(f=>({ico:iconKey(pick(f.icon, f.ico)), ttl:s(pick(f.title, f.ttl)), sub:s(f.sub)})),
     problems: (j.problems||[]).map(s).filter(Boolean),
     opportunities: (j.opportunities||[]).map(s).filter(Boolean),
     map: rawMap.map((m,i)=>({
-      lv:s(pick(m.level, m.lv)), ic:iconFor(pick(m.icon, m.ic)), zone:s(m.zone), why:s(m.why), eye:!!m.eye,
+      lv:s(pick(m.level, m.lv)), ic:iconKey(pick(m.icon, m.ic)), zone:s(m.zone), why:s(m.why), eye:!!m.eye,
       shelfIndex: Math.max(0, Math.min(geometry.shelfCount-1, nonNegInt(m.shelfIndex, i))),
       safety: {
         flag: (m.safety && SAFETY_FLAGS.has(m.safety.flag)) ? m.safety.flag : null,
@@ -137,7 +143,7 @@ export function normalizeAi(j){
        uses it to scope prose that would otherwise read as findings. */
     observed: j.observed !== false,
     existingLede: s(j.existingLede),
-    existing: (j.existing||[]).map(e=>({ico:iconFor(pick(e.icon, e.ico)), ft:s(pick(e.title, e.ft)), fd:s(pick(e.detail, e.fd))})),
+    existing: (j.existing||[]).map(e=>({ico:iconKey(pick(e.icon, e.ico)), ft:s(pick(e.title, e.ft)), fd:s(pick(e.detail, e.fd))})),
     dontBuy: s(j.dontBuy),
     /* `cite` is the user's own answer, carried on the step's face rather than
        inside the collapsed "Why?" panel. It has to survive this whitelist or

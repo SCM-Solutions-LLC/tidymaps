@@ -73,31 +73,31 @@ export const EFFORT = [
 
 /* Demo / mock AI output */
 export const DEMO_FEATURES = [
-  {ico:SVG.layers,ttl:'5 shelves',sub:'Top shelf is hard to reach'},
-  {ico:SVG.shoppingBag,ttl:'2 baskets',sub:'Currently underused'},
-  {ico:SVG.archive,ttl:'1 deep bin',sub:'Good for overflow'},
-  {ico:SVG.arrowsH,ttl:'Open shelf space on the right',sub:'Unused'},
-  {ico:SVG.arrowsV,ttl:'Unused vertical space',sub:'Above the cans'},
-  {ico:SVG.arrowDown,ttl:'Lower shelf',sub:'Can hold heavier items'},
-  {ico:SVG.xCircle,ttl:'No visible hooks',sub:'Detected'},
-  {ico:SVG.door,ttl:'No door rack',sub:'Detected'}
+  {ico:'layers',ttl:'5 shelves',sub:'Top shelf is hard to reach'},
+  {ico:'shoppingBag',ttl:'2 baskets',sub:'Currently underused'},
+  {ico:'archive',ttl:'1 deep bin',sub:'Good for overflow'},
+  {ico:'arrowsH',ttl:'Open shelf space on the right',sub:'Unused'},
+  {ico:'arrowsV',ttl:'Unused vertical space',sub:'Above the cans'},
+  {ico:'arrowDown',ttl:'Lower shelf',sub:'Can hold heavier items'},
+  {ico:'xCircle',ttl:'No visible hooks',sub:'Detected'},
+  {ico:'door',ttl:'No door rack',sub:'Detected'}
 ];
 export const DEMO_CATS = ['Snacks','Canned goods','Pasta & grains','Baking supplies','Spices & sauces','Breakfast items','Paper goods','Bulk overflow','Kids’ snacks','Loose packets','Duplicate items','Possible expired items'];
 
 export const MAP = [
-  {lv:'Top shelf',ic:SVG.arrowUp,zone:'Bulk overflow · Backup paper goods · Rarely used items',why:'These items are used less often and do not need to be easy to reach.',
+  {lv:'Top shelf',ic:'arrowUp',zone:'Bulk overflow · Backup paper goods · Rarely used items',why:'These items are used less often and do not need to be easy to reach.',
     shelfIndex:0,safety:{flag:'keep-high',why:'Rarely used bulk stays out of the way of daily traffic.'},
     items:[{name:'Bulk overflow',size:'l',flags:['heavy']},{name:'Paper goods',size:'l',flags:[]},{name:'Rarely used',size:'m',flags:[]}]},
-  {lv:'Eye level',ic:SVG.eye,eye:true,zone:'Daily snacks · Breakfast items · Coffee or tea',why:'Frequently used items should be visible and easy to access.',
+  {lv:'Eye level',ic:'eye',eye:true,zone:'Daily snacks · Breakfast items · Coffee or tea',why:'Frequently used items should be visible and easy to access.',
     shelfIndex:1,safety:{flag:null,why:null},
     items:[{name:'Daily snacks',size:'m',flags:['kid-frequent']},{name:'Breakfast',size:'m',flags:[]},{name:'Coffee & tea',size:'s',flags:[]}]},
-  {lv:'Middle shelf',ic:SVG.alignCenter,zone:'Canned goods · Pasta · Grains · Dinner ingredients',why:'Meal-building items should be grouped together to reduce searching.',
+  {lv:'Middle shelf',ic:'alignCenter',zone:'Canned goods · Pasta · Grains · Dinner ingredients',why:'Meal-building items should be grouped together to reduce searching.',
     shelfIndex:2,safety:{flag:null,why:null},
     items:[{name:'Canned goods',size:'m',flags:['heavy']},{name:'Pasta & grains',size:'m',flags:[]},{name:'Dinner ingredients',size:'m',flags:[]}]},
-  {lv:'Lower shelf',ic:SVG.arrowDown,zone:'Heavy items · Kid-friendly snacks · Large containers',why:'Heavy items are safer lower down, and kid snacks stay within reach.',
+  {lv:'Lower shelf',ic:'arrowDown',zone:'Heavy items · Kid-friendly snacks · Large containers',why:'Heavy items are safer lower down, and kid snacks stay within reach.',
     shelfIndex:3,safety:{flag:'kid-safe',why:'Kid snacks stay reachable without climbing; heavy items cannot fall far.'},
     items:[{name:'Heavy items',size:'l',flags:['heavy']},{name:'Kid snacks',size:'s',flags:['kid-frequent']},{name:'Large containers',size:'l',flags:[]}]},
-  {lv:'Door / side',ic:SVG.panelRight,zone:'Spices · Sauces · Small packets',why:'Small items are easier to manage in narrow zones or small organizers.',
+  {lv:'Door / side',ic:'panelRight',zone:'Spices · Sauces · Small packets',why:'Small items are easier to manage in narrow zones or small organizers.',
     shelfIndex:4,safety:{flag:null,why:null},
     items:[{name:'Spices',size:'s',flags:[]},{name:'Sauces',size:'s',flags:['fragile']},{name:'Small packets',size:'s',flags:[]}]}
 ];
@@ -116,12 +116,12 @@ export const DEMO_PRODUCT_NEEDS = [
   {type:'label-set',qty:1,purpose:'Make the zones easy for the whole household to keep',targetZone:'Every zone',maxDims:null,priority:'nice'}
 ];
 export const EXISTING = [
-  {ico:SVG.shoppingBag,ft:'Reuse: 2 baskets',fd:'Use these for snacks and breakfast items.'},
-  {ico:SVG.archive,ft:'Reuse: deep bin',fd:'Use for overflow and backup items.'},
-  {ico:SVG.arrowsH,ft:'Right-side open space',fd:'Assign to daily-use items.'},
-  {ico:SVG.arrowsV,ft:'Unused vertical space',fd:'Stack cans by type to reclaim height.'},
-  {ico:SVG.arrowDownCircle,ft:'Lower shelf',fd:'Move heavy items here for stability.'},
-  {ico:SVG.minusCircle,ft:'Keep one zone empty',fd:'Leave room near the front for daily access.'}
+  {ico:'shoppingBag',ft:'Reuse: 2 baskets',fd:'Use these for snacks and breakfast items.'},
+  {ico:'archive',ft:'Reuse: deep bin',fd:'Use for overflow and backup items.'},
+  {ico:'arrowsH',ft:'Right-side open space',fd:'Assign to daily-use items.'},
+  {ico:'arrowsV',ft:'Unused vertical space',fd:'Stack cans by type to reclaim height.'},
+  {ico:'arrowDownCircle',ft:'Lower shelf',fd:'Move heavy items here for stability.'},
+  {ico:'minusCircle',ft:'Keep one zone empty',fd:'Leave room near the front for daily access.'}
 ];
 export const STEPS = [
   {t:'Remove expired or duplicate items first',m:'10 min',w:'This creates space before reorganizing anything.'},

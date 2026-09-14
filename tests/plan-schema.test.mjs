@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validatePlan, EFFORT_STEP_RANGES, ARCHETYPES, SURFACES, PLACES, usableShelfDepth,
-         STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS } from '../supabase/functions/_shared/planSchema.js';
+         STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS, PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../supabase/functions/_shared/planSchema.js';
 import {
   ARCHETYPES as CLIENT_ARCHETYPES,
   SURFACES as CLIENT_SURFACES,
@@ -185,6 +185,53 @@ test('the enforced-limits block states the step-length caps the validator applie
   assert.match(fn, /\$\{STEP_TASK_MAX_WORDS\} words or fewer/,
     'the prompt must interpolate the constant, not retype the number');
   assert.match(fn, /\$\{STEP_WHY_MAX_WORDS\} or fewer/);
+});
+
+/* String length. The plan is stored as returned and re-sent to every visitor
+   of a share link, and until now nothing bounded a single field. The cap is
+   an abuse bound: the longest string the deterministic scenarios ship is under
+   400 characters, and the prompt's own word limits sit far below that, so a
+   compliant answer never meets it. Icons are keywords from a stated list. */
+test('a string past the text cap is rejected, one at it passes', () => {
+  const at = 'x'.repeat(PLAN_TEXT_MAX_CHARS);
+  assert.equal(validatePlan({ ...basePlan(), summary: at }, noKidsContext).ok, true);
+  const result = validatePlan({ ...basePlan(), summary: `${at}x` }, noKidsContext);
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /^summary:/m);
+});
+
+test('an icon past the keyword cap is rejected; every keyword the prompt names passes', () => {
+  const row = (icon) => ({ level: 'Top shelf', icon, zone: 'Bulk', why: 'Rarely used.', shelfIndex: 0, safety: { flag: null, why: null } });
+  const long = validatePlan(basePlan({ map: [row('<svg onload="1"></svg>'.repeat(3))] }), noKidsContext);
+  assert.equal(long.ok, false);
+  assert.match(long.errors.join('\n'), /^map\.0\.icon:/m);
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  // The two `"icon": string` lines each end in a comment listing keywords as a|b|c.
+  const listed = fn.split('\n')
+    .filter((line) => line.includes('"icon": string'))
+    .flatMap((line) => [...line.slice(line.indexOf('//')).matchAll(/\b[a-z]+(?:\|[a-z]+)+\b/g)].map((m) => m[0]))
+    .flatMap((run) => run.split('|'));
+  assert.ok(listed.length >= 15, `expected the prompt's icon keyword lists, found ${listed.length}`);
+  for (const icon of listed) {
+    assert.equal(validatePlan(basePlan({ map: [row(icon)] }), noKidsContext).ok, true, `prompt keyword "${icon}" rejected`);
+    assert.ok(icon.length <= PLAN_ICON_MAX_CHARS);
+  }
+});
+
+test('the text cap clears every string the deterministic scenarios ship, with room', () => {
+  const src = readFileSync(new URL('../js/demo-scenarios.js', import.meta.url), 'utf8');
+  let longest = 0;
+  for (const m of src.matchAll(/'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`/g)) {
+    longest = Math.max(longest, (m[1] ?? m[2] ?? m[3] ?? '').length);
+  }
+  assert.ok(longest > 200, `expected to have read the scenarios' prose, longest string was ${longest}`);
+  assert.ok(longest * 2 <= PLAN_TEXT_MAX_CHARS, `cap ${PLAN_TEXT_MAX_CHARS} is within 2x of the scenarios' own ${longest}`);
+});
+
+test('the enforced-limits block states the length caps the validator applies', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /\$\{PLAN_TEXT_MAX_CHARS\} characters/, 'the prompt must interpolate the constant, not retype the number');
+  assert.match(fn, /\$\{PLAN_ICON_MAX_CHARS\} or fewer/);
 });
 
 test('two map rows claiming the same shelfIndex are rejected instead of double-counted', () => {

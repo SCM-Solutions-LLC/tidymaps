@@ -3,7 +3,8 @@ import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
 import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth, ARCHETYPES,
-         KID_REACH_IN, YOUNG_KID_MAX_AGE, STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS } from '../_shared/planSchema.js';
+         KID_REACH_IN, YOUNG_KID_MAX_AGE, STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS,
+         PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -267,6 +268,7 @@ Deno.serve(async (req) => {
     `- steps: return between ${minSteps} and ${maxSteps} steps, matching the effort level this user chose.`,
     `- step length: every steps[].task must be ${STEP_TASK_MAX_WORDS} words or fewer and every steps[].why ${STEP_WHY_MAX_WORDS} or fewer. Aim well under both, at 8 and 12, because each step renders as one line beside a picture. Checked per step, so one long task rejects the whole plan.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
+    `- text length: no string value may be longer than ${PLAN_TEXT_MAX_CHARS} characters, and every icon keyword ${PLAN_ICON_MAX_CHARS} or fewer. The word limits above are far tighter, so a plan that follows them never comes near these.`,
     /* Every clause below is a rule checkInvariants applies to the answer. The
        numbers come from planSchema so the two cannot drift: a validator that
        is stricter than the prompt spends the user's 80 seconds and returns a
