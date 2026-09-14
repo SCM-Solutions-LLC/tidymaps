@@ -1863,15 +1863,29 @@ Ordered by whether anyone can act on them today.
 12. **The 2026-09-14 site review, everything except item 1.** A full pass
     (security, browser UI/UX with axe at 390 and 1280, throttled performance,
     copy and SEO) whose top claims were verified in source by the reviewer.
-    Item 1, the icon XSS, shipped in #134. Nothing else is fixed. Each batch
-    is roughly one PR per line; the security items in batch 1 come first.
+    Item 1, the icon XSS, shipped in #134, and batch 1's pantry item in #136.
+    Nothing else is fixed. Each batch is roughly one PR per line; the security
+    items in batch 1 come first.
     Not verified from the sandbox: live-site headers and contents, and the
     hosted auth config.
 
     **Batch 1, fix now.**
-    - Pantry is pre-selected as the user's answer (`js/state.js` `space:'pantry'`).
+    - ~~Pantry is pre-selected as the user's answer (`js/state.js` `space:'pantry'`).
       Add a `spaceTouched` flag, unselected cards, Next disabled, "(our
-      default)" on Review.
+      default)" on Review.~~ **Done in #136.** `spaceTouched` is an answer in
+      `ANSWER_DEFAULTS`, so it round-trips through the draft and the row;
+      `setArea()` sets it (the wizard card, the landing gallery and the Product
+      Library all pick through it) and `restart()` passes `chosen:false`. The
+      cards render unticked and Continue stays off until a pick; Review labels
+      Room and Spot as ours when untouched; the report's `answeredAnything`
+      counts the pick. A saved row from before the flag reads its space as
+      chosen, because it was saved as a plan for that space. `state.space`
+      still holds `'pantry'` underneath: the setup list, the dims and the demo
+      scenario read it, and a null there would have meant touching all three.
+      Each of the six new assertions was proven red by neutering only its own
+      behaviour. Left alone on purpose: the setup card is still preselected and
+      ticked, and Review prints it without a label. That is batch 2's "Room and
+      Spot as two rows" neighbour, not this item.
     - The 3D viewer says "matches your space" and "estimated from your photos"
       on sample plans (`index.html` ~847, `js/screens/viewer3d.js` ~267).
       Branch on `planMeta.source` and `uploadedFiles`.
