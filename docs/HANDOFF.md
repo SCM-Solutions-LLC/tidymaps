@@ -10,8 +10,8 @@ SVG table and the report's two icon sinks are table lookups, so nothing a
 `spaces` row carries reaches `innerHTML` (see Production health #4 for why
 that mattered: the share payload carried the row's markup verbatim). **The
 deploy split on this merge.** Pages run 139 carries the client half, which is
-the whole of the fix; it was still in progress when this was written, so
-confirm it went green before calling the fix live. The server half (string caps in `planSchema.js` and the
+the whole of the fix, and it went green at 22:16 UTC: **the XSS fix is
+live on the site.** The server half (string caps in `planSchema.js` and the
 matching enforced-limits line in `analyze-space`) did **not** ship: "Deploy
 edge functions" run 21 failed with `401 Unauthorized` from Supabase, and run 20,
 the weekly one at 12:43 UTC the same morning, had already failed the same way
