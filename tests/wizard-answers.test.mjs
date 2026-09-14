@@ -37,6 +37,7 @@ const { rowFromState, applyLoadedSpace } = await import('../js/db.js');
 const FILLED = {
   room: 'garage',
   space: 'workbench',
+  spaceTouched: true,
   goal: 'find',
   capture: 'photos',
   setup: 'bench',
@@ -326,6 +327,10 @@ test('a guest draft in the pre-answers shape still restores', () => {
   assert.equal(state.afterMode, 'Show suggested products');
   assert.deepEqual(state.dimsFt, { w: 12, h: 6.5, d: 2 });
   assert.equal(state.detail_pegboard, true, 'prefixed toggle keys must still be read');
+  /* A draft is written on every screen change, from the space step on, so an
+     old draft holding the pantry cannot say whether anyone picked it. Absent
+     means the default stands: the space step asks again, which costs one tap. */
+  assert.equal(state.spaceTouched, false, 'an old draft must not claim the space was chosen');
 });
 
 test('a saved space row in the pre-answers shape still restores', () => {
@@ -350,6 +355,9 @@ test('a saved space row in the pre-answers shape still restores', () => {
   applyLoadedSpace({ data: legacy, beforePhotoUrl: null, afterRenderUrl: null });
 
   assert.equal(state.space, 'workbench');
+  /* A saved row predating the flag was kept under a name as a plan for this
+     space, so its space reads as chosen rather than as our placeholder. */
+  assert.equal(state.spaceTouched, true, 'a saved space from before the flag is the user\'s');
   assert.equal(state.setup, 'bench');
   assert.equal(state.setupLabel, 'Workbench');
   assert.equal(state.setupTouched, true);

@@ -42,11 +42,15 @@ export function stepNumFor(id){ return WIZARD_STEPS.indexOf(id) + 1; }
    of inserting a new one and overwrote every column of it. The photos matter
    for the same reason — shots of a pantry must not be analysed as a closet and
    then filed against the closet's record. */
-export function setArea(roomId, spaceId){
+export function setArea(roomId, spaceId, { chosen = true } = {}){
   resetPlanRecord(state);
   clearGuestMedia(state);
   state.room = roomId;
   state.space = spaceId;
+  /* Every caller but one is the user picking a space: the wizard card, the
+     landing gallery, the Product Library's "Plan this space". The one is
+     restart(), putting the pantry placeholder back, and it says so. */
+  state.spaceTouched = chosen;
   const st = (SETUP_TYPES[spaceId] || [])[0];
   state.setup = st ? st.id : 'cabinet';
   state.setupLabel = st ? st.label : 'Cabinet';
@@ -192,10 +196,13 @@ function renderSpace(){
     (AREAS[room.id] || []).forEach((a, index) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'room-card' + (state.space === a.id ? ' sel' : '');
+      /* state.space is never empty (the pantry placeholder), so "is this the
+         selected card" has to ask whether anyone selected one at all. */
+      const picked = state.spaceTouched && state.space === a.id;
+      b.className = 'room-card' + (picked ? ' sel' : '');
       b.dataset.room = room.id;
       b.dataset.area = a.id;
-      b.setAttribute('aria-pressed', String(state.space === a.id));
+      b.setAttribute('aria-pressed', String(picked));
       b.innerHTML = `
         <div class="rc-img card-visual tone-${index % 4}">${cardArt(a)}</div>
         <span class="rc-check">${CHECK}</span>
@@ -207,9 +214,13 @@ function renderSpace(){
              losing them silently is the worst thing this wizard did — the photo
              step even went on displaying the old tiles afterwards. Ask first, and
              only when there is actually something to lose. */
-          if(!confirmAreaChange(a.label)){ markSelected(wrap, wrap.querySelector('.sel')||b); return; }
+          /* Declined: put the tick back where it was, which may be nowhere
+             now that the placeholder card arrives unticked. */
+          if(!confirmAreaChange(a.label)){ markSelected(wrap, wrap.querySelector('.sel')); return; }
           setArea(room.id, a.id);
         }
+        // Tapping the card that already holds the placeholder is still a choice.
+        state.spaceTouched = true;
         markSelected(wrap, b); updateGate();
       };
       cards.appendChild(b);
@@ -725,8 +736,12 @@ function renderReviewSummary(){
   const people = [plural(h.adults || 0, 'adult'), plural(h.kidCount || 0, 'kid'), plural(h.petCount || 0, 'pet')].join(' · ')
     + ((h.kidCount || 0) > 0 && h.kids.ages.length ? ' (' + h.kids.ages.join(', ') + ')' : '');
   const rows = [
-    ['Room', room.label, 'space'],
-    ['Spot', area.label, 'space'],
+    /* Kitchen and Pantry are what the wizard starts on, and Continue now waits
+       for a pick, so on the wizard's own path these are always the user's. A
+       draft or row from before the flag, or a jump straight to Review, can
+       still land here untouched, and then the placeholder says whose it is. */
+    ['Room', state.spaceTouched ? room.label : dflt(room.label), 'space'],
+    ['Spot', state.spaceTouched ? area.label : dflt(area.label), 'space'],
     ['Setup', state.setupLabel, 'setup'],
     ['Measurements', measureSummary(state.setup, dimsFtNums(), isMetric()), 'measure'],
     ['Photos', plural(state.uploadedFiles.length, 'photo'), 'capture'],

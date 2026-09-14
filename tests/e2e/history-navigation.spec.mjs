@@ -7,12 +7,17 @@ import { test, expect } from 'playwright/test';
 
 const screen = (page) => page.evaluate(() => document.body.dataset.screen);
 
+/* Continue on the space step waits for a card: the pantry is a placeholder, not
+   an answer. Picking it here keeps every walk below on the kitchen defaults. */
+const pickPantry = (page) => page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
+
 async function enterWizard(page) {
   await page.goto('/index.html');
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
   await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  await pickPantry(page);
 }
 
 test('Back walks the wizard in reverse instead of leaving the site', async ({ page }) => {
@@ -44,6 +49,7 @@ test('Back keeps going past the landing page and leaves the app', async ({ page 
   await page.goto('/index.html');
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.locator('#screen-landing .btn-primary').first().click();
+  await pickPantry(page);
   for (let i = 0; i < 2; i++) await page.locator('#flow-next').click();
   await expect(page.locator('#screen-measure')).toHaveClass(/active/);
 
@@ -61,6 +67,7 @@ test('Back still leaves the app after Start over', async ({ page }) => {
   await page.goto('/index.html');
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.locator('#screen-landing .btn-primary').first().click();
+  await pickPantry(page);
   for (let i = 0; i < 3; i++) await page.locator('#flow-next').click();
 
   // Same entry point the test above uses: the appbar button is hidden while a

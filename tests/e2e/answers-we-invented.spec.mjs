@@ -163,6 +163,77 @@ test('the Edit links are big enough to hit on a phone', async ({ page, browser }
   await ctx.close();
 });
 
+/* The first step arrived already answered. state.space starts as 'pantry' so
+   that everything downstream has a space to draw, and the space step rendered
+   that placeholder as a ticked card with Continue enabled: the one question
+   the wizard cannot do without could be passed without being asked, and Review
+   then listed Kitchen and Pantry under "Here's what we heard". The placeholder
+   stays (the setup list, the dims and the demo scenario all read it); it just
+   stops looking like an answer, and the step waits for one. */
+
+test('no space card arrives ticked', async ({ page }) => {
+  await openWizard(page);
+  await expect(page.locator('#space-cards .room-card').first()).toBeVisible();
+  expect(await page.locator('#space-cards .room-card.sel').count(),
+    'the space step pre-selected an answer the user has not given').toBe(0);
+  expect(await page.locator('#space-cards .room-card[aria-pressed="true"]').count(),
+    'the space step tells a screen reader a space is chosen').toBe(0);
+});
+
+test('Continue waits for a space to be picked', async ({ page }) => {
+  await openWizard(page);
+  await expect(page.locator('#flow-next')).toBeDisabled();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await expect(page.locator('#space-cards .room-card.sel')).toContainText('Pantry');
+  await expect(page.locator('#flow-next')).toBeEnabled();
+});
+
+test('Review calls the space ours until it is picked', async ({ page }) => {
+  await openWizard(page);
+  await gotoStep(page, 'review');
+  const row = (label) => page.locator('.wz-rev-row', { hasText: label }).first();
+  await expect(row('SPOT')).toContainText('our default');
+  await expect(row('ROOM')).toContainText('our default');
+
+  await gotoStep(page, 'space');
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
+  await gotoStep(page, 'review');
+  await expect(row('SPOT')).toContainText('Pantry');
+  await expect(row('SPOT')).not.toContainText('our default');
+  await expect(row('ROOM')).not.toContainText('our default');
+});
+
+test('Start over un-ticks the space and closes the gate again', async ({ page }) => {
+  /* restart() puts the pantry placeholder back through the same setter the
+     cards use, so it has to say that this one is ours. */
+  await openWizard(page);
+  await page.locator('#space-cards .room-card', { hasText: 'Workbench' }).first().click();
+  await expect(page.locator('#flow-next')).toBeEnabled();
+
+  page.once('dialog', (d) => d.accept());
+  await page.evaluate(() => window.restart());
+  await expect(page.locator('#screen-landing')).toHaveClass(/active/);
+  await page.getByRole('button', { name: 'Plan my space' }).first().click();
+  await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  await expect(page.locator('#space-cards .room-card').first()).toBeVisible();
+  expect(await page.locator('#space-cards .room-card.sel').count(),
+    'Start over left a space ticked').toBe(0);
+  await expect(page.locator('#flow-next')).toBeDisabled();
+});
+
+test('a space picked from the landing gallery counts as chosen', async ({ page }) => {
+  /* The gallery cards and the Product Library's "Plan this space" enter the
+     wizard at the setup step with the space already set. That IS the pick, so
+     Back onto the space step must show it ticked and let Continue through. */
+  await page.goto('/index.html');
+  await page.locator('#space-groups .room-card', { hasText: 'Workbench' }).first().click();
+  await expect(page.locator('#screen-setup')).toHaveClass(/active/);
+  await page.locator('#flow-back').click();
+  await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  await expect(page.locator('#space-cards .room-card.sel')).toContainText(/workbench/i);
+  await expect(page.locator('#flow-next')).toBeEnabled();
+});
+
 /* The same complaint, one screen later: the report read the user's own answers
    back to them as findings.
 

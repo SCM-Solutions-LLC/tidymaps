@@ -47,6 +47,7 @@
  * -- answers: what the wizard collected (resetWizardAnswers / wizardAnswers) --
  * @property {string} room
  * @property {string|null} space
+ * @property {boolean} spaceTouched              true once the user picked a space card; the pantry is ours until then
  * @property {string|null} goal
  * @property {string|null} capture              'photos' | 'video' | 'demo'
  * @property {string|null} setup
@@ -111,9 +112,16 @@
 /** @type {AppState} */
 export const state = {
   // Three-step space selection (design contract): room → area → setup type.
-  // The wizard preselects the design defaults so Continue is always valid.
+  // The wizard preselects the design defaults so everything downstream (the
+  // setup list, the dims, the demo scenario) always has a space to work from.
   room:'kitchen',
   space:'pantry', goal:null, capture:null,
+  /* The pantry is a placeholder, not an answer, and the space step arrived
+     with its card ticked and Continue enabled, so the first question the
+     wizard asks could be passed without answering it. Same shape as
+     setupTouched: keep the default, remember that it is ours. The card is
+     rendered unselected and Continue stays off until this flips. */
+  spaceTouched:false,
   setup:'cabinet', setupLabel:'Cabinet',
   // true once the user actually picks a setup card; setArea() only preselects
   // one, and a preselection must not outrank what the photos show
@@ -291,7 +299,7 @@ const freshHousehold = () => ({ adults:2, kidCount:0, petCount:0,
 
 // One entry per answer: the value a fresh wizard starts from.
 const ANSWER_DEFAULTS = {
-  room:'kitchen', space:'pantry', goal:null, capture:null,
+  room:'kitchen', space:'pantry', spaceTouched:false, goal:null, capture:null,
   setup:'cabinet', setupLabel:'Cabinet', setupTouched:false,
   goals:[], styles:[], cats:[], catsTouched:false, detected:[], features:[],
   budget:null, effort:'Weekend reset', effortTouched:false,

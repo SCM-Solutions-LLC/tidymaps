@@ -77,7 +77,7 @@ export function buildResults(){
   const def=SETUP_DIMS[state.setup];
   const dimsTyped = !!(state.dimsFt && def
     && (state.dimsFt.w!==def.w || state.dimsFt.h!==def.h || state.dimsFt.d!==def.d));
-  const answeredAnything = state.setupTouched || state.catsTouched || state.shoppingTouched
+  const answeredAnything = state.spaceTouched || state.setupTouched || state.catsTouched || state.shoppingTouched
     || state.effortTouched || dimsTyped || householdAnswered()
     || (state.goals||[]).length>0 || (state.styles||[]).length>0
     || (state.uploadedFiles||[]).length>0;
