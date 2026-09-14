@@ -4,7 +4,22 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-09, after PR #132 merged (`main` at `40b874e`): the 143
+**Last refreshed:** 2026-09-14, after PR #134 merged (`main` at `14858ed`): the
+stored XSS through the plan's icon fields is closed. Icons are keys into the
+SVG table and the report's two icon sinks are table lookups, so nothing a
+`spaces` row carries reaches `innerHTML` (see Production health #4 for why
+that mattered: the share payload carried the row's markup verbatim). **The
+deploy split on this merge.** Pages run 139 carries the client half, which is
+the whole of the fix, and it went green at 22:16 UTC: **the XSS fix is
+live on the site.** The server half (string caps in `planSchema.js` and the
+matching enforced-limits line in `analyze-space`) did **not** ship: "Deploy
+edge functions" run 21 failed with `401 Unauthorized` from Supabase, and run 20,
+the weekly one at 12:43 UTC the same morning, had already failed the same way
+on the previous `main`. The `SUPABASE_ACCESS_TOKEN` secret is dead. Production
+functions are still what run 19 deployed on 09-07 (`main` at `c26eac3`), and
+nothing under `supabase/functions/` changed between then and #134, so the live
+functions equal `main`'s minus #134's caps. See Production health #5 and open
+item 11. Before that, 2026-09-09, after PR #132 merged (`main` at `40b874e`): the 143
 step clips re-rendered in the site's own palette, the correcting CSS filter
 gone. That closes the last open design item from the redesign. Earlier the
 same day, PR #130 merged (`main` at `9296f3f`): the
@@ -1298,6 +1313,44 @@ and the list is finished.
      broken, and it survives longer than the logs do. **This is now the check
      to run by hand; the automated one is the canary in open item 2**, which
      calls the model rather than waiting for a user to.
+4. **Stored XSS through a shared plan's icons, closed 09-14 (#134).** A
+   `spaces` row is its owner's to write under RLS, `sharedSpacePayload` copied
+   `map[].ic` and `existing[].ico` verbatim, `iconFor()` passed any string
+   beginning `<svg` straight through (so that saved rows holding the resolved
+   SVG kept their icons on a second `normalizeAi` pass), and the report
+   `innerHTML`'d both fields raw. Anyone could put `<svg><image onerror=...>`
+   in their own row and hand the link to someone else. Icons are now keys and
+   the sinks are table lookups; rows saved with the SVG itself are recognised
+   by exact match against our own table only, and render pixel-identically.
+   Two things worth keeping: the "idempotent normalizer" comment that justified
+   the pass-through was the vulnerability, and a Chromium quirk nearly hid it
+   from the test, since `<svg onload>` inserted via `innerHTML` does not fire
+   there while `<image onerror>` does. The browser test uses the one that runs.
+   Checked against production on 09-14 (read-only SQL over `spaces`): 2 rows
+   in total, both holding this app's own SVG in `ic`, none matching
+   `onerror|onload|<script|javascript:|<iframe|<image`, and none with a
+   `share_id` set. Nothing was exploited, and nothing is currently shared.
+5. **The function deploy token is dead (09-14).** "Deploy edge functions" run
+   20 (weekly, 09-14 12:43 UTC) and run 21 (the #134 merge) both failed at the
+   deploy step with `unexpected deploy status 401: {"message":"Unauthorized"}`.
+   The token check step passed, so the secret is set; Supabase no longer
+   accepts it. Last success was run 19 on 09-07. Consequences and non-
+   consequences:
+   - **The product is unaffected today.** Nothing under `supabase/functions/`
+     changed between run 19 and #134, so what is live equals `main` minus
+     #134's string caps, and the canary (open item 2) keeps passing because
+     it is calling the function that is actually there.
+   - **The next server change will not ship until the token is replaced**,
+     and neither will #134's caps. This is exactly the client-half-live,
+     server-half-dormant state the workflow was built to end, with one
+     difference that matters: it is not silent. The failing run IS the
+     alert, the same design as the canary, and GitHub emails the owner on it.
+   - **Only the owner can fix it.** Mint a new token (Supabase dashboard,
+     Account, Access Tokens), replace the `SUPABASE_ACCESS_TOKEN` repository
+     secret, then run "Deploy edge functions" by hand (`workflow_dispatch`)
+     rather than waiting for Monday's schedule. Read the function back:
+     `analyze-space`'s `ezbr_sha256` must change. A session can trigger the
+     re-run but cannot rotate the secret.
 
    **Confirmed working again 2026-08-21.** Three `analyze-space` POSTs on
    08-20 (04:25, 16:56, 19:17) all returned 200, no 502s anywhere in the 24h
@@ -1526,11 +1579,14 @@ and the list is finished.
   telemetry silently never sends.
 - **Production matches `main` automatically now.** Since 2026-08-12 the same
   merge that publishes the site publishes the functions
-  (`.github/workflows/deploy-functions.yml`, requires a `SUPABASE_ACCESS_TOKEN`
+  (`.github/workflows/supabase-functions.yml`, requires a `SUPABASE_ACCESS_TOKEN`
   repo secret). The old advice to deploy by hand and read the function back is
   obsolete for the normal path — but the workflow deliberately omits
   `--prune`, so **deleting** a function is still a manual `supabase functions
-  delete`.
+  delete`. **The token can die**, and when it does the deploy step fails with
+  a 401 and the run goes red (Production health #5, 09-14). A red "Deploy edge
+  functions" run means `main` and production have diverged for the functions;
+  do not read a green Pages run as "deployed".
 - Secrets live on the project, not in the repo (`supabase secrets list` prints
   digests, never values): `ANTHROPIC_API_KEY`, `GOOGLE_AI_API_KEY`,
   `IP_HASH_SALT`, plus the Supabase-managed ones. `js/config.js` holds only the
@@ -1665,6 +1721,9 @@ section in mind.
 - ~~Open item 10, the 32 other setups' fit notes~~ — closed 09-08. Every
   setup's wizard run with no backend opens its 3D view clean, and
   `demo-fit.spec.mjs` walks all 33 to hold it there.
+- ~~Stored XSS through the plan's icon fields~~ — closed 09-14 in #134
+  (Production health #4). Batch 1 item 1 of the 09-14 site review; the rest of
+  that review is open item 12.
 
 ## Open items / next actions
 
@@ -1795,6 +1854,121 @@ Ordered by whether anyone can act on them today.
     with a true but unflattering fit note on most spaces. Do not fix this by
     softening the matcher back to shared-word matching; that put organizers
     on the wrong level and then warned that they did not fit.
+
+11. **Replace the function deploy token.** Owner-only, ten minutes, and it
+    gates every server-side item below. Production health #5 has the steps.
+    Until it is done, treat any PR that touches `supabase/functions/` as
+    merged-not-deployed, and say so in its handoff line.
+
+12. **The 2026-09-14 site review, everything except item 1.** A full pass
+    (security, browser UI/UX with axe at 390 and 1280, throttled performance,
+    copy and SEO) whose top claims were verified in source by the reviewer.
+    Item 1, the icon XSS, shipped in #134. Nothing else is fixed. Each batch
+    is roughly one PR per line; the security items in batch 1 come first.
+    Not verified from the sandbox: live-site headers and contents, and the
+    hosted auth config.
+
+    **Batch 1, fix now.**
+    - Pantry is pre-selected as the user's answer (`js/state.js` `space:'pantry'`).
+      Add a `spaceTouched` flag, unselected cards, Next disabled, "(our
+      default)" on Review.
+    - The 3D viewer says "matches your space" and "estimated from your photos"
+      on sample plans (`index.html` ~847, `js/screens/viewer3d.js` ~267).
+      Branch on `planMeta.source` and `uploadedFiles`.
+    - "Analyzed by Claude" appears twice on the report (`results.js` badge ~39
+      and byline ~86).
+    - The auth modal shows a raw "Failed to fetch" (`js/auth.js` ~80).
+    - Rate-limit copy: `js/api.js` ~70 drops `retryAfterSeconds`, and the
+      `results.js` ~170 banner reads the same for quota and outage. Branch on
+      `code === 'rate_limited'` and print minutes.
+    - `security.html` makes three false claims: that CORS blocks requests (it
+      only hides responses, `_shared/cors.ts`); that the salt rotates daily (it
+      is a static salt plus the date, `_shared/auth.ts`); that guest use
+      touches no database (`usage_events`, `telemetry_events`).
+    - Legal: `privacy.html` and `terms.html` promise video while the input is
+      `image/*`; Resend is missing from privacy; five telemetry events are
+      undisclosed (`_shared/telemetryEvents.js`); dates are stale; `terms.html`
+      lacks the safety-note redaction sentence.
+
+    **Batch 2, UX, accessibility, copy.**
+    - Shelf-map tint is inverted (`css/components.css` ~181 vs ~190; swap
+      `--surface-3` and `--primary-bg` at the use site). DESIGN.md says the
+      eye-level zone is the accent one.
+    - Progress rail reads 100% then 75% then 81% after Review
+      (`js/router.js` ~154-165).
+    - Mobile nav is not modal: no Esc, outside click, scroll lock or Tab trap
+      (`index.html` ~49). Use `closeSiteNav()` in `js/ui.js`, add `inert`.
+    - 3D sliders have a 4px track (`css/screens.css` ~75).
+    - Tap targets under 44px: report checkboxes 19px, retailer links 15px,
+      segments 32px, `.btn-sm`, `.home-link`, `.ch-head`, `.wr-edit`. Pad,
+      don't grow.
+    - No skip link; no h1 off the landing page (axe `page-has-heading-one` on
+      wizard, report and 3D).
+    - 3D canvas has no role, label or tabindex, and rearranging is drag-only.
+    - Rating buttons carry no ARIA state (`js/screens/feedback.js` ~24-38).
+    - `aria-label` on a div (`results.js` ~807): add `role=list`.
+    - Space cards: radiogroup with roving tabindex.
+    - Copy: "green notes" (`results.js` ~269; nothing is green); Review shows
+      "Room" and "Spot" as two rows after the merge (`wizard.js` ~728); "your
+      14" shelf" on the landing page (`index.html` ~248); TOC and chapter heads
+      disagree (`index.html` ~589-591 vs ~629, ~664); "room" headline
+      (`index.html` ~105); 8-digit vs "6-8 digit" code (`index.html` ~78,
+      `account.js` ~111); `&mdash;` in `loading.js` ~332, and extend the
+      copy-conventions test to JS; UK and US spelling mixed;
+      `planExport.js` ~135 prints inches to metric users; the rating scale
+      mixes usefulness with "I would pay" (`js/data.js` ~174, split it);
+      "Extracting key frames" shown on photo runs (`js/data.js` ~182); silent
+      autosave loss on 401 (`js/db.js` ~145, ~159); the guest reload toast
+      hides photo loss (`js/startup.js` ~91).
+    - Desktop step clips letterbox (`components.css` ~439, ~455); empty ruled
+      cells in two-card room groups (`landing.css`); the toast covers the
+      Summary heading; the brand link is `href="#"`.
+
+    **Batch 3, performance, infrastructure, backend.**
+    - `pages.yml` ~42 uploads `path: .` after `npm ci`: a 168MB artifact for
+      an 11MB site, with `node_modules`, tests, docs and migrations public.
+      Build a `_site/`. Keep `supabase/functions/_shared/telemetryEvents.js`
+      in it (fetched at boot).
+    - Inline `tokens.css` and `base.css`, load the other four async: measured
+      FCP 1116 to 488ms and LCP 1476 to 496ms on a throttled phone. Do NOT
+      concatenate and do NOT `modulepreload` (both measured worse).
+    - Eager JS is 41 modules and 216KB gzipped; 15 modules and 56KB is
+      reachable: `main.js` and `router.js` import every screen for window
+      shims. Make them async and take `plan.js` off boot. Cut the whole
+      frontier, not one module.
+    - The 3D rAF loop never idles (`js/three/scene.js` ~974-981). Render on
+      controls change.
+    - `js/three/layouts/index.js` loads 14 builders to use one: thunk map.
+    - The italic woff2 (39KB) loads eagerly on the landing page: static 400
+      instance, or synthesize.
+    - Edge functions parse the body before auth and rate limiting
+      (`_shared/body.js` ~20): check `Content-Length` first. The global
+      breakers (`render-after` 100/day) are a cheap denial of service; exempt
+      signed-in users. EXIF and GPS are kept (`js/db.js` ~170; the upload
+      canvas blob strips them). Upstream error text is returned
+      (`analyze-space/index.ts` ~361, ~425). No retention purge for
+      `usage_events` or `telemetry_events`. The after-render is stored without
+      a save (`results.js` ~503). `plan_meta` is not allowlisted
+      (`sharePayload.js` ~352). `escapeHtml` misses `'` (`js/ui.js` ~18) and
+      `products.js` ~55 has a duplicate escaper.
+    - Supabase advisors: revoke EXECUTE on `handle_new_user()` from anon and
+      authenticated; move `pg_net` out of public; wrap `auth.uid()` in
+      `(select ...)` in five policies; index the `user_id` foreign keys on
+      `feedback`, `invite_requests` and `space_media`.
+    - CI: add `permissions: contents: read` to the test, supabase-functions
+      and canary workflows; pin actions to SHAs. Check the hosted OTP expiry
+      and captcha (`config.toml` says 1h, no captcha).
+    - SEO: canonical is `scmsolutions.org/tidymaps` while the README says
+      github.io and CORS lists tidymaps.ai (did not resolve). Add `robots.txt`,
+      `sitemap.xml`, JSON-LD, `apple-touch-icon`, `<meta name=color-scheme>`;
+      unify `theme-color`; the title is 72 chars.
+    - Dead work: `plan.features` is requested, normalized and shared but
+      rendered nowhere; household counts are never read; `detected` is never
+      set in production; `hero-3d.webp` is declared 522x700 and the file is
+      1100x858.
+    - Funnel: zero telemetry rows in 14 days, one real AI space on 09-08. Open
+      item 6 stands. There is no in-app opt-out, and `cookies.html`'s
+      no-banner reasoning ignores localStorage.
 
 ### Waiting on traffic
 
