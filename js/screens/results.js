@@ -1,5 +1,5 @@
 import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_CATS } from '../data.js';
-import { SVG, ICON } from '../icons.js';
+import { SVG, ICON, iconFor } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
@@ -286,7 +286,7 @@ export function buildResults(){
     <div class="shelf ${m.eye?'eye':''}">
       <div class="label">
         ${wall?`<span class="lv-wall">${escapeHtml(wall)}</span>`:''}
-        <span class="lv">${escapeHtml(lvl)}</span><span class="ic">${m.ic}</span></div>
+        <span class="lv">${escapeHtml(lvl)}</span><span class="ic">${iconFor(m.ic)}</span></div>
       <div class="body"><div class="zone">${escapeHtml(m.zone)}${badge}</div>
         <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div>${safetyWhy}${itemsRow(m)}</div>
     </div>`;
@@ -323,7 +323,7 @@ export function buildResults(){
     : (A ? [] : EXISTING);
   const existingWrap = document.getElementById('res-existing');
   existingWrap.innerHTML=existingData.map(e=>`
-    <div class="feat"><span class="fi">${e.ico}</span><div><span class="ft">${escapeHtml(e.ft)}</span><span class="fd">${escapeHtml(e.fd)}</span></div></div>`).join('');
+    <div class="feat"><span class="fi">${iconFor(e.ico)}</span><div><span class="ft">${escapeHtml(e.ft)}</span><span class="fd">${escapeHtml(e.fd)}</span></div></div>`).join('');
   existingWrap.classList.toggle('hide', !existingData.length);
   const dontBuy = (A && A.dontBuy) || '';
   // No generic substitute here: "what not to buy yet" is only useful when it

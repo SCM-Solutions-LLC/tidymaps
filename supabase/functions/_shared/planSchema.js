@@ -56,29 +56,42 @@ export function wordCount(s) {
   return String(s == null ? '' : s).trim().split(/\s+/).filter(Boolean).length;
 }
 
+/* Every free-text field is length-capped, and the cap is an abuse bound, not a
+   style rule: the prompt asks for sentences of 10 to 20 words, and the longest
+   string this app's own deterministic scenarios ship is under 400 characters,
+   so a compliant answer never comes near it. What it stops is a plan whose
+   "summary" is a novel, stored as-is in the spaces row and re-sent to every
+   share-link visitor. Icons are keywords from a list the prompt states, so
+   theirs is tighter. Both are restated to the model in the enforced-limits
+   block, so the validator is never stricter than its own prompt. */
+export const PLAN_TEXT_MAX_CHARS = 1000;
+export const PLAN_ICON_MAX_CHARS = 40;
+const text = () => z.string().max(PLAN_TEXT_MAX_CHARS);
+const iconKeyword = () => z.string().max(PLAN_ICON_MAX_CHARS);
+
 const safetySchema = z.object({
   flag: z.enum(SAFETY_FLAGS).nullable(),
-  why: z.string().nullable(),
+  why: text().nullable(),
 });
 
 const mapRowSchema = z.object({
-  level: z.string(),
-  icon: z.string(),
-  zone: z.string(),
-  why: z.string(),
+  level: text(),
+  icon: iconKeyword(),
+  zone: text(),
+  why: text(),
   eye: z.boolean().optional(),
   shelfIndex: z.number().int(),
   safety: safetySchema,
   items: z.array(z.object({
-    name: z.string(),
+    name: text(),
     size: z.enum(ITEM_SIZES).optional(),
-    flags: z.array(z.string()).optional(),
+    flags: z.array(text()).optional(),
   })).optional(),
   surface: z.enum(SURFACES).nullable().optional(),
 });
 
 const geometrySchema = z.object({
-  unit: z.string(),
+  unit: text(),
   width: z.number().positive(),
   height: z.number().positive(),
   depth: z.number().positive(),
@@ -90,8 +103,8 @@ const geometrySchema = z.object({
 const productNeedSchema = z.object({
   type: z.enum(PRODUCT_TYPES),
   qty: z.number().int().positive(),
-  purpose: z.string(),
-  targetZone: z.string(),
+  purpose: text(),
+  targetZone: text(),
   maxDims: z.object({
     w_in: z.number().positive(),
     h_in: z.number().positive(),
@@ -101,8 +114,8 @@ const productNeedSchema = z.object({
 });
 
 const layoutSectionSchema = z.object({
-  id: z.string(),
-  label: z.string().optional(),
+  id: text(),
+  label: text().optional(),
   place: z.enum(PLACES).optional(),
   rows: z.array(z.number().int().min(0)).max(12),
 });
@@ -113,23 +126,23 @@ const layoutSchema = z.object({
 }).nullable().optional();
 
 export const planSchema = z.object({
-  spaceType: z.string(),
-  summary: z.string(),
-  categories: z.array(z.string()).optional(),
-  features: z.array(z.object({ icon: z.string(), title: z.string(), sub: z.string() })).optional(),
-  problems: z.array(z.string()).optional(),
-  opportunities: z.array(z.string()).optional(),
+  spaceType: text(),
+  summary: text(),
+  categories: z.array(text()).optional(),
+  features: z.array(z.object({ icon: iconKeyword(), title: text(), sub: text() })).optional(),
+  problems: z.array(text()).optional(),
+  opportunities: z.array(text()).optional(),
   map: z.array(mapRowSchema).min(1),
   geometry: geometrySchema,
   layout: layoutSchema,
-  safetyNotes: z.array(z.string()).optional(),
+  safetyNotes: z.array(text()).optional(),
   productNeeds: z.array(productNeedSchema).optional(),
-  existingLede: z.string().optional(),
-  existing: z.array(z.object({ icon: z.string(), title: z.string(), detail: z.string() })).optional(),
-  dontBuy: z.string().optional(),
-  steps: z.array(z.object({ task: z.string(), time: z.string(), why: z.string() })).min(1),
-  time: z.string().optional(),
-  cost: z.string().optional(),
+  existingLede: text().optional(),
+  existing: z.array(z.object({ icon: iconKeyword(), title: text(), detail: text() })).optional(),
+  dontBuy: text().optional(),
+  steps: z.array(z.object({ task: text(), time: text(), why: text() })).min(1),
+  time: text().optional(),
+  cost: text().optional(),
 });
 
 function issuesToStrings(zodError) {

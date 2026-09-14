@@ -82,27 +82,59 @@ export const ICON = {
   why: SVG.why
 };
 
-// Map an AI-returned icon keyword to one of our inline SVGs
+/* ---------- Plan icons: a closed set, resolved by key ----------
+
+   A plan row's `ic`, and a feature's or reuse card's `ico`, is a KEY into the
+   SVG table above. Never markup. The report renders it through iconFor(),
+   which can only return a string from that table, so nothing a plan carries
+   ever reaches innerHTML.
+
+   The previous resolver passed any string starting with "<svg" straight
+   through, so that a saved row or share payload holding the already-resolved
+   SVG kept its icon on a second pass through normalizeAi. That was a stored
+   XSS: a spaces row is its owner's to write (RLS), the share payload carries
+   map[].ic and existing[].ico verbatim, and the report innerHTML'd both raw.
+   Anyone could put `<svg onload=...>` in their own row and hand the link to
+   someone else.
+
+   Rows written before this change still hold the SVG itself, so those are
+   recognised too, but only by exact match against our own table. Markup that
+   is not byte-for-byte one of ours is unknown and gets the fallback. */
+
+// AI keyword -> SVG table key. The prompt names a short list; the rest are
+// synonyms models have actually returned.
+const KEYWORD_KEY = new Map(Object.entries({
+  shelf:'layers', shelves:'layers', layers:'layers',
+  basket:'shoppingBag', baskets:'shoppingBag', bag:'shoppingBag',
+  bin:'archive', box:'archive', container:'archive', drawer:'archive',
+  horizontal:'arrowsH', side:'arrowsH', width:'arrowsH',
+  vertical:'arrowsV', height:'arrowsV',
+  down:'arrowDown', lower:'arrowDown', bottom:'arrowDown',
+  up:'arrowUp', top:'arrowUp',
+  hook:'hook', rod:'hook', hanger:'hook', hooks:'hook',
+  none:'xCircle', missing:'xCircle', x:'xCircle',
+  door:'door', eye:'eye', daily:'eye', middle:'alignCenter',
+  empty:'minusCircle', keep:'minusCircle', space:'arrowsH',
+  spice:'layoutGrid', label:'tag', riser:'trendingUp', jar:'box'
+}));
+const KEY_FOR_MARKUP = new Map(Object.entries(SVG).map(([k, v]) => [v, k]));
+export const ICON_FALLBACK_KEY = 'archive';
+const isKey = (k) => Object.prototype.hasOwnProperty.call(SVG, k);
+
+/* Resolve whatever a plan carries as an icon (a keyword from the model, a key
+   this app stored, or the SVG an older row saved) to an SVG table key. Never
+   returns anything that is not a key, so it is idempotent by construction. */
+export function iconKey(name){
+  if(name === undefined || name === null || name === '') return ICON_FALLBACK_KEY;
+  const raw = String(name);
+  if(isKey(raw)) return raw;
+  const legacy = KEY_FOR_MARKUP.get(raw);
+  if(legacy) return legacy;
+  const k = raw.toLowerCase().replace(/[^a-z]/g,'');
+  return KEYWORD_KEY.get(k) || ICON_FALLBACK_KEY;
+}
+
+// The only way plan markup reaches the page: a table lookup, never the input.
 export function iconFor(name){
-  const m = {
-    shelf:SVG.layers, shelves:SVG.layers, layers:SVG.layers,
-    basket:SVG.shoppingBag, baskets:SVG.shoppingBag, bag:SVG.shoppingBag,
-    bin:SVG.archive, box:SVG.archive, container:SVG.archive, drawer:SVG.archive,
-    horizontal:SVG.arrowsH, side:SVG.arrowsH, width:SVG.arrowsH,
-    vertical:SVG.arrowsV, height:SVG.arrowsV,
-    down:SVG.arrowDown, lower:SVG.arrowDown, bottom:SVG.arrowDown,
-    up:SVG.arrowUp, top:SVG.arrowUp,
-    hook:SVG.hook, rod:SVG.hook, hanger:SVG.hook, hooks:SVG.hook,
-    none:SVG.xCircle, missing:SVG.xCircle, x:SVG.xCircle,
-    door:SVG.door, eye:SVG.eye, daily:SVG.eye, middle:SVG.alignCenter,
-    empty:SVG.minusCircle, keep:SVG.minusCircle, space:SVG.arrowsH,
-    spice:SVG.layoutGrid, label:SVG.tag, riser:SVG.trendingUp, jar:SVG.box
-  };
-  if(!name) return SVG.archive;
-  // Idempotent: an already-normalized plan (saved rows, share payloads) holds
-  // the resolved SVG here, not a keyword. Re-resolving it would strip every
-  // icon down to the generic fallback.
-  if(/^\s*<svg/i.test(String(name))) return name;
-  const k = String(name).toLowerCase().replace(/[^a-z]/g,'');
-  return m[k] || SVG.archive;
+  return SVG[iconKey(name)];
 }

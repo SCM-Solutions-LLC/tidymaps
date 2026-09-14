@@ -182,6 +182,41 @@ test('a shared plan does not tell the visitor what they asked for', async ({ pag
   await expect(page.locator('#res-steps .tname').first()).toContainText(/pull everything off the shelves/i);
 });
 
+/* Stored XSS. A spaces row is its owner's to write, the share payload carries
+   map[].ic and existing[].ico verbatim, and the report innerHTML'd both. The
+   icon resolver let any string beginning "<svg" through, on the reasoning that
+   a saved row holds the resolved SVG, so the owner's markup ran in the
+   visitor's browser. Icons are keys now and the sink is a table lookup; this
+   is the visitor's half of that, in a real browser. */
+test('markup in a shared plan’s icon fields never reaches the page', async ({ page }) => {
+  /* The vector is chosen to run, not just to render: Chromium does not fire
+     onload for an <svg> inserted through innerHTML, so a test built on that
+     one passed its "nothing executed" check against the unfixed code. An
+     <image> that fails to load fires onerror either way. */
+  const hostile = '<svg><image href="x" onerror="window.__xss=1"/></svg>';
+  await openShared(page, {
+    space: {
+      ...PAYLOAD.space,
+      plan: {
+        ...PAYLOAD.space.plan,
+        map: PAYLOAD.space.plan.map.map((row) => ({ ...row, ic: hostile })),
+        existing: PAYLOAD.space.plan.existing.map((e) => ({ ...e, ico: hostile })),
+      },
+    },
+  });
+  await expect(page.locator('#screen-results')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#res-map .shelf')).toHaveCount(2);
+
+  expect(await page.evaluate(() => window.__xss)).toBeUndefined();
+  for (const sel of ['#res-map', '#res-existing']) {
+    const html = await page.locator(sel).innerHTML();
+    expect(html, `${sel} carried the row's own markup onto the page`).not.toMatch(/onerror|onload|href="x"/);
+  }
+  // The rows still get an icon: the fallback is drawn, not blanked.
+  await expect(page.locator('#res-map .ic svg')).toHaveCount(2);
+  await expect(page.locator('#res-existing .fi svg')).toHaveCount(1);
+});
+
 /* A plan with no safety section reads as a plan that needs none, and for a
    space with bleach in it that is a worse outcome than the disclosure was.
    The banner says so — on every shared plan, in the same words, whether or
