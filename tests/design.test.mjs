@@ -147,6 +147,41 @@ test('one terracotta accent, grey fields, no ambient gradients', () => {
   }
 });
 
+/* The eye-level zone is the one field the accent may tint (DESIGN.md, the
+   Accent-Is-Small Rule); every other zone in a figure is warm grey. The report's
+   shelf map had it backwards: the plain shelves read the legacy `--surface-3`,
+   which lands on the accent tint, and the eye-level shelf read `--primary-bg`,
+   which lands on the grey. Two aliases that sound like a hierarchy and are not
+   one. Resolved through tokens.css rather than matched by name, so a future
+   re-aliasing has to keep the colours right and not merely the words. */
+test('the shelf map tints the eye-level zone, and only that zone, with the accent', () => {
+  const componentsCss = readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
+  const tokenMap = new Map([...tokens.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+  const resolve = (value, depth = 0) => {
+    const ref = /^var\(--([\w-]+)\)$/.exec(value.trim());
+    if (!ref) return value.trim();
+    assert.ok(depth < 12, `token chain loops at --${ref[1]}`);
+    assert.ok(tokenMap.has(ref[1]), `--${ref[1]} is not defined in tokens.css`);
+    return resolve(tokenMap.get(ref[1]), depth + 1);
+  };
+  const grey = resolve('var(--tint)');
+  const accentTint = resolve('var(--tint-2)');
+  assert.notEqual(grey, accentTint, 'the accent tint collapsed into the grey; nothing can mark eye level');
+
+  const background = (selector) => {
+    const rule = new RegExp(`${selector.replace(/[.\s]/g, (c) => (c === '.' ? '\\.' : '\\s+'))}\\{([^}]*)\\}`).exec(componentsCss);
+    assert.ok(rule, `no rule for ${selector}`);
+    const decl = /(?:^|;)\s*background:\s*([^;]+)/.exec(rule[1]);
+    assert.ok(decl, `${selector} sets no background`);
+    return resolve(decl[1]);
+  };
+  assert.equal(background('.shelf.eye .label'), accentTint, 'the eye-level shelf label is not the accent tint');
+  assert.equal(background('.shelf .label'), grey, 'an ordinary shelf label is not warm grey');
+  // The landing figure draws the same rule; the two must not drift apart.
+  assert.match(landingCss, /\.f-zone\{fill:var\(--tint\)/, 'Figure 1 ordinary zones are not warm grey');
+  assert.match(landingCss, /\.f-zone-eye\{fill:var\(--tint-2\)\}/, 'Figure 1 eye-level zone is not the accent tint');
+});
+
 test('buttons are not universal pills', () => {
   assert.ok(!baseCss.includes('border-radius:999px'), 'pill buttons are back');
 });
