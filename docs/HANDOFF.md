@@ -10,9 +10,9 @@ the user's answer. `spaceTouched` joins the touched flags in `js/state.js`, the
 space cards arrive unticked with Continue off until a pick, Review labels Room
 and Spot as ours when untouched, and the report's `answeredAnything` counts the
 pick. Client-only, so the dead deploy token (Production health #5, open item
-11) does not apply to it. Pages run 141 started at 01:25 UTC and was in flight
-at this refresh; the line below this one will say when it is green. That
-closes the second line of open item 12's batch 1, with six lines left there.
+11) does not apply to it. Pages run 141 went green at 01:39 UTC, so **the
+space-step gate is live on the site.** That closes the second line of open
+item 12's batch 1, with six lines left there.
 Before that, 2026-09-14, after PR #134 merged (`main` at `14858ed`): the
 stored XSS through the plan's icon fields is closed. Icons are keys into the
 SVG table and the report's two icon sinks are table lookups, so nothing a
