@@ -4,7 +4,18 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #140 merged (`main` at `5c8ca2c`,
+**Last refreshed:** 2026-09-15, with PR #142 open (draft, from `main` at
+`c1ab9e9`): the sign-in modal explains a failed request instead of printing
+the browser's fetch text. `js/auth.js` runs the library load and the request
+under one catch and reads the error by name, status and code
+(`authErrorMessage`), so no answer is "Could not reach the sign-in service",
+a 5xx is "Sign-in is temporarily unavailable", 429 is "Too many attempts",
+and a refused address on send is about the address rather than a code that
+never went. Client-only, so the dead deploy token (Production health #5,
+open item 11) does not apply. When it merges, that closes the fifth line of
+open item 12's batch 1, with three lines left there (rate-limit copy,
+`security.html`, legal pages).
+Before that, 2026-09-15, after PR #140 merged (`main` at `5c8ca2c`,
 05:16 UTC): the report says "Analyzed by Claude" once. The badge is the credit
 and carries the model ("Analyzed by Claude · Sonnet 4.6"); the byline says the
 basis in the same shape as its other readings ("Personalized plan · based on
@@ -1955,7 +1966,29 @@ Ordered by whether anyone can act on them today.
       never says any more; it asserts the badge is hidden too. Each new
       assertion proven red by neutering only its own behaviour; all five
       readings browser-checked at 390 and 1280.
-    - The auth modal shows a raw "Failed to fetch" (`js/auth.js` ~80).
+    - ~~The auth modal shows a raw "Failed to fetch" (`js/auth.js` ~80).~~
+      **Done in #142.** supabase-js reports a request that got no answer
+      as an `AuthRetryableFetchError` carrying the browser's own fetch text,
+      and a 5xx the same way with the response body as the message; the
+      modal's reading passed anything it did not recognise straight through,
+      so a bad connection printed "Failed to fetch" and a 503 printed "{}".
+      The library load (a dynamic `import()` of the vendored bundle) sat
+      outside the catch, so a first visit with no connection printed the
+      loader's text instead. `sendCode` and `verifyCode` now run the load
+      and the request under one catch, and `authErrorMessage(error, stage)`
+      reads the error by name, status and code: no answer is the
+      connection, a 5xx is the service, 429 is too many attempts (GoTrue's
+      send-again text, "you can only request this after 59 seconds", does
+      not contain "rate", so the old `/rate/` reading missed it), and
+      nothing unrecognised reaches the modal; the callers log the raw
+      error instead. The stage argument exists because "invalid" on send is
+      a refused address, and the old one-size reading told that person to
+      check the newest email for a code that never went. Six of the seven
+      unit assertions proven red by putting the old reading back inside the
+      function (the seventh guards the wrong-code reading, which the old
+      code got right); the four browser tests cut the auth routes at the
+      browser and go red on the exact raw text. Browser-checked at 390 and
+      1280.
     - Rate-limit copy: `js/api.js` ~70 drops `retryAfterSeconds`, and the
       `results.js` ~170 banner reads the same for quota and outage. Branch on
       `code === 'rate_limited'` and print minutes.
