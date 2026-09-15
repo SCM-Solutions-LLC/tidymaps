@@ -9,6 +9,7 @@ const migrations = [1, 2, 3, 4, 5, 6, 7]
     catch { return ''; }
   }).join('\n');
 const retention = readFileSync(new URL('../supabase/migrations/0011_event_retention.sql', import.meta.url), 'utf8');
+const advisorFixes = readFileSync(new URL('../supabase/migrations/0012_advisor_rls_and_indexes.sql', import.meta.url), 'utf8');
 const renderAfter = readFileSync(new URL('../supabase/functions/render-after/index.ts', import.meta.url), 'utf8');
 const getSharedSpace = readFileSync(new URL('../supabase/functions/get-shared-space/index.ts', import.meta.url), 'utf8');
 const auth = readFileSync(new URL('../supabase/functions/_shared/auth.ts', import.meta.url), 'utf8');
@@ -304,6 +305,35 @@ test('event retention purges usage_events and telemetry_events on a schedule', (
     'the purge function must not be callable by anon/authenticated clients');
   assert.match(retention, /create extension if not exists pg_cron with schema extensions/,
     'pg_cron should not land in the public schema, the same finding as pg_net');
+});
+
+/* A bare auth.uid() in a policy is re-evaluated per row; the Supabase advisor
+   flags this as auth_rls_initplan on every policy that does it. Five policies
+   had it (0009 already dealt with the project's other two advisor findings,
+   as deliberate non-fixes, so they are not repeated here) — each is asserted
+   by name so a future policy edit that reintroduces a bare auth.uid() on one
+   of these five is caught, rather than the count alone letting a wrap on one
+   policy hide a miss on another. */
+test('five RLS policies wrap auth.uid() in a scalar subselect instead of leaving it bare', () => {
+  const policies = [
+    'own profile select', 'own profile insert', 'own profile update',
+    'own spaces all', 'own media all',
+  ];
+  for (const name of policies) {
+    const stmt = advisorFixes.slice(advisorFixes.indexOf(`alter policy "${name}"`));
+    const clause = stmt.slice(0, stmt.indexOf(';') + 1);
+    const wrapped = clause.match(/\(select auth\.uid\(\)\)/g) || [];
+    const total = clause.match(/auth\.uid\(\)/g) || [];
+    assert.ok(wrapped.length > 0, `policy "${name}" still has a bare auth.uid()`);
+    assert.equal(wrapped.length, total.length, `policy "${name}" mixes a wrapped and a bare auth.uid()`);
+  }
+});
+
+test('the three previously unindexed user_id foreign keys are now indexed', () => {
+  for (const table of ['feedback', 'invite_requests', 'space_media']) {
+    assert.match(advisorFixes, new RegExp(`create index \\w+ on public\\.${table} \\(user_id\\)`),
+      `${table}.user_id has no index`);
+  }
 });
 
 test('every function reads its body through the shared guard', () => {
