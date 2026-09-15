@@ -151,17 +151,24 @@ export function initHistory(){
   });
 }
 
+/* The rail under the running head is the wizard's. It is empty before the
+   wizard (the landing page, the product library, the dashboard), advances a
+   step at a time through it, and stays full from Review on: the loading
+   screen, the report, the screens past it and the 3D view all carry a plan
+   the wizard has finished building. It used to switch formulas after Review,
+   dividing the screen's index in FLOW by FLOW's length, so a rail that had
+   just reached 100% at Review fell to 75% on the loading screen and climbed
+   back to 81% on the report, as if building the plan had undone two steps. */
+const PLAN_SCREENS=new Set([...FLOW.slice(FLOW.indexOf('review')+1),'viewer3d']);
+export function railPercent(id){
+  const stepNum=stepNumFor(id);
+  if(stepNum>0) return Math.round(stepNum/WIZARD_STEPS.length*100);
+  return PLAN_SCREENS.has(id)?100:0;
+}
 export function setRail(){
   const rail=document.getElementById('rail');
   if(!rail) return;
-  const stepNum=stepNumFor(current);
-  if(stepNum>0){
-    rail.style.width=Math.round(stepNum/WIZARD_STEPS.length*100)+'%';
-    return;
-  }
-  const idx=Math.max(0,FLOW.indexOf(current));
-  const pct=Math.round(idx/(FLOW.length-2)*100);
-  rail.style.width=Math.min(100,pct)+'%';
+  rail.style.width=railPercent(current)+'%';
 }
 export function go(id, opts={}){
   id=resolveScreen(id);
