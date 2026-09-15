@@ -4,16 +4,17 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #143 merged (`main` at `64cea85`,
-12:01 UTC) with PR #144 open (draft): a rate-limited analysis says how
-long to wait and is not called a failure (#143, `waitText` and
-`analysisFailureCopy` in `js/api.js`, the code and wait carried as
-`state.aiFailure`), and the security page's three false claims are
-rewritten to what the code does (#144, with the privacy policy's copy of
-the salt sentence). Both client-only, so the dead deploy token (Production
-health #5, open item 11) does not apply. Pages run 148 carries #143; see
-below for whether it went green. That closes the sixth and, when #144
-merges, the seventh line of open item 12's batch 1, leaving the legal pages.
+**Last refreshed:** 2026-09-15, after PR #144 merged (`main` at `60ba720`,
+12:21 UTC), on top of PR #143 (`main` at `64cea85`, 12:01 UTC): a
+rate-limited analysis says how long to wait and is not called a failure
+(#143, `waitText` and `analysisFailureCopy` in `js/api.js`, the code and
+wait carried as `state.aiFailure`), and the security page's three false
+claims are rewritten to what the code does (#144, with the privacy policy's
+copy of the salt sentence). Both client-only, so the dead deploy token
+(Production health #5, open item 11) does not apply. Pages run 148 went
+green at 12:14 UTC, so **the rate-limit copy is live on the site**; run 149
+carries #144 and was in progress at the time of writing. That closes the
+sixth and seventh lines of open item 12's batch 1, leaving the legal pages.
 Before that, 2026-09-15, after PR #142 merged (`main` at `52145ce`,
 09:47 UTC): the sign-in modal explains a failed request instead of printing
 the browser's fetch text. `js/auth.js` runs the library load and the request
