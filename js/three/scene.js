@@ -397,6 +397,12 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
     : []);
   const shelfFracs=fracs.length?fracs:evenShelfFracs(NSH);
 
+  /* Declared before anything that can call requestRender() — reflow() runs
+     once during setup, long before the render-loop code further down, and a
+     `let` referenced ahead of its own declaration throws (temporal dead
+     zone) even though the function that closes over it is only CALLED
+     later. A real browser load caught this; no unit test could have. */
+  let raf=0, disposed=false;
   const renderer=createRenderer(canvas);
   renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
   renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -857,6 +863,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         );
       });
     });
+    requestRender();
   }
   reflow();
   /* Everything still owed, not just what some row got partway through. A need
@@ -918,6 +925,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
     renderer.setSize(w, h, false);
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
+    requestRender();
   }
   setSize();
 
@@ -949,6 +957,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   function setZoneLabels(on){
     zoneLabelsOn=!!on;
     if(!zoneLabelsOn) zoneLabels.forEach(l=>{ l.visible=false; });
+    requestRender();
   }
 
   function updateZoneLabels(){
@@ -970,19 +979,35 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
 
   if(envTarget) scopeEnvironment(scene, envTarget.texture);
 
-  let raf=0, disposed=false;
-  function loop(){
+  /* The loop used to run forever at whatever the display refresh rate is,
+     rendering an unchanged scene the whole time anyone left the tab open on
+     it. Render on demand instead: a frame is scheduled only when something
+     could actually look different. OrbitControls' own 'change' event covers
+     the camera (drag, wheel, and damping's decay, which keeps firing 'change'
+     from inside its own update() until the motion settles below its epsilon,
+     which is what keeps this self-sustaining through a coast-to-stop rather
+     than freezing one frame in). Everything that moves the scene without
+     moving the camera — reflow(), setSize(), setZoneLabels(), and every
+     pointer/keyboard interaction in interact.js — calls requestRender()
+     itself; see the comments at each call site. */
+  function renderFrame(){
     if(disposed) return;
     controls.update();
     updateZoneLabels();
     renderer.render(scene, camera);
-    raf=requestAnimationFrame(loop);
   }
-  loop();
+  function requestRender(){
+    if(disposed) return;
+    cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(renderFrame);
+  }
+  controls.addEventListener('change', requestRender);
+  requestRender();
 
   function dispose(){
     disposed=true;
     cancelAnimationFrame(raf);
+    controls.removeEventListener('change', requestRender);
     controls.dispose();
     const geometries=new Set(),materials=new Set(),textures=new Set();
     scene.traverse(o=>{
@@ -1008,6 +1033,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   }
 
   return { scene, renderer, camera, controls, items, organizers, shelves, surfaces, reflow, setSize, dispose,
+    requestRender,
     unplacedOrganizerQty, mountedElsewhere, setZoneLabels, zoneLabelsOn(){ return zoneLabelsOn; },
     placements(){ return items.map(m=>({ itemId:m.userData.itemId, shelfIndex:m.userData.shelfIndex, slot:m.userData.slot })); } };
 }

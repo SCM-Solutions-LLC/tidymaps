@@ -14,6 +14,12 @@ test('L side selector mirrors scene and saves choice',async({page})=>{
   await expect(page.locator('#v3d-l-side-control')).toBeVisible();
   await page.locator('[data-side="left"]').click();
   await page.locator('#v3d-save').click();
+  /* saveArrangement() is dynamic-imported on click now (js/main.js), a
+     module already loaded by the time this button is reachable but still a
+     promise Playwright's click() does not wait on — reading state right
+     after the click raced it. The toast is the same signal a person reads
+     the save from, so it is what the test waits on too. */
+  await expect(page.locator('#toast')).toContainText('Arrangement saved');
   const saved=await page.evaluate(async()=>{
     const {state}=await import('/js/state.js');
     return state.arrangement;
@@ -43,6 +49,7 @@ test('wall shelf editor saves count, placement, and uneven heights',async({page}
   await page.locator('[data-shelf-height="1"]').fill('41');
   await page.waitForTimeout(300);
   await page.locator('#v3d-save').click();
+  await expect(page.locator('#toast')).toContainText('Arrangement saved');
   const saved=await page.evaluate(async()=>{
     const {state}=await import('/js/state.js');
     return state.arrangement;

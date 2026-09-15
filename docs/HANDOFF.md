@@ -57,11 +57,13 @@ surfaces.
 The rating-scale split merged as **#159** (`main` at `87b2ef9`). **Batch 3
 (performance, infrastructure, backend) is under way**: the Pages artifact
 merged as **#160** (`main` at `7268c99`), inlining the two critical
-stylesheets as **#161** (`main` at `9c7a56f`); the eager-JS line, only
-partly closeable from `main.js` as it turned out, is PR #162 (see the
-batch list below for all three). Each PR this session was cherry-picked
-from a local branch onto the one PR branch, reset from `main` after each
-merge; the five cross-line
+stylesheets as **#161** (`main` at `9c7a56f`), the eager-JS line (only
+partly closeable from `main.js` as it turned out) as **#162** (`main` at
+`c21d39b`); the 3D render loop, which also carried a fix for a
+merge-time regression in #162's own async click handlers, is PR #163
+(see the batch list below for all four). Each PR this session was
+cherry-picked from a local branch onto the one PR branch, reset from
+`main` after each merge; the five cross-line
 conflicts met along the way were resolved once on a scratch stack and the
 full suite run against it (282 passed, 1 pre-existing skip) before any of
 them went up.
@@ -2385,8 +2387,55 @@ Ordered by whether anyone can act on them today.
       the landing page onward; reaching anything near 56KB means deciding
       which of the wizard's own screens can defer which of the others, not
       trimming what `main.js` hands to `window`.
-    - The 3D rAF loop never idles (`js/three/scene.js` ~974-981). Render on
-      controls change.
+    - ~~The 3D rAF loop never idles (`js/three/scene.js` ~974-981). Render on
+      controls change.~~ **Done in #163.** `requestFrame()`/`renderFrame()`
+      replace the always-on loop: a frame is scheduled only by OrbitControls'
+      own `change` event (which keeps firing from inside its own `update()`
+      through a drag's damping decay, then stops on its own) or by whatever
+      moved the scene without moving the camera — `reflow()`, `setSize()`,
+      `setZoneLabels()` each call it directly, and every pointer/keyboard
+      handler in `interact.js` is wrapped so a future interaction cannot
+      forget to ask for a frame. `spotlightShelf()`'s hover highlight
+      (`js/screens/viewer3d.js`) was the one direct scene mutation outside
+      those three functions and needed its own call.
+
+      **Two things only a real browser load caught, in order.** First,
+      `let raf=0, disposed=false;` sat textually inside the render-loop
+      section, after `reflow()`'s single startup call — a `let` referenced
+      before its own declaration line executes throws (temporal dead zone),
+      even though the function closing over it is only *called* later, so
+      the very first open of the 3D view threw and 52 e2e tests across the
+      viewer3d suites failed with the view never rendering at all. Moving
+      the declaration to the top of `buildScene()`, before anything that
+      can call `requestRender()`, fixed it; a unit test cannot see this
+      class of bug because it is about *when* a closure is entered, not
+      what it returns. Second, `saveArrangement`/`openViewer3d` becoming
+      dynamic-imported in #162 means the click handler is now a promise
+      Playwright's `.click()` does not wait on; two `three-editor.spec.mjs`
+      tests that read `state.arrangement` immediately after clicking Save
+      raced it and had been intermittently green since #162 merged. Fixed
+      by waiting for the "Arrangement saved" toast, the same signal a
+      person reads the save from, before reading state — the honest fix,
+      since a real Save click has the same race and nothing is owed a
+      synchronous read.
+
+      **A genuine, not a fixable, tail:** OrbitControls fires `change` at a
+      roughly constant rate for as long as frame-to-frame camera movement
+      is above its own fixed epsilon (not exposed as a public option), then
+      stops outright rather than tapering off. Measured on this scene's
+      scale — an 84-inch cabinet, camera distance over 100 world units — a
+      single orbit's damping kept firing `change` (and therefore rendering)
+      for 5 to 6 real seconds after the pointer was released, not the
+      sub-second settle a smaller scene would show. That is inherent to
+      OrbitControls' EPS constant interacting with absolute world scale,
+      not something this fix introduced or can tune away without forking
+      the vendored library; `tests/e2e/viewer3d-render-on-demand.spec.mjs`
+      waits it out (up to 8s) rather than asserting a settle time this
+      scene cannot meet. New assertions proven red two ways: reverting the
+      loop to always-render (idle and settle-time tests both failed, as
+      expected) and reverting the `let` hoist alone (the whole viewer3d
+      suite failed on the TDZ throw, confirming that bug's blast radius
+      before the fix).
     - `js/three/layouts/index.js` loads 14 builders to use one: thunk map.
     - The italic woff2 (39KB) loads eagerly on the landing page: static 400
       instance, or synthesize.

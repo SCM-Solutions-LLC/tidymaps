@@ -545,6 +545,9 @@ function spotlightShelf(shelfIndex, on){
     item.material.emissive.setHex(on?0x26372c:0x000000);
     if(item.userData.label) item.userData.label.visible=on;
   });
+  // The render loop is on-demand (js/three/scene.js): nothing repaints
+  // itself, so a hover highlight has to ask for the frame it just changed.
+  view.requestRender();
 }
 
 /* The switch outlives the scene. Rebuilding (a shelf-count change, a layout
