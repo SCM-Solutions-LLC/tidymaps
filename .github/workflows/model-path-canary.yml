@@ -18,10 +18,12 @@ on:
     # behind everyone else's, and this one has a 155s client timeout.
     - cron: '20 6 * * *'
   workflow_dispatch:
-# The script only reads config.js and calls the deployed function; nothing
-# here touches the repository.
+# The script only reads config.js and calls the deployed function; the
+# heartbeat step reads this workflow's own run history through the GitHub
+# API. Neither writes to the repo.
 permissions:
   contents: read
+  actions: read
 jobs:
   canary:
     runs-on: ubuntu-latest
@@ -32,7 +34,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # No `npm ci`: the script imports only node builtins and js/config.js,
+      # No `npm ci`: the scripts import only node builtins and js/config.js,
       # which is committed. Nothing to install, so nothing to break.
       - name: Call analyze-space for real
         run: node scripts/model-path-canary.mjs
+      # Runs even if the canary above failed, so a schedule issue is reported
+      # alongside a model-path outage rather than hidden behind it. See the
+      # header of scripts/check-canary-heartbeat.mjs for why this exists.
+      - name: Check heartbeat (previous run was not silently skipped)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node scripts/check-canary-heartbeat.mjs
