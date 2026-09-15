@@ -14,7 +14,9 @@ copy of the salt sentence). Both client-only, so the dead deploy token
 (Production health #5, open item 11) does not apply. Pages run 148 went
 green at 12:14 UTC, so **the rate-limit copy is live on the site**; run 149
 carries #144 and was in progress at the time of writing. That closes the
-sixth and seventh lines of open item 12's batch 1, leaving the legal pages.
+sixth and seventh lines of open item 12's batch 1; the eighth and last, the
+legal pages, is PR #145, open (draft) at the time of writing. When it
+merges, batch 1 is done and batch 2 (UX, accessibility, copy) is next.
 Before that, 2026-09-15, after PR #142 merged (`main` at `52145ce`,
 09:47 UTC): the sign-in modal explains a failed request instead of printing
 the browser's fetch text. `js/auth.js` runs the library load and the request
@@ -2050,10 +2052,24 @@ Ordered by whether anyone can act on them today.
       switch themselves off if the backend changes so the claim would be
       true again; each proven red by putting the old sentence back.
       Browser-checked at 390 and 1280.
-    - Legal: `privacy.html` and `terms.html` promise video while the input is
+    - ~~Legal: `privacy.html` and `terms.html` promise video while the input is
       `image/*`; Resend is missing from privacy; five telemetry events are
       undisclosed (`_shared/telemetryEvents.js`); dates are stale; `terms.html`
-      lacks the safety-note redaction sentence.
+      lacks the safety-note redaction sentence.~~ **Done in #145.** Privacy
+      says photos rather than photos and videos, names Resend under "Where
+      your data lives" (verified from the sandbox: the Resend account's one
+      sending domain is `scmsolutions.org`; not verified: the hosted Supabase
+      Auth SMTP setting), and its usage-data paragraph lists all ten events
+      in the server allowlist with what each carries. Terms drop the video,
+      carry the redaction sentence, and date today; privacy's date moved in
+      #144. Four tests in `legal-pages.test.mjs` tie the claims to the code
+      (the input's `accept`, the allowlist with a name-to-words map that
+      fails both on a new undisclosed event and on a disclosure that
+      outlives its event, `sharePayload.js`'s `householdPatterns`, and the
+      security page's provider list), each proven red by putting the old
+      text back. Left alone: the "Last reviewed" dates on `cookies.html` and
+      `accessibility.html`, which nobody reviewed. **That was the last line
+      of batch 1.** Batch 2 is next.
 
     **Batch 2, UX, accessibility, copy.**
     - Shelf-map tint is inverted (`css/components.css` ~181 vs ~190; swap
