@@ -276,7 +276,7 @@ test('the age advice argues from height, and says whose age it is answering', ()
 
   // and a teenager gets the opposite advice, because it is the opposite problem
   const teen = getDemoScenario('pantry', 'find', withAges(['Teen']));
-  assert.ok(teen.steps.some(s => /own\b.*zone they control|labelled zone/i.test(s.task)),
+  assert.ok(teen.steps.some(s => /own\b.*zone they control|labell?ed zone/i.test(s.task)),
     `no teen-specific step: ${teen.steps.map(s => s.task).join(' | ')}`);
 });
 

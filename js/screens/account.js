@@ -108,7 +108,7 @@ export async function verifyAuthCode(){
   const email=document.getElementById('auth-email').value.trim();
   const code=document.getElementById('auth-code').value.trim();
   const msg=document.getElementById('auth-msg');
-  if(code.length<6||code.length>8){ msg.textContent='Enter the code from your email (6–8 digits).'; return; }
+  if(code.length<6||code.length>8){ msg.textContent='Enter the code from your email.'; return; }
   const btn=document.getElementById('auth-verify-btn');
   btn.disabled=true; msg.textContent='Checking…';
   try{

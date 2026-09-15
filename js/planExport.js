@@ -1,6 +1,6 @@
-import { state } from './state.js';
+import { state, isMetric } from './state.js';
 import { activeMapV2, activeSafetyNotes, activeProductNeeds } from './plan.js';
-import { areaFor } from './wizard-data.js';
+import { areaFor, fmtIn } from './wizard-data.js';
 import { toast } from './ui.js';
 
 /* Plain-text renderings of the plan.
@@ -124,6 +124,9 @@ export function shoppingListText() {
     return lines.join('\n');
   }
 
+  // The reader's units, not the plan's: dims are inches inside, and a metric
+  // reader was told what must fit in inches.
+  const metric = isMetric();
   let total = 0;
   rows.forEach((row) => {
     const price = Number(row.price);
@@ -132,7 +135,7 @@ export function shoppingListText() {
     if (row.zone) lines.push(`    for: ${row.zone}`);
     if (row.purpose) lines.push(`    ${row.purpose}`);
     if (row.dims && row.dims.w_in) {
-      lines.push(`    must fit: ${row.dims.w_in}w x ${row.dims.h_in}h x ${row.dims.d_in}d inches`);
+      lines.push(`    must fit: ${fmtIn(row.dims.w_in, metric)} wide x ${fmtIn(row.dims.h_in, metric)} high x ${fmtIn(row.dims.d_in, metric)} deep`);
     }
     if (row.url) lines.push(`    ${row.retailer ? `${row.retailer}: ` : ''}${row.url}`);
     lines.push('');
