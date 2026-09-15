@@ -79,6 +79,15 @@ function rejectReason(item){
   return '“'+name+'” doesn’t hang on a rod, so it went back where it was.';
 }
 
+/* What a keyboard move did, for the live region beside the drawing. Cleared
+   first so the same sentence twice in a row is read twice. */
+function announce3d(text){
+  const live=document.getElementById('v3d-live');
+  if(!live) return;
+  live.textContent='';
+  live.textContent=text;
+}
+
 function organizerPlan(){
   const existing=(state.ai&&state.ai.existing)||[];
   return {
@@ -147,6 +156,7 @@ function rebuildScene(){
   const kids=state.household.kids.present==='yes';
   detach=_attachDrag(view, {
     canDrop: dropAllowed,
+    announce: announce3d,
     onRejectDrop(item, shelf){ toast(rejectReason(item, shelf)); },
     onDrop(item, shelf){
       const flags=item.userData.flags||[];
@@ -200,6 +210,7 @@ export async function openViewer3d(){
     const kids=state.household.kids.present==='yes';
     detach=attachDrag(view, {
       canDrop: dropAllowed,
+      announce: announce3d,
       onRejectDrop(item, shelf){ toast(rejectReason(item, shelf)); },
       onDrop(item, shelf){
         const flags=item.userData.flags||[];
@@ -275,6 +286,10 @@ function updateHeading(){
   if(title) title.textContent = kind==='shared' ? `The ${name}, standing up`
     : kind==='sample' ? `The sample ${name}, standing up`
     : `Your ${name}, standing up`;
+  // The drawing's accessible name says whose space it is, the way the title does.
+  const canvas=document.getElementById('v3d-canvas');
+  if(canvas) canvas.setAttribute('aria-label', 'Three-dimensional drawing of '
+    + (kind==='shared' ? `the ${name}` : kind==='sample' ? `the sample ${name}` : `your ${name}`));
   const intro=document.getElementById('v3d-intro');
   if(intro) intro.textContent = 'Drag to spin it around, scroll to zoom. ' + {
     shared: 'The model follows this plan\'s layout and size.',

@@ -53,6 +53,9 @@ p{margin:0 0 1em}
 }
 .muted{color:var(--spot-ink)}
 .small{font-size:14px;line-height:1.5}
+/* Read by assistive tech, drawn nowhere: a live region, a name for a control
+   that shows only a picture. */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .ui{font-family:var(--sans)}
 
 /* ---------- Skip link ----------

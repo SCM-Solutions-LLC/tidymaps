@@ -10,11 +10,12 @@ import {
 
 /* Pointer-drag for items: raycast pick, lift, retarget across shelf
    hitboxes, snap into a slot on drop. onDrop(item, targetShelf) may veto
-   nothing but can warn (safety). */
+   nothing but can warn (safety). The same moves are on the keyboard below,
+   and `announce(text)` is how each keyboard step is read out. */
 
-export function attachDrag(view, { onDrop, canDrop, onRejectDrop }={}){
+export function attachDrag(view, { onDrop, canDrop, onRejectDrop, announce }={}){
   const { renderer, camera, controls, items, shelves, reflow }=view;
-  const surfaces=view.surfaces||shelves;
+  const surfaces=(view.surfaces||shelves).slice().sort((a,b)=>a.index-b.index);
   const canvas=renderer.domElement;
   const ray=new THREE.Raycaster();
   const pointer=new THREE.Vector2();
@@ -123,16 +124,144 @@ export function attachDrag(view, { onDrop, canDrop, onRejectDrop }={}){
     if(!dragging) hovered=null;
   }
 
+  /* ---------- the same moves on the keyboard ----------
+     Rearranging was drag-only, so the drawing could be looked at from the
+     keyboard and nothing in it moved. With the canvas focused: Left and Right
+     choose an item (its label shows, and the live region names it and where
+     it sits); Space or Enter picks it up; Up and Down carry it to the surface
+     above or below, Left and Right along the one it is on; Space or Enter
+     puts it down, through the same canDrop and onDrop as a pointer drop;
+     Escape puts it back where it was. Focus leaving the drawing puts a held
+     item back too, so nothing is left in the air. */
+  const say=(text)=>{ if(announce) announce(text); };
+  const surfaceName=(s)=>(s&&s.row&&(s.row.level||s.row.lv))||(s?`${s.kind||'shelf'} ${s.index+1}`:'nowhere');
+  const surfaceOf=(item)=>surfaces.find(s=>s.index===item.userData.shelfIndex)||null;
+  const bySlot=(a,b)=>a.userData.slot-b.userData.slot;
+  const ordered=()=>items.slice().sort((a,b)=>(a.userData.shelfIndex-b.userData.shelfIndex)||bySlot(a,b));
+  let chosen=null;      // the item the arrows are on
+  let held=null;        // the item being carried
+  let origin=null;      // where the held item came from, for Escape and a refused drop
+
+  function lift(item){
+    if(item.userData.label) item.userData.label.visible=true;
+    (item.userData.displayCopies||[]).forEach(copy=>{ copy.visible=false; });
+    controls.enabled=false;
+    item.position.y+=1.2;
+    item.material.emissive=new THREE.Color(0x1c2b20);
+  }
+  function settle(item){
+    controls.enabled=true;
+    item.material.emissive=new THREE.Color(0x000000);
+  }
+  function placeAt(item, shelfIndex, slot){
+    const others=items.filter(m=>m!==item&&m.userData.shelfIndex===shelfIndex).sort(bySlot);
+    item.userData.shelfIndex=shelfIndex;
+    others.forEach((m,i)=>{ m.userData.slot=i>=slot?i+1:i; });
+    item.userData.slot=slot;
+    reflow();
+  }
+
+  function choose(delta){
+    const list=ordered();
+    if(!list.length){ say('There is nothing to move in this drawing.'); return; }
+    const at=chosen?list.indexOf(chosen):-1;
+    const next=list[(at+delta+list.length)%list.length];
+    if(chosen&&chosen!==next&&chosen.userData.label) chosen.userData.label.visible=false;
+    chosen=next;
+    hovered=next;
+    if(chosen.userData.label) chosen.userData.label.visible=true;
+    say(`${chosen.userData.name}, on ${surfaceName(surfaceOf(chosen))}, ${list.indexOf(chosen)+1} of ${list.length}. Space picks it up.`);
+  }
+  function pickUp(){
+    if(!chosen){ choose(1); return; }
+    held=chosen;
+    origin={ shelfIndex:held.userData.shelfIndex, slot:held.userData.slot };
+    lift(held);
+    say(`Picked up ${held.userData.name}. Up and Down carry it to another shelf, Left and Right move it along, Space puts it down, Escape puts it back.`);
+  }
+  function carry(dShelf, dSlot){
+    const here=surfaceOf(held);
+    let target=here;
+    if(dShelf){
+      target=surfaces[surfaces.indexOf(here)+dShelf];
+      if(!target){ say(`Nothing ${dShelf<0?'above':'below'} ${surfaceName(here)}.`); return; }
+    }
+    const others=items.filter(m=>m!==held&&m.userData.shelfIndex===target.index);
+    const slot=dShelf?others.length:Math.max(0, Math.min(others.length, held.userData.slot+dSlot));
+    if(!dShelf&&slot===held.userData.slot){
+      say(`${held.userData.name} is already at the ${dSlot<0?'start':'end'} of ${surfaceName(target)}.`);
+      return;
+    }
+    placeAt(held, target.index, slot);
+    held.position.y+=1.2;
+    if(held.userData.label) held.userData.label.visible=true;
+    say(`${held.userData.name} on ${surfaceName(target)}, position ${slot+1} of ${others.length+1}.`);
+  }
+  function putBack(item, why){
+    placeAt(item, origin.shelfIndex, origin.slot);
+    say(`${why} ${item.userData.name} is back on ${surfaceName(surfaceOf(item))}.`);
+  }
+  function putDown(){
+    const item=held; held=null;
+    settle(item);
+    const target=surfaceOf(item);
+    if(target && canDrop && !canDrop(item, target)){
+      if(onRejectDrop) onRejectDrop(item, target);
+      putBack(item, `${item.userData.name} cannot go on ${surfaceName(target)}.`);
+    }else{
+      reflow();
+      if(onDrop) onDrop(item, target);
+      say(`Put down ${item.userData.name} on ${surfaceName(target)}.`);
+    }
+    origin=null;
+  }
+  function cancel(){
+    const item=held; held=null;
+    settle(item);
+    putBack(item, 'Put back.');
+    origin=null;
+  }
+  function onKey(e){
+    if(dragging) return;
+    const k=e.key;
+    if(held){
+      if(k==='ArrowUp') carry(-1,0);
+      else if(k==='ArrowDown') carry(1,0);
+      else if(k==='ArrowLeft') carry(0,-1);
+      else if(k==='ArrowRight') carry(0,1);
+      else if(k===' '||k==='Enter') putDown();
+      else if(k==='Escape') cancel();
+      else return;
+      e.preventDefault();
+      return;
+    }
+    if(k==='ArrowRight'||k==='ArrowDown') choose(1);
+    else if(k==='ArrowLeft'||k==='ArrowUp') choose(-1);
+    else if(k===' '||k==='Enter') pickUp();
+    else return;
+    e.preventDefault();
+  }
+  function onBlur(){
+    if(held) cancel();
+    if(chosen&&chosen.userData.label) chosen.userData.label.visible=false;
+    chosen=null;
+    hovered=null;
+  }
+
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
   canvas.addEventListener('pointerup', onUp);
   canvas.addEventListener('pointercancel', onUp);
   canvas.addEventListener('pointerleave', onLeave);
+  canvas.addEventListener('keydown', onKey);
+  canvas.addEventListener('blur', onBlur);
   return ()=>{
     canvas.removeEventListener('pointerdown', onDown);
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
     canvas.removeEventListener('pointercancel', onUp);
     canvas.removeEventListener('pointerleave', onLeave);
+    canvas.removeEventListener('keydown', onKey);
+    canvas.removeEventListener('blur', onBlur);
   };
 }

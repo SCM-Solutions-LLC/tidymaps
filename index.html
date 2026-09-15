@@ -918,8 +918,14 @@
   <div class="v3d-body">
     <div class="v3d-main">
       <div class="v3d-wrap">
-        <canvas id="v3d-canvas"></canvas>
+        <!-- A focusable widget, not a picture: with the drawing focused the
+             arrow keys choose and carry an item the way a pointer drags one
+             (js/three/interact.js), and each step is read into the live
+             region below. The label names whose space it is (updateHeading). -->
+        <canvas id="v3d-canvas" role="application" tabindex="0" aria-label="Three-dimensional drawing of the space" aria-describedby="v3d-keys"></canvas>
       </div>
+      <p class="small muted" id="v3d-keys" style="margin:8px 0 0">Keyboard: Tab to the drawing, then Left and Right choose an item, Space picks it up, the arrows carry it to another shelf or along one, Space puts it down, Escape puts it back.</p>
+      <p class="sr-only" id="v3d-live" role="status" aria-live="polite" aria-atomic="true"></p>
       <p class="note" id="v3d-status" style="margin-top:10px"></p>
       <!-- The fit warning sits under the VIEW, not in the sidebar list, for
            two reasons: it is a statement about this view ("no spot in this
