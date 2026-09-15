@@ -95,6 +95,35 @@ export function snapshotSave(name, { media=true }={}){
 
 /* Takes its client the way deleteSpaceData and uploadMissingMedia do, so a
    test can drive the ownership rules without a live project. */
+/* The PostgREST error rides along as `cause`, so a caller can tell an expired
+   sign-in from a server that is simply down and say the right thing. */
+function saveError(error){
+  const err=new Error('Saving failed. Please try again.');
+  err.cause=error||null;
+  return err;
+}
+/* PostgREST answers a stale JWT with 401 and code PGRST301; supabase-js
+   refreshes tokens on its own, so reaching here means the refresh failed and
+   the user is, for the server's purposes, signed out. */
+export function sessionExpired(error){
+  const cause=(error && error.cause) || error || {};
+  return cause.code==='PGRST301' || cause.status===401
+    || /\bjwt\b|not authenticated|session (has )?expired/i.test(String(cause.message||''));
+}
+/* A save that failed used to fail in silence: the row stopped updating and
+   the screen went on looking saved. Said once per plan instance, because every
+   later write of the same plan fails the same way and a toast a tick is
+   noise; said only about the plan still on screen. */
+let warnedInstance=null;
+export function warnSaveFailed(error, instance){
+  if(warnedInstance===instance) return;
+  warnedInstance=instance;
+  if(instance && !planInstanceIsCurrent(instance)) return;
+  toast(sessionExpired(error)
+    ? 'Your sign-in has expired, so this plan is not being saved to My spaces. Sign in again to keep it.'
+    : 'This plan could not be saved to My spaces. It is still here; try Save again in a moment.');
+}
+
 export async function persistSpace(c, userId, snapshot, { auto=false }={}){
   let spaceId = snapshot.spaceId;
   if(spaceId){
@@ -106,10 +135,10 @@ export async function persistSpace(c, userId, snapshot, { auto=false }={}){
        THIS plan's row was written, not that some row was. */
     const { data, error } = await c.from('spaces')
       .update(snapshot.row).eq('id', spaceId).select('id').maybeSingle();
-    if(error || !data) throw new Error('Saving failed. Please try again.');
+    if(error || !data) throw saveError(error);
   }else{
     const { data, error } = await c.from('spaces').insert({ ...snapshot.row, user_id:userId }).select('id').single();
-    if(error) throw new Error('Saving failed. Please try again.');
+    if(error) throw saveError(error);
     spaceId = data.id;
     /* The id belongs to the plan that asked for the insert, not to whatever
        is on screen when it lands. Stamping it unconditionally handed the new
@@ -142,7 +171,9 @@ export async function saveSpace(name, { media=true, auto=false }={}){
    is, which also turns on incremental writes for progress, shopping, and the
    3D arrangement. Photos are deliberately NOT uploaded here: the privacy page
    ties photo storage to an explicit save or share, and that stays true.
-   Failure is silent — a plan on screen must never depend on the network. */
+   A plan on screen never depends on the network: a failure leaves it where it
+   is and returns null, but it is said once (warnSaveFailed), because a plan
+   that looked saved and was not is the worse silence. */
 export async function autoSaveSpace(){
   if(!supa() || !getUser()) return null;
   if(state.shareView || !state.ai) return null;
@@ -156,7 +187,8 @@ export async function autoSaveSpace(){
     // wrong space, and points at a row this one does not own.
     if(isNew && planInstanceIsCurrent(instance)) toast('Saved to “My spaces”.');
     return id;
-  }catch(_){
+  }catch(e){
+    warnSaveFailed(e, instance);
     return null;
   }
 }
@@ -522,6 +554,16 @@ export function takePendingPatch(){
 export async function writePatch(c, id, body){
   const { error } = await c.from('spaces').update(body).eq('id', id);
   if(!error) return;
+  /* An expired sign-in fails every retry the same way, so retrying every four
+     seconds against it is noise on the wire and silence on the screen. The
+     keys are kept for the flush after the next sign-in, it is said once, and
+     the timer is not re-armed. */
+  if(sessionExpired(error)){
+    if(!(patchTargetId && patchTargetId!==id)){ pendingPatch={ ...body, ...pendingPatch }; patchTargetId=id; }
+    clearTimeout(patchTimer);
+    warnSaveFailed(error, currentPlanInstance());
+    return;
+  }
   /* The error was never read, and `pendingPatch` is emptied before the await —
      so one failed request dropped that progress tick, shopping edit or 3D
      arrangement on the floor, with no retry and nothing on screen to say so.

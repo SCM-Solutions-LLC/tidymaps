@@ -470,6 +470,10 @@ export function persistGuestDraft(){
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       v:2, savedAt:Date.now(),
       planReady: !!state.ai || !!(state.stepDone && state.stepDone.length),
+      /* Photos and video cannot be stored (File objects), so the draft records
+         only that there were some: the restore toast has to say they are gone
+         rather than let "your answers are still here" imply they are not. */
+      hadMedia: (state.uploadedFiles||[]).length > 0 || !!state.uploadedVideo,
       answers: wizardAnswers(state),
       ai:state.ai, planMeta:state.planMeta,
       stepDone:state.stepDone||[], upgradeChecked:state.upgradeChecked||null,
@@ -491,7 +495,7 @@ export function restoreGuestDraft(){
     state.ai=d.ai||null; state.planMeta=d.planMeta||null;
     state.stepDone=d.stepDone||[]; state.upgradeChecked=d.upgradeChecked||null;
     state.shopping=d.shopping||null; state.arrangement=d.arrangement||null;
-    return { restored:true, planReady: !!d.planReady };
+    return { restored:true, planReady: !!d.planReady, lostMedia: !!d.hadMedia };
   }catch(_){ return false; }
 }
 
