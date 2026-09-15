@@ -28,6 +28,11 @@ on:
     - cron: '17 6 * * 1'
   workflow_dispatch:
 
+# The deploy authenticates to Supabase with SUPABASE_ACCESS_TOKEN, never with
+# GITHUB_TOKEN — this only needs to read the checkout.
+permissions:
+  contents: read
+
 concurrency:
   group: supabase-functions
   cancel-in-progress: false

@@ -2543,8 +2543,9 @@ Ordered by whether anyone can act on them today.
       reads one older than a day: `check_and_log_usage` only ever looks back
       an hour or a day); `telemetry_events` gets 180 days, since it feeds the
       trend reports in `supabase/queries/telemetry.sql` rather than a
-      rate-limit window. Migrations are applied by hand, so this still needs
-      running against the live project.
+      rate-limit window. Applied to the live project (along with the
+      still-pending #159 and #168 migrations) once Supabase MCP access came
+      back mid-session; `pg_cron` installed cleanly into `extensions`.
       Separately, `render-after` (~line 118) was writing its output to
       storage and to the space's `after_render_path` as soon as a `spaceId`
       was present — and `autoSaveSpace` creates that id, silently, the
@@ -2575,10 +2576,36 @@ Ordered by whether anyone can act on them today.
       `spaces` and `space_media` (a bare `auth.uid()` re-evaluates per row;
       wrapped, the planner evaluates it once per query), and indexes
       `feedback.user_id`, `invite_requests.user_id` and
-      `space_media.user_id`, none of which had one.
-    - CI: add `permissions: contents: read` to the test, supabase-functions
+      `space_media.user_id`, none of which had one. Applied and verified via
+      `get_advisors`: the `auth_rls_initplan` findings are gone, the three
+      new indexes show up only as INFO-level `unused_index` (expected — they
+      are brand new), and `pg_net`/`handle_new_user` are unchanged, exactly
+      as intended.
+    - ~~CI: add `permissions: contents: read` to the test, supabase-functions
       and canary workflows; pin actions to SHAs. Check the hosted OTP expiry
-      and captcha (`config.toml` says 1h, no captcha).
+      and captcha (`config.toml` says 1h, no captcha).~~ **Partly done in
+      #169.** `test.yml`, `supabase-functions.yml` and
+      `model-path-canary.yml` now declare `contents: read` explicitly
+      (`pages.yml` already had it, for the `pages`/`id-token` write its
+      deploy needs). Pinning the six third-party actions in use
+      (`actions/checkout`, `setup-node`, `upload-artifact`,
+      `configure-pages`, `upload-pages-artifact`, `deploy-pages`) to commit
+      SHAs is still open: this session's GitHub access is scoped to this one
+      repository, so there is no way from here to resolve `@v4`/`@v5` to the
+      commit they currently point at, and a guessed SHA is worse than an
+      unpinned tag. Left for a session with broader GitHub read access (or a
+      human, from the Actions tab's "pin to SHA" affordance).
+      The OTP expiry/captcha check resolved itself: `get_advisors` carries a
+      dedicated `auth_otp_long_expiry` finding when the hosted expiry exceeds
+      Supabase's own 1-hour recommendation, and none appeared in this
+      session's scan, so the hosted project is already within it. Captcha
+      stays off for the same reason 0009 gives for leaked-password
+      protection: sign-in is magic-code only, so there is no password form
+      for a bot to hammer; a captcha would guard the OTP-request endpoint
+      against spam, but that is already rate-limited
+      (`auth.rate_limit.sign_in_sign_ups`/`token_verifications`), and adding
+      a third-party captcha provider is a product call, not a code fix, so
+      it is left to whoever owns that account.
     - SEO: canonical is `scmsolutions.org/tidymaps` while the README says
       github.io and CORS lists tidymaps.ai (did not resolve). Add `robots.txt`,
       `sitemap.xml`, JSON-LD, `apple-touch-icon`, `<meta name=color-scheme>`;
