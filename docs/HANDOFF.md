@@ -4,19 +4,28 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #144 merged (`main` at `60ba720`,
-12:21 UTC), on top of PR #143 (`main` at `64cea85`, 12:01 UTC): a
-rate-limited analysis says how long to wait and is not called a failure
-(#143, `waitText` and `analysisFailureCopy` in `js/api.js`, the code and
-wait carried as `state.aiFailure`), and the security page's three false
-claims are rewritten to what the code does (#144, with the privacy policy's
-copy of the salt sentence). Both client-only, so the dead deploy token
-(Production health #5, open item 11) does not apply. Pages run 148 went
-green at 12:14 UTC, so **the rate-limit copy is live on the site**; run 149
-carries #144 and was in progress at the time of writing. That closes the
-sixth and seventh lines of open item 12's batch 1; the eighth and last, the
-legal pages, is PR #145, open (draft) at the time of writing. When it
-merges, batch 1 is done and batch 2 (UX, accessibility, copy) is next.
+**Last refreshed:** 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
+12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
+client-only, so the dead deploy token (Production health #5, open item 11)
+applied to none of them: #142 (the sign-in modal explains a failed request
+instead of printing the browser's fetch text; Pages run 147 green 10:02
+UTC), #143 (a rate-limited analysis says how long to wait and is not
+called a failure, `waitText` and `analysisFailureCopy` in `js/api.js`, the
+code and wait carried as `state.aiFailure`; Pages run 148 green 12:14 UTC),
+#144 (the security page's three false claims rewritten to what the code
+does, with the privacy policy's copy of the salt sentence; Pages run 149
+green 12:38 UTC, so **the corrected security page is live**), and #145
+(the legal pages: photos not video, Resend named, all ten telemetry events
+disclosed, the terms carry the share-redaction sentence and today's date;
+Pages run 150 was in progress at the time of writing). Every new test was
+proven red by neutering only its own behaviour, and every user-facing
+change was browser-checked at 390 and 1280. **Batch 2 is under way** (UX,
+accessibility, copy): its first line, the shelf-map tint, is PR #147, open
+(draft) at the time of writing, and this header refresh (PR #146) was
+folded into it rather than merged on its own. Left alone on purpose: the
+"Last reviewed" dates on `cookies.html` and `accessibility.html` (nobody
+reviewed them), and the copy-conventions test's blind spot for `&mdash;`
+in JS (batch 2; the one instance in `loading.js` is gone).
 Before that, 2026-09-15, after PR #142 merged (`main` at `52145ce`,
 09:47 UTC): the sign-in modal explains a failed request instead of printing
 the browser's fetch text. `js/auth.js` runs the library load and the request
@@ -2072,9 +2081,21 @@ Ordered by whether anyone can act on them today.
       of batch 1.** Batch 2 is next.
 
     **Batch 2, UX, accessibility, copy.**
-    - Shelf-map tint is inverted (`css/components.css` ~181 vs ~190; swap
+    - ~~Shelf-map tint is inverted (`css/components.css` ~181 vs ~190; swap
       `--surface-3` and `--primary-bg` at the use site). DESIGN.md says the
-      eye-level zone is the accent one.
+      eye-level zone is the accent one.~~ **Done in #147.** The two rules
+      name `--tint` and `--tint-2` directly, the tokens DESIGN.md names,
+      rather than swapping the aliases: `--surface-3` and `--primary-bg`
+      sound like a hierarchy and are not one (the first lands on the accent
+      tint, the second on the grey). The landing figure and the report's
+      elevation drawing already read the right way. The design test
+      resolves the `var()` chain through `tokens.css` and asserts the
+      colours, not the names, so a re-aliasing has to keep the eye-level
+      zone the tinted one; each of its two shelf assertions proven red by
+      putting its old token back alone. Browser-checked on the sample plan
+      at 390 and 1280. Seen on the way, not fixed: the "Loaded the sample
+      pantry plan" toast sits over the shelf map at 390, the same toast
+      the last line of this batch says covers the Summary heading.
     - Progress rail reads 100% then 75% then 81% after Review
       (`js/router.js` ~154-165).
     - Mobile nav is not modal: no Esc, outside click, scroll lock or Tab trap
