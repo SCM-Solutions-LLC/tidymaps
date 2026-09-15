@@ -36,11 +36,18 @@ jobs:
       - name: Check product links
         run: npm run check:links
         continue-on-error: true
+      # Publishing the working tree uploaded node_modules, tests, docs and
+      # migrations alongside the 11MB site — a 168MB artifact for what a
+      # visitor's browser actually fetches. scripts/build-site.sh copies only
+      # what the site references; tests/deploy-artifact.test.mjs runs the same
+      # script, so a change to either is checked against the other.
+      - name: Build the deploy artifact
+        run: bash scripts/build-site.sh _site
       - uses: actions/configure-pages@v5
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

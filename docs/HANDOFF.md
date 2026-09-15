@@ -54,11 +54,14 @@ pay are separate questions") was proven red by neutering only the
 afterwards, never `git checkout`. Browser-checked at 390 and 1280 on both
 surfaces.
 
-**Batch 3 (performance, infrastructure, backend) is next.** Each PR this
-session was cherry-picked from a local branch onto the one PR branch,
-reset from `main` after each merge; the five cross-line conflicts met
-along the way were resolved once on a scratch stack and the full suite run
-against it (282 passed, 1 pre-existing skip) before any of them went up.
+The rating-scale split merged as **#159** (`main` at `87b2ef9`). **Batch 3
+(performance, infrastructure, backend) is under way**; its first line, the
+Pages artifact, is PR #160 (see the batch list below for what it does).
+Each PR this session was cherry-picked from a local branch onto the one PR
+branch, reset from `main` after each merge; the five cross-line conflicts
+met along the way were resolved once on a scratch stack and the full suite
+run against it (282 passed, 1 pre-existing skip) before any of them went
+up.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2295,10 +2298,21 @@ Ordered by whether anyone can act on them today.
       its fix neutered. Browser-checked at 390 and 1280.
 
     **Batch 3, performance, infrastructure, backend.**
-    - `pages.yml` ~42 uploads `path: .` after `npm ci`: a 168MB artifact for
+    - ~~`pages.yml` ~42 uploads `path: .` after `npm ci`: a 168MB artifact for
       an 11MB site, with `node_modules`, tests, docs and migrations public.
       Build a `_site/`. Keep `supabase/functions/_shared/telemetryEvents.js`
-      in it (fetched at boot).
+      in it (fetched at boot).~~ **Done in #160.** `scripts/build-site.sh`
+      copies the seven top-level pages and the six asset directories a
+      browser fetches (`assets`, `css`, `data`, `js`, `media`, `vendor`)
+      plus the one file outside them a browser import reaches at boot
+      (`js/telemetry.js` imports `../supabase/functions/_shared/telemetryEvents.js`
+      by that relative path, so the built site keeps it at the same path);
+      `pages.yml` runs it and uploads `_site` rather than `.`.
+      `tests/deploy-artifact.test.mjs` runs the real script into a temp
+      directory and reads what came out, rather than pattern-matching the
+      workflow text, so a script and workflow that drifted apart would still
+      fail it; each of its three assertions proven red by neutering the
+      workflow step and, separately, the script's own copy list.
     - Inline `tokens.css` and `base.css`, load the other four async: measured
       FCP 1116 to 488ms and LCP 1476 to 496ms on a throttled phone. Do NOT
       concatenate and do NOT `modulepreload` (both measured worse).
