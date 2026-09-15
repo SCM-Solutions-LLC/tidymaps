@@ -151,6 +151,9 @@
 .v3d-wrap{border:var(--rule-2);overflow:hidden;background:var(--tint);position:relative}
 .v3d-wrap canvas{display:block;width:100%;height:min(68vh,560px);touch-action:none;cursor:grab}
 .v3d-wrap canvas:active{cursor:grabbing}
+/* The drawing takes keyboard focus (it is a widget, not a picture); the ring
+   sits inside the frame so the frame's own rule stays a rule. */
+.v3d-wrap canvas:focus-visible{outline:2px solid var(--spot);outline-offset:-3px}
 
 .v3d-zones{align-self:start}
 
