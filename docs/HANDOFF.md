@@ -4,26 +4,29 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #149 merged (`main` at `f1d42f6`,
-14:25 UTC): the phone menu behaves like the dialog it looks like
-(`openSiteNav`, `closeSiteNav`, `toggleSiteNav` in `js/ui.js`: Escape,
-outside tap, scroll lock, inert page, Tab cycle). Before it, #148 (the
-progress rail stays full once the wizard is complete, `railPercent` in
-`js/router.js`) and #147 (the shelf map tints the eye-level shelf with the
-accent). All client-only, so the dead deploy token (Production health #5,
-open item 11) does not apply. Pages run 152 (#148) went green at 13:53
-UTC, so **the rail fix is live**; run 153 carries #149 and was in progress
-at the time of writing. That closes the first three lines of open item
-12's batch 2; the fourth, the 3D sliders' 44px target, is PR #150, open
-(draft) at the time of writing. Lines 5 to 10 (the tap targets under
-44px, the skip link and per-screen h1, the keyboard-operable 3D drawing,
-the rating buttons' ARIA state with the shelf items as a list, the space
-cards as a radio group) are built, tested and browser-checked on local
-branches in this session (`wip/targets`, `wip/headings`, `wip/canvas`,
-`wip/aria`, `wip/radio`), each waiting its turn on the one PR branch; the
-session's branch is reset from `main` after each merge and the next line
-cherry-picked onto it. Lines 8 and 9 travel as one PR, both being ARIA
-attributes on the report.
+**Last refreshed:** 2026-09-15, after PR #150 merged (`main` at `6a196d6`,
+14:47 UTC): the 3D view's sliders are 44px targets in the row they had
+(`css/screens.css`, the rule drawn on the track, the box pulled back with
+negative margins). Before it, #149 (the phone menu behaves like the dialog
+it looks like, `openSiteNav`/`closeSiteNav`/`toggleSiteNav` in `js/ui.js`),
+#148 (the progress rail stays full once the wizard is complete) and #147
+(the shelf map tints the eye-level shelf with the accent). All client-only,
+so the dead deploy token (Production health #5, open item 11) does not
+apply. Pages run 153 (#149) and run 154 (#150) were in progress or just
+green at the time of writing; run 152 (#148) went green at 13:53 UTC. That
+closes the first four lines of open item 12's batch 2; the fifth, the tap
+targets under 44px, is PR #151, open (draft) at the time of writing. Lines
+6 to 10 and the copy line are built, tested and browser-checked on local
+branches in this session (`wip/headings`, `wip/canvas`, `wip/aria`,
+`wip/radio`, `wip/copy`, `wip/copy2`), each waiting its turn on the one PR
+branch; the session's branch is reset from `main` after each merge and the
+next line cherry-picked onto it. Lines 8 and 9 travel as one PR, both being
+ARIA attributes on the report; the copy line travels as two (the ten pure
+copy items, then the two behaviours: the autosave failure said once and
+the reload toast naming lost photos), with the rating-scale split left for
+its own PR because it needs a feedback column. The last line (the step
+clips, the gallery's ruled cells, the toast over the Summary head, the
+brand link) is in progress on `wip/layout`.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2149,9 +2152,18 @@ Ordered by whether anyone can act on them today.
       that the row did not grow, that no two targets overlap, and a hit
       test in the padded band; proven red with the 4px box back and with
       the box left in flow. Browser-checked at 390 and 1280.
-    - Tap targets under 44px: report checkboxes 19px, retailer links 15px,
+    - ~~Tap targets under 44px: report checkboxes 19px, retailer links 15px,
       segments 32px, `.btn-sm`, `.home-link`, `.ch-head`, `.wr-edit`. Pad,
-      don't grow.
+      don't grow.~~ **Done in #151.** Text controls take padding and hand
+      the space back with negative margins; the chapter head turns six of
+      the 16px below it into padding; the checkbox gets a 44px label pulled
+      back into its 20px column; bordered controls take the tap in a
+      pseudo-element band (5px above and below a small button, 12px below a
+      segment, because the sticky progress bar sits over the steps toggle).
+      Two siblings the review did not list came along: the six 14px footer
+      links (real padding, since that row wraps) and the product cards'
+      "Details & other options" summary. Four browser tests at 390, each
+      of eight rules proven red alone. Browser-checked at 390 and 1280.
     - No skip link; no h1 off the landing page (axe `page-has-heading-one` on
       wizard, report and 3D).
     - 3D canvas has no role, label or tabindex, and rearranging is drag-only.
