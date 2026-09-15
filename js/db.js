@@ -317,6 +317,14 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
   // here rather than in the blob.
   state.activeSpaceId = data.id;
   state.space = data.space_type;
+  /* A row written before spaceTouched existed cannot say whether its space was
+     picked or let through as the placeholder. It was saved under a name as a
+     plan for that space, which is the user adopting it, so it reads as theirs:
+     otherwise Edit answers on a saved workbench would open the space step with
+     nothing selected and Review would call the workbench our default. Rows
+     written since carry the flag and are read as given, so a saved sample plan
+     still keeps its placeholder honest. */
+  if(!prefs.answers || prefs.answers.spaceTouched===undefined) state.spaceTouched = !!data.space_type;
   state.goal = data.goal;
   state.dims = data.dims;
   // Same contract as restoreGuestDraft: the measure screen renders from

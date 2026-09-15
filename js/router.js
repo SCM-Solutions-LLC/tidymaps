@@ -267,11 +267,14 @@ export function goBack(){
   if(cfg&&cfg.back) go(cfg.back);
 }
 export function updateGate(){
-  // The wizard preselects a valid default at every step (design contract),
-  // so Continue is enabled whenever the minimal selection exists.
+  /* Every step but the first preselects a valid default (design contract), so
+     Continue is enabled whenever the minimal selection exists. The space step
+     is the exception: state.space always holds the pantry placeholder, and
+     letting that through meant the wizard's first question could be skipped
+     and its answer then reported as the user's. */
   const btn=document.getElementById('flow-next');
   let ok=true;
-  if(current==='space') ok=!!state.space;
+  if(current==='space') ok=!!state.space && !!state.spaceTouched;
   if(current==='setup') ok=!!state.setup;
   btn.disabled=!ok;
 }
@@ -287,8 +290,9 @@ export function restart(){
      of that list and had already drifted from it. */
   resetWizardAnswers(state);
   resetPlanRecord(state);
-  // back to the design defaults: Kitchen → Pantry → Cabinet
-  setArea('kitchen','pantry');
+  // back to the design defaults: Kitchen → Pantry → Cabinet. Ours, not
+  // chosen: Start over must not leave the first step already answered.
+  setArea('kitchen','pantry',{ chosen:false });
   clearGuestDraft();
   const custom=document.getElementById('customize-result');
   if(custom) custom.classList.add('hide');
