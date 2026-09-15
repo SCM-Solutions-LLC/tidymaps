@@ -4,19 +4,23 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #147 merged (`main` at `b604374`,
-13:21 UTC): the report's shelf map tints the eye-level shelf with the accent
-and the other shelves grey, the way DESIGN.md and the landing figure already
-had it (`css/components.css` names `--tint` and `--tint-2` directly; the
-design test resolves the token chain and asserts the colours). Client-only,
-so the dead deploy token (Production health #5, open item 11) does not
-apply. Pages run 150 (#145) went green at 12:59 UTC, so **the corrected
-legal pages are live**; run 151 carries #147 and was in progress at the
-time of writing. That closes the first line of open item 12's batch 2; the
-second, the progress rail, is PR #148, open (draft) at the time of writing.
-Lines 3 to 5 (the phone menu as a dialog, the 3D sliders' 44px target, the
-tap targets under 44px) are built, tested and browser-checked on local
-branches in this session, each waiting its turn on the one PR branch.
+**Last refreshed:** 2026-09-15, after PR #148 merged (`main` at `1ee0db5`,
+13:39 UTC): the progress rail stays full once the wizard is complete
+(`railPercent` in `js/router.js`; it used to fall from 100% at Review to
+75% on the loading screen and 81% on the report). Before it, PR #147
+(`main` at `b604374`, 13:21 UTC): the report's shelf map tints the
+eye-level shelf with the accent and the other shelves grey, the way
+DESIGN.md and the landing figure already had it. Both client-only, so the
+dead deploy token (Production health #5, open item 11) does not apply.
+Pages run 151 (#147) went green at 13:38 UTC, so **the shelf-map tint is
+live**; run 152 carries #148 and was in progress at the time of writing.
+That closes the first two lines of open item 12's batch 2; the third, the
+phone menu as a dialog, is PR #149, open (draft) at the time of writing.
+Lines 4 to 7 (the 3D sliders' 44px target, the tap targets under 44px, the
+skip link and per-screen h1, the keyboard-operable 3D drawing) are built,
+tested and browser-checked on local branches in this session, each waiting
+its turn on the one PR branch; the session's branch is reset from `main`
+after each merge and the next line cherry-picked onto it.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2121,8 +2125,19 @@ Ordered by whether anyone can act on them today.
       the real steps and reads the rail on Review, loading and the report.
       Both proven red on "loading reads 75% after 100%". Browser-checked
       at 390 and 1280.
-    - Mobile nav is not modal: no Esc, outside click, scroll lock or Tab trap
-      (`index.html` ~49). Use `closeSiteNav()` in `js/ui.js`, add `inert`.
+    - ~~Mobile nav is not modal: no Esc, outside click, scroll lock or Tab trap
+      (`index.html` ~49). Use `closeSiteNav()` in `js/ui.js`, add `inert`.~~
+      **Done in #149.** `openSiteNav`, `closeSiteNav` and `toggleSiteNav`
+      in `js/ui.js` are the only entry points, so the body class, the
+      toggle's `aria-expanded`, the scroll lock, the listeners and the
+      inert page (`main` and the footer) are always set together. Escape
+      closes and refocuses the button; an outside tap closes in the
+      capture phase so "Sign in" still opens; Tab cycles the running head;
+      opening focuses the first item. Desktop untouched: the listeners
+      exist only while the menu is open. Five browser tests at 390, each
+      proven red by neutering one half alone (the key listener, the click
+      listener, the scroll lock with inert). Browser-checked at 390 and
+      1280.
     - 3D sliders have a 4px track (`css/screens.css` ~75).
     - Tap targets under 44px: report checkboxes 19px, retailer links 15px,
       segments 32px, `.btn-sm`, `.home-link`, `.ch-head`, `.wr-edit`. Pad,
