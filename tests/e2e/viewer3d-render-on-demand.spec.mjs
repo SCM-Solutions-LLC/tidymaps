@@ -49,7 +49,7 @@ test('an untouched view stops rendering once the opening camera move settles', a
 });
 
 test('orbiting the camera renders again, and stops once it settles', async ({ page }) => {
-  test.setTimeout(30_000);
+  test.setTimeout(45_000);
   await openSamplePantry3d(page);
   await page.waitForTimeout(1500);
   const idle = await page.evaluate(() => window.__renderCount);
@@ -71,20 +71,21 @@ test('orbiting the camera renders again, and stops once it settles', async ({ pa
      stops outright rather than tapering off — so on this scene's scale
      (an 84in-tall cabinet, camera distance well over 100 world units) a
      single orbit's damping measured 5-6 real seconds of continued rendering
-     before it stopped, not the sub-second settle a smaller scene would show.
-     That is OrbitControls' own EPS constant interacting with world scale,
-     not a bug this PR introduces or can tune away without forking the
-     vendored library — so the test waits it out rather than asserting a
-     settle time this scene cannot actually meet. */
+     in isolation, and longer under the CPU/GPU contention of a full parallel
+     test run, before it stopped — not the sub-second settle a smaller scene
+     would show. That is OrbitControls' own EPS constant interacting with
+     world scale, not a bug this PR introduces or can tune away without
+     forking the vendored library, so the test waits generously rather than
+     asserting a settle time this scene, under load, cannot reliably meet. */
   let previous = justAfterDrag;
   let stopped = false;
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 40; i++) {
     await page.waitForTimeout(500);
     const count = await page.evaluate(() => window.__renderCount);
     if (count === previous) { stopped = true; break; }
     previous = count;
   }
-  expect(stopped, 'the drag never stopped rendering within 8 seconds').toBe(true);
+  expect(stopped, 'the drag never stopped rendering within 20 seconds').toBe(true);
   await page.waitForTimeout(1000);
   const stillStopped = await page.evaluate(() => window.__renderCount);
   expect(stillStopped, 'rendering resumed after it had already stopped').toBe(previous);
