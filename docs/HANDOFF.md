@@ -4,23 +4,26 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #148 merged (`main` at `1ee0db5`,
-13:39 UTC): the progress rail stays full once the wizard is complete
-(`railPercent` in `js/router.js`; it used to fall from 100% at Review to
-75% on the loading screen and 81% on the report). Before it, PR #147
-(`main` at `b604374`, 13:21 UTC): the report's shelf map tints the
-eye-level shelf with the accent and the other shelves grey, the way
-DESIGN.md and the landing figure already had it. Both client-only, so the
-dead deploy token (Production health #5, open item 11) does not apply.
-Pages run 151 (#147) went green at 13:38 UTC, so **the shelf-map tint is
-live**; run 152 carries #148 and was in progress at the time of writing.
-That closes the first two lines of open item 12's batch 2; the third, the
-phone menu as a dialog, is PR #149, open (draft) at the time of writing.
-Lines 4 to 7 (the 3D sliders' 44px target, the tap targets under 44px, the
-skip link and per-screen h1, the keyboard-operable 3D drawing) are built,
-tested and browser-checked on local branches in this session, each waiting
-its turn on the one PR branch; the session's branch is reset from `main`
-after each merge and the next line cherry-picked onto it.
+**Last refreshed:** 2026-09-15, after PR #149 merged (`main` at `f1d42f6`,
+14:25 UTC): the phone menu behaves like the dialog it looks like
+(`openSiteNav`, `closeSiteNav`, `toggleSiteNav` in `js/ui.js`: Escape,
+outside tap, scroll lock, inert page, Tab cycle). Before it, #148 (the
+progress rail stays full once the wizard is complete, `railPercent` in
+`js/router.js`) and #147 (the shelf map tints the eye-level shelf with the
+accent). All client-only, so the dead deploy token (Production health #5,
+open item 11) does not apply. Pages run 152 (#148) went green at 13:53
+UTC, so **the rail fix is live**; run 153 carries #149 and was in progress
+at the time of writing. That closes the first three lines of open item
+12's batch 2; the fourth, the 3D sliders' 44px target, is PR #150, open
+(draft) at the time of writing. Lines 5 to 10 (the tap targets under
+44px, the skip link and per-screen h1, the keyboard-operable 3D drawing,
+the rating buttons' ARIA state with the shelf items as a list, the space
+cards as a radio group) are built, tested and browser-checked on local
+branches in this session (`wip/targets`, `wip/headings`, `wip/canvas`,
+`wip/aria`, `wip/radio`), each waiting its turn on the one PR branch; the
+session's branch is reset from `main` after each merge and the next line
+cherry-picked onto it. Lines 8 and 9 travel as one PR, both being ARIA
+attributes on the report.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2138,7 +2141,14 @@ Ordered by whether anyone can act on them today.
       proven red by neutering one half alone (the key listener, the click
       listener, the scroll lock with inert). Browser-checked at 390 and
       1280.
-    - 3D sliders have a 4px track (`css/screens.css` ~75).
+    - ~~3D sliders have a 4px track (`css/screens.css` ~75).~~ **Done in
+      #150.** The input's box is 44px, pulled back into the 4px footprint
+      with negative margins; the rule is drawn on the track pseudo-element
+      and the thumb centred on it, so the panel is the height it was. A
+      browser test at 390 asserts the box, that it paints nothing itself,
+      that the row did not grow, that no two targets overlap, and a hit
+      test in the padded band; proven red with the 4px box back and with
+      the box left in flow. Browser-checked at 390 and 1280.
     - Tap targets under 44px: report checkboxes 19px, retailer links 15px,
       segments 32px, `.btn-sm`, `.home-link`, `.ch-head`, `.wr-edit`. Pad,
       don't grow.
