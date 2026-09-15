@@ -4,7 +4,19 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #136 merged (`main` at `7fd9bca`,
+**Last refreshed:** 2026-09-15, after PR #138 merged (`main` at `c1ccb85`,
+04:08 UTC): the 3D view stops claiming photos and the visitor's own space on
+plans that had neither. One rule in `js/planProvenance.js` (`planFromPhotos`,
+`planIsSample`, `answeredAnything`) answers whose plan it is for the report's
+byline and the viewer alike, keyed on `planMeta.source` rather than
+`uploadedFiles`; the viewer's heading, intro and status line read four ways
+(sample, wizard without photos, photos, share view), and the share view was
+the one place "matched from your photos" could actually print. Client-only, so
+the dead deploy token (Production health #5, open item 11) does not apply.
+Pages run 143 started at 04:08 UTC and was still running at this writing, so
+until it goes green the live site is #137's build. That closes the third line
+of open item 12's batch 1, with five lines left there.
+Before that, 2026-09-15, after PR #136 merged (`main` at `7fd9bca`,
 01:25 UTC): the wizard's space step no longer passes the pantry placeholder as
 the user's answer. `spaceTouched` joins the touched flags in `js/state.js`, the
 space cards arrive unticked with Continue off until a pick, Review labels Room
