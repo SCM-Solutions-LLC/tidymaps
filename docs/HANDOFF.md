@@ -1989,9 +1989,31 @@ Ordered by whether anyone can act on them today.
       code got right); the four browser tests cut the auth routes at the
       browser and go red on the exact raw text. Browser-checked at 390 and
       1280.
-    - Rate-limit copy: `js/api.js` ~70 drops `retryAfterSeconds`, and the
+    - ~~Rate-limit copy: `js/api.js` ~70 drops `retryAfterSeconds`, and the
       `results.js` ~170 banner reads the same for quota and outage. Branch on
-      `code === 'rate_limited'` and print minutes.
+      `code === 'rate_limited'` and print minutes.~~ **Done in #143.**
+      `callFn` builds the 429 message from the wait (`waitText`: "in about
+      30 minutes", "in about an hour", "in about 6 hours", the old "a little
+      later" when the number is missing or unusable) and names the function
+      that ran out, so the photo preview no longer reports an "Analysis
+      limit". The limiter's values are fixed windows (1800 hourly, 21600
+      daily, 3600 global breaker, `check_and_log_usage`), not an exact
+      reset, which is why the copy says "about". The banner could not
+      branch because `loading.js` reduced the error to its message before
+      the report saw it; the code and wait now travel as `state.aiFailure`
+      (reset with `aiError` in `resetPlanRecord`, `runLoading` and
+      `retryAnalysis`, never persisted), and `analysisFailureCopy` in
+      `api.js` gives the banner its two readings. Taken from batch 2 on the
+      way: the loading line's `&mdash;` in `loading.js`, because the
+      rate-limit message was the first that did not already end "Showing
+      the demo plan instead." and "minutes. — showing" read badly; the
+      suffix is appended as a sentence when the message lacks it. The
+      copy-conventions test still does not check `&mdash;` in JS; that half
+      of the batch 2 line stands. Each unit assertion proven red by
+      neutering only its own behaviour; the browser test for the rate limit
+      goes red on its own when `loading.js` drops the failure, which no
+      unit test can see. Browser-checked at 390 and 1280, loading line and
+      banner both.
     - `security.html` makes three false claims: that CORS blocks requests (it
       only hides responses, `_shared/cors.ts`); that the salt rotates daily (it
       is a static salt plus the date, `_shared/auth.ts`); that guest use
@@ -2024,7 +2046,7 @@ Ordered by whether anyone can act on them today.
       14" shelf" on the landing page (`index.html` ~248); TOC and chapter heads
       disagree (`index.html` ~589-591 vs ~629, ~664); "room" headline
       (`index.html` ~105); 8-digit vs "6-8 digit" code (`index.html` ~78,
-      `account.js` ~111); `&mdash;` in `loading.js` ~332, and extend the
+      `account.js` ~111); ~~`&mdash;` in `loading.js` ~332~~ (gone in #143), and extend the
       copy-conventions test to JS; UK and US spelling mixed;
       `planExport.js` ~135 prints inches to metric users; the rating scale
       mixes usefulness with "I would pay" (`js/data.js` ~174, split it);
