@@ -78,7 +78,7 @@ export function toggleSiteNav(){
   else openSiteNav();
 }
 
-export function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+export function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* The CSS honours prefers-reduced-motion carefully, but scrolling is driven
    from JS and was bypassing it — a smooth scroll is exactly the kind of motion

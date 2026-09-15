@@ -5,6 +5,7 @@ import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE
 import { productArt } from '../product-art.js';
 import { go } from '../router.js';
 import { setArea } from './wizard.js';
+import { escapeHtml as esc } from '../ui.js';
 
 /* ============================================================
    Product library — every item TidyMap can suggest, grouped by the
@@ -52,10 +53,6 @@ function dimStr(d){
 function priceStr(p){
   return p == null ? 'Price varies' : '$' + (Number.isInteger(p) ? p : p.toFixed(2));
 }
-function esc(s){
-  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-}
-
 /* ---------- Rendering ---------- */
 
 /* A real retailer photo when the catalog has one, the category drawing when it

@@ -174,8 +174,15 @@ Deno.serve(async (req) => {
   const admin = adminClient();
   const caller = await getCaller(req);
   try {
+    /* The global breaker caps what an anonymous flood can cost — 300 real
+       model calls/day across every caller with no account. Applied to
+       signed-in callers too, the same flood (cheap: 3/hour/6/day per
+       anonymous caller, but many IPs) could exhaust the shared 300 and lock
+       out someone who never made a call of their own. A signed-in caller is
+       already capped by their own perHour/perDay; the global count is an
+       anonymous-only concern, the same reasoning render-after uses. */
     await checkAndLog(admin, 'analyze-space', caller,
-      caller.userId ? { perHour: 10, perDay: 30, globalPerDay: 300 }
+      caller.userId ? { perHour: 10, perDay: 30 }
                     : { perHour: 3, perDay: 6, globalPerDay: 300 });
   } catch (e) {
     if (e instanceof RateLimitError) {
@@ -404,7 +411,13 @@ Deno.serve(async (req) => {
       if (!result.ok) {
         console.error('analyze-space model call failed', requestId, attempt, elapsedMs(), result.error, result.detail.slice(0, 200));
         if (!result.retryable || isLastAttempt) {
-          return json(req, result.status, { error: result.error, detail: result.detail });
+          /* result.detail is the upstream model API's own error text, logged
+             above for debugging and never sent over the wire: js/api.js reads
+             only `error` (a stable code) to choose the copy it shows, the
+             same reason render-after's own error responses carry no detail
+             field either. Returning it added nothing a client uses and
+             exposed whatever the upstream response happened to say. */
+          return json(req, result.status, { error: result.error });
         }
         messages = [
           ...messages,

@@ -193,12 +193,49 @@ export async function autoSaveSpace(){
   }
 }
 
+/* A camera photo's EXIF block can carry GPS coordinates — where the photo of
+   someone's home was taken. The video-frame path below never had this
+   problem: a frame comes off a canvas, and canvas export never carries EXIF
+   forward. A photo File uploaded as-is does, straight into storage.
+   Re-decoding through a canvas and re-exporting strips it the same way,
+   without resizing (drawImage at natural size). Modern browsers apply the
+   file's own EXIF orientation when decoding into an <img>, so the pixels
+   this draws are already right-side up; nothing here needs to read the
+   orientation tag itself, only to not carry the block that would leak the
+   location.
+   Guarded for Node: pendingMedia() below builds this promise synchronously,
+   and a unit test that populates uploadedFiles with plain objects (not real
+   Files) runs with no DOM at all. Failing open to the original file, the
+   same way assessImageFile (js/imageQuality.js) fails open on a decode
+   error, keeps a file whose EXIF could not be stripped from blocking the
+   save outright — the privacy win is best-effort, not a hard gate. */
+function stripPhotoMetadata(file){
+  if(typeof Image==='undefined' || typeof document==='undefined') return Promise.resolve(file);
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const c=document.createElement('canvas');
+        c.width=img.naturalWidth; c.height=img.naturalHeight;
+        c.getContext('2d').drawImage(img,0,0);
+        c.toBlob((blob)=>resolve(blob||file), 'image/jpeg', 0.92);
+      }catch(_){
+        resolve(file); // e.g. a tainted canvas — keep the original rather than lose the photo
+      }finally{
+        URL.revokeObjectURL(img.src);
+      }
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(img.src); resolve(file); };
+    img.src=URL.createObjectURL(file);
+  });
+}
+
 /* The photos and video frames held in memory right now, captured as a list
    rather than read live. Called from snapshotSave, before the save's first
    await. */
 function pendingMedia(target=state){
   const uploads=[];
-  (target.uploadedFiles||[]).forEach((file,i)=>uploads.push({ blobPromise:Promise.resolve(file), kind:'photo', sort:i, ext:'jpg', type:file.type||'image/jpeg' }));
+  (target.uploadedFiles||[]).forEach((file,i)=>uploads.push({ blobPromise:stripPhotoMetadata(file), kind:'photo', sort:i, ext:'jpg', type:'image/jpeg' }));
   (target.frames||[]).forEach((fr,i)=>uploads.push({
     blobPromise:fetch('data:image/jpeg;base64,'+fr.data).then(r=>r.blob()),
     kind:'frame', sort:i, ext:'jpg', type:'image/jpeg',

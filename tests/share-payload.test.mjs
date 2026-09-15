@@ -57,6 +57,24 @@ test('payload includes only the plan-viewing fields', () => {
     ['dims', 'goal', 'name', 'plan', 'planMeta', 'sharedAt', 'spaceType'].sort());
 });
 
+/* Every field on this payload is either named explicitly or run through a
+   sanitizer — plan_meta was the one exception, passed through whole. A row
+   carrying a future private field there (a request id, cost data, anything
+   not meant to travel) used to leak it verbatim; the allowlist is model,
+   source and analyzedAt, the only three js/screens/loading.js ever writes. */
+test('plan_meta is an allowlist too: only model, source and analyzedAt travel', () => {
+  const row = { ...FULL_ROW, plan_meta: { model: 'Sonnet 4.6', source: 'ai', analyzedAt: 123, requestId: 'req-secret-abc' } };
+  const p = sharedSpacePayload(row);
+  assert.deepEqual(Object.keys(p.planMeta).sort(), ['analyzedAt', 'model', 'source']);
+  assert.equal(p.planMeta.requestId, undefined, 'an unlisted plan_meta field leaked');
+  assert.ok(!JSON.stringify(p).includes('req-secret-abc'), 'the unlisted field leaked as a string too');
+});
+
+test('a plan_meta with none of the allowed fields still resolves to an empty object, not null', () => {
+  const row = { ...FULL_ROW, plan_meta: { requestId: 'x' } };
+  assert.deepEqual(sharedSpacePayload(row).planMeta, {});
+});
+
 test('household, progress, shopping, media paths, and ids never leak', () => {
   const flat = JSON.stringify(sharedSpacePayload(FULL_ROW));
   for (const secret of ['meds on top shelf', 'user-123', 'stepsDone', 'render.jpg', 'share_id', '"checked"']) {
