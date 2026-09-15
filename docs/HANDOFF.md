@@ -4,14 +4,13 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #156 merged (`main` at `40e768e`,
-16:35 UTC): the ten pure copy items of the review's copy line (the notes
-are not "green", one Space row on Review, "a 14″ shelf", the contents list
-carries the chapter headings' words, "space" in the hero, no code length
-promised, the copy-conventions test reads the `&mdash;` entity and refuses
-British spellings, the shopping list prints the reader's units, the
-loading labels are split by media kind). Before it, #155 (the space cards
-as a `radiogroup` with a roving Tab stop), #154 (the rating buttons'
+**Last refreshed:** 2026-09-15, after PR #157 merged (`main` at `58fcd26`,
+16:56 UTC): a signed-in plan that is not being saved says so once (an
+expired sign-in by name; `sessionExpired` and `warnSaveFailed` in
+`js/db.js`, the refused patch kept without a retry) and the guest reload
+toast names the photos it lost (`hadMedia` on the draft, `lostMedia` from
+the restore). Before it, #156 (the ten pure copy items), #155 (the space
+cards as a `radiogroup` with a roving Tab stop), #154 (the rating buttons'
 `aria-pressed` and the shelf list's `role=list`), #153 (the 3D drawing as
 a focusable `role=application` widget the arrow keys rearrange), #152 (an
 h1 on every screen and a skip link on every page), #151 (the small tap
@@ -20,21 +19,25 @@ targets in the row they had), #149 (the phone menu behaves like the
 dialog it looks like), #148 (the progress rail stays full once the wizard
 is complete) and #147 (the shelf map tints the eye-level shelf with the
 accent). All client-only, so the dead deploy token (Production health #5,
-open item 11) does not apply. Pages runs 152 to 156 (#148 to #152) and
-158 (#154) went green; runs 157 (#153) and 159 (#155) were cancelled by
-the run starting behind each, which is how Pages concurrency works, and
-the next run carried their content; run 160 (#156) was in progress at the
-time of writing. That leaves two PRs of open item 12's batch 2: the copy
-line's two behaviours (the autosave failure said once, the reload toast
-naming lost photos) are PR #157, open (draft) at the time of writing, and
-the last layout line is built, tested and browser-checked on `wip/layout`,
-waiting its turn on the one PR branch. Browser-checking #157's notices at
-390 showed the toast has always shrunk to half the viewport (`left:50%`
-with no width, so the box takes the space to its right), which wraps the
-two longer notices into a five-line block; the width fix rides the layout
-PR, which already moves the toast and tests its placement. The
-rating-scale split ("I would pay" mixed into usefulness) is left for its
-own PR because it needs a feedback column.
+open item 11) does not apply. Pages runs 152 to 156 (#148 to #152), 158
+(#154) and 160 (#156, 16:53 UTC) went green; runs 157 (#153) and 159
+(#155) were cancelled by the run starting behind each, which is how Pages
+concurrency works, and the next run carried their content; run 161 (#157)
+was in progress at the time of writing. **The last line of open item
+12's batch 2 is PR #158**, open (draft) at the time of writing: the toast
+over the running head and sized by its text (it could only be half the
+viewport wide, which wrapped #157's longer notices into a five-line block
+on a phone), the step clip band capped at the clip's width, the landing
+gallery unboxed from a retired picker's rule, the brand link going home
+and the dashboard's Sign out a button. When it merges, batch 2 is done
+and **batch 3 (performance, infrastructure, backend) is next**; the one
+piece of batch 2 left behind is the rating-scale split ("I would pay"
+mixed into usefulness, `js/data.js` ~174), which needs a feedback column
+and its own PR. Each PR this session was cherry-picked from a local
+branch onto the one PR branch, reset from `main` after each merge; the
+five cross-line conflicts met along the way were resolved once on a
+scratch stack and the full suite run against it (282 passed, 1
+pre-existing skip) before any of them went up.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2252,9 +2255,22 @@ Ordered by whether anyone can act on them today.
       Still open from this line: the rating scale mixing usefulness with
       "I would pay" (`js/data.js` ~174), which needs a feedback column and
       its own PR.
-    - Desktop step clips letterbox (`components.css` ~439, ~455); empty ruled
+    - ~~Desktop step clips letterbox (`components.css` ~439, ~455); empty ruled
       cells in two-card room groups (`landing.css`); the toast covers the
-      Summary heading; the brand link is `href="#"`.
+      Summary heading; the brand link is `href="#"`.~~ **Done in #158.** The
+      toast sits over the running head (the one band nothing is read from)
+      and the `--foot-h` plumbing it needed at the bottom is gone; it is
+      sized by its text up to 90vw or 560px, since `left:50%` with no
+      width had capped it at half the viewport. The clip band is
+      `min(100%, 392px)`, the clips being 4:1 at 98px. The gallery's box
+      came from a dead grouped-picker rule sharing `.space-group`; the
+      rules are removed. The brand goes to `index.html`; the dashboard's
+      Sign out, the other `href="#"`, is a 44px button. Two hygiene tests
+      (no `href="#"`, the dead rules stay gone) and nine browser tests in
+      `report-chrome.spec.mjs` (toast placement at three viewports, the
+      longest notice's width and coverage at two, the wizard footer, the
+      clip band's aspect, the gallery borders), each proven red with only
+      its fix neutered. Browser-checked at 390 and 1280.
 
     **Batch 3, performance, infrastructure, backend.**
     - `pages.yml` ~42 uploads `path: .` after `npm ci`: a 168MB artifact for
