@@ -42,3 +42,28 @@ test('a draft without measurements clears both dim fields', () => {
   assert.equal(state.dims, null);
   assert.equal(state.dimsFt, null);
 });
+
+/* Photos never survive a reload: they are File objects in memory and the draft
+   stores only what serializes. The draft used to forget they had existed, so
+   the restore toast could say "your answers are still here" over a photo step
+   that had quietly emptied. It records that there were some. */
+test('a draft remembers that photos were added, so the restore can say they are gone', () => {
+  state.space = 'pantry';
+  state.shareView = false;
+  state.uploadedFiles = [{ name: 'shelf.jpg' }];
+  state.uploadedVideo = null;
+  persistGuestDraft();
+  state.uploadedFiles = [];
+  const res = restoreGuestDraft();
+  assert.equal(res.lostMedia, true, 'the restore does not know photos were lost');
+  assert.deepEqual(state.uploadedFiles, [], 'a File cannot come back from localStorage');
+});
+
+test('a draft made without photos does not claim any were lost', () => {
+  state.space = 'pantry';
+  state.uploadedFiles = [];
+  state.uploadedVideo = null;
+  persistGuestDraft();
+  const res = restoreGuestDraft();
+  assert.equal(res.lostMedia, false);
+});

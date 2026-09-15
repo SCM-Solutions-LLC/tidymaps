@@ -193,3 +193,23 @@ test('does not apply a shared plan after the user has started a different plan',
   assert.deepEqual(await initializing, { status:'skipped-navigation' });
   assert.deepEqual(h.calls, [], 'the shared payload must not wipe the plan they started');
 });
+
+/* A reload part-way through the wizard keeps the answers and loses the photos
+   (File objects live in memory only). The toast said "your answers are still
+   here", which a reader took to cover the photos too, and the photo step had
+   emptied without a word. The draft now says whether there were photos, and
+   the toast says which half came back. */
+test('a mid-wizard reload that lost photos says so', async()=>{
+  const h=harness({ restoreGuestDraft:()=>({ restored:true, planReady:false, lostMedia:true }) });
+  assert.deepEqual(await initializeRoute(h.deps), { status:'restored-answers' });
+  const [[kind, message]]=h.calls;
+  assert.equal(kind, 'toast');
+  assert.match(message, /photos you added were not kept/, 'the toast hides the photo loss');
+  assert.match(message, /answers are still here/, 'the toast lost the half that did come back');
+});
+
+test('a mid-wizard reload with no photos to lose says only that the answers are here', async()=>{
+  const h=harness({ restoreGuestDraft:()=>({ restored:true, planReady:false, lostMedia:false }) });
+  assert.deepEqual(await initializeRoute(h.deps), { status:'restored-answers' });
+  assert.deepEqual(h.calls, [['toast','Your answers are still here. Pick up where you left off.']]);
+});

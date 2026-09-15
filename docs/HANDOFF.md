@@ -4,38 +4,37 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #155 merged (`main` at `a512077`,
-16:18 UTC): the space cards are a `radiogroup` with a roving Tab stop the
-arrow keys work (`js/screens/wizard.js`, `markSelected` driving
-`aria-checked` on radios and `aria-pressed` elsewhere). Before it, #154
-(the rating buttons' `aria-pressed` and the shelf list's `role=list`),
-#153 (the 3D drawing as a focusable `role=application` widget the arrow
-keys rearrange, `js/three/interact.js`), #152 (an h1 on every screen and
-a skip link on every page), #151 (the small tap targets are 44px without
-growing: "pad, don't grow"), #150 (the 3D view's sliders are 44px targets
-in the row they had), #149 (the phone menu behaves like the dialog it
-looks like, `openSiteNav`/`closeSiteNav`/`toggleSiteNav` in `js/ui.js`),
-#148 (the progress rail stays full once the wizard is complete) and #147
-(the shelf map tints the eye-level shelf with the accent). All
-client-only, so the dead deploy token (Production health #5, open item
-11) does not apply. Pages runs 152 to 156 (#148 to #152) and 158 (#154,
-16:16 UTC) went green; run 157 (#153) was cancelled by 158 starting
-behind it, which is how Pages concurrency works and carries #153's
-content all the same; run 159 (#155) was in progress at the time of
-writing. That closes the ten numbered lines of open item 12's batch 2;
-the copy line's ten pure copy items are PR #156, open (draft) at the time
-of writing. The copy line's two behaviours (the autosave failure said
-once, the reload toast naming lost photos) and the last layout line are
-built, tested and browser-checked on local branches in this session
-(`wip/copy2`, `wip/layout`), each waiting its turn on the one PR branch;
-the session's branch is reset from `main` after each merge and the next
-line cherry-picked onto it. The remaining lines were stacked in merge
-order on a scratch branch and the full suite run against the stack (282
-passed, 1 pre-existing skip), with the three cross-line conflicts
-(heading ids in `index.html`, the accessibility statement's spelling, two
-tests appended to `site-hygiene`) resolved once there, so each remaining
-cherry-pick is clean. The rating-scale split ("I would pay" mixed into
-usefulness) is left for its own PR because it needs a feedback column.
+**Last refreshed:** 2026-09-15, after PR #156 merged (`main` at `40e768e`,
+16:35 UTC): the ten pure copy items of the review's copy line (the notes
+are not "green", one Space row on Review, "a 14″ shelf", the contents list
+carries the chapter headings' words, "space" in the hero, no code length
+promised, the copy-conventions test reads the `&mdash;` entity and refuses
+British spellings, the shopping list prints the reader's units, the
+loading labels are split by media kind). Before it, #155 (the space cards
+as a `radiogroup` with a roving Tab stop), #154 (the rating buttons'
+`aria-pressed` and the shelf list's `role=list`), #153 (the 3D drawing as
+a focusable `role=application` widget the arrow keys rearrange), #152 (an
+h1 on every screen and a skip link on every page), #151 (the small tap
+targets are 44px without growing), #150 (the 3D view's sliders are 44px
+targets in the row they had), #149 (the phone menu behaves like the
+dialog it looks like), #148 (the progress rail stays full once the wizard
+is complete) and #147 (the shelf map tints the eye-level shelf with the
+accent). All client-only, so the dead deploy token (Production health #5,
+open item 11) does not apply. Pages runs 152 to 156 (#148 to #152) and
+158 (#154) went green; runs 157 (#153) and 159 (#155) were cancelled by
+the run starting behind each, which is how Pages concurrency works, and
+the next run carried their content; run 160 (#156) was in progress at the
+time of writing. That leaves two PRs of open item 12's batch 2: the copy
+line's two behaviours (the autosave failure said once, the reload toast
+naming lost photos) are PR #157, open (draft) at the time of writing, and
+the last layout line is built, tested and browser-checked on `wip/layout`,
+waiting its turn on the one PR branch. Browser-checking #157's notices at
+390 showed the toast has always shrunk to half the viewport (`left:50%`
+with no width, so the box takes the space to its right), which wraps the
+two longer notices into a five-line block; the width fix rides the layout
+PR, which already moves the toast and tests its placement. The
+rating-scale split ("I would pay" mixed into usefulness) is left for its
+own PR because it needs a feedback column.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2238,10 +2237,19 @@ Ordered by whether anyone can act on them today.
       `tests/copy-review.test.mjs` and a TOC browser test at 390 and 1280,
       each proven red with the old copy back alone. Browser-checked at 390
       and 1280.
-      Still open from this line: silent autosave loss on 401 (`js/db.js`
-      ~145, ~159) and the guest reload toast hiding photo loss
-      (`js/startup.js` ~91), both behaviour rather than copy and built on
-      `wip/copy2` for the next PR; the rating scale mixing usefulness with
+      ~~Silent autosave loss on 401 (`js/db.js` ~145, ~159) and the guest
+      reload toast hiding photo loss (`js/startup.js` ~91).~~ **Done in
+      #157.** `persistSpace` carries the PostgREST error as the thrown
+      error's `cause`; `sessionExpired` reads it (401, `PGRST301`, a JWT
+      message); `warnSaveFailed` says once per plan instance that the plan
+      is not being saved, naming an expired sign-in, and a patch refused
+      for one keeps its keys and arms no retry. The guest draft records
+      `hadMedia`, the restore reports `lostMedia`, and the reload toast
+      says the photos were not kept. Unit tests for the expiry check, the
+      once-only notice, the kept patch and the draft flag; browser tests
+      for a 401 on the report (notice once, no "Saved") and a reload with
+      and without a photo. Each proven red by neutering its own half.
+      Still open from this line: the rating scale mixing usefulness with
       "I would pay" (`js/data.js` ~174), which needs a feedback column and
       its own PR.
     - Desktop step clips letterbox (`components.css` ~439, ~455); empty ruled

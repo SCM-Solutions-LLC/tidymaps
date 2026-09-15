@@ -89,7 +89,11 @@ export async function initializeRoute({
        the landing page, which reads as having lost the session — so people
        start again from scratch on top of answers that were never gone. Say so. */
     if(res && res.restored){
-      toast('Your answers are still here. Pick up where you left off.');
+      /* The photos never survive a reload (they live in memory only), and the
+         old line let "still here" cover them. Say which half came back. */
+      toast(res.lostMedia
+        ? 'Your answers are still here, but the photos you added were not kept. Add them again on the photo step.'
+        : 'Your answers are still here. Pick up where you left off.');
       return { status:'restored-answers' };
     }
   }
