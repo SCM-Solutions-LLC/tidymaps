@@ -21,6 +21,9 @@ import { toast } from '../ui.js';
    counted once. */
 
 // One selectable list, shared by both surfaces so they cannot drift apart.
+// Each button carries its state as aria-pressed, the way the wizard's
+// single-select cards do: a chosen answer marked only by a class looks chosen
+// and reads unchosen.
 function optionList(el, items, cls, onPick, selected){
   if(!el) return;
   el.innerHTML='';
@@ -28,10 +31,12 @@ function optionList(el, items, cls, onPick, selected){
     const b=document.createElement('button');
     b.type='button';
     b.className=cls+(t===selected?' sel':'');
+    b.setAttribute('aria-pressed', String(t===selected));
     b.innerHTML = cls==='chip' ? t : `<span class="ttl">${t}</span><span class="tick">${ICON.check}</span>`;
     b.onclick=()=>{
-      el.querySelectorAll('.'+cls).forEach(o=>o.classList.remove('sel'));
+      el.querySelectorAll('.'+cls).forEach(o=>{ o.classList.remove('sel'); o.setAttribute('aria-pressed','false'); });
       b.classList.add('sel');
+      b.setAttribute('aria-pressed','true');
       onPick(t);
     };
     el.appendChild(b);
