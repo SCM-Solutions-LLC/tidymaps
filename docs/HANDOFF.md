@@ -12,9 +12,11 @@ under one catch and reads the error by name, status and code
 a 5xx is "Sign-in is temporarily unavailable", 429 is "Too many attempts",
 and a refused address on send is about the address rather than a code that
 never went. Client-only, so the dead deploy token (Production health #5,
-open item 11) does not apply. That closes the fifth line of open item 12's
-batch 1, with three lines left there (rate-limit copy, `security.html`,
-legal pages).
+open item 11) does not apply. Pages run 147 went green at 10:02 UTC, so
+**the sign-in modal's failure copy is live on the site.** That closes the
+fifth line of open item 12's batch 1, with three lines left there
+(rate-limit copy, `security.html`, legal pages); the rate-limit line is
+PR #143, open at the time of writing.
 Before that, 2026-09-15, after PR #140 merged (`main` at `5c8ca2c`,
 05:16 UTC): the report says "Analyzed by Claude" once. The badge is the credit
 and carries the model ("Analyzed by Claude · Sonnet 4.6"); the byline says the
