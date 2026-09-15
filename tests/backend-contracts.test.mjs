@@ -8,6 +8,7 @@ const migrations = [1, 2, 3, 4, 5, 6, 7]
     try { return readFileSync(new URL(`../supabase/migrations/000${n}_atomic_usage_and_storage.sql`, import.meta.url), 'utf8'); }
     catch { return ''; }
   }).join('\n');
+const retention = readFileSync(new URL('../supabase/migrations/0011_event_retention.sql', import.meta.url), 'utf8');
 const renderAfter = readFileSync(new URL('../supabase/functions/render-after/index.ts', import.meta.url), 'utf8');
 const getSharedSpace = readFileSync(new URL('../supabase/functions/get-shared-space/index.ts', import.meta.url), 'utf8');
 const auth = readFileSync(new URL('../supabase/functions/_shared/auth.ts', import.meta.url), 'utf8');
@@ -264,6 +265,45 @@ test('a body within the cap still parses normally', async () => {
 
 test('a request with no Content-Length at all (chunked transfer) still parses', async () => {
   assert.deepEqual(await readJsonObject(asRequest('{"ok":true}')), { ok: true });
+});
+
+/* The privacy page's promise is specific: "they are uploaded to your private
+   account only when you save or share the space. The plan itself saves
+   automatically, your photos do not." autoSaveSpace creates the spaces row
+   (and so state.activeSpaceId) the moment a plan exists, well before any
+   explicit save — so gating the after-render's storage write on spaceId
+   alone persists a photo of the user's home on the strength of an auto-save
+   they never asked for. Requiring an existing photo/frame media row first
+   ties it to the same explicit save or share that already gates the before
+   photo, without the client having to be trusted to say so itself. */
+test('render-after only persists its output to a space that already has a saved photo', () => {
+  const ownership = renderAfter.slice(
+    renderAfter.indexOf('// Ownership check up front'),
+    renderAfter.indexOf('try {', renderAfter.indexOf('// Ownership check up front')),
+  );
+  assert.match(ownership, /from\('space_media'\)/,
+    'the ownership check never looks for an existing saved photo');
+  assert.match(ownership, /\.in\('kind',\s*\[['"]photo['"],\s*['"]frame['"]\]\)/,
+    'the saved-photo check does not look at the same kinds coverUrl treats as the before photo');
+  const persistence = renderAfter.slice(renderAfter.indexOf('let storagePath'));
+  const guard = /if \(spaceOwned\s*&&\s*(\w+)\s*&&\s*body\.spaceId\s*&&\s*caller\.userId\)/.exec(persistence);
+  assert.ok(guard, 'the persistence branch does not check for a saved photo alongside ownership');
+});
+
+/* Neither table had a purge before this migration, so both grew forever.
+   usage_events only ever answers a "last hour/last day" question
+   (check_and_log_usage above), so anything kept past that is pure liability;
+   telemetry_events feeds trend reports and gets a longer runway. The function
+   is scheduled with pg_cron rather than left to run by hand, because a purge
+   nobody remembers to run is the same as no purge. */
+test('event retention purges usage_events and telemetry_events on a schedule', () => {
+  assert.match(retention, /delete from public\.usage_events where created_at < now\(\) - interval/);
+  assert.match(retention, /delete from public\.telemetry_events where created_at < now\(\) - interval/);
+  assert.match(retention, /cron\.schedule\(/, 'the purge is defined but never scheduled to actually run');
+  assert.match(retention, /revoke all on function public\.purge_old_events\(\)\s*\n?\s*from public, anon, authenticated/,
+    'the purge function must not be callable by anon/authenticated clients');
+  assert.match(retention, /create extension if not exists pg_cron with schema extensions/,
+    'pg_cron should not land in the public schema, the same finding as pg_net');
 });
 
 test('every function reads its body through the shared guard', () => {
