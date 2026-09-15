@@ -80,8 +80,15 @@ Deno.serve(async (req) => {
   const admin = adminClient();
   const caller = await getCaller(req);
   try {
+    /* The global breaker exists to cap what an anonymous flood can cost —
+       100 renders/day across every caller with no account. It used to apply
+       to signed-in callers too, so that same flood (cheap: 1/hour/1/day per
+       anonymous caller, but many IPs) could exhaust the shared 100 and lock
+       out someone who never made a call of their own. A signed-in caller is
+       already capped by their own perHour/perDay; the global count is an
+       anonymous-only concern. */
     await checkAndLog(admin, 'render-after', caller,
-      caller.userId ? { perHour: 3, perDay: 5, globalPerDay: 100 }
+      caller.userId ? { perHour: 3, perDay: 5 }
                     : { perHour: 1, perDay: 1, globalPerDay: 100 });
   } catch (e) {
     if (e instanceof RateLimitError) {

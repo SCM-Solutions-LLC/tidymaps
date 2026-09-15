@@ -2473,16 +2473,39 @@ Ordered by whether anyone can act on them today.
       restoring the `@font-face` (and the file, from git history, since a
       neutered test needs the request to actually be servable) and green
       again after both were removed a second time.
-    - Edge functions parse the body before auth and rate limiting
+    - ~~Edge functions parse the body before auth and rate limiting
       (`_shared/body.js` ~20): check `Content-Length` first. The global
       breakers (`render-after` 100/day) are a cheap denial of service; exempt
       signed-in users. EXIF and GPS are kept (`js/db.js` ~170; the upload
       canvas blob strips them). Upstream error text is returned
-      (`analyze-space/index.ts` ~361, ~425). No retention purge for
-      `usage_events` or `telemetry_events`. The after-render is stored without
-      a save (`results.js` ~503). `plan_meta` is not allowlisted
+      (`analyze-space/index.ts` ~361, ~425). `plan_meta` is not allowlisted
       (`sharePayload.js` ~352). `escapeHtml` misses `'` (`js/ui.js` ~18) and
-      `products.js` ~55 has a duplicate escaper.
+      `products.js` ~55 has a duplicate escaper.~~ **Done in #165.**
+      `readJsonObject` (`_shared/body.js`) now rejects a body over 16MB by
+      `Content-Length` before calling `req.json()`, so an oversized upload is
+      refused without paying the parse cost. `render-after` and
+      `analyze-space` still cap signed-in callers at their per-user limits
+      (3/hr + 5/day, 5/hr) but no longer also count them against the
+      anonymous-only global breaker (100/day and 300/day respectively) - that
+      breaker exists to stop an anonymous flood, and was capable of locking
+      out every signed-in user once it filled. `js/db.js`'s `pendingMedia()`
+      now runs every photo through a canvas re-encode
+      (`stripPhotoMetadata()`) before it ever reaches state or upload, which
+      strips EXIF (including GPS) the same way the existing render-prep
+      canvas already did incidentally; proven with a hand-built JPEG carrying
+      a real EXIF/GPS APP1 segment that a real browser decodes, then
+      confirmed the uploaded blob no longer contains it.
+      `analyze-space/index.ts`'s failure response no longer forwards
+      `result.detail` (the upstream model's own error text) to the client;
+      it's still logged server-side via `console.error`. `sharePayload.js`
+      now allowlists `plan_meta` to `model`, `source` and `analyzedAt` the
+      same way the rest of the shared-space payload is allowlisted, so a
+      field like a request ID never rides along in a share link.
+      `escapeHtml` (`js/ui.js`) now escapes `'` as `&#39;` alongside the other
+      four characters, and `products.js`'s duplicate `esc()` is gone in favor
+      of importing the shared one.
+    - No retention purge for `usage_events` or `telemetry_events`. The
+      after-render is stored without a save (`results.js` ~503).
     - Supabase advisors: revoke EXECUTE on `handle_new_user()` from anon and
       authenticated; move `pg_net` out of public; wrap `auth.uid()` in
       `(select ...)` in five policies; index the `user_id` foreign keys on

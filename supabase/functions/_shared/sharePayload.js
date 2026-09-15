@@ -332,6 +332,19 @@ export function sanitizeSharedPlan(plan, household) {
   return redactPlan(householdPatterns(household), sharedPlanShape(plan));
 }
 
+// plan_meta used to pass through whole, the one field on this payload with no
+// allowlist of its own — every other field here is either named explicitly
+// or run through sanitizeSharedPlan. What the client actually reads is model,
+// source and analyzedAt (js/screens/loading.js); anything else a future
+// field adds defaults to excluded, the same rule PLAN_FIELDS states above.
+const PLAN_META_FIELDS = ['model', 'source', 'analyzedAt'];
+function sharedPlanMeta(meta) {
+  if (!meta || typeof meta !== 'object') return null;
+  const out = {};
+  for (const key of PLAN_META_FIELDS) if (key in meta) out[key] = meta[key];
+  return out;
+}
+
 // The full response body for get-shared-space. Top-level allowlist mirrors
 // the plan one: name/space/goal/dims describe the space, plan is the plan.
 // No user_id, no household, no progress, no shopping, no storage paths.
@@ -350,7 +363,7 @@ export function sharedSpacePayload(row) {
     goal: row.goal || null,
     dims: row.dims || null,
     plan: sanitizeSharedPlan(row.plan, row.household),
-    planMeta: row.plan_meta || null,
+    planMeta: sharedPlanMeta(row.plan_meta),
     sharedAt: row.updated_at || null,
   };
 }

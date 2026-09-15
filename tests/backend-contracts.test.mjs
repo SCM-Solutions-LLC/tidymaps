@@ -80,6 +80,52 @@ test('the analysis prompt confines household specifics to the shareable fields',
     'the free-text note is the one the offline path leaks, so it is named explicitly');
 });
 
+/* The global breaker exists to cap what an ANONYMOUS flood can cost — a
+   caller with no account can mint a fresh rate-limit identity by IP, so the
+   shared daily ceiling is the only thing standing between that and unbounded
+   cost. Applied to signed-in callers too, that same anonymous flood could
+   exhaust the shared ceiling and lock out someone who never made a call of
+   their own; a signed-in caller is already capped by their own perHour/perDay.
+   Extracts each function's checkAndLog call by source position rather than a
+   single regex across the whole file, so the signed-in and anonymous branches
+   cannot be matched in the wrong order. */
+function checkAndLogBranches(src, fnName) {
+  const call = src.slice(src.indexOf(`checkAndLog(admin, '${fnName}'`));
+  const body = call.slice(0, call.indexOf(');') + 2);
+  const signedIn = /caller\.userId\s*\?\s*(\{[^}]*\})/.exec(body);
+  const anon = /:\s*(\{[^}]*\})\s*\)\s*;/.exec(body);
+  return { signedIn: signedIn && signedIn[1], anon: anon && anon[1] };
+}
+
+test('the global breaker on render-after and analyze-space does not apply to signed-in callers', () => {
+  for (const [fn, src] of [['render-after', renderAfter], ['analyze-space', analyzeSpace]]) {
+    const { signedIn, anon } = checkAndLogBranches(src, fn);
+    assert.ok(signedIn, `${fn}: could not find the signed-in rate-limit branch`);
+    assert.ok(anon, `${fn}: could not find the anonymous rate-limit branch`);
+    assert.doesNotMatch(signedIn, /globalPerDay/,
+      `${fn}: a signed-in caller can still be locked out by an anonymous flood`);
+    assert.match(anon, /globalPerDay/, `${fn}: the anonymous branch lost its global breaker entirely`);
+  }
+});
+
+/* The upstream model API's own error text used to ride straight through to
+   the client in the final failure response — logged for debugging (still is,
+   a line above) but also handed to whoever is asking, whatever the upstream
+   response happened to say. js/api.js reads only the stable `error` code to
+   choose what it shows (analysisFailureCopy, renderAfterErrorMessage); it
+   never reads a detail field on this path, so returning it added nothing a
+   client uses. render-after's own error responses never carried it either —
+   this brings analyze-space's last-attempt failure in line with that. */
+test('analyze-space does not return the upstream model error text to the caller', () => {
+  const finalFailure = analyzeSpace.slice(
+    analyzeSpace.indexOf('if (!result.ok) {'),
+    analyzeSpace.indexOf('messages = [', analyzeSpace.indexOf('if (!result.ok) {')),
+  );
+  assert.match(finalFailure, /console\.error\(.*result\.detail/, 'the detail is no longer logged for debugging either');
+  assert.match(finalFailure, /return json\(req, result\.status, \{ error: result\.error \}\);/,
+    'the client-facing response still carries the upstream error text');
+});
+
 /* X-Forwarded-For grows left to right: every proxy APPENDS the address of the
    peer it received from, so a request that crossed one trusted edge reads
    "<whatever the client sent>, <address the edge saw>". Reading entry [0] read
@@ -180,17 +226,44 @@ test('every edge function declares verify_jwt in config.toml', () => {
    the next line, and `body.images` on a null body throws a TypeError the
    runtime turns into a 500: the caller's mistake reported as a server fault,
    generated on demand by anyone, burying the real 500s in the log. */
-test('a body that is not an object is refused rather than dereferenced', async () => {
-  const asRequest = (text) => ({ json: async () => JSON.parse(text) });
+const noHeaders = { get: () => null };
+const asRequest = (text) => ({ json: async () => JSON.parse(text), headers: noHeaders });
 
+test('a body that is not an object is refused rather than dereferenced', async () => {
   for (const bad of ['null', '4', '"hi"', '[]', '[{"kind":"feedback"}]', 'true']) {
     assert.equal(await readJsonObject(asRequest(bad)), null, `${bad} must not pass as a body`);
   }
-  assert.equal(await readJsonObject({ json: async () => { throw new SyntaxError('bad'); } }), null,
+  assert.equal(await readJsonObject({ json: async () => { throw new SyntaxError('bad'); }, headers: noHeaders }), null,
     'unparseable JSON is still refused');
 
   assert.deepEqual(await readJsonObject(asRequest('{"kind":"feedback"}')), { kind: 'feedback' });
   assert.deepEqual(await readJsonObject(asRequest('{}')), {}, 'an empty object is a valid body');
+});
+
+/* req.json() used to run before any auth or rate-limit check, so a caller
+   nobody had authorized yet could still make the function spend CPU and
+   memory reading and parsing an arbitrarily large body. Content-Length is
+   checked first now, and cheaply, before req.json() is ever called. */
+test('a body larger than the shared cap is refused before it is parsed', async () => {
+  let parsed = false;
+  const req = {
+    json: async () => { parsed = true; return {}; },
+    headers: { get: (k) => (k.toLowerCase() === 'content-length' ? '20000000' : null) },
+  };
+  assert.equal(await readJsonObject(req), null, 'an oversized body was not refused');
+  assert.equal(parsed, false, 'the oversized body was read and parsed anyway');
+});
+
+test('a body within the cap still parses normally', async () => {
+  const req = {
+    json: async () => ({ ok: true }),
+    headers: { get: (k) => (k.toLowerCase() === 'content-length' ? '1000' : null) },
+  };
+  assert.deepEqual(await readJsonObject(req), { ok: true });
+});
+
+test('a request with no Content-Length at all (chunked transfer) still parses', async () => {
+  assert.deepEqual(await readJsonObject(asRequest('{"ok":true}')), { ok: true });
 });
 
 test('every function reads its body through the shared guard', () => {
