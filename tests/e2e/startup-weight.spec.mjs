@@ -82,6 +82,11 @@ test('the product library arrives when it is opened, not with the page', async (
   expect(urls.some((u) => /screens\/products\.js/.test(u))).toBe(true);
 });
 
+test('the italic face never loads: browsers synthesize it from the one face that does', async ({ page }) => {
+  const urls = await loadLanding(page);
+  expect(urls.some((u) => /archivo-latin-wght-italic/.test(u)), 'a second, italic-only font file was fetched for a handful of small captions').toBe(false);
+});
+
 test('the brand face is requested before the stylesheets ask for it', async ({ page }) => {
   const urls = await loadLanding(page);
   const font = urls.findIndex((u) => /archivo-latin-wdth-normal\.woff2/.test(u));
