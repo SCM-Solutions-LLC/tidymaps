@@ -102,9 +102,3 @@ export function setAppbarHeightVar(){
   if(bar) document.documentElement.style.setProperty('--appbar-h', bar.offsetHeight+'px');
 }
 
-// The toast floats above the flow footer only while the footer is visible.
-export function setFootHeightVar(){
-  const foot=document.getElementById('flow-foot');
-  const h=(foot && !foot.classList.contains('hide')) ? foot.offsetHeight : 0;
-  document.documentElement.style.setProperty('--foot-h', h+'px');
-}

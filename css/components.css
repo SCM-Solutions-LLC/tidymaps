@@ -334,10 +334,17 @@ textarea{resize:vertical;min-height:84px}
 .callout.info{background:var(--teal-bg);border:1px solid var(--teal-line);color:var(--teal-ink)}
 .callout.info svg{color:var(--teal-ink)}
 
-/* clears the flow footer; --foot-h is maintained by the router when the footer shows/hides */
-.toast{position:fixed;left:50%;bottom:calc(var(--foot-h,16px) + 16px);transform:translateX(-50%) translateY(20px);z-index:90;
+/* Over the running head, not the page. At the bottom it cleared the wizard's
+   footer by a variable the router maintained, and on the report (no footer) it
+   landed on the plan: on a 390 by 844 phone over the Summary heading, on a
+   shorter one over the 3D badge and the contents bar. The head is the one
+   band nothing is read from.
+   Sized by its text, not by the space right of centre: with left:50% and no
+   width the box could only be half the viewport wide, which wrapped the
+   longer notices into a five-line block on a phone. */
+.toast{position:fixed;left:50%;top:10px;transform:translateX(-50%) translateY(-20px);z-index:90;
   background:var(--ink);color:var(--stock);padding:12px 20px;font-family:var(--sans);font-size:14px;font-weight:600;
-  opacity:0;pointer-events:none;transition:.3s;max-width:90vw;text-align:center}
+  opacity:0;pointer-events:none;transition:.3s;width:max-content;max-width:min(90vw,560px);text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .divider{height:1px;background:var(--line);margin:26px 0}
@@ -415,19 +422,6 @@ body[data-flow="1"] .site-footer{display:none}
 .cab-item{min-width:0;flex:none}
 .cab-item.more{background:var(--surface-2);border-style:dashed;color:var(--ink-3)}
 
-/* grouped space picker */
-.space-group{border:var(--rule);background:var(--stock);overflow:hidden}
-.sg-head{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;background:var(--stock);border:none;font-weight:700;font-size:15px;color:var(--ink);text-align:left;cursor:pointer}
-.sg-head .sg-count{margin-left:auto;font-size:12px;font-weight:600;color:var(--ink-3);background:var(--surface-2);border-radius:0;padding:2px 9px}
-.sg-head svg{width:16px;height:16px;color:var(--ink-3);transition:transform .18s;flex:none}
-.space-group.open .sg-head svg{transform:rotate(180deg)}
-.space-group .sg-body{display:none;padding:2px 12px 14px}
-.space-group.open .sg-body{display:grid}
-@media(max-width:519px){
-  #space-opts .grid-auto{grid-template-columns:1fr}
-  #space-opts .opt{flex-wrap:nowrap;align-items:center;padding:12px 14px}
-}
-
 /* nowrap chip rows must not inflate the layout's minimum width */
 .ba > div,.cab,.cab-shelf,.cab-row{min-width:0}
 /* one-line shelf headers so mode tags never change the drawing's height */
@@ -453,7 +447,10 @@ body[data-flow="1"] .site-footer{display:none}
    could not be made out — decoration next to the text rather than the thing
    doing the explaining. Now it is a band under the task name at a size the
    motion actually reads at, and the text has the full column back. */
-.step-art{display:grid;place-items:center;width:100%;height:98px;margin:11px 0 3px;
+/* The clips are 4:1, so at 98px tall the band is 392px wide: on a phone that
+   is the column, on a desktop a full-width band left the clip floating in a
+   letterbox of tint on either side. */
+.step-art{display:grid;place-items:center;width:min(100%,392px);height:98px;margin:11px 0 3px;
   background:var(--tint);color:var(--draw);
   pointer-events:none;overflow:hidden}
 /* The scenes carry furniture and item detail now, so they are drawn to be read
