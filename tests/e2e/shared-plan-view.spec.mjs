@@ -300,3 +300,22 @@ test('a shared plan is illustrated as the space it is about, not as a pantry', a
     `the workbench plan is illustrated as: ${JSON.stringify(shown)}`).not.toMatch(/pantry/i);
   expect(`${shown.space} ${shown.alt}`.toLowerCase()).toMatch(/workbench/);
 });
+
+test('the 3D view of a shared plan does not call it yours', async ({ page }) => {
+  /* The viewer's heading, intro and status line were written for the owner:
+     "Your space, standing up", "matches your space's layout and size", "Built
+     from your measurements" and, because a shared plan carries no setup and so
+     resolves its layout from the plan's own reading, "matched from your
+     photos". A visitor was told all four about somebody else's pantry. */
+  await openShared(page);
+  await expect(page.locator('#screen-results')).toBeVisible({ timeout: 20000 });
+  await page.locator('#res-actions button:has-text("Open the 3D view")').click();
+  await expect(page.locator('#v3d-canvas')).toHaveAttribute('data-layout', 'walkin-u', { timeout: 20_000 });
+
+  await expect(page.locator('#v3d-title')).toHaveText('The pantry, standing up');
+  for (const id of ['v3d-title', 'v3d-intro', 'v3d-status']) {
+    await expect(page.locator(`#${id}`), `${id} addresses the visitor as the owner`).not.toContainText(/\byour\b/i);
+  }
+  await expect(page.locator('#v3d-status')).toContainText("Built from the plan's measurements");
+  await expect(page.locator('#v3d-status')).toContainText("matched from the plan's photos");
+});

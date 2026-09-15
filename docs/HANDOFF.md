@@ -1872,9 +1872,9 @@ Ordered by whether anyone can act on them today.
 12. **The 2026-09-14 site review, everything except item 1.** A full pass
     (security, browser UI/UX with axe at 390 and 1280, throttled performance,
     copy and SEO) whose top claims were verified in source by the reviewer.
-    Item 1, the icon XSS, shipped in #134, and batch 1's pantry item in #136.
-    Nothing else is fixed. Each batch is roughly one PR per line; the security
-    items in batch 1 come first.
+    Item 1, the icon XSS, shipped in #134, batch 1's pantry item in #136, and
+    its 3D-viewer item in #138. Nothing else is fixed. Each batch is roughly
+    one PR per line; the security items in batch 1 come first.
     Not verified from the sandbox: live-site headers and contents, and the
     hosted auth config.
 
@@ -1895,9 +1895,30 @@ Ordered by whether anyone can act on them today.
       behaviour. Left alone on purpose: the setup card is still preselected and
       ticked, and Review prints it without a label. That is batch 2's "Room and
       Spot as two rows" neighbour, not this item.
-    - The 3D viewer says "matches your space" and "estimated from your photos"
+    - ~~The 3D viewer says "matches your space" and "estimated from your photos"
       on sample plans (`index.html` ~847, `js/screens/viewer3d.js` ~267).
-      Branch on `planMeta.source` and `uploadedFiles`.
+      Branch on `planMeta.source` and `uploadedFiles`.~~ **Done in #138.**
+      Whose plan it is and whether a photo was read live in one rule,
+      `js/planProvenance.js` (`planFromPhotos`, `planIsSample`,
+      `answeredAnything`), which the report's byline and the viewer both
+      read; a unit test refuses either screen its own `planMeta.source`
+      comparison. `source==='ai'` is the signal, not `uploadedFiles`: a
+      failed analysis (`demo-fallback`) keeps the files and read none, and a
+      saved analysis reopened from the dashboard has no files in memory and
+      was read from them. The viewer's heading, its intro (`#v3d-intro`,
+      written at open) and its status line have four readings: the sample
+      ("The sample pantry, standing up", "Dimensions are the sample's, not
+      yours"), a wizard plan without photos ("No photos were added"), a photo
+      plan (wording unchanged), and a share view, which says "the plan's"
+      where it said "your". The share view was the one place "matched from
+      your photos" could actually print: a shared plan carries no setup, so
+      `resolveLayout` answers `ai` from the plan's own layout whatever the
+      plan came from. Browser-checked on all three own-plan cases and the
+      share fixture; each new assertion proven red by neutering only its own
+      behaviour. Left alone on purpose: "Built from your measurements" and
+      "Shown as your cabinet" on a wizard run whose measure and setup steps
+      were passed untouched. Those are batch 2's setup-card and
+      Measurements-row neighbours, and Review prints both unlabelled too.
     - "Analyzed by Claude" appears twice on the report (`results.js` badge ~39
       and byline ~86).
     - The auth modal shows a raw "Failed to fetch" (`js/auth.js` ~80).

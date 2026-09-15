@@ -3,7 +3,8 @@ import { SVG, ICON, iconFor } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
-import { areaFor, fmtFt, fmtIn, optionsForHousehold, SETUP_DIMS } from '../wizard-data.js';
+import { areaFor, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
+import { planFromPhotos, planIsSample } from '../planProvenance.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -33,7 +34,7 @@ export function buildResults(){
        when what it says is nothing. */
     state.cats=(A ? (A.cats||[]) : DEMO_CATS).slice();
   }
-  const isRealAi = A && state.planMeta && state.planMeta.source==='ai';
+  const isRealAi = planFromPhotos();
   // AI badge on results title
   const badge=document.getElementById('res-ai-badge');
   if(badge) badge.style.display = isRealAi ? 'inline-flex' : 'none';
@@ -70,18 +71,9 @@ export function buildResults(){
      false of the landing page's sample, which is opened by someone who has
      made no selections at all. The three states are different claims and now
      read as three different lines. */
-  /* "Answered" has to mean any answer, not the three that carry a touched
-     flag. Someone who typed their measurements and named their household but
-     left the three defaults alone was told the plan was "not based on your
-     space", under chips quoting the measurements they had just typed. */
-  const def=SETUP_DIMS[state.setup];
-  const dimsTyped = !!(state.dimsFt && def
-    && (state.dimsFt.w!==def.w || state.dimsFt.h!==def.h || state.dimsFt.d!==def.d));
-  const answeredAnything = state.spaceTouched || state.setupTouched || state.catsTouched || state.shoppingTouched
-    || state.effortTouched || dimsTyped || householdAnswered()
-    || (state.goals||[]).length>0 || (state.styles||[]).length>0
-    || (state.uploadedFiles||[]).length>0;
-  const isSample = !isRealAi && state.planMeta && state.planMeta.source==='demo' && !answeredAnything;
+  /* "Answered" means any answer, not the three that carry a touched flag; the
+     rule is in planProvenance.js, where the 3D view reads the same one. */
+  const isSample = planIsSample();
   if(byline) byline.textContent = isRealAi
     ? 'Analyzed by Claude'+(modelLabel(model)?' · '+modelLabel(model):'')
     : (isSample ? 'Sample plan · not based on your space'

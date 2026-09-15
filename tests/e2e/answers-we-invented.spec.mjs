@@ -1,5 +1,6 @@
 import { test, expect } from 'playwright/test';
 import { fileURLToPath } from 'node:url';
+import { driveWizardToReview } from './helpers.mjs';
 
 /* Two of the wizard's steps arrived with an answer already given.
 
@@ -372,4 +373,61 @@ test('a wizard plan still says it was built from the answers given', async ({ pa
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
 
   await expect(page.locator('#res-byline')).toHaveText(/based on your selections/i);
+});
+
+/* ---------- the 3D view ----------
+   The same invented answer, one screen further on. The viewer's heading said
+   "Your space, standing up", its intro said the model matched your space's
+   layout and size, and its status line said the dimensions were estimated
+   from your photos: over the landing page's sample pantry, to a visitor who
+   had answered nothing and photographed nothing. The status read
+   geometry.estimated, which is true of every demo scenario. */
+
+async function open3d(page) {
+  await page.evaluate(() => window.openViewer3d());
+  await expect(page.locator('#v3d-canvas')).toHaveAttribute('data-layout', /./, { timeout: 20_000 });
+}
+
+test('the sample plan in 3D says it is the sample, not your space or your photos', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.getByRole('button', { name: 'View a sample plan' }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  await open3d(page);
+
+  await expect(page.locator('#v3d-title')).toHaveText('The sample pantry, standing up');
+  await expect(page.locator('#v3d-intro')).toContainText('not your space');
+  const status = page.locator('#v3d-status');
+  await expect(status).toContainText('not yours');
+  for (const claim of [/from your photos/, /your measurements/, /Shown as your/, /your setup/]) {
+    await expect(status, `the sample's 3D view still claims ${claim}`).not.toContainText(claim);
+  }
+});
+
+test('a plan built without photos does not say its 3D view came from any', async ({ page }) => {
+  await driveWizardToReview(page);
+  await page.locator('#flow-next').click();          // review, then build
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  await open3d(page);
+
+  // Theirs: they walked the wizard. Just not photographed.
+  await expect(page.locator('#v3d-title')).toContainText(/^Your .*, standing up$/);
+  await expect(page.locator('#v3d-intro')).toContainText('No photos were added');
+  await expect(page.locator('#v3d-status')).not.toContainText('photos');
+});
+
+test('a plan read from photos still says so in 3D', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.evaluate(async () => {
+    const [{ state }, { getDemoScenario }, { normalizeAi }, { setArea }] = await Promise.all([
+      import('/js/state.js'), import('/js/demo-scenarios.js'), import('/js/plan.js'), import('/js/screens/wizard.js'),
+    ]);
+    setArea('kitchen', 'pantry');
+    state.dims = null;                                  // nothing typed, so the estimate is the photos'
+    state.ai = normalizeAi(getDemoScenario('pantry', 'find', state.household, null));
+    state.planMeta = { model: 'test', source: 'ai', analyzedAt: 0 };
+  });
+  await open3d(page);
+  await expect(page.locator('#v3d-title')).toHaveText('Your pantry, standing up');
+  await expect(page.locator('#v3d-intro')).toContainText('your photos');
+  await expect(page.locator('#v3d-status')).toContainText('estimated from your photos');
 });

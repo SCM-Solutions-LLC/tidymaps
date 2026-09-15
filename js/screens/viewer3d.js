@@ -11,6 +11,7 @@ import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { resolveLayout, chipArchetypesFor, ARCHETYPE_LABELS } from '../layout.js';
 import { selectedProductNeeds } from '../three/organizerKinds.js';
+import { planFromPhotos, planIsSample } from '../planProvenance.js';
 import {
   normalizeViewerGeometry,geometryWithShelfCount,geometryWithShelfHeight,
   shelfHeightInches,mapForShelfCount,inferLSide,
@@ -94,7 +95,7 @@ function currentLayout(map=activeMapV2()){
     ai: state.ai||{ map },
     setup: state.setup,
     setupTouched: state.setupTouched,
-    aiFromPhotos: !!(state.planMeta && state.planMeta.source === 'ai'),
+    aiFromPhotos: planFromPhotos(),
     scenarioKey: state.space,
     override: layoutOverride,
     map,
@@ -221,11 +222,7 @@ export async function openViewer3d(){
     contextLostHandler=()=>{ disposeViewer3d(); };
     canvas.addEventListener('webglcontextlost', contextLostHandler, { once:true });
 
-    const title=document.getElementById('v3d-title');
-    if(title){
-      const name=(state.ai&&state.ai.spaceType)||state.space||'space';
-      title.textContent='Your '+name+', standing up';
-    }
+    updateHeading();
 
     exposeView();
     populateZones(map);
@@ -259,17 +256,59 @@ export async function openViewer3d(){
   }
 }
 
+/* Whose space this is, said the same way by the heading, the intro and the
+   status line. "Your space, standing up" over "the model matches your space's
+   layout and size" was printed over the landing page's sample pantry, to a
+   visitor who had answered nothing, and over a shared plan, to a visitor
+   looking at somebody else's. Three readers, and it was true for one. */
+function provenance(){
+  if(state.shareView) return 'shared';
+  if(planFromPhotos()) return 'photos';
+  if(planIsSample()) return 'sample';
+  return 'answers';
+}
+
+function updateHeading(){
+  const kind=provenance();
+  const name=String((state.ai&&state.ai.spaceType)||state.space||'space').toLowerCase();
+  const title=document.getElementById('v3d-title');
+  if(title) title.textContent = kind==='shared' ? `The ${name}, standing up`
+    : kind==='sample' ? `The sample ${name}, standing up`
+    : `Your ${name}, standing up`;
+  const intro=document.getElementById('v3d-intro');
+  if(intro) intro.textContent = 'Drag to spin it around, scroll to zoom. ' + {
+    shared: 'The model follows this plan\'s layout and size.',
+    photos: 'The model follows your photos and your answers.',
+    sample: `This is our sample ${name}, not your space. Plan your own to see it drawn at your layout and size.`,
+    answers: 'The model follows your answers. No photos were added, so nothing here comes from a look at your space.',
+  }[kind] + ' Switch types below to compare.';
+}
+
 function updateStatus(geometry, resolved, sourceGeometry=geometry){
   const status=document.getElementById('v3d-status');
   if(!status) return;
   const label=ARCHETYPE_LABELS[resolved.type]||resolved.type;
-  let note=geometry.estimated
-    ? 'Dimensions are estimated from your photos. Add measurements in the wizard for exact scale.'
-    : `Built from your measurements: ${fmtIn(sourceGeometry.width, isMetric())}w × ${fmtIn(sourceGeometry.height, isMetric())}h × ${fmtIn(sourceGeometry.depth, isMetric())}d.`;
+  const kind=provenance();
+  const photos=planFromPhotos();
+  // A visitor on a share link is reading somebody else's tape measure.
+  const whose = kind==='shared' ? 'the plan\'s' : 'your';
+  /* `geometry.estimated` is true of every demo scenario as well as of a real
+     analysis without measurements, so on its own it does not say a photo was
+     read. Only a plan that came from one gets to say so; the sample says
+     whose size it is drawn at, and a share view drops the advice to add
+     measurements, which the visitor cannot do. */
+  let note = !geometry.estimated
+    ? `Built from ${whose} measurements: ${fmtIn(sourceGeometry.width, isMetric())}w × ${fmtIn(sourceGeometry.height, isMetric())}h × ${fmtIn(sourceGeometry.depth, isMetric())}d.`
+    : kind==='sample' ? 'Dimensions are the sample\'s, not yours. Plan your own space to see it at your size.'
+    : kind==='shared' ? (photos ? 'Dimensions are estimated from the plan\'s photos.' : 'Dimensions are a typical size for this kind of space.')
+    : photos ? 'Dimensions are estimated from your photos. Add measurements in the wizard for exact scale.'
+    : 'Dimensions are a typical size for this setup. Add measurements in the wizard for exact scale.';
   const sourceDesc={
     override:'your selection.',
-    ai:'matched from your photos.',
-    setup:'from your setup choice.',
+    /* resolveLayout also answers 'ai' for a plan that carries a layout and no
+       setup at all, which is every shared plan, whatever the plan came from. */
+    ai: photos ? `matched from ${whose} photos.` : 'from the plan\'s layout.',
+    setup: kind==='sample' ? 'the sample\'s layout.' : 'from your setup choice.',
     scenario:'from the space type.',
     default:'default layout.',
   };
@@ -278,7 +317,7 @@ function updateStatus(geometry, resolved, sourceGeometry=geometry){
      so someone who chose "Reach-in" was told it was Shelves, and a Butler's
      pantry was labelled "Counter + uppers" — the name of a card in a different
      room they never saw. It reads as though the answer was lost. */
-  const chosen = resolved.source==='setup' && state.setupLabel;
+  const chosen = resolved.source==='setup' && state.setupLabel && kind!=='sample';
   /* When the setup the user picked and the archetype it draws as are the same
      word, naming both produced "Shown as your cabinet, drawn as Cabinet" — a
      sentence that says one thing twice and reads like a bug. */
