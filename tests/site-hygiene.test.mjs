@@ -139,3 +139,44 @@ test('every page has a distinct title and its own description', () => {
     descriptions.set(desc[1], page);
   }
 });
+
+/* ---------- a skip link and a main landmark on every page ----------
+
+   The accessibility statement listed "no skip-to-content link" under where
+   the site falls short. Every page opens with one now, and it lands focus on
+   a main landmark that can take it. */
+
+test('every page opens with a skip link that lands on its main landmark', () => {
+  for (const page of PAGES) {
+    const src = read(page);
+    const body = src.slice(src.indexOf('<body'));
+    const first = /<body[^>]*>\s*<([a-z]+)([^>]*)>/.exec(body);
+    assert.ok(first && first[1] === 'a' && first[2].includes('class="skip-link"'),
+      `${page}: the skip link is not the first thing in the body`);
+    assert.ok(first[2].includes('href="#main"'), `${page}: the skip link does not point at #main`);
+    assert.match(body, /<main[^>]*\bid="main"[^>]*\btabindex="-1"/, `${page}: main is not a focusable #main landmark`);
+  }
+});
+
+test('the accessibility statement does not disclaim a skip link the site has', () => {
+  if (!read('index.html').includes('class="skip-link"')) return;
+  assert.ok(!/no skip-to-content link/i.test(read('accessibility.html')),
+    'accessibility.html still says there is no skip link');
+});
+
+/* ---------- one h1 per screen ----------
+
+   A screen is a page to a screen reader, and every one but the landing page
+   titled itself with an h2, so the wizard, the report and the 3D view had no
+   level-one heading (axe: page-has-heading-one). */
+
+test('every screen of the app titles itself with an h1', () => {
+  const html = read('index.html');
+  const screens = html.split(/(?=<section class="screen[^"]*" id="screen-)/).slice(1);
+  assert.ok(screens.length >= 20, `found only ${screens.length} screens`);
+  for (const s of screens) {
+    const id = /id="(screen-[a-z0-9]+)"/.exec(s)[1];
+    const own = s.slice(0, s.indexOf('</section>'));
+    assert.ok(/<h1[ >]/.test(own), `${id} has no h1`);
+  }
+});

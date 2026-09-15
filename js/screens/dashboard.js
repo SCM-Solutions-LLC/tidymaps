@@ -45,7 +45,7 @@ export async function buildDashboard(){
     card.innerHTML=`
       <div class="dash-cover"><span class="dc-type">${escapeHtml(typeName(sp.space_type))}</span></div>
       <div class="dash-body">
-        <h4>${escapeHtml(sp.name)}</h4>
+        <h2>${escapeHtml(sp.name)}</h2>
         <div class="dash-meta"><span>Updated ${escapeHtml(when)}</span>${total?`<span>${done}/${total} steps</span>`:''}</div>
         <div class="dash-prog"><i style="width:${pct}%"></i></div>
         <div class="dash-acts">

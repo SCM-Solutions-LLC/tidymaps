@@ -5,7 +5,7 @@
 /* ---------- Masthead ---------- */
 .report-mast{padding:8px 0 26px;border-bottom:var(--rule-2)}
 .dash-count{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--spot-ink);margin:10px 0 0}
-.report-mast h2{font-size:clamp(30px,5.4vw,44px);margin-top:14px;max-width:20ch}
+.report-mast h1{font-size:clamp(30px,5.4vw,44px);margin-top:14px;max-width:20ch}
 .report-byline{
   display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:14px;
   font-size:15px;color:var(--ink-2);line-height:1.6;
@@ -19,7 +19,7 @@
 }
 @media(min-width:880px){.plan-hero{grid-template-columns:46fr 54fr;gap:clamp(36px,4vw,64px)}}
 .plan-hero-copy{min-width:0}
-.plan-hero h2{font-size:clamp(30px,4vw,44px);font-weight:700;letter-spacing:-.02em;line-height:1.08;max-width:18ch}
+.plan-hero h1{font-size:clamp(30px,4vw,44px);font-weight:700;letter-spacing:-.02em;line-height:1.08;max-width:18ch}
 
 
 .plan-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
@@ -113,7 +113,7 @@
    chapter body starts where it did. */
 .ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:10px;border-top:var(--rule-2);padding:14px 0 6px}
 .ch-head .ch-titles{min-width:0}
-.ch-head h3{font-size:clamp(20px,3.2vw,24px);letter-spacing:-.02em}
+.ch-head h2{font-size:clamp(20px,3.2vw,24px);letter-spacing:-.02em}
 /* Survives the fold, unlike .ch-sub, because it is the only hint a reader gets
    that this chapter holds a tool rather than a picture. margin-left:auto pins
    it to the right of the head, clear of the chevron. */
@@ -193,8 +193,8 @@
    thing on this screen asking rather than telling — but without a heavier
    surface than the chapters it follows. */
 .plan-rate{margin-top:48px;padding:24px;border:var(--rule-2);background:var(--tint)}
-.plan-rate h3{font-family:var(--sans);font-size:22px;line-height:1.15}
-.plan-rate h4{font-size:14px;font-weight:600;color:var(--ink-2)}
+.plan-rate h2{font-family:var(--sans);font-size:22px;line-height:1.15}
+.plan-rate h3{font-size:14px;font-weight:600;color:var(--ink-2)}
 .plan-rate textarea{width:100%;min-height:76px}
 .plan-rate .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
 .rate-thanks{display:flex;align-items:center;gap:10px;color:var(--good);font-weight:600;font-size:14.5px}

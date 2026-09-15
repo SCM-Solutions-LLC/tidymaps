@@ -36,7 +36,10 @@ h1,h2,h3,h4{
   text-rendering:optimizeLegibility;
   text-wrap:balance;
 }
-h1{font-size:clamp(32px,4.2vw,46px);font-weight:700;letter-spacing:-0.022em;line-height:1.08}
+/* Every screen's title is its h1 (a screen is a page to a screen reader), so
+   the h1 is set at the size those titles always had; the landing hero, the
+   one display headline, takes its larger size in landing.css. */
+h1{font-size:clamp(26px,3.4vw,34px);font-weight:700;letter-spacing:-0.018em;line-height:1.12}
 h2{font-size:clamp(26px,3.4vw,34px);font-weight:700;letter-spacing:-0.018em;line-height:1.12}
 h3{font-size:clamp(17px,3vw,19px);font-weight:700}
 h4{font-size:16px;font-weight:700}
@@ -51,6 +54,18 @@ p{margin:0 0 1em}
 .muted{color:var(--spot-ink)}
 .small{font-size:14px;line-height:1.5}
 .ui{font-family:var(--sans)}
+
+/* ---------- Skip link ----------
+   The first thing Tab reaches on every page. Off-screen until it has focus,
+   then a ruled box over the running head; it jumps past the header to main. */
+.skip-link{
+  position:absolute;left:var(--pad,18px);top:-100px;z-index:100;
+  font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;
+  letter-spacing:var(--tracking-label);text-transform:uppercase;
+  color:var(--ink);background:var(--stock);border:var(--rule-2);padding:12px 16px;
+}
+.skip-link:focus{top:10px}
+main:focus{outline:none}
 
 /* ---------- Running head ---------- */
 .appbar{
