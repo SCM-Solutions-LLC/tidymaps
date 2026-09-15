@@ -4,7 +4,17 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #142 merged (`main` at `52145ce`,
+**Last refreshed:** 2026-09-15, after PR #143 merged (`main` at `64cea85`,
+12:01 UTC) with PR #144 open (draft): a rate-limited analysis says how
+long to wait and is not called a failure (#143, `waitText` and
+`analysisFailureCopy` in `js/api.js`, the code and wait carried as
+`state.aiFailure`), and the security page's three false claims are
+rewritten to what the code does (#144, with the privacy policy's copy of
+the salt sentence). Both client-only, so the dead deploy token (Production
+health #5, open item 11) does not apply. Pages run 148 carries #143; see
+below for whether it went green. That closes the sixth and, when #144
+merges, the seventh line of open item 12's batch 1, leaving the legal pages.
+Before that, 2026-09-15, after PR #142 merged (`main` at `52145ce`,
 09:47 UTC): the sign-in modal explains a failed request instead of printing
 the browser's fetch text. `js/auth.js` runs the library load and the request
 under one catch and reads the error by name, status and code
@@ -2016,10 +2026,29 @@ Ordered by whether anyone can act on them today.
       goes red on its own when `loading.js` drops the failure, which no
       unit test can see. Browser-checked at 390 and 1280, loading line and
       banner both.
-    - `security.html` makes three false claims: that CORS blocks requests (it
+    - ~~`security.html` makes three false claims: that CORS blocks requests (it
       only hides responses, `_shared/cors.ts`); that the salt rotates daily (it
       is a static salt plus the date, `_shared/auth.ts`); that guest use
-      touches no database (`usage_events`, `telemetry_events`).
+      touches no database (`usage_events`, `telemetry_events`).~~ **Done in
+      #144.** Each sentence now says what the code does: the CORS
+      allowlist decides who may read a response, the request still arrives
+      and still counts against the limit, and a non-browser client is not
+      bound by it at all; the hash is `ip|date|salt` with one static secret,
+      so the date is what varies, and the page says what that means (not
+      reversible without the salt, testable with it, which is why the salt
+      lives only in the backend's environment); guest use writes no account
+      data but every call writes a usage row and, without DNT or GPC, the
+      telemetry rows. The privacy policy carried the same salt sentence
+      ("short-lived", "changes daily"), so that one sentence changed with it
+      and its effective date moved; "short-lived" was wrong too, since
+      nothing purges `usage_events` (batch 3). The rest of the legal line
+      (video, Resend, the five undisclosed events, the terms redaction
+      sentence) is untouched. Three tests in `legal-pages.test.mjs` tie each
+      claim to the code that makes it false (`auth.ts`'s hash shape,
+      `ratelimit.ts`'s `check_and_log_usage`, `cors.ts`'s headers), and
+      switch themselves off if the backend changes so the claim would be
+      true again; each proven red by putting the old sentence back.
+      Browser-checked at 390 and 1280.
     - Legal: `privacy.html` and `terms.html` promise video while the input is
       `image/*`; Resend is missing from privacy; five telemetry events are
       undisclosed (`_shared/telemetryEvents.js`); dates are stale; `terms.html`
