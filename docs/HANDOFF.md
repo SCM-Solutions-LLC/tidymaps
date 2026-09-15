@@ -4,7 +4,20 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
+**Last refreshed:** 2026-09-15, after PR #147 merged (`main` at `b604374`,
+13:21 UTC): the report's shelf map tints the eye-level shelf with the accent
+and the other shelves grey, the way DESIGN.md and the landing figure already
+had it (`css/components.css` names `--tint` and `--tint-2` directly; the
+design test resolves the token chain and asserts the colours). Client-only,
+so the dead deploy token (Production health #5, open item 11) does not
+apply. Pages run 150 (#145) went green at 12:59 UTC, so **the corrected
+legal pages are live**; run 151 carries #147 and was in progress at the
+time of writing. That closes the first line of open item 12's batch 2; the
+second, the progress rail, is PR #148, open (draft) at the time of writing.
+Lines 3 to 5 (the phone menu as a dialog, the 3D sliders' 44px target, the
+tap targets under 44px) are built, tested and browser-checked on local
+branches in this session, each waiting its turn on the one PR branch.
+Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
 applied to none of them: #142 (the sign-in modal explains a failed request
@@ -2096,8 +2109,18 @@ Ordered by whether anyone can act on them today.
       at 390 and 1280. Seen on the way, not fixed: the "Loaded the sample
       pantry plan" toast sits over the shelf map at 390, the same toast
       the last line of this batch says covers the Summary heading.
-    - Progress rail reads 100% then 75% then 81% after Review
-      (`js/router.js` ~154-165).
+    - ~~Progress rail reads 100% then 75% then 81% after Review
+      (`js/router.js` ~154-165).~~ **Done in #148.** `setRail` had one
+      formula for wizard steps (step over eleven) and another for every
+      other screen (the screen's index in `FLOW` over `FLOW`'s length),
+      and the second did not know the first had finished. The rail is the
+      wizard's now (`railPercent`): empty before it, a step at a time
+      through it, full on every screen past Review, the 3D view included
+      so the report and the drawing do not move it. A unit test walks
+      `FLOW` and refuses any drop; a browser test builds a plan through
+      the real steps and reads the rail on Review, loading and the report.
+      Both proven red on "loading reads 75% after 100%". Browser-checked
+      at 390 and 1280.
     - Mobile nav is not modal: no Esc, outside click, scroll lock or Tab trap
       (`index.html` ~49). Use `closeSiteNav()` in `js/ui.js`, add `inert`.
     - 3D sliders have a 4px track (`css/screens.css` ~75).
