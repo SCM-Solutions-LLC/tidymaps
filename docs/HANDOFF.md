@@ -59,9 +59,11 @@ The rating-scale split merged as **#159** (`main` at `87b2ef9`). **Batch 3
 merged as **#160** (`main` at `7268c99`), inlining the two critical
 stylesheets as **#161** (`main` at `9c7a56f`), the eager-JS line (only
 partly closeable from `main.js` as it turned out) as **#162** (`main` at
-`c21d39b`); the 3D render loop, which also carried a fix for a
-merge-time regression in #162's own async click handlers, is PR #163
-(see the batch list below for all four). Each PR this session was
+`c21d39b`), the 3D render loop (which also carried a fix for a merge-time
+regression in #162's own async click handlers) as **#163** (`main` at
+`55e4b9e`). The layout-builders thunk map was measured and deliberately
+not done (see its batch line below for why); the italic font is PR #164
+(see the batch list below for all of them). Each PR this session was
 cherry-picked from a local branch onto the one PR branch, reset from
 `main` after each merge; the five cross-line
 conflicts met along the way were resolved once on a scratch stack and the
@@ -2436,9 +2438,41 @@ Ordered by whether anyone can act on them today.
       expected) and reverting the `let` hoist alone (the whole viewer3d
       suite failed on the TDZ throw, confirming that bug's blast radius
       before the fix).
-    - `js/three/layouts/index.js` loads 14 builders to use one: thunk map.
-    - The italic woff2 (39KB) loads eagerly on the landing page: static 400
-      instance, or synthesize.
+    - ~~`js/three/layouts/index.js` loads 14 builders to use one: thunk map.~~
+      **Measured, not done, and recorded so nobody re-tries this without the
+      finding.** The 14 files are 54KB combined, largest 6.2KB — a thunk map
+      would save at most that, on a chunk `js/three/scene.js` already loads
+      lazily (batch 3.3, PR #162), only when someone opens the 3D view, with
+      a loading state shown. There is no critical-path win here. What a
+      thunk map costs: `buildScene()` is synchronous today and 7 e2e spec
+      files call it directly and synchronously (`const view=buildScene(...)`,
+      no `await`, 16 call sites total counting `viewer3d.js`) — making the
+      builder lookup lazy means making `buildScene()` async, which means
+      touching all 16, in a codebase where the last two async conversions
+      this session (#162's window shims, this session's own render-on-demand
+      work) each shipped one real bug caught only by a browser load. A KB-scale
+      win on a non-blocking chunk was not worth a third attempt at that class
+      of change. Left alone on purpose, the same shape of decision as the
+      personalize.js/setupStructure.js tangle two sessions back.
+    - ~~The italic woff2 (39KB) loads eagerly on the landing page: static 400
+      instance, or synthesize.~~ **Done in #164.** The second `@font-face`
+      (Archivo italic, the full 100-900 variable weight range, 39KB) is
+      gone from `css/tokens.css`, and the now-unreferenced font file with
+      it. It loaded eagerly because three `<em>` captions in the landing
+      page's "What you get" section ("Fits a 14&Prime; shelf", "Nothing to
+      buy") are in `index.html`'s static markup, present at parse time —
+      font loading isn't viewport-gated, so a matching `@font-face` fetches
+      regardless of whether the element is above the fold. Browsers
+      synthesize italic from the upright face by default
+      (`font-synthesis:style`) whenever no matching italic face exists, so
+      dropping the second face costs a faux slant on those captions and on
+      the two other places `font-style:italic` is used (an empty-cart note,
+      an empty rail state) — confirmed at 390 and 1280, indistinguishable
+      at this size. `tests/e2e/startup-weight.spec.mjs` gained an assertion
+      reading the network for the italic file's name, proven red by
+      restoring the `@font-face` (and the file, from git history, since a
+      neutered test needs the request to actually be servable) and green
+      again after both were removed a second time.
     - Edge functions parse the body before auth and rate limiting
       (`_shared/body.js` ~20): check `Content-Length` first. The global
       breakers (`render-after` 100/day) are a cheap denial of service; exempt
