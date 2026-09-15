@@ -55,13 +55,14 @@ afterwards, never `git checkout`. Browser-checked at 390 and 1280 on both
 surfaces.
 
 The rating-scale split merged as **#159** (`main` at `87b2ef9`). **Batch 3
-(performance, infrastructure, backend) is under way**; its first line, the
-Pages artifact, is PR #160 (see the batch list below for what it does).
-Each PR this session was cherry-picked from a local branch onto the one PR
-branch, reset from `main` after each merge; the five cross-line conflicts
-met along the way were resolved once on a scratch stack and the full suite
-run against it (282 passed, 1 pre-existing skip) before any of them went
-up.
+(performance, infrastructure, backend) is under way**: the Pages artifact
+merged as **#160** (`main` at `7268c99`); its next line, inlining the two
+critical stylesheets, is PR #161 (see the batch list below for what both
+do). Each PR this session was cherry-picked from a local branch onto the
+one PR branch, reset from `main` after each merge; the five cross-line
+conflicts met along the way were resolved once on a scratch stack and the
+full suite run against it (282 passed, 1 pre-existing skip) before any of
+them went up.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2313,9 +2314,27 @@ Ordered by whether anyone can act on them today.
       workflow text, so a script and workflow that drifted apart would still
       fail it; each of its three assertions proven red by neutering the
       workflow step and, separately, the script's own copy list.
-    - Inline `tokens.css` and `base.css`, load the other four async: measured
+    - ~~Inline `tokens.css` and `base.css`, load the other four async: measured
       FCP 1116 to 488ms and LCP 1476 to 496ms on a throttled phone. Do NOT
-      concatenate and do NOT `modulepreload` (both measured worse).
+      concatenate and do NOT `modulepreload` (both measured worse).~~ **Done
+      in #161.** The source pages keep separate `<link>` tags (unchanged for
+      anyone editing styles), wrapped in `<!-- critical-css:start/end -->`
+      markers; `scripts/inline-critical-css.mjs`, run by `build-site.sh`
+      after the copy, inlines whatever the markers bracket into one
+      `<style>` and swaps every stylesheet link after them to the standard
+      preload-as-style pattern with a `<noscript>` fallback. One bug caught
+      before it shipped: `tokens.css`'s `url(../vendor/fonts/...)` is
+      relative to `css/`, where the `<link>` used to live; inlined verbatim
+      at the page root the same string would have pointed one directory
+      above the site, a font 404 no unit test would have caught, only a
+      real browser load. Every `url()` is rebased to the page. Verified by
+      building `_site` and loading it in a real browser at 390 and 1280:
+      zero console errors, zero failed requests, `font-family` resolves to
+      Archivo. `tests/inline-critical-css.test.mjs` builds a throwaway site
+      directory and reads what the transform produced rather than
+      pattern-matching source; each of its assertions (both stylesheets
+      inlined, the url rebase, the async swap, `run()` touching only
+      `.html` files) proven red by neutering that one behaviour alone.
     - Eager JS is 41 modules and 216KB gzipped; 15 modules and 56KB is
       reachable: `main.js` and `router.js` import every screen for window
       shims. Make them async and take `plan.js` off boot. Cut the whole
