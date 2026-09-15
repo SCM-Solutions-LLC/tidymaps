@@ -1,7 +1,7 @@
 /* ============================================================
    TidyMap — entry point
    ============================================================ */
-import { toast, setAppbarHeightVar, setFootHeightVar } from './ui.js';
+import { toast, setAppbarHeightVar, setFootHeightVar, toggleSiteNav } from './ui.js';
 import { state, restoreGuestDraft, applySharedSpace, resetPlanRecord, persistGuestDraft, getUnits } from './state.js';
 import { fetchSharedSpace } from './api.js';
 import { normalizeAi } from './plan.js';
@@ -26,7 +26,7 @@ import { initializeRoute } from './startup.js';
    (in index.html and in injected template strings) */
 Object.assign(window, {
   go, goBack, goNext, restart,
-  toast, uncheckAllUpgrades, setUpgrades, useZeroPlan,
+  toast, toggleSiteNav, uncheckAllUpgrades, setUpgrades, useZeroPlan,
   runDemo, requestInvite, submitFeedback, sendRate, navHome, openProducts,
   downloadShoppingList, sendShoppingList,
   handleFiles,
