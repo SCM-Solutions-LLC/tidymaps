@@ -844,7 +844,10 @@
 <!-- ============================================================ 3D VIEWER -->
 <section class="screen wide" id="screen-viewer3d">
   <h2 id="v3d-title">Your space, standing up</h2>
-  <p class="muted small" style="margin-top:8px;max-width:60ch">Drag to spin it around, scroll to zoom. The model matches your space&rsquo;s layout and size. Switch types below to compare.</p>
+  <!-- The middle sentence is written by the viewer when it opens: whose space
+       this is depends on whether the plan came from photos, from the wizard,
+       from the landing page's sample, or from somebody else's share link. -->
+  <p class="muted small" id="v3d-intro" style="margin-top:8px;max-width:60ch">Drag to spin it around, scroll to zoom. Switch types below to compare.</p>
 
   <!-- Two tiers, deliberately. Someone opening the 3D view met ten range
        sliders at once — width, depth, height, shelf count and one per shelf —

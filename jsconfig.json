@@ -32,6 +32,7 @@
   "include": [
     "js/state.js",
     "js/plan.js",
+    "js/planProvenance.js",
     "js/db.js",
     "js/personalize.js",
     "js/layout.js",
