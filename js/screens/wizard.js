@@ -188,7 +188,7 @@ function renderSpace(){
   ROOMS.forEach(room => {
     const group = document.createElement('div');
     group.className = 'wiz-space-group';
-    const heading = document.createElement('h3');
+    const heading = document.createElement('h2');
     heading.className = 'wiz-space-room';
     heading.textContent = room.label;
     const cards = document.createElement('div');
@@ -252,7 +252,7 @@ function renderSetup(){
   const wrap = document.getElementById('setup-cards');
   if(!wrap) return;
   const area = areaFor(state.space);
-  const h = document.querySelector('#screen-setup h2');
+  const h = document.querySelector('#screen-setup h1');
   if(h) h.textContent = `Which one looks like your ${area.short}?`;
   wrap.innerHTML = '';
   (SETUP_TYPES[state.space] || []).forEach((t, index) => {
@@ -296,7 +296,7 @@ function renderMeasure(){
   const wrap = document.getElementById('measure-fields');
   if(!wrap) return;
   const area = areaFor(state.space);
-  const h = document.querySelector('#screen-measure h2');
+  const h = document.querySelector('#screen-measure h1');
   if(h) h.textContent = `How big is your ${area.short}?`;
   const roomy = ROOMY.includes(state.setup);
   const metric = isMetric();

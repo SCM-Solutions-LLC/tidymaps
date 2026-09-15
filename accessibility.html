@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/legal.css" />
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <header class="appbar">
   <div class="appbar-inner">
@@ -21,10 +22,10 @@
   </div>
 </header>
 
-<main class="legal">
+<main class="legal" id="main" tabindex="-1">
   <a class="back" href="index.html">&larr; Back to TidyMap</a>
   <h1>Accessibility</h1>
-  <p class="updated">Last reviewed August 14, 2026 &middot; TidyMap is built by SCM Solutions LLC</p>
+  <p class="updated">Last reviewed September 15, 2026 &middot; TidyMap is built by SCM Solutions LLC</p>
 
   <nav aria-label="Legal documents">
     <ul class="legal-nav">
@@ -44,8 +45,8 @@
 
   <h2>What that means in practice</h2>
   <ul>
-    <li><strong>Keyboard.</strong> The planner runs end to end without a mouse, and focus is always visible: a consistent outline on every focusable thing, never removed for looks.</li>
-    <li><strong>Screen readers.</strong> Headings are ordered, controls are labelled, the sign-in dialog is a real dialog, and toasts announce politely without stealing focus.</li>
+    <li><strong>Keyboard.</strong> The planner runs end to end without a mouse, and focus is always visible: a consistent outline on every focusable thing, never removed for looks. A skip link is the first thing Tab reaches on every page, and it jumps past the header to the content.</li>
+    <li><strong>Screen readers.</strong> Every screen has one heading at the top level and the headings beneath it are ordered, controls are labelled, the sign-in dialog is a real dialog, and toasts announce politely without stealing focus.</li>
     <li><strong>Contrast.</strong> Text and interface colors are checked against AA contrast on every change. The colour system was rebuilt once already to get there.</li>
     <li><strong>Motion.</strong> If your system asks for reduced motion, the illustrations hold still, the step animations stop, and smooth scrolling becomes an ordinary jump. This is honored in both the stylesheets and the scripted scrolling.</li>
     <li><strong>Zoom and small screens.</strong> Type scales with the viewport, layouts reflow rather than requiring horizontal scrolling, and the phone layout is tested at real phone widths.</li>
@@ -55,7 +56,6 @@
   <h2>Where we fall short</h2>
   <p>An accessibility statement that lists only successes is not much use to the person it is written for.</p>
   <ul>
-    <li><strong>There is no skip-to-content link.</strong> The header is short, so the cost is small, but it is a standard affordance and we do not have it yet.</li>
     <li><strong>The 3D layout view is a rendered canvas</strong> and is not usable with a screen reader. Nothing in it is exclusive: every zone, product, and move it depicts is also in the written plan and the checklist, which is the accessible path through the same information.</li>
     <li><strong>Photo upload is central to the product.</strong> Getting a useful plan requires taking photographs of a space, and we have not built a route through that does not. Describing a room in text instead is not yet supported.</li>
     <li><strong>No independent audit.</strong> Our testing is automated plus our own manual checks. TidyMap has not been reviewed by an accessibility specialist or tested with disabled users, and we do not publish a VPAT. We would like to change this.</li>

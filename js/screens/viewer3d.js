@@ -585,7 +585,7 @@ function populateZones(map){
     const color=ZONE_COLORS[i%ZONE_COLORS.length];
     const el=document.createElement('div');
     el.className='v3d-zone-item';
-    el.innerHTML=`<span class="vz-dot" style="background:${color}"></span><div><h4>${escapeHtml(zone)}</h4>${desc?'<p>'+escapeHtml(desc.slice(0,80))+'</p>':''}</div>`;
+    el.innerHTML=`<span class="vz-dot" style="background:${color}"></span><div><h3>${escapeHtml(zone)}</h3>${desc?'<p>'+escapeHtml(desc.slice(0,80))+'</p>':''}</div>`;
     el.onmouseenter=()=>spotlightShelf(row.shelfIndex, true);
     el.onmouseleave=()=>spotlightShelf(row.shelfIndex, false);
     list.appendChild(el);

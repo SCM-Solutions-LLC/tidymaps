@@ -91,7 +91,7 @@ function typeBlock(need, products){
   if(!products.length) return '';
   return `
     <section class="ptype">
-      <h4>${esc(TYPE_LABEL[need.type] || need.type)}${need.kidOnly ? '<span class="ptype-tag">with kids or pets</span>' : ''}</h4>
+      <h3>${esc(TYPE_LABEL[need.type] || need.type)}${need.kidOnly ? '<span class="ptype-tag">with kids or pets</span>' : ''}</h3>
       <p class="ptype-why">${esc(need.purpose)}</p>
       <div class="pcards">${products.map((p, i) => productCard(p, i)).join('')}</div>
     </section>`;
@@ -111,7 +111,7 @@ function areaBlock(room, area, open){
     <details class="parea"${open ? ' open' : ''}>
       <summary class="parea-head">
         <div class="parea-titles">
-          <h3>${esc(area.label)}</h3>
+          <h2>${esc(area.label)}</h2>
           <p class="parea-setups">${esc(room.label)} &middot; ${esc(setups)}</p>
           <p class="parea-count">${groups.length} ${groups.length === 1 ? 'category' : 'categories'} &middot; ${count} products</p>
         </div>

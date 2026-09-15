@@ -72,7 +72,7 @@ test('a zone label names the shelf and the job, not just the shelf', async ({ pa
   /* The sidebar is the reference: whatever it calls zone 1, the drawing has to
      agree. Reading the sprite's text means reading what was drawn into its
      canvas texture, so the label records its own source text instead. */
-  const first = await page.locator('#v3d-zone-list .v3d-zone-item h4').first().textContent();
+  const first = await page.locator('#v3d-zone-list .v3d-zone-item h3').first().textContent();
   // Zone strings arrive in two shapes — "Name: detail" from the model and
   // "Name · detail · detail" from the demo scenarios. The name is the head of
   // either, and the name is what has to reach the drawing.

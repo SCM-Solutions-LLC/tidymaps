@@ -676,13 +676,13 @@ export function renderUpgrades(){
       <label class="pcheck"><input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list"></label>
       <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${SVG[TYPE_ICON[need.type]]||SVG.box}</span></span>
       <div>
-        <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${
+        <h3>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${
           /* Everything else in this list is what the model recommended from the
              photos. An item the user added in the 3D view must not wear the
              same badge — the plan would be taking credit for their idea, and
              they would have no way to tell the two apart later. */
           need.addedByUser?'<span class="tag">you added this</span>'
-            :(need.priority==='high'?'<span class="tag green">recommended</span>':'')}</h4>
+            :(need.priority==='high'?'<span class="tag green">recommended</span>':'')}</h3>
         <div class="pwhy">${escapeHtml(need.purpose)}</div>
         ${main}
         <details class="pmore">

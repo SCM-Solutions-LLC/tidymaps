@@ -39,6 +39,7 @@
 </script>
 </head>
 <body data-screen="landing" data-site="1">
+<a class="skip-link" href="#main">Skip to content</a>
 
 <header class="appbar">
   <div class="appbar-inner">
@@ -94,7 +95,7 @@
   </div>
 </div>
 
-<main>
+<main id="main" tabindex="-1">
 
 <!-- ============================================================ 1. LANDING -->
 <section class="screen wide active" id="screen-landing">
@@ -365,7 +366,7 @@
 <!-- ============================================================ PRODUCT LIBRARY -->
 <section class="screen wide" id="screen-products">
   <div class="prod-mast">
-    <h2>Products that help</h2>
+    <h1>Products that help</h1>
     <p class="sec-sub">Everything TidyMap can suggest, grouped by the space it belongs in. Every plan works at $0 without any of it. This is the shortcut for when you already know you want the bins.</p>
   </div>
 
@@ -397,7 +398,7 @@
      one grid. One screen now, grouped by room; js/screens/wizard.js renderSpace. -->
 <section class="screen wizard" id="screen-space">
   <div class="step-head"><span class="step-num">Step 1 of 11</span></div>
-  <h2>Which space needs sorting out?</h2>
+  <h1>Which space needs sorting out?</h1>
   <p class="wz-sub">Pick the one spot we'll plan first. Small wins stack up, and you can always come back for another. No account needed.</p>
   <div class="space-cards" id="space-cards"></div>
 </section>
@@ -405,7 +406,7 @@
 <!-- ============================================================ STEP 3 — SETUP -->
 <section class="screen wizard" id="screen-setup">
   <div class="step-head"><span class="step-num">Step 2 of 11</span></div>
-  <h2>Which one looks like your pantry?</h2>
+  <h1>Which one looks like your pantry?</h1>
   <p class="wz-sub">Go by the picture. This shapes your 3D layout and where each zone lands.</p>
   <div class="wz-setups" id="setup-cards"></div>
 </section>
@@ -413,7 +414,7 @@
 <!-- ============================================================ STEP 4 — MEASUREMENTS -->
 <section class="screen wizard" id="screen-measure">
   <div class="step-head"><span class="step-num">Step 3 of 11</span></div>
-  <h2>How big is your pantry?</h2>
+  <h1>How big is your pantry?</h1>
   <p class="wz-sub">Close is plenty: drag the slider or type it in. This sizes your plan and the 3D preview.</p>
   <div class="wz-units" id="measure-units" role="group" aria-label="Measurement units"></div>
   <div class="wz-measures" id="measure-fields"></div>
@@ -423,7 +424,7 @@
 <!-- ============================================================ STEP 5 — PHOTOS -->
 <section class="screen wizard" id="screen-capture">
   <div class="step-head"><span class="step-num">Step 4 of 11</span></div>
-  <h2>Add a few honest photos</h2>
+  <h1>Add a few honest photos</h1>
   <!-- The landing page promises plans built from photos, so a visitor with none
        to hand reasonably expects to be blocked here. Continue simply moved on
        and said nothing, and the plan that followed was noticeably more generic.
@@ -451,7 +452,7 @@
 <!-- ============================================================ STEP 6 — HOUSEHOLD -->
 <section class="screen wizard" id="screen-household">
   <div class="step-head"><span class="step-num">Step 5 of 11</span></div>
-  <h2>Who uses this space?</h2>
+  <h1>Who uses this space?</h1>
   <p class="wz-sub">This decides what goes within easy reach and what gets tucked up high or behind a latch.</p>
   <div class="wz-people" id="people-rows"></div>
   <div class="wz-kid-ages hide" id="kid-ages-block">
@@ -491,7 +492,7 @@
 <!-- ============================================================ STEP 7 — CONTENTS -->
 <section class="screen wizard" id="screen-contents">
   <div class="step-head"><span class="step-num">Step 6 of 11</span></div>
-  <h2>What's kept in here?</h2>
+  <h1>What's kept in here?</h1>
   <p class="wz-sub">Tap everything that lives in this space. We'll group them into zones that make sense together.</p>
   <p class="wz-prefilled hide" id="contents-detected">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>
@@ -503,7 +504,7 @@
 <!-- ============================================================ STEP 8 — GOALS -->
 <section class="screen wizard" id="screen-goals">
   <div class="step-head"><span class="step-num">Step 7 of 11</span></div>
-  <h2>What bugs you most about it?</h2>
+  <h1>What bugs you most about it?</h1>
   <p class="wz-sub">Be honest. The plan leans hardest on whatever you pick here.</p>
   <div class="wz-goals" id="goal-list"></div>
 </section>
@@ -511,7 +512,7 @@
 <!-- ============================================================ STEP 9 — STYLE -->
 <section class="screen wizard" id="screen-style">
   <div class="step-head"><span class="step-num">Step 8 of 11</span></div>
-  <h2>How do you like things kept?</h2>
+  <h1>How do you like things kept?</h1>
   <p class="wz-sub">Pick as many as feel like you. Together they set the tone of your plan.</p>
   <div class="wz-styles" id="style-cards"></div>
 </section>
@@ -519,7 +520,7 @@
 <!-- ============================================================ STEP 10 — EFFORT -->
 <section class="screen wizard" id="screen-effort">
   <div class="step-head"><span class="step-num">Step 9 of 11</span></div>
-  <h2>How big a project is this?</h2>
+  <h1>How big a project is this?</h1>
   <p class="wz-sub">We'll size the steps to the time you actually have.</p>
   <div class="wz-efforts" id="effort-cards"></div>
 </section>
@@ -527,7 +528,7 @@
 <!-- ============================================================ STEP 11 — SHOPPING -->
 <section class="screen wizard" id="screen-shopping">
   <div class="step-head"><span class="step-num">Step 10 of 11</span></div>
-  <h2>New containers, or work with what you have?</h2>
+  <h1>New containers, or work with what you have?</h1>
   <p class="wz-sub">Either way the plan works. Product ideas are always optional and clearly marked.</p>
   <div class="wz-shops" id="shopping-cards"></div>
 </section>
@@ -535,7 +536,7 @@
 <!-- ============================================================ STEP 12 — REVIEW -->
 <section class="screen wizard" id="screen-review">
   <div class="step-head"><span class="step-num">Step 11 of 11</span></div>
-  <h2>Here's what we heard</h2>
+  <h1>Here's what we heard</h1>
   <p class="wz-sub">Change anything that's off, then build your plan.</p>
   <div class="wz-review" id="review-rows"></div>
 </section>
@@ -543,7 +544,7 @@
 <!-- ============================================================ LOADING -->
 <section class="screen" id="screen-loading">
   <div style="text-align:center;padding:18px 0">
-    <h2 id="load-title">Putting your plan together</h2>
+    <h1 id="load-title">Putting your plan together</h1>
     <p class="muted small" id="load-sub">Placing zones, sorting by reach, and keeping the little ones in mind.</p>
   </div>
   <div class="card pad">
@@ -559,7 +560,7 @@
 <section class="screen wide report" id="screen-results">
   <header class="report-mast plan-hero">
     <div class="plan-hero-copy">
-      <h2 id="res-title">The pantry, with a place for everything</h2>
+      <h1 id="res-title">The pantry, with a place for everything</h1>
       <div class="report-byline">
         <span id="mast-space" style="display:none">Pantry</span>
         <span id="res-byline">Example plan &middot; demo data</span>
@@ -596,7 +597,7 @@
     <div class="report-main">
       <!-- 01. Summary -->
       <section class="chapter" id="ch-summary">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-summary-h"><div class="ch-titles"><h3 id="ch-summary-h">Summary</h3></div></div>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-summary-h"><div class="ch-titles"><h2 id="ch-summary-h">Summary</h2></div></div>
         <p class="summary-lede" id="res-summary"></p>
         <p class="small hide" id="res-summary-points-title" style="font-weight:600;margin:14px 0 6px;color:var(--ink-2)"></p>
         <ul class="summary-points" id="res-summary-points"></ul>
@@ -620,13 +621,13 @@
 
       <!-- 02. Organization map -->
       <section class="chapter" id="ch-map">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-map-h"><div class="ch-titles"><h3 id="ch-map-h">Where things go</h3></div></div>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-map-h"><div class="ch-titles"><h2 id="ch-map-h">Where things go</h2></div></div>
         <div id="res-map"></div>
       </section>
 
       <!-- 03. Use existing first -->
       <section class="chapter collapsed" id="ch-reuse">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-reuse-h"><div class="ch-titles"><h3 id="ch-reuse-h">Use what you already have first</h3></div></div>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-reuse-h"><div class="ch-titles"><h2 id="ch-reuse-h">Use what you already have first</h2></div></div>
         <div class="card pad" style="background:var(--primary-bg);border-color:var(--primary-line)">
           <p style="margin:0 0 14px;font-size:15px;color:var(--ink-2)" id="res-existing-lede"></p>
           <div class="feat-grid" id="res-existing"></div>
@@ -639,7 +640,7 @@
 
       <!-- 04. Move-by-move -->
       <section class="chapter" id="ch-steps">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-steps-h"><div class="ch-titles"><h3 id="ch-steps-h">Step-by-step</h3>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-steps-h"><div class="ch-titles"><h2 id="ch-steps-h">Step-by-step</h2>
           <p class="ch-sub">Work top to bottom. Mark steps complete as you go.</p></div></div>
         <div class="progwrap">
           <div class="lab"><span id="prog-text">Step 0 of 9 complete</span><span id="prog-pct" class="muted">0%</span></div>
@@ -661,7 +662,7 @@
 
       <!-- 05. Before/After -->
       <section class="chapter collapsed" id="ch-after">
-        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-after-h"><div class="ch-titles"><h3 id="ch-after-h">What it could look like</h3>
+        <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-after-h"><div class="ch-titles"><h2 id="ch-after-h">What it could look like</h2>
           <p class="ch-sub">An illustrated layout of the recommended plan. Each shelf is a labeled zone. With a photo of your space, you can also see it edited to match the plan.</p></div>
           <!-- The one thing in this chapter a reader would go looking for is
                the photo preview, and a collapsed chapter shows nothing but its
@@ -723,7 +724,7 @@
       <!-- 06. Optional upgrades + shopping -->
       <section class="chapter collapsed" id="ch-shop">
         <div id="res-upgrades-wrap" class="hide">
-          <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-shop-h"><div class="ch-titles"><h3 id="ch-shop-h">Optional purchases</h3>
+          <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-shop-h"><div class="ch-titles"><h2 id="ch-shop-h">Optional purchases</h2>
             <p class="ch-sub" id="res-upgrades-sub">Only because you said you&rsquo;re open to buying storage products. The $0 plan above works without any of these.</p></div></div>
           <div id="res-upgrades"></div>
           <div class="callout warn" style="margin-top:8px">
@@ -752,16 +753,16 @@
            two screens past it. See js/screens/feedback.js. -->
       <section class="plan-rate hide" id="res-rate" aria-labelledby="rate-h">
         <div id="rate-ask">
-          <h3 id="rate-h">How useful is this plan?</h3>
+          <h2 id="rate-h">How useful is this plan?</h2>
           <p class="muted small" style="margin-top:4px">One tap. Your answer decides what we build next.</p>
           <div class="grid" id="rate-opts" style="margin-top:14px"></div>
         </div>
         <div class="hide" id="rate-more">
-          <h4 style="margin-top:24px">Was the step-by-step plan more useful than just seeing an after image?</h4>
+          <h3 style="margin-top:24px">Was the step-by-step plan more useful than just seeing an after image?</h3>
           <div class="grid" id="rate-vs" style="margin-top:12px"></div>
-          <h4 style="margin-top:22px">What space would you organize next?</h4>
+          <h3 style="margin-top:22px">What space would you organize next?</h3>
           <div class="chips" id="rate-next" style="margin-top:12px"></div>
-          <h4 style="margin-top:22px">What would make this better?</h4>
+          <h3 style="margin-top:22px">What would make this better?</h3>
           <textarea id="rate-text" placeholder="Optional. Tell us anything&hellip;" style="margin-top:10px"></textarea>
           <button class="btn btn-primary" style="margin-top:16px" onclick="sendRate()">Send feedback</button>
         </div>
@@ -782,7 +783,7 @@
 
 <!-- ============================================================ 9. CUSTOMIZE -->
 <section class="screen" id="screen-customize">
-  <h2>Adjust your plan</h2>
+  <h1>Adjust your plan</h1>
   <p class="muted small" style="margin-top:6px">Pick a change and we&rsquo;ll revise the plan.</p>
   <div class="grid grid-2" id="customize-opts" style="margin-top:18px"></div>
   <div id="customize-result" class="hide" style="margin-top:20px"></div>
@@ -794,7 +795,7 @@
 <!-- ============================================================ 10. SAVE / SHARE -->
 <section class="screen" id="screen-save">
   <div style="text-align:center;padding:10px 0 0">
-    <h2>Your plan is ready</h2>
+    <h1>Your plan is ready</h1>
     <p class="muted small" style="max-width:34ch;margin:8px auto 0">Save it, share it with the household, or start organizing your next space.</p>
   </div>
   <div class="grid grid-2" id="save-opts" style="margin-top:24px"></div>
@@ -807,16 +808,16 @@
 <!-- ============================================================ 11. FEEDBACK -->
 <section class="screen" id="screen-feedback">
   <div id="fb-form">
-    <h2>How useful is this plan?</h2>
+    <h1>How useful is this plan?</h1>
     <div class="grid" id="fb-useful" style="margin-top:16px"></div>
 
-    <h3 style="margin-top:28px">Was the step-by-step plan more useful than just seeing an after image?</h3>
+    <h2 class="fb-q">Was the step-by-step plan more useful than just seeing an after image?</h2>
     <div class="grid" id="fb-vs" style="margin-top:14px"></div>
 
-    <h3 style="margin-top:28px">What would make this better?</h3>
+    <h2 class="fb-q">What would make this better?</h2>
     <textarea id="fb-text" placeholder="Tell us anything&hellip;" style="margin-top:12px"></textarea>
 
-    <h3 style="margin-top:28px">What space would you organize next?</h3>
+    <h2 class="fb-q">What space would you organize next?</h2>
     <div class="chips" id="fb-next" style="margin-top:14px"></div>
 
     <div style="margin-top:26px">
@@ -830,7 +831,7 @@
   <!-- Answered already on the report. Asking the same four questions again
        reads as though the first answer went nowhere. -->
   <div class="hide" id="fb-sent">
-    <h2>Thanks, you already sent this</h2>
+    <h1>Thanks, you already sent this</h1>
     <p class="muted" style="margin-top:8px">We have your feedback on this plan. It goes straight into what we build next.</p>
     <div style="margin-top:26px">
       <button class="btn btn-primary btn-block" onclick="go('done')">Continue</button>
@@ -843,7 +844,7 @@
 
 <!-- ============================================================ 3D VIEWER -->
 <section class="screen wide" id="screen-viewer3d">
-  <h2 id="v3d-title">Your space, standing up</h2>
+  <h1 id="v3d-title">Your space, standing up</h1>
   <!-- The middle sentence is written by the viewer when it opens: whose space
        this is depends on whether the plan came from photos, from the wizard,
        from the landing page's sample, or from somebody else's share link. -->
@@ -934,7 +935,7 @@
          sidebar scrolls inside whatever that comes to. -->
     <aside class="v3d-zones" id="v3d-zone-sidebar">
      <div class="v3d-zones-inner">
-      <h3 class="v3d-zones-h" id="v3d-zones-h">Zones</h3>
+      <h2 class="v3d-zones-h" id="v3d-zones-h">Zones</h2>
       <!-- A zone and a shelf are the same row of the plan: the controls above
            set how many shelves there are, and each one gets a zone here. The
            panel used to say neither, so the two words read as two things. -->
@@ -945,7 +946,7 @@
       </label>
       <div class="v3d-zone-list" id="v3d-zone-list"></div>
       <section class="v3d-organizers hide" id="v3d-organizers">
-        <h3 class="v3d-zones-h">Organizers shown</h3>
+        <h2 class="v3d-zones-h">Organizers shown</h2>
         <p class="small muted" style="margin:4px 0 10px">These match your plan. Quantity and spacing adjust to the measured space.</p>
         <div class="v3d-organizer-list" id="v3d-organizer-list"></div>
         <p class="small muted hide" id="v3d-mounted-note" style="margin:8px 0 0"></p>
@@ -983,7 +984,7 @@
 <!-- ============================================================ DASHBOARD -->
 <section class="screen wide" id="screen-dashboard">
   <header class="report-mast" style="border-bottom-width:1px">
-    <h2>Your spaces</h2>
+    <h1>Your spaces</h1>
     <p class="dash-count" id="dash-count"></p>
     <div class="report-byline"><span id="dash-email"></span><span class="sep">&middot;</span><a href="#" onclick="dashSignOut();return false" style="text-decoration:underline">Sign out</a></div>
   </header>
@@ -993,7 +994,7 @@
 <!-- ============================================================ DONE -->
 <section class="screen" id="screen-done">
   <div style="text-align:center;padding:40px 0">
-    <h2>Thank you</h2>
+    <h1>Thank you</h1>
     <p class="muted" style="max-width:36ch;margin:10px auto 0">Your feedback tells us if a real plan beats a pretty picture. That&rsquo;s what we&rsquo;re here to find out.</p>
     <div style="display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-top:26px">
       <button class="btn btn-primary" onclick="go('results')">Back to my plan</button>
