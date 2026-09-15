@@ -95,6 +95,30 @@ test('attaching photos actually sends them to the analysis backend', async ({ pa
   await expect(page.locator('#res-steps .task').first()).toContainText('Empty the shelf');
 });
 
+test('the report credits the analysis once, and says what the plan is based on', async ({ page }) => {
+  /* The masthead printed "Analyzed by Claude · Sonnet 4.6" in the byline and
+     "Analyzed by Claude" again in the badge beside it: the same credit twice
+     on one line, and no line saying the one thing a photo plan's reader is
+     owed, that it was built from their photos. The badge is the credit and
+     the byline is the basis. */
+  await page.route('**/functions/v1/analyze-space', (route) => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ plan: PLAN, model: 'claude-sonnet-4-6', requestId: 'test' }),
+  }));
+  await driveToPhotos(page);
+  await page.setInputFiles('#photo-input', PHOTO);
+  await expect(page.locator('#photo-tiles .wz-photo')).toHaveCount(1);
+  await finishWizard(page);
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+
+  const badge = page.locator('#res-ai-badge');
+  await expect(badge).toBeVisible();
+  await expect(badge).toHaveText('Analyzed by Claude · Sonnet 4.6');
+  await expect(page.locator('#res-byline')).toContainText('based on your photos');
+  const masthead = await page.locator('#screen-results .report-byline').textContent();
+  expect(masthead.match(/analyzed by claude/gi) || [], `the masthead reads: ${masthead}`).toHaveLength(1);
+});
+
 test('one unreadable photo does not sink the photos that are fine', async ({ page }) => {
   // This is the failure that hid the whole backend: a file the browser cannot
   // decode (HEIC off a phone is the common one) rejected the encode step, and
@@ -177,7 +201,9 @@ test('an empty plan object is a failed analysis, not a successful one', async ({
      a list of steps; anything else failed, whatever status code carried it. */
   await analysisReturns(page, JSON.stringify({ plan: {} }));
   await expect(page.locator('#res-fallback-note')).toBeVisible();
-  await expect(page.locator('#res-byline')).not.toContainText(/analyzed by/i);
+  // The credit moved to the badge, so the byline check alone would pass forever.
+  await expect(page.locator('#res-ai-badge')).toBeHidden();
+  await expect(page.locator('#res-byline')).not.toContainText(/analyzed by|photos/i);
   expect(await page.locator('#res-steps .task').count()).toBeGreaterThan(0);
 });
 

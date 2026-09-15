@@ -35,9 +35,17 @@ export function buildResults(){
     state.cats=(A ? (A.cats||[]) : DEMO_CATS).slice();
   }
   const isRealAi = planFromPhotos();
-  // AI badge on results title
+  const model=(state.planMeta&&state.planMeta.model)||'';
+  /* The badge is the credit: who read the photos, and with what. The byline
+     underneath says what the plan is based on. Both used to open "Analyzed by
+     Claude", so a photo plan announced it twice on one line, and neither said
+     the thing a reader of that plan most wants told, that it came from their
+     photos. One claim per element now. */
   const badge=document.getElementById('res-ai-badge');
-  if(badge) badge.style.display = isRealAi ? 'inline-flex' : 'none';
+  if(badge){
+    badge.style.display = isRealAi ? 'inline-flex' : 'none';
+    badge.textContent = 'Analyzed by Claude'+(modelLabel(model)?' · '+modelLabel(model):'');
+  }
 
   // report masthead + byline
   // A shared plan carries its own space type; state.space is deliberately null
@@ -66,18 +74,20 @@ export function buildResults(){
   const mastDate=document.getElementById('mast-date');
   if(mastDate) mastDate.textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
   const byline=document.getElementById('res-byline');
-  const model=(state.planMeta&&state.planMeta.model)||'';
   /* "based on your selections" is true of a plan built from the wizard and
      false of the landing page's sample, which is opened by someone who has
-     made no selections at all. The three states are different claims and now
-     read as three different lines. */
+     made no selections at all. The states are different claims and read as
+     different lines. A share view is read by somebody who took none of the
+     photos and gave none of the answers, so it says whose they were; the 3D
+     view makes the same turn from "your" to "the plan's". */
   /* "Answered" means any answer, not the three that carry a touched flag; the
      rule is in planProvenance.js, where the 3D view reads the same one. */
   const isSample = planIsSample();
-  if(byline) byline.textContent = isRealAi
-    ? 'Analyzed by Claude'+(modelLabel(model)?' · '+modelLabel(model):'')
-    : (isSample ? 'Sample plan · not based on your space'
-                : 'Personalized plan · based on your selections');
+  if(byline) byline.textContent = state.shareView
+    ? 'Shared plan · based on the owner\'s '+(isRealAi?'photos':'answers')
+    : isRealAi ? 'Personalized plan · based on your photos and selections'
+    : isSample ? 'Sample plan · not based on your space'
+    : 'Personalized plan · based on your selections';
 
   // masthead answer chips: setup + measurements, household, effort — the
   // wizard's answers round-tripped onto the plan (design contract)

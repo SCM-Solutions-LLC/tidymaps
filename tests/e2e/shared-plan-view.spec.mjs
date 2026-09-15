@@ -301,6 +301,22 @@ test('a shared plan is illustrated as the space it is about, not as a pantry', a
   expect(`${shown.space} ${shown.alt}`.toLowerCase()).toMatch(/workbench/);
 });
 
+test('the byline of a shared plan says whose photos it came from', async ({ page }) => {
+  /* The byline of a photo plan says "based on your photos". A visitor on a
+     share link took none of them, so their copy says the owner's, the way the
+     3D view says "the plan's". The credit stays: it is about the analysis,
+     not about whose plan this is. */
+  await openShared(page);
+  await expect(page.locator('#screen-results')).toBeVisible({ timeout: 20000 });
+
+  const byline = page.locator('#res-byline');
+  await expect(byline).toContainText("based on the owner's photos");
+  await expect(byline, 'the byline addresses the visitor as the owner').not.toContainText(/\byour\b/i);
+  await expect(page.locator('#res-ai-badge')).toBeVisible();
+  const masthead = await page.locator('#screen-results .report-byline').textContent();
+  expect(masthead.match(/analyzed by claude/gi) || [], `the masthead reads: ${masthead}`).toHaveLength(1);
+});
+
 test('the 3D view of a shared plan does not call it yours', async ({ page }) => {
   /* The viewer's heading, intro and status line were written for the owner:
      "Your space, standing up", "matches your space's layout and size", "Built
