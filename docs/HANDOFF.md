@@ -4,29 +4,30 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #150 merged (`main` at `6a196d6`,
-14:47 UTC): the 3D view's sliders are 44px targets in the row they had
-(`css/screens.css`, the rule drawn on the track, the box pulled back with
-negative margins). Before it, #149 (the phone menu behaves like the dialog
-it looks like, `openSiteNav`/`closeSiteNav`/`toggleSiteNav` in `js/ui.js`),
-#148 (the progress rail stays full once the wizard is complete) and #147
-(the shelf map tints the eye-level shelf with the accent). All client-only,
-so the dead deploy token (Production health #5, open item 11) does not
-apply. Pages run 153 (#149) and run 154 (#150) were in progress or just
-green at the time of writing; run 152 (#148) went green at 13:53 UTC. That
-closes the first four lines of open item 12's batch 2; the fifth, the tap
-targets under 44px, is PR #151, open (draft) at the time of writing. Lines
-6 to 10 and the copy line are built, tested and browser-checked on local
-branches in this session (`wip/headings`, `wip/canvas`, `wip/aria`,
-`wip/radio`, `wip/copy`, `wip/copy2`), each waiting its turn on the one PR
-branch; the session's branch is reset from `main` after each merge and the
-next line cherry-picked onto it. Lines 8 and 9 travel as one PR, both being
-ARIA attributes on the report; the copy line travels as two (the ten pure
-copy items, then the two behaviours: the autosave failure said once and
-the reload toast naming lost photos), with the rating-scale split left for
-its own PR because it needs a feedback column. The last line (the step
-clips, the gallery's ruled cells, the toast over the Summary head, the
-brand link) is in progress on `wip/layout`.
+**Last refreshed:** 2026-09-15, after PR #151 merged (`main` at `7abf234`,
+15:06 UTC): the small tap targets are 44px without growing ("pad, don't
+grow": negative-margin padding on text controls, pseudo-element hit bands
+on bordered ones, a 44px label around the report's checkboxes). Before it,
+#150 (the 3D view's sliders are 44px targets in the row they had), #149
+(the phone menu behaves like the dialog it looks like,
+`openSiteNav`/`closeSiteNav`/`toggleSiteNav` in `js/ui.js`), #148 (the
+progress rail stays full once the wizard is complete) and #147 (the shelf
+map tints the eye-level shelf with the accent). All client-only, so the
+dead deploy token (Production health #5, open item 11) does not apply.
+Pages runs 152 (#148, 13:53 UTC), 153 (#149, 14:40) and 154 (#150, 15:03)
+went green; run 155 (#151) was in progress at the time of writing. That
+closes the first five lines of open item 12's batch 2; the sixth, a skip
+link and an h1 on every screen, is PR #152, open (draft) at the time of
+writing. Lines 7 to 10, the copy line and the last layout line are built,
+tested and browser-checked on local branches in this session
+(`wip/canvas`, `wip/aria`, `wip/radio`, `wip/copy`, `wip/copy2`,
+`wip/layout`), each waiting its turn on the one PR branch; the session's
+branch is reset from `main` after each merge and the next line
+cherry-picked onto it. Lines 8 and 9 travel as one PR, both being ARIA
+attributes on the report; the copy line travels as two (the ten pure copy
+items, then the two behaviours: the autosave failure said once and the
+reload toast naming lost photos), with the rating-scale split left for its
+own PR because it needs a feedback column.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2164,8 +2165,18 @@ Ordered by whether anyone can act on them today.
       links (real padding, since that row wraps) and the product cards'
       "Details & other options" summary. Four browser tests at 390, each
       of eight rules proven red alone. Browser-checked at 390 and 1280.
-    - No skip link; no h1 off the landing page (axe `page-has-heading-one` on
-      wizard, report and 3D).
+    - ~~No skip link; no h1 off the landing page (axe `page-has-heading-one` on
+      wizard, report and 3D).~~ **Done in #152.** Every screen's title is an
+      h1 at the size it had (the base h1 takes the old h2 size; the landing
+      hero keeps its display size in `landing.css`), and the headings beneath
+      move up a level with their selectors renamed. A skip link is first in
+      the body of all seven pages and lands on `main`, which takes focus.
+      The accessibility statement drops its disclaimer. Three unit tests
+      (skip link and landmark on every page, the statement against the site,
+      an h1 per screen section) and three browser tests (Tab reaches the
+      skip link first and Enter lands on main; one h1 per reachable screen;
+      axe heading-one and heading-order on wizard, report and 3D), each
+      proven red by neutering its own half. Browser-checked at 390 and 1280.
     - 3D canvas has no role, label or tabindex, and rearranging is drag-only.
     - Rating buttons carry no ARIA state (`js/screens/feedback.js` ~24-38).
     - `aria-label` on a div (`results.js` ~807): add `role=list`.
