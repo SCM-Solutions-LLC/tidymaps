@@ -13,9 +13,9 @@ byline and the viewer alike, keyed on `planMeta.source` rather than
 (sample, wizard without photos, photos, share view), and the share view was
 the one place "matched from your photos" could actually print. Client-only, so
 the dead deploy token (Production health #5, open item 11) does not apply.
-Pages run 143 started at 04:08 UTC and was still running at this writing, so
-until it goes green the live site is #137's build. That closes the third line
-of open item 12's batch 1, with five lines left there.
+Pages run 143 went green at 04:23 UTC, so **the viewer's provenance copy is
+live on the site.** That closes the third line of open item 12's batch 1,
+with five lines left there.
 Before that, 2026-09-15, after PR #136 merged (`main` at `7fd9bca`,
 01:25 UTC): the wizard's space step no longer passes the pantry placeholder as
 the user's answer. `spaceTouched` joins the touched flags in `js/state.js`, the
