@@ -673,7 +673,7 @@ export function renderUpgrades(){
       `<div class="pretail">No exact match in our catalog. Search: ${links}</div>`;
     return `
     <div class="prod${sel.checked?'':' excluded'}">
-      <input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list">
+      <label class="pcheck"><input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list"></label>
       <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${SVG[TYPE_ICON[need.type]]||SVG.box}</span></span>
       <div>
         <h4>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${

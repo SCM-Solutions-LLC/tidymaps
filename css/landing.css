@@ -17,8 +17,10 @@
   color:var(--stock);background:var(--ink);padding:3px 7px 2px;margin-right:10px;vertical-align:2px;
 }
 
+/* A text button in a sentence. Padding makes it a 44px target; the negative
+   margins hand the space back, so the sentence is set as it was. */
 .home-link{
-  background:none;border:none;padding:0;font:inherit;font-weight:600;
+  display:inline-block;background:none;border:none;padding:11px 3px;margin:-11px -3px;font:inherit;font-weight:600;
   color:var(--spot-ink);cursor:pointer;
   text-decoration:underline;text-decoration-color:var(--spot);text-decoration-thickness:1px;text-underline-offset:3px;
 }
