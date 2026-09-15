@@ -1,5 +1,6 @@
 node_modules/
 test-results/
+_site/
 .impeccable/review/
 .impeccable/hook.cache.json
 .impeccable/*.mjs
