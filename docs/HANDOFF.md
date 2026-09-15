@@ -4,7 +4,28 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #158 merged (`main` at `92e2f5d`):
+**Last refreshed:** 2026-09-15, after PR #165 merged (`main` at `8a0a724`):
+batch 3 of open item 12 (performance, infrastructure, backend) is done through
+its edge-function-hardening item. #159 split the feedback rating question
+into usefulness and willingness-to-pay. #160 builds a deploy-only `_site/`
+for Pages instead of uploading the whole checkout. #161 inlines the two
+critical stylesheets and async-loads the rest. #162 defers the two screen
+modules (`viewer3d.js`, `products.js`) nothing else on the boot path reaches.
+#163 renders the 3D view on demand instead of every animation frame forever
+(a `let` TDZ bug and a pre-existing async-save race in
+`three-editor.spec.mjs` were both found and fixed along the way). #164 drops
+the italic webfont in favor of browser synthesis. #165 caps edge function
+body size before parsing, exempts signed-in callers from the anonymous-only
+global rate-limit breaker, strips EXIF/GPS from uploaded photos, stops
+forwarding the upstream model's raw error text to clients, allowlists
+`plan_meta` in share payloads, and makes `escapeHtml` also escape `'`
+(removing `products.js`'s duplicate escaper). Batch 3.5 (a lazy thunk map for
+the 14 layout builders) was evaluated and deliberately left alone: see the
+open items list below for why. What's left of batch 3: retention purge for
+`usage_events`/`telemetry_events`, Supabase advisor fixes, CI hardening, and
+SEO/dead-work cleanup (3.8 through 3.11).
+
+Before that, PR #158 merged (`main` at `92e2f5d`):
 the toast sits over the running head, the step clip band is capped at the
 clip's width, the landing gallery lost a dead grouped-picker rule, and the
 brand link goes home. Pages run 162 went green. **That closes batch 2 of
