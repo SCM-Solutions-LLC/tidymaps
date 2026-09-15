@@ -13,3 +13,4 @@ mkdir -p "$OUT"
 cp -r *.html assets css data js media vendor "$OUT"/
 mkdir -p "$OUT/supabase/functions/_shared"
 cp supabase/functions/_shared/telemetryEvents.js "$OUT/supabase/functions/_shared/"
+node scripts/inline-critical-css.mjs "$OUT"
