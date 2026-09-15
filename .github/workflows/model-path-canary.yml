@@ -18,6 +18,10 @@ on:
     # behind everyone else's, and this one has a 155s client timeout.
     - cron: '20 6 * * *'
   workflow_dispatch:
+# The script only reads config.js and calls the deployed function; nothing
+# here touches the repository.
+permissions:
+  contents: read
 jobs:
   canary:
     runs-on: ubuntu-latest

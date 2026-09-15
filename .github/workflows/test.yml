@@ -2,6 +2,11 @@ name: Tests
 on:
   pull_request:
   workflow_dispatch:
+# Neither job writes anything through GITHUB_TOKEN — checkout, install,
+# lint/typecheck/test. Least-privilege default rather than whatever the
+# repo's own token settings happen to be.
+permissions:
+  contents: read
 jobs:
   unit:
     runs-on: ubuntu-latest
