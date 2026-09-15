@@ -195,3 +195,65 @@ test('the security page does not claim CORS stops a request from counting', () =
   assert.doesNotMatch(page, /only answers our own origins/i);
   assert.match(page, /still counts against the rate limit/i, 'the page should say the request is still counted');
 });
+
+/* ---------- the legal pages describe the product that exists ----------
+   The same shape as the security checks above: each claim is tied to the
+   code that makes it true or false, so the check switches itself off when
+   the code changes rather than when someone edits this file. */
+
+test('the legal pages do not promise video while the app accepts images only', () => {
+  const index = read('index.html');
+  const accept = (index.match(/id="photo-input"[^>]*accept="([^"]+)"/) || [])[1] || '';
+  if (/video/.test(accept)) return; // the input takes video again; the claim is true
+  for (const file of ['privacy.html', 'terms.html']) {
+    assert.doesNotMatch(source[file], /\bvideos?\b/i, `${file}: promises video; the input accepts ${accept}`);
+  }
+});
+
+test('the privacy policy discloses every telemetry event the server accepts', async () => {
+  /* The server drops any event name off this list, so the list IS what can
+     be collected. Each entry maps to the words the policy uses for it; a new
+     event without a disclosure fails here, and a disclosure for an event
+     that no longer exists fails too, so the paragraph cannot drift either way. */
+  const { EVENT_NAMES } = await import('../supabase/functions/_shared/telemetryEvents.js');
+  const DISCLOSED = {
+    screen_viewed: /which steps of the planner people reach/,
+    plan_created: /when a plan is generated, with the space type, whether the AI or our built-in fallback produced it, and how many steps it has/,
+    step_checked: /how many plan steps get checked off/,
+    product_clicked: /which product links get clicked, as the retailer and whether it was a named pick or a search, never the product itself/,
+    plan_rated: /multiple-choice feedback answers/,
+    feedback_submitted: /multiple-choice feedback answers/,
+    after_render_requested: /whether a photo preview was requested and whether it worked/,
+    share_link_created: /when a share link is created/,
+    shared_plan_viewed: /when one is opened/,
+    space_saved: /when a plan is saved to an account, with the space type and whether the save was automatic/,
+  };
+  assert.deepEqual(Object.keys(DISCLOSED).sort(), [...EVENT_NAMES].sort(), 'the disclosure map and the server allowlist name different events');
+  const policy = source['privacy.html'];
+  for (const [name, words] of Object.entries(DISCLOSED)) {
+    assert.match(policy, words, `privacy.html does not disclose ${name}`);
+  }
+});
+
+test('the terms carry the share-link redaction the privacy policy describes', () => {
+  /* sharePayload.js strips the safety notes and every household-naming
+     sentence when a link is read. The privacy policy said so; the terms,
+     which set what a reader of a link can expect, did not. */
+  const share = read('supabase/functions/_shared/sharePayload.js');
+  if (!/export function householdPatterns/.test(share)) return; // the redaction is gone; nothing to promise
+  for (const file of ['privacy.html', 'terms.html']) {
+    assert.match(source[file], /safety notes/i, `${file}: does not say the safety notes are left out of a shared plan`);
+    assert.match(source[file], /names? your household|mentions your kids/i, `${file}: does not say household-naming sentences are left out`);
+  }
+});
+
+test('every provider the security page depends on is named in the privacy policy', () => {
+  /* security.html lists the providers whose outages and protections the
+     product inherits. A processor that handles personal data (Resend sees
+     every sign-in email) belongs in the privacy policy as well; it was not. */
+  const m = source['security.html'].match(/We depend on our providers \(([^)]+)\)/);
+  assert.ok(m, 'security.html no longer lists its providers in the expected sentence');
+  for (const provider of m[1].split(',').map((p) => p.trim())) {
+    assert.ok(source['privacy.html'].includes(provider), `privacy.html does not name ${provider}`);
+  }
+});
