@@ -19,12 +19,13 @@ green 12:38 UTC, so **the corrected security page is live**), and #145
 disclosed, the terms carry the share-redaction sentence and today's date;
 Pages run 150 was in progress at the time of writing). Every new test was
 proven red by neutering only its own behaviour, and every user-facing
-change was browser-checked at 390 and 1280. **Next is batch 2** (UX,
-accessibility, copy), starting with the shelf-map tint. Left alone on
-purpose this session: the "Last reviewed" dates on `cookies.html` and
-`accessibility.html` (nobody reviewed them), and the copy-conventions
-test's blind spot for `&mdash;` in JS (batch 2; the one instance in
-`loading.js` is gone).
+change was browser-checked at 390 and 1280. **Batch 2 is under way** (UX,
+accessibility, copy): its first line, the shelf-map tint, is PR #147, open
+(draft) at the time of writing, and this header refresh (PR #146) was
+folded into it rather than merged on its own. Left alone on purpose: the
+"Last reviewed" dates on `cookies.html` and `accessibility.html` (nobody
+reviewed them), and the copy-conventions test's blind spot for `&mdash;`
+in JS (batch 2; the one instance in `loading.js` is gone).
 Before that, 2026-09-15, after PR #142 merged (`main` at `52145ce`,
 09:47 UTC): the sign-in modal explains a failed request instead of printing
 the browser's fetch text. `js/auth.js` runs the library load and the request
@@ -2080,9 +2081,21 @@ Ordered by whether anyone can act on them today.
       of batch 1.** Batch 2 is next.
 
     **Batch 2, UX, accessibility, copy.**
-    - Shelf-map tint is inverted (`css/components.css` ~181 vs ~190; swap
+    - ~~Shelf-map tint is inverted (`css/components.css` ~181 vs ~190; swap
       `--surface-3` and `--primary-bg` at the use site). DESIGN.md says the
-      eye-level zone is the accent one.
+      eye-level zone is the accent one.~~ **Done in #147.** The two rules
+      name `--tint` and `--tint-2` directly, the tokens DESIGN.md names,
+      rather than swapping the aliases: `--surface-3` and `--primary-bg`
+      sound like a hierarchy and are not one (the first lands on the accent
+      tint, the second on the grey). The landing figure and the report's
+      elevation drawing already read the right way. The design test
+      resolves the `var()` chain through `tokens.css` and asserts the
+      colours, not the names, so a re-aliasing has to keep the eye-level
+      zone the tinted one; each of its two shelf assertions proven red by
+      putting its old token back alone. Browser-checked on the sample plan
+      at 390 and 1280. Seen on the way, not fixed: the "Loaded the sample
+      pantry plan" toast sits over the shelf map at 390, the same toast
+      the last line of this batch says covers the Summary heading.
     - Progress rail reads 100% then 75% then 81% after Review
       (`js/router.js` ~154-165).
     - Mobile nav is not modal: no Esc, outside click, scroll lock or Tab trap
