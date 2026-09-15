@@ -58,6 +58,30 @@ test('the plan engine arrives with the first plan, not with the page', async ({ 
   await expect(page.locator('#res-steps .task').first()).toBeVisible();
 });
 
+/* main.js used to statically import viewer3d.js and products.js just to hand
+   their functions to window — nothing else on the boot path reaches either
+   module, unlike results.js/db.js/plan.js/account.js/dashboard.js, which
+   landing.js, router.js and buildAll()'s own screens already force eager
+   regardless of what main.js imports. These two are a real, checked win. */
+test('the 3D viewer arrives when it is opened, not with the page', async ({ page }) => {
+  const urls = await loadLanding(page);
+  expect(urls.some((u) => /screens\/viewer3d\.js/.test(u)), 'viewer3d.js fetched before it was opened').toBe(false);
+  await page.getByRole('button', { name: 'View a sample plan' }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  expect(urls.some((u) => /screens\/viewer3d\.js/.test(u)), 'viewer3d.js fetched before it was opened').toBe(false);
+  await page.click('.plan-3d-badge');
+  await expect(page.locator('#screen-viewer3d')).toHaveClass(/active/, { timeout: 20_000 });
+  expect(urls.some((u) => /screens\/viewer3d\.js/.test(u))).toBe(true);
+});
+
+test('the product library arrives when it is opened, not with the page', async ({ page }) => {
+  const urls = await loadLanding(page);
+  expect(urls.some((u) => /screens\/products\.js/.test(u)), 'products.js fetched before it was opened').toBe(false);
+  await page.click('.footer-nav >> text=Products');
+  await expect(page.locator('#screen-products')).toHaveClass(/active/);
+  expect(urls.some((u) => /screens\/products\.js/.test(u))).toBe(true);
+});
+
 test('the brand face is requested before the stylesheets ask for it', async ({ page }) => {
   const urls = await loadLanding(page);
   const font = urls.findIndex((u) => /archivo-latin-wdth-normal\.woff2/.test(u));

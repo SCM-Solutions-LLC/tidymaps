@@ -56,10 +56,12 @@ surfaces.
 
 The rating-scale split merged as **#159** (`main` at `87b2ef9`). **Batch 3
 (performance, infrastructure, backend) is under way**: the Pages artifact
-merged as **#160** (`main` at `7268c99`); its next line, inlining the two
-critical stylesheets, is PR #161 (see the batch list below for what both
-do). Each PR this session was cherry-picked from a local branch onto the
-one PR branch, reset from `main` after each merge; the five cross-line
+merged as **#160** (`main` at `7268c99`), inlining the two critical
+stylesheets as **#161** (`main` at `9c7a56f`); the eager-JS line, only
+partly closeable from `main.js` as it turned out, is PR #162 (see the
+batch list below for all three). Each PR this session was cherry-picked
+from a local branch onto the one PR branch, reset from `main` after each
+merge; the five cross-line
 conflicts met along the way were resolved once on a scratch stack and the
 full suite run against it (282 passed, 1 pre-existing skip) before any of
 them went up.
@@ -2335,10 +2337,54 @@ Ordered by whether anyone can act on them today.
       pattern-matching source; each of its assertions (both stylesheets
       inlined, the url rebase, the async swap, `run()` touching only
       `.html` files) proven red by neutering that one behaviour alone.
-    - Eager JS is 41 modules and 216KB gzipped; 15 modules and 56KB is
+    - ~~Eager JS is 41 modules and 216KB gzipped; 15 modules and 56KB is
       reachable: `main.js` and `router.js` import every screen for window
       shims. Make them async and take `plan.js` off boot. Cut the whole
-      frontier, not one module.
+      frontier, not one module.~~ **Partly done in #162, and the rest is
+      not a `main.js` fix.** Walking the real static import graph (a small
+      script, not a guess: every non-dynamic `import ... from` edge,
+      transitively, from a set of roots) found that `main.js`'s own
+      eager imports mostly cost nothing to defer, because they were
+      already forced in from somewhere else on the mandatory boot path:
+      `results.js`, `db.js` and `plan.js` are imported by `landing.js`
+      itself (the sample-plan demo), and `account.js`/`dashboard.js` by
+      `router.js`; `planExport.js` comes in through `save.js`, which
+      `buildAll()` already builds at startup. Deferring any of *those* in
+      `main.js` would have changed nothing a browser could measure. Only
+      two modules had no other path in: `screens/viewer3d.js` (three.js-backed,
+      the single biggest chunk in the app) and `screens/products.js`,
+      both imported nowhere but `main.js`. Both are dynamic-imported on
+      first use now, the same pattern `router.js` already used to dispose
+      the 3D view on exit. `tests/e2e/startup-weight.spec.mjs` gained two
+      tests reading the actual network requests (not the module graph, the
+      same reasoning its existing tests already give for why): neither
+      file is fetched before its screen is opened. Each proven red by
+      restoring the eager import, then green again with a diff against a
+      backed-up `main.js`, never `git checkout`. Full e2e suite run
+      (284 passed, 1 pre-existing skip) since the change touches every
+      onclick path to the 3D view and the product library.
+
+      **The 41-to-15 number needs `landing.js`, `router.js`, `save.js` and
+      `customize.js` touched too, not `main.js` again.** Those four already
+      statically import `results.js`/`db.js`/`plan.js`/`account.js`/
+      `dashboard.js`/`planExport.js` for their own use, not for window
+      shims — deferring those is the same shape of problem the 09-02
+      session left open for `personalize.js`/`setupStructure.js` ("untangling
+      that graph... a session of its own"), and it is that session's problem
+      too: `wizard-data.js` (72KB) and `personalize.js`/`setupStructure.js`
+      (65KB+54KB) are still eager because `data.js`/`wizard-data.js` import
+      them, and `buildAll()` needs `wizard.js`, which needs `wizard-data.js`.
+      Whoever picks this up next: measure with a real graph walk before
+      changing anything, the way this session did — the review's "15
+      modules" undercounts what `buildAll()` alone requires. `wizard.js`'s
+      own closure is 34 modules and 564KB raw by itself, because
+      `wizard-data.js` pulls in `personalize.js` and `setupStructure.js`
+      (120KB together) and `wizard.js` itself statically imports
+      `results.js`, `db.js` and `router.js` directly, not just through
+      `main.js`. The app is one tightly coupled graph from very close to
+      the landing page onward; reaching anything near 56KB means deciding
+      which of the wizard's own screens can defer which of the others, not
+      trimming what `main.js` hands to `window`.
     - The 3D rAF loop never idles (`js/three/scene.js` ~974-981). Render on
       controls change.
     - `js/three/layouts/index.js` loads 14 builders to use one: thunk map.
