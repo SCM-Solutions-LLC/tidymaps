@@ -14,7 +14,7 @@ import {
    and `announce(text)` is how each keyboard step is read out. */
 
 export function attachDrag(view, { onDrop, canDrop, onRejectDrop, announce }={}){
-  const { renderer, camera, controls, items, shelves, reflow }=view;
+  const { renderer, camera, controls, items, shelves, reflow, requestRender }=view;
   const surfaces=(view.surfaces||shelves).slice().sort((a,b)=>a.index-b.index);
   const canvas=renderer.domElement;
   const ray=new THREE.Raycaster();
@@ -248,20 +248,36 @@ export function attachDrag(view, { onDrop, canDrop, onRejectDrop, announce }={})
     hovered=null;
   }
 
-  canvas.addEventListener('pointerdown', onDown);
-  canvas.addEventListener('pointermove', onMove);
-  canvas.addEventListener('pointerup', onUp);
-  canvas.addEventListener('pointercancel', onUp);
-  canvas.addEventListener('pointerleave', onLeave);
-  canvas.addEventListener('keydown', onKey);
-  canvas.addEventListener('blur', onBlur);
+  /* The render loop is on-demand now (js/three/scene.js): nothing repaints on
+     its own, so every handler here that can move or restyle something in the
+     scene — a drag in flight, a lift, a keyboard carry — has to ask for a
+     frame itself. Wrapping each listener rather than sprinkling
+     requestRender() through every mutation above means a new interaction
+     added later cannot forget it. */
+  function withRender(fn){
+    return (...args)=>{ fn(...args); requestRender(); };
+  }
+  const onDownR=withRender(onDown);
+  const onMoveR=withRender(onMove);
+  const onUpR=withRender(onUp);
+  const onLeaveR=withRender(onLeave);
+  const onKeyR=withRender(onKey);
+  const onBlurR=withRender(onBlur);
+
+  canvas.addEventListener('pointerdown', onDownR);
+  canvas.addEventListener('pointermove', onMoveR);
+  canvas.addEventListener('pointerup', onUpR);
+  canvas.addEventListener('pointercancel', onUpR);
+  canvas.addEventListener('pointerleave', onLeaveR);
+  canvas.addEventListener('keydown', onKeyR);
+  canvas.addEventListener('blur', onBlurR);
   return ()=>{
-    canvas.removeEventListener('pointerdown', onDown);
-    canvas.removeEventListener('pointermove', onMove);
-    canvas.removeEventListener('pointerup', onUp);
-    canvas.removeEventListener('pointercancel', onUp);
-    canvas.removeEventListener('pointerleave', onLeave);
-    canvas.removeEventListener('keydown', onKey);
-    canvas.removeEventListener('blur', onBlur);
+    canvas.removeEventListener('pointerdown', onDownR);
+    canvas.removeEventListener('pointermove', onMoveR);
+    canvas.removeEventListener('pointerup', onUpR);
+    canvas.removeEventListener('pointercancel', onUpR);
+    canvas.removeEventListener('pointerleave', onLeaveR);
+    canvas.removeEventListener('keydown', onKeyR);
+    canvas.removeEventListener('blur', onBlurR);
   };
 }
