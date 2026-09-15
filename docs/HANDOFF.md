@@ -1982,27 +1982,40 @@ Ordered by whether anyone can act on them today.
    pantry most users see, and it comes out by deleting the `depthRankStep` call
    in `reflow`, which takes its containment test with it.
 
-9. **The canary has no heartbeat. It has not missed a day — correct the earlier
-   claim that it had.** This item first said the 08-27 run was dropped; it was
-   not, it ran 11 hours late (Production health #10). Every run so far has
-   fired and passed, so this is a precaution rather than a repair, and it drops
-   below open item 1 accordingly.
+9. ~~**The canary has no heartbeat.**~~ **Done in #171.** The workflow gained
+   a second step that reads its own recent successful runs through the GitHub
+   Actions API (via `GITHUB_TOKEN` with `actions: read`, no new secret) and
+   fails as `CANARY HEARTBEAT LOST` if the last one is over 36 hours old.
+   Runs `if: always()` so a schedule gap is reported alongside a model-path
+   outage rather than hidden behind it. Neither of the two options the
+   entry proposed was taken: a committed timestamp would have wanted
+   `contents: write`, which #169 just took away for exactly the right reason,
+   and reading `usage_events` would have needed the service-role key shipped
+   as a new secret to the runner — the API path is smaller than either.
 
-   The gap is real anyway: a failing run emails, a run that never happens is
-   silent, so the monitor's own failure mode looks exactly like a healthy day.
-   Two smallest-thing-that-works options, neither a new service: have the
-   workflow write a timestamp the next run reads and fails on if it is stale, or
-   check `usage_events` for an `analyze-space` row per day, which is free and
-   already recorded. GitHub also disables `schedule` workflows after 60 days
-   with no repo activity, so a quiet period silently ends the alert.
+   **Threshold set to 36h, not the entry's 30h.** The 30h floor was measured
+   against the 08-27 pattern only. The worst-case normal gap between two
+   consecutive completions on a 24h schedule is `24 + max_jitter` — with
+   observed jitter of 0 to 11h 21m, that is ~35.5h without any run being
+   missed, so 30h would false-alarm on a late-but-fired run's follower. 36h
+   clears the observed jitter with a small margin and still catches a missed
+   day (≥48h). The `36h clears the worst observed jitter without
+   false-alarming` test pins this to the observation rather than to the
+   number itself.
 
-   **Whatever is built must tolerate the observed jitter.** Firings have landed
-   between 44 minutes and 11 hours 21 minutes after the scheduled 06:20, so any
-   staleness threshold has to sit well past a day. A 30-hour window is the
-   smallest that would not have false-alarmed on 08-27; anything tighter
-   re-creates the same wrong conclusion in code that a human already reached by
-   hand. And a check which could not run must never read as success, the same
-   rule the canary applies to itself.
+   **Three exit modes, following the canary's own precedent:** fresh under
+   36h passes; stale over 36h fails as `HEARTBEAT LOST`; and any
+   could-not-check case (API error, malformed response, missing env) fails
+   under its own `HEARTBEAT CHECK COULD NOT RUN` header so nobody rotates
+   the API key over a schedule issue. Bootstrap (no prior successful run at
+   all — first deploy, rebased history, runs rolled off) exits 0 with a
+   note, since the current run cannot be its own predecessor.
+
+   Every new behavioural assertion proven red by neutering only its own fix
+   with file copies rather than `git checkout`: threshold to `Infinity` (4
+   red, including the boundary case that underflows), the current-run skip
+   removed (3 red), and the workflow's `actions: read` grant put back (1
+   red). Files then restored from the scratchpad backups.
 
 10. ~~**26 of the 33 setups' demo scenarios ask for more than their own geometry
     holds.**~~ **Closed 2026-09-08.** The real number was 25 of 33 on the
