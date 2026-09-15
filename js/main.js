@@ -11,7 +11,6 @@ import { getSession } from './auth.js';
 import { fetchSpace, applyLoadedSpace } from './db.js';
 import { buildAll } from './screens/index.js';
 import { runDemo, requestInvite, initLanding, navHome } from './screens/landing.js';
-import { openProducts } from './screens/products.js';
 import { handleFiles } from './screens/capture.js';
 import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, buildResults, applySavedProgress, pickProduct, generateAfter, retryAnalysis } from './screens/results.js';
 import { useZeroPlan } from './screens/customize.js';
@@ -19,8 +18,33 @@ import { submitFeedback, sendRate } from './screens/feedback.js';
 import { downloadShoppingList, sendShoppingList } from './planExport.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
 import { dashSignOut } from './screens/dashboard.js';
-import { openViewer3d, saveArrangement, resetArrangement } from './screens/viewer3d.js';
 import { initializeRoute } from './startup.js';
+
+/* screens/products.js and screens/viewer3d.js (three.js-backed, the single
+   biggest chunk in the app) are the only two modules nothing else on the
+   boot path reaches: every other screen main.js used to import eagerly —
+   results.js, db.js, plan.js, account.js, dashboard.js, planExport.js — is
+   already forced in by landing.js, router.js or buildAll()'s own screens
+   regardless of what main.js does, so importing them here again cost
+   nothing to defer and would have bought nothing either. These two are a
+   real, checked win: dynamic-imported on first use, same pattern router.js
+   already uses to dispose the 3D view on exit. */
+async function openViewer3d(...args){
+  const m = await import('./screens/viewer3d.js');
+  return m.openViewer3d(...args);
+}
+async function saveArrangement(...args){
+  const m = await import('./screens/viewer3d.js');
+  return m.saveArrangement(...args);
+}
+async function resetArrangement(...args){
+  const m = await import('./screens/viewer3d.js');
+  return m.resetArrangement(...args);
+}
+async function openProducts(...args){
+  const m = await import('./screens/products.js');
+  return m.openProducts(...args);
+}
 
 /* Expose every function referenced by inline on* handlers
    (in index.html and in injected template strings) */
