@@ -149,7 +149,7 @@ export const CUSTOMIZE = [
   ['kid','Make it more kid-friendly','Moves snacks lower and adds clear, reachable zones.'],
   ['capacity','Maximize storage capacity','Adds risers and stacking to reclaim vertical space.'],
   ['hide','Hide more clutter','Shifts loose items into bins and baskets.'],
-  ['labels','Add more labels','Every zone gets a labelled home.'],
+  ['labels','Add more labels','Every zone gets a labeled home.'],
   ['fewer','Reduce the number of steps','Condenses the plan into a quick 5-step reset.'],
   /* It used to say "targets a 30-minute version" and produce a 50-minute plan,
      because it did exactly what "Reduce the number of steps" does — take the
@@ -175,13 +175,18 @@ export const FB_USEFUL = ['Not useful','Somewhat useful','Very useful','I would 
 export const FB_VS = ['Yes, I want instructions','I mostly want the final image','I want both','I’m not sure'];
 export const FB_NEXT = ['Pantry','Closet','Garage','Attic','Kitchen cabinets','Laundry room','Kids’ room','Bathroom storage','Other'];
 
-/* The first three describe work that only happens when the user actually gave
+/* The first rows describe work that only happens when the user actually gave
    us media. Shown unconditionally they were a lie: a plan built with no photos
-   still ticked off "Reviewing uploaded photos or video" with a green check.
-   loading.js picks the list to match what was supplied. */
-export const LOAD_LABELS_MEDIA = [
-  'Reviewing uploaded photos or video','Extracting key frames','Detecting visible item categories',
+   still ticked off "Reviewing uploaded photos or video" with a green check,
+   and a photo run ticked off "Extracting key frames", which is what happens
+   to a video. loading.js picks the list to match what was supplied. */
+export const LOAD_LABELS_PHOTOS = [
+  'Reviewing uploaded photos','Detecting visible item categories',
 ];
+export const LOAD_LABELS_VIDEO = [
+  'Reviewing uploaded video','Extracting key frames','Detecting visible item categories',
+];
+export const LOAD_LABELS_MEDIA = LOAD_LABELS_VIDEO;
 export const LOAD_LABELS_COMMON = [
   'Understanding existing space features','Finding unused vertical and shelf space','Grouping similar items',
   'Creating organization zones','Building your move-by-move plan','Preparing optional upgrades'

@@ -520,7 +520,7 @@ const GOAL_ADVICE = [
     why: 'An avalanche means the stacks are leaning on each other. Dividers make each one independent.' },
   // the garage already boxes its holiday decorations; that is this behavior
   { match: /seasonal stuff gets buried/i, dedupe: /each season in its own|holiday decorations into|seasonal items and lift/i,
-    task: 'Put each season in its own labelled bin and rotate the current one to the front',
+    task: 'Put each season in its own labeled bin and rotate the current one to the front',
     noBuy: 'Put each season in its own box or bag you already have, and rotate the current one to the front',
     why: 'Seasonal storage only works if swapping takes one motion twice a year.' },
   { match: /small parts/i, dedupe: /small parts into/i,
@@ -530,7 +530,7 @@ const GOAL_ADVICE = [
   { match: /cords tangle/i, dedupe: /coil (?:each cable|cords)/i,
     task: 'Coil each cable, band it, and label what it belongs to',
     noBuy: 'Coil each cable, tie it with its own plug lead, and write what it belongs to on a tape flag',
-    why: 'A coiled, labelled cable takes a quarter of the space and never needs identifying twice.' },
+    why: 'A coiled, labeled cable takes a quarter of the space and never needs identifying twice.' },
   /* The four goals that DO map to an id already move the summary, the
      opportunities and the product priorities — but through applyGoal, which
      never quotes the user. These give them the verbatim citation every other
@@ -542,7 +542,7 @@ const GOAL_ADVICE = [
   { match: /can't find|cannot find/i, dedupe: /\blabell?(?:s|ed|ing)?\b/i,
     task: 'Label the front edge of every zone so the whole household can find things without asking',
     noBuy: 'Write each zone on a strip of tape along the front edge, so the whole household can find things without asking',
-    why: 'Searching is what a labelled zone removes; the label is read from the doorway, not the shelf.' },
+    why: 'Searching is what a labeled zone removes; the label is read from the doorway, not the shelf.' },
   { match: /running out of room|no room for the car/i, dedupe: /\briser\b/i,
     task: 'Measure the empty air above each level and add a riser or a stacking bin to claim it',
     noBuy: 'Measure the empty air above each level and reuse a sturdy box as a riser to claim it',

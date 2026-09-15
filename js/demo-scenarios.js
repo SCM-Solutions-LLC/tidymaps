@@ -1873,7 +1873,7 @@ const KID_AGE_RULES = [
   },
   {
     match: /^teen$/i,
-    task: 'Give their own things one labelled zone they control, and leave it to them',
+    task: 'Give their own things one labeled zone they control, and leave it to them',
     why: 'A shared space works when everyone owns a piece of it outright.',
     cite: 'You told us there is a teenager at home.',
   },

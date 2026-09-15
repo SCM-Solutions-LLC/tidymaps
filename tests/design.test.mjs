@@ -14,7 +14,7 @@ const landing = html.slice(html.indexOf('id="screen-landing"'), html.indexOf('id
 
 test('hero leads with the practical promise', () => {
   for (const phrase of [
-    'Bring order to the room that runs your day',
+    'Bring order to the space that runs your day',
     'already own',
     'Plan my space',
     'View a sample plan',

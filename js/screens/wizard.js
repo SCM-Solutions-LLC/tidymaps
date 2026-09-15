@@ -781,8 +781,9 @@ function renderReviewSummary(){
        for a pick, so on the wizard's own path these are always the user's. A
        draft or row from before the flag, or a jump straight to Review, can
        still land here untouched, and then the placeholder says whose it is. */
-    ['Room', state.spaceTouched ? room.label : dflt(room.label), 'space'],
-    ['Spot', state.spaceTouched ? area.label : dflt(area.label), 'space'],
+    /* One row for the one answer: the space step picks the spot and its room
+       together, and two rows read as two questions the wizard never asked. */
+    ['Space', state.spaceTouched ? `${area.label} · ${room.label}` : dflt(`${area.label} · ${room.label}`), 'space'],
     ['Setup', state.setupLabel, 'setup'],
     ['Measurements', measureSummary(state.setup, dimsFtNums(), isMetric()), 'measure'],
     ['Photos', plural(state.uploadedFiles.length, 'photo'), 'capture'],

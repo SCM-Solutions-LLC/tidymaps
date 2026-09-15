@@ -75,7 +75,7 @@ async function callFn(name, body, { signal }={}){
     /* A request the caller abandoned is not a failure anyone should read
        about: the code says so, and the loading screen drops it rather than
        putting "that took longer than expected" over a newer analysis. */
-    if(signal && signal.aborted) throw new ApiError('That request was cancelled.', { code:'aborted' });
+    if(signal && signal.aborted) throw new ApiError('That request was canceled.', { code:'aborted' });
     if(e && (e.name==='TimeoutError' || e.name==='AbortError')){
       throw new ApiError('That took longer than expected. Showing the demo plan instead.', { code:'timeout' });
     }

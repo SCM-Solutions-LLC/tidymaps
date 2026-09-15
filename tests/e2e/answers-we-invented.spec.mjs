@@ -193,15 +193,14 @@ test('Review calls the space ours until it is picked', async ({ page }) => {
   await openWizard(page);
   await gotoStep(page, 'review');
   const row = (label) => page.locator('.wz-rev-row', { hasText: label }).first();
-  await expect(row('SPOT')).toContainText('our default');
-  await expect(row('ROOM')).toContainText('our default');
+  await expect(row('SPACE')).toContainText('our default');
 
   await gotoStep(page, 'space');
   await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await gotoStep(page, 'review');
-  await expect(row('SPOT')).toContainText('Pantry');
-  await expect(row('SPOT')).not.toContainText('our default');
-  await expect(row('ROOM')).not.toContainText('our default');
+  await expect(row('SPACE')).toContainText('Pantry');
+  await expect(row('SPACE')).toContainText('Kitchen');
+  await expect(row('SPACE')).not.toContainText('our default');
 });
 
 test('Start over un-ticks the space and closes the gate again', async ({ page }) => {

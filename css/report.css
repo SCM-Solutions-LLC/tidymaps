@@ -95,9 +95,13 @@
   }
   .report-toc .toc-h{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);margin-bottom:10px;padding-bottom:8px;border-bottom:var(--rule-2)}
   .report-toc ol{display:grid;gap:2px;overflow:visible}
+  /* The entries carry the chapter headings' own words now, and the longest
+     of them is wider than the column: they wrap here, where the phone bar
+     above keeps them on one line and scrolls. */
   .report-toc a{
     display:flex;gap:10px;align-items:baseline;padding:7px 2px;font-size:13.5px;font-weight:500;
     border-top:var(--rule);border-bottom:none;text-transform:none;letter-spacing:0;font-stretch:100%;font-weight:600;font-size:13.5px;
+    white-space:normal;
   }
 }
 

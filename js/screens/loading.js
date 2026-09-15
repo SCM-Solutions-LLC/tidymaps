@@ -1,4 +1,4 @@
-import { LOAD_LABELS_MEDIA, LOAD_LABELS_COMMON, LOAD_LABELS_NO_MEDIA } from '../data.js';
+import { LOAD_LABELS_PHOTOS, LOAD_LABELS_VIDEO, LOAD_LABELS_COMMON, LOAD_LABELS_NO_MEDIA } from '../data.js';
 import { ICON } from '../icons.js';
 import { state, currentPlanInstance, planInstanceIsCurrent } from '../state.js';
 import { escapeHtml } from '../ui.js';
@@ -130,11 +130,13 @@ export function runLoading(){
   fw.classList.add('hide');
   const title=document.getElementById('load-title');
   if(title) title.textContent=`Building your ${areaFor(state.space).short} plan…`;
-  // Only claim the photo work when photos (or a video) were actually given.
-  const hasMedia = state.uploadedFiles.length > 0 || !!state.uploadedVideo;
-  const labels = hasMedia
-    ? [...LOAD_LABELS_MEDIA, ...LOAD_LABELS_COMMON]
-    : [...LOAD_LABELS_NO_MEDIA, ...LOAD_LABELS_COMMON];
+  // Only claim the media work that was actually done: a video has key frames
+  // to extract, photos do not, and answers alone have neither.
+  const labels = state.uploadedVideo
+    ? [...LOAD_LABELS_VIDEO, ...LOAD_LABELS_COMMON]
+    : state.uploadedFiles.length > 0
+      ? [...LOAD_LABELS_PHOTOS, ...LOAD_LABELS_COMMON]
+      : [...LOAD_LABELS_NO_MEDIA, ...LOAD_LABELS_COMMON];
   labels.forEach((l,i)=>{
     const row=document.createElement('div'); row.className='load-step'; row.id='ls-'+i;
     row.innerHTML=`<span class="dot">${ICON.check}</span><span>${l}</span>`;

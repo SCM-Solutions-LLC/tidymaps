@@ -268,7 +268,7 @@ export function buildResults(){
     const notes=activeSafetyNotes();
     notesWrap.innerHTML=notes.length?
       `<div class="sn-head">${SVG.shield}<div><strong>Safety notes for your household</strong>
-        <span>The green notes below are placements chosen for safety, based on what you told us about kids, pets, and reach. The plan already follows them.</span></div></div>`
+        <span>The notes below are placements chosen for safety, based on what you told us about kids, pets, and reach. The plan already follows them.</span></div></div>`
       + notes.map(n=>`<div class="safety-note">${SVG.shield}<span>${escapeHtml(n)}</span></div>`).join('')
       :'';
   }

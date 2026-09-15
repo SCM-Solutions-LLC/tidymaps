@@ -4,36 +4,38 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #154 merged (`main` at `535721a`,
-15:58 UTC): the rating buttons carry `aria-pressed` in groups named by
-their question, and each shelf's items are a `role=list` its label can
-name. Before it, #153 (the 3D drawing as a focusable `role=application`
-widget the arrow keys rearrange, `js/three/interact.js`), #152 (an h1 on
-every screen and a skip link on every page), #151 (the small tap targets
-are 44px without growing: "pad, don't grow"), #150 (the 3D view's sliders
-are 44px targets in the row they had), #149 (the phone menu behaves like
-the dialog it looks like, `openSiteNav`/`closeSiteNav`/`toggleSiteNav` in
-`js/ui.js`), #148 (the progress rail stays full once the wizard is
-complete) and #147 (the shelf map tints the eye-level shelf with the
-accent). All client-only, so the dead deploy token (Production health #5,
-open item 11) does not apply. Pages runs 152 to 156 (#148 to #152) went
-green, the last at 15:40 UTC; runs 157 (#153) and 158 (#154) were in
-progress at the time of writing. That closes the first nine lines of open
-item 12's batch 2; line 10, the space cards as a radio group with a roving
-Tab stop, is PR #155, open (draft) at the time of writing. The copy line
-and the last layout line are built, tested and browser-checked on local
-branches in this session (`wip/copy`, `wip/copy2`, `wip/layout`), each
-waiting its turn on the one PR branch; the session's branch is reset from
-`main` after each merge and the next line cherry-picked onto it. The
-remaining lines were stacked in merge order on a scratch branch and the
-full suite run against the stack (282 passed, 1 pre-existing skip), with
-the three cross-line conflicts (heading ids in `index.html`, the
-accessibility statement's spelling, two tests appended to `site-hygiene`)
-resolved once there, so each remaining cherry-pick is clean. The copy line
-travels as two PRs (the ten pure copy items, then the two behaviours: the
-autosave failure said once and the reload toast naming lost photos), with
-the rating-scale split left for its own PR because it needs a feedback
-column.
+**Last refreshed:** 2026-09-15, after PR #155 merged (`main` at `a512077`,
+16:18 UTC): the space cards are a `radiogroup` with a roving Tab stop the
+arrow keys work (`js/screens/wizard.js`, `markSelected` driving
+`aria-checked` on radios and `aria-pressed` elsewhere). Before it, #154
+(the rating buttons' `aria-pressed` and the shelf list's `role=list`),
+#153 (the 3D drawing as a focusable `role=application` widget the arrow
+keys rearrange, `js/three/interact.js`), #152 (an h1 on every screen and
+a skip link on every page), #151 (the small tap targets are 44px without
+growing: "pad, don't grow"), #150 (the 3D view's sliders are 44px targets
+in the row they had), #149 (the phone menu behaves like the dialog it
+looks like, `openSiteNav`/`closeSiteNav`/`toggleSiteNav` in `js/ui.js`),
+#148 (the progress rail stays full once the wizard is complete) and #147
+(the shelf map tints the eye-level shelf with the accent). All
+client-only, so the dead deploy token (Production health #5, open item
+11) does not apply. Pages runs 152 to 156 (#148 to #152) and 158 (#154,
+16:16 UTC) went green; run 157 (#153) was cancelled by 158 starting
+behind it, which is how Pages concurrency works and carries #153's
+content all the same; run 159 (#155) was in progress at the time of
+writing. That closes the ten numbered lines of open item 12's batch 2;
+the copy line's ten pure copy items are PR #156, open (draft) at the time
+of writing. The copy line's two behaviours (the autosave failure said
+once, the reload toast naming lost photos) and the last layout line are
+built, tested and browser-checked on local branches in this session
+(`wip/copy2`, `wip/layout`), each waiting its turn on the one PR branch;
+the session's branch is reset from `main` after each merge and the next
+line cherry-picked onto it. The remaining lines were stacked in merge
+order on a scratch branch and the full suite run against the stack (282
+passed, 1 pre-existing skip), with the three cross-line conflicts
+(heading ids in `index.html`, the accessibility statement's spelling, two
+tests appended to `site-hygiene`) resolved once there, so each remaining
+cherry-pick is clean. The rating-scale split ("I would pay" mixed into
+usefulness) is left for its own PR because it needs a feedback column.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2216,18 +2218,32 @@ Ordered by whether anyone can act on them today.
       arrows, Home, End and wrap; a tap keeping the stop across a screen
       change), each proven red by neutering its own half. Browser-checked
       at 390 and 1280.
-    - Copy: "green notes" (`results.js` ~269; nothing is green); Review shows
+    - Copy. ~~"green notes" (`results.js` ~269; nothing is green); Review shows
       "Room" and "Spot" as two rows after the merge (`wizard.js` ~728); "your
       14" shelf" on the landing page (`index.html` ~248); TOC and chapter heads
       disagree (`index.html` ~589-591 vs ~629, ~664); "room" headline
       (`index.html` ~105); 8-digit vs "6-8 digit" code (`index.html` ~78,
-      `account.js` ~111); ~~`&mdash;` in `loading.js` ~332~~ (gone in #143), and extend the
-      copy-conventions test to JS; UK and US spelling mixed;
-      `planExport.js` ~135 prints inches to metric users; the rating scale
-      mixes usefulness with "I would pay" (`js/data.js` ~174, split it);
-      "Extracting key frames" shown on photo runs (`js/data.js` ~182); silent
-      autosave loss on 401 (`js/db.js` ~145, ~159); the guest reload toast
-      hides photo loss (`js/startup.js` ~91).
+      `account.js` ~111); `&mdash;` in `loading.js` ~332 (gone in #143), and
+      extend the copy-conventions test to JS; UK and US spelling mixed;
+      `planExport.js` ~135 prints inches to metric users; "Extracting key
+      frames" shown on photo runs (`js/data.js` ~182).~~ **Done in #156.**
+      "The notes below"; one "Space: Pantry · Kitchen" row on Review; "a
+      14″ shelf"; the contents list carries the chapter headings' own words
+      and the desktop column wraps the longest; "space" in the hero;
+      neither sign-in sentence names a code length (the hosted auth config
+      sets it and the repo cannot see it); the copy-conventions test reads
+      the `&mdash;` entity in scripts and refuses British spellings in
+      copy (three words were); the shopping list prints the reader's
+      units; the loading labels are split by media kind. Pinned by
+      `tests/copy-review.test.mjs` and a TOC browser test at 390 and 1280,
+      each proven red with the old copy back alone. Browser-checked at 390
+      and 1280.
+      Still open from this line: silent autosave loss on 401 (`js/db.js`
+      ~145, ~159) and the guest reload toast hiding photo loss
+      (`js/startup.js` ~91), both behaviour rather than copy and built on
+      `wip/copy2` for the next PR; the rating scale mixing usefulness with
+      "I would pay" (`js/data.js` ~174), which needs a feedback column and
+      its own PR.
     - Desktop step clips letterbox (`components.css` ~439, ~455); empty ruled
       cells in two-card room groups (`landing.css`); the toast covers the
       Summary heading; the brand link is `href="#"`.
