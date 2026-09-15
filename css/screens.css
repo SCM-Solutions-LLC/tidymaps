@@ -72,19 +72,26 @@
 .v3d-dim{display:block}
 .v3d-dim span{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2);margin-bottom:6px}
 .v3d-dim strong{color:var(--ink);font-weight:700}
+/* The rule is 4px, and the input used to be the same 4px tall, so on a phone
+   the whole target was the rule and an 18px thumb. The box is 44px now and
+   pulled back into the same 4px footprint with negative margins, so the row
+   does not grow; the rule is drawn on the track, centred in the box, and the
+   thumb is centred on the rule. */
 .v3d-dim input[type=range]{
-  width:100%;height:4px;-webkit-appearance:none;appearance:none;
-  background:var(--ink);outline:none;cursor:pointer;
+  display:block;width:100%;height:44px;margin:-20px 0;
+  -webkit-appearance:none;appearance:none;background:none;outline:none;cursor:pointer;
 }
+.v3d-dim input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--ink)}
+.v3d-dim input[type=range]::-moz-range-track{height:4px;background:var(--ink)}
 .v3d-dim input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;
+  -webkit-appearance:none;width:18px;height:18px;margin-top:-7px;
   background:var(--spot);border:2px solid var(--ink);cursor:grab;
 }
 .v3d-dim input[type=range]::-moz-range-thumb{
   width:18px;height:18px;border-radius:0;border:2px solid var(--ink);
   background:var(--spot);cursor:grab;
 }
-.v3d-dim input[type=range]:focus-visible{outline:2px solid var(--spot);outline-offset:4px}
+.v3d-dim input[type=range]:focus-visible{outline:2px solid var(--spot);outline-offset:-12px}
 .v3d-structure{padding-top:18px;border-top:1px solid var(--line)}
 
 /* The second tier: everything numeric, behind one click. */
