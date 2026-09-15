@@ -69,8 +69,14 @@ textarea{resize:vertical;min-height:84px}
 .helper svg{width:16px;height:16px;flex:none;color:var(--primary);margin-top:2px}
 
 /* segmented yes/no */
-.seg{display:inline-flex;border:var(--rule);overflow:hidden;background:var(--stock)}
-.seg button{border:none;background:var(--stock);padding:9px 22px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);transition:background-color var(--dur,.18s), color var(--dur,.18s), box-shadow var(--dur,.18s)}
+.seg{display:inline-flex;border:var(--rule);background:var(--stock)}
+.seg button{position:relative;border:none;background:var(--stock);padding:9px 22px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);transition:background-color var(--dur,.18s), color var(--dur,.18s), box-shadow var(--dur,.18s)}
+/* A 32px segment is a 44px target: a band below the box takes the tap, the
+   box itself is drawn as it was. Below, not above and below: the sticky
+   progress bar sits over the steps toggle and would take a tap above it.
+   .seg no longer clips, so the band is reachable; with square corners there
+   was nothing left to clip. */
+.seg button::before{content:"";position:absolute;left:0;right:0;top:0;bottom:-12px}
 .seg button:hover{background:var(--surface-3);color:var(--ink)}
 .seg button:active{background:var(--surface-3)}
 .seg button.sel{background:var(--spot);color:var(--stock)}
@@ -290,7 +296,12 @@ textarea{resize:vertical;min-height:84px}
 .prod select{max-width:100%}
 .prod a{overflow-wrap:anywhere}
 .prod.excluded{opacity:.5}
-.prod > input[type=checkbox]{width:19px;height:19px;margin-top:2px;accent-color:var(--primary);flex:none}
+/* The 19px box is drawn by the browser and cannot be padded, so the label
+   around it is the target: 44px square, pulled back with negative margins so
+   the card's first column stays the 20px it was and the box sits where it
+   sat. Tapping anywhere in the label toggles the box. */
+.prod > .pcheck{display:grid;place-items:center;width:44px;height:44px;margin:-10px -12px -14px}
+.prod .pcheck input[type=checkbox]{width:19px;height:19px;margin:0;accent-color:var(--primary)}
 /* Every product in the catalog currently ships without a photo, so .pic is the
    type glyph in practice, not a fallback for one. At 46px it read as a bullet
    point rather than a picture of the thing being suggested. Sized up so the
@@ -370,6 +381,12 @@ body[data-flow="1"] .site-footer{display:none}
 .footer-links{font-size:13px;color:var(--ink-3);line-height:1.7}
 .footer-links > span{display:block}
 .footer-nav{display:flex;flex-wrap:wrap;gap:4px 14px}
+/* Six 14px links in a row were the smallest targets on the site. Real
+   padding here, not the negative-margin kind used elsewhere: the footer is
+   the last thing on the page, and a row that wraps on a narrow phone must
+   not stack overlapping targets. */
+.footer-nav > *{padding:15px 4px;margin:0 -4px}
+.footer-nav .home-link{padding:15px 4px;margin:0 -4px}
 @media(min-width:680px){.footer-nav{justify-content:flex-end}}
 .footer-links a{color:var(--ink-2)}
 .footer-links a:hover{color:var(--ink)}
@@ -583,13 +600,18 @@ body[data-flow="1"] .site-footer{display:none}
 .prod .pic .pic-ico svg{width:30px;height:30px}
 .prod .pname{display:inline-block;font-weight:600;font-size:14.5px;line-height:1.45;text-decoration:underline;text-underline-offset:3px;color:var(--primary-2);margin-top:6px}
 .prod .pretail{font-size:12.5px;color:var(--ink-3);margin-top:3px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+/* The retailer search links (shown when the catalog has no match) are a line
+   of 12.5px text; the padding makes each a 44px target without moving the
+   line. Two links on one line are separated by the gap and the dot between
+   them, so their targets do not meet. */
+.prod .pretail a{padding:14px 4px;margin:-14px -4px}
 .prod .pmore{margin-top:10px}
-.prod .pmore summary{font-size:12.5px;font-weight:600;color:var(--ink-3);cursor:pointer;list-style-position:inside}
+.prod .pmore summary{font-size:12.5px;font-weight:600;color:var(--ink-3);cursor:pointer;list-style-position:inside;padding:12px 0;margin:-12px 0}
 .prod .pmore summary:hover{color:var(--ink)}
 .prod .pmore .pmeta{margin-top:10px}
 @media(max-width:560px){
   .prod{grid-template-columns:auto auto minmax(0,1fr)}
-  .prod > input[type=checkbox]{grid-column:1;grid-row:1}
+  .prod > .pcheck{grid-column:1;grid-row:1}
   .prod .pic{grid-column:2;grid-row:1}
   .prod > div{grid-column:2/4;grid-row:2}
   .prod .cost{grid-column:3;grid-row:1;justify-self:end}
@@ -998,9 +1020,10 @@ body[data-flow="1"] .site-footer{display:none}
 .wr-label{width:150px;flex:none;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);padding-top:4px}
 .wr-value{flex:1;font-size:16px;color:var(--ink)}
 /* 26×16 was the whole hit area on a phone, on the one screen made of nothing
-   but these. Padding buys a comfortable target without moving the text. */
+   but these. Padding buys a 44px target without moving the text; the rows'
+   own 16px padding keeps one row's Edit clear of the next. */
 .wr-edit{border:none;background:none;color:var(--spot-ink);font-family:var(--sans);font-weight:700;font-size:13px;text-decoration:underline;text-underline-offset:3px;
-  padding:8px 10px;margin:-8px -10px;min-height:32px}
+  padding:14px 10px;margin:-14px -10px;min-height:44px}
 .wr-edit:hover{color:var(--primary)}
 @media(max-width:519px){
   .wz-rev-row{flex-wrap:wrap;gap:6px 16px}
