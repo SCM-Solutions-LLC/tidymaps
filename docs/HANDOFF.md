@@ -4,17 +4,17 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, with PR #142 open (draft, from `main` at
-`c1ab9e9`): the sign-in modal explains a failed request instead of printing
+**Last refreshed:** 2026-09-15, after PR #142 merged (`main` at `52145ce`,
+09:47 UTC): the sign-in modal explains a failed request instead of printing
 the browser's fetch text. `js/auth.js` runs the library load and the request
 under one catch and reads the error by name, status and code
 (`authErrorMessage`), so no answer is "Could not reach the sign-in service",
 a 5xx is "Sign-in is temporarily unavailable", 429 is "Too many attempts",
 and a refused address on send is about the address rather than a code that
 never went. Client-only, so the dead deploy token (Production health #5,
-open item 11) does not apply. When it merges, that closes the fifth line of
-open item 12's batch 1, with three lines left there (rate-limit copy,
-`security.html`, legal pages).
+open item 11) does not apply. That closes the fifth line of open item 12's
+batch 1, with three lines left there (rate-limit copy, `security.html`,
+legal pages).
 Before that, 2026-09-15, after PR #140 merged (`main` at `5c8ca2c`,
 05:16 UTC): the report says "Analyzed by Claude" once. The badge is the credit
 and carries the model ("Analyzed by Claude · Sonnet 4.6"); the byline says the
