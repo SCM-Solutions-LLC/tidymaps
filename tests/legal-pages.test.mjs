@@ -152,3 +152,46 @@ test('the pages do not name a third party the site stopped using', () => {
       `${file}: credits Google Fonts, but the fonts are self-hosted`);
   }
 });
+
+/* ---------- the security page describes the backend that exists ----------
+   A security page is only worth reading if its claims are true of the code,
+   and three of them were not: the CORS allowlist was said to stop other
+   sites spending the rate limit (it only decides who may READ a response;
+   the request arrives and is counted either way), the IP-hash salt was
+   said to rotate daily (auth.ts hashes ip|date|salt with one static
+   secret, so the date varies and the salt never does), and guest use was
+   said to touch no database (every call writes a usage row, and telemetry
+   writes its events). Each check below is tied to the code that makes the
+   claim false, so a backend change that makes it true again is what turns
+   the check off, not an edit to this file. */
+
+test('no legal page says the IP-hash salt rotates while auth.ts hashes with one static salt', () => {
+  const auth = read('supabase/functions/_shared/auth.ts');
+  const staticSalt = /Deno\.env\.get\('IP_HASH_SALT'\)/.test(auth) && /\$\{ip\}\|\$\{day\}\|\$\{salt\}/.test(auth);
+  if (!staticSalt) return; // the hash changed shape; the claim below no longer applies
+  for (const [file, src] of Object.entries(source)) {
+    assert.doesNotMatch(src, /salt (rotates|changes|is rotated) (daily|every day|each day)/i, `${file}: says the salt rotates`);
+    assert.doesNotMatch(src, /short-lived[^.]*hash/i, `${file}: calls the hash short-lived; nothing purges usage_events`);
+  }
+});
+
+test('the security page does not say guest use touches no database', () => {
+  /* checkAndLog inserts a usage row on every call the limiter admits, for
+     signed-in and anonymous callers alike. */
+  const limiter = read('supabase/functions/_shared/ratelimit.ts');
+  assert.match(limiter, /check_and_log_usage/, 'the limiter moved; re-derive what a guest call writes');
+  assert.doesNotMatch(source['security.html'], /touches no database/i);
+  assert.match(source['security.html'], /usage row/i, 'the page should say what a guest call writes');
+});
+
+test('the security page does not claim CORS stops a request from counting', () => {
+  /* cors.ts sets Access-Control-Allow-Origin on the response. A browser
+     enforces that on the READ; nothing in it rejects the request itself. */
+  const cors = read('supabase/functions/_shared/cors.ts');
+  assert.match(cors, /Access-Control-Allow-Origin/);
+  assert.doesNotMatch(cors, /return new Response\([^)]*40[13]/, 'cors.ts rejects requests now; the claim below may be true again');
+  const page = source['security.html'];
+  assert.doesNotMatch(page, /cannot quietly spend your rate limit/i);
+  assert.doesNotMatch(page, /only answers our own origins/i);
+  assert.match(page, /still counts against the rate limit/i, 'the page should say the request is still counted');
+});
