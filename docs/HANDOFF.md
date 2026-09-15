@@ -1931,8 +1931,18 @@ Ordered by whether anyone can act on them today.
       "Shown as your cabinet" on a wizard run whose measure and setup steps
       were passed untouched. Those are batch 2's setup-card and
       Measurements-row neighbours, and Review prints both unlabelled too.
-    - "Analyzed by Claude" appears twice on the report (`results.js` badge ~39
-      and byline ~86).
+    - ~~"Analyzed by Claude" appears twice on the report (`results.js` badge ~39
+      and byline ~86).~~ **Done in #140.** The badge is the credit and carries
+      the model ("Analyzed by Claude · Sonnet 4.6"); the byline says the basis
+      in the same shape as its other readings ("Personalized plan · based on
+      your photos and selections"). Putting "your photos" in the byline made a
+      share view print it to a visitor who took none, the claim #138 removed
+      from the 3D view, so the byline has a share reading now ("Shared plan ·
+      based on the owner's photos", or "answers"). The failed-analysis test
+      used to assert only that the byline did not say "analyzed by", which it
+      never says any more; it asserts the badge is hidden too. Each new
+      assertion proven red by neutering only its own behaviour; all five
+      readings browser-checked at 390 and 1280.
     - The auth modal shows a raw "Failed to fetch" (`js/auth.js` ~80).
     - Rate-limit copy: `js/api.js` ~70 drops `retryAfterSeconds`, and the
       `results.js` ~170 banner reads the same for quota and outage. Branch on
