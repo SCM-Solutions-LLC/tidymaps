@@ -4,12 +4,12 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #165 merged (`main` at `8a0a724`):
-batch 3 of open item 12 (performance, infrastructure, backend) is done through
-its edge-function-hardening item. #159 split the feedback rating question
-into usefulness and willingness-to-pay. #160 builds a deploy-only `_site/`
-for Pages instead of uploading the whole checkout. #161 inlines the two
-critical stylesheets and async-loads the rest. #162 defers the two screen
+**Last refreshed:** 2026-09-15, after PR #168 merged (`main` at `8462118`
+before it): batch 3 of open item 12 (performance, infrastructure, backend) is
+done through its Supabase-advisor item. #159 split the feedback rating
+question into usefulness and willingness-to-pay. #160 builds a deploy-only
+`_site/` for Pages instead of uploading the whole checkout. #161 inlines the
+two critical stylesheets and async-loads the rest. #162 defers the two screen
 modules (`viewer3d.js`, `products.js`) nothing else on the boot path reaches.
 #163 renders the 3D view on demand instead of every animation frame forever
 (a `let` TDZ bug and a pre-existing async-save race in
@@ -19,11 +19,18 @@ body size before parsing, exempts signed-in callers from the anonymous-only
 global rate-limit breaker, strips EXIF/GPS from uploaded photos, stops
 forwarding the upstream model's raw error text to clients, allowlists
 `plan_meta` in share payloads, and makes `escapeHtml` also escape `'`
-(removing `products.js`'s duplicate escaper). Batch 3.5 (a lazy thunk map for
-the 14 layout builders) was evaluated and deliberately left alone: see the
-open items list below for why. What's left of batch 3: retention purge for
-`usage_events`/`telemetry_events`, Supabase advisor fixes, CI hardening, and
-SEO/dead-work cleanup (3.8 through 3.11).
+(removing `products.js`'s duplicate escaper). #167 adds a retention purge for
+`usage_events` (30 days) and `telemetry_events` (180 days) via `pg_cron`, and
+stops `render-after` from persisting its output to storage until the space
+already has an explicitly-saved photo — closing a gap against the privacy
+page's own promise. #168 wraps `auth.uid()` in five RLS policies and indexes
+three previously-unindexed `user_id` foreign keys; the other two advisor
+findings this batch set out to fix (the `handle_new_user` EXECUTE grant,
+`pg_net` in `public`) turned out to already be deliberate non-fixes on record
+in `0009_touch_updated_at_search_path.sql`, so they were left alone rather
+than redone. Batch 3.5 (a lazy thunk map for the 14 layout builders) was also
+evaluated and deliberately left alone: see the open items list below for why.
+What's left of batch 3: CI hardening and SEO/dead-work cleanup (3.10, 3.11).
 
 Before that, PR #158 merged (`main` at `92e2f5d`):
 the toast sits over the running head, the step clip band is capped at the
@@ -2551,10 +2558,24 @@ Ordered by whether anyone can act on them today.
       before ever saving still renders and displays, it just isn't written
       to storage until a real save (or share, which saves first) has
       happened.
-    - Supabase advisors: revoke EXECUTE on `handle_new_user()` from anon and
+    - ~~Supabase advisors: revoke EXECUTE on `handle_new_user()` from anon and
       authenticated; move `pg_net` out of public; wrap `auth.uid()` in
       `(select ...)` in five policies; index the `user_id` foreign keys on
-      `feedback`, `invite_requests` and `space_media`.
+      `feedback`, `invite_requests` and `space_media`.~~ **Done in #168** —
+      half of it, anyway. Two of these four turned out to already be closed:
+      `0009_touch_updated_at_search_path.sql`'s own comment records that the
+      EXECUTE grant is a false positive (measured by calling
+      `handle_new_user()` directly — it fails closed on its `trigger` return
+      type) and that moving `pg_net` out of `public` is a Supabase default,
+      not a choice made here, invasive for no gain. Rebuilding either would
+      have been undoing a decision this repo already made and wrote down,
+      not fixing a gap — the exact case CLAUDE.md warns about. The other two
+      were real: `0012_advisor_rls_and_indexes.sql` wraps `auth.uid()` in
+      `(select ...)` on the three `profiles` policies and one each on
+      `spaces` and `space_media` (a bare `auth.uid()` re-evaluates per row;
+      wrapped, the planner evaluates it once per query), and indexes
+      `feedback.user_id`, `invite_requests.user_id` and
+      `space_media.user_id`, none of which had one.
     - CI: add `permissions: contents: read` to the test, supabase-functions
       and canary workflows; pin actions to SHAs. Check the hosted OTP expiry
       and captcha (`config.toml` says 1h, no captcha).
