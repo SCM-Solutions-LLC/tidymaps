@@ -1,7 +1,7 @@
 /* ============================================================
    TidyMap — entry point
    ============================================================ */
-import { toast, setAppbarHeightVar, setFootHeightVar, toggleSiteNav } from './ui.js';
+import { toast, setAppbarHeightVar, toggleSiteNav } from './ui.js';
 import { state, restoreGuestDraft, applySharedSpace, resetPlanRecord, persistGuestDraft, getUnits } from './state.js';
 import { fetchSharedSpace } from './api.js';
 import { normalizeAi } from './plan.js';
@@ -51,8 +51,7 @@ initLanding();
 initHistory();
 setRail();
 setAppbarHeightVar();
-setFootHeightVar();
-addEventListener('resize', () => { setAppbarHeightVar(); setFootHeightVar(); });
+addEventListener('resize', () => { setAppbarHeightVar(); });
 
 // TidyMap now runs analysis server-side; scrub any bring-your-own-key
 // remnants from the prototype era.

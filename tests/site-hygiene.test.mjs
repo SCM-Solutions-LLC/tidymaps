@@ -180,3 +180,25 @@ test('every screen of the app titles itself with an h1', () => {
     assert.ok(/<h1[ >]/.test(own), `${id} has no h1`);
   }
 });
+
+/* ---------- the brand link goes somewhere ---------- */
+test('no link on the app page points at "#"', () => {
+  /* The running head's brand was href="#": a link to nowhere that scrolled to
+     the top and read as a broken link to a screen reader. It goes home. */
+  const html = read('index.html').replace(/<!--[\s\S]*?-->/g, '');
+  assert.equal((html.match(/href="#"/g) || []).length, 0, 'a link points at "#"');
+  assert.match(html, /<a class="brand" href="index\.html"/, 'the brand link does not go home');
+  // The dashboard's "Sign out" was the other one: an action, so a button.
+  assert.match(html, /<button type="button" class="byline-btn" onclick="dashSignOut\(\)">Sign out<\/button>/, 'Sign out is not a button');
+});
+
+/* ---------- a class name is not shared with a dead rule ---------- */
+test('the landing gallery\'s .space-group is not boxed by the retired grouped picker', () => {
+  /* The wizard once had a collapsible "grouped space picker" (.space-group,
+     .sg-head, .sg-body); its rules outlived it, and the landing gallery, which
+     reuses the class name, inherited a bordered box that drew empty ruled
+     cells beside a two-card room. */
+  const css = read('css/components.css');
+  assert.ok(!/\.sg-head|\.sg-body|#space-opts/.test(css), 'the retired picker\'s rules are back');
+  assert.ok(!/^\.space-group\{[^}]*border/m.test(css), '.space-group is boxed again');
+});

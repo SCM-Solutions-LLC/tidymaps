@@ -1,6 +1,6 @@
 import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord, resetWizardAnswers } from './state.js';
 import { track } from './telemetry.js';
-import { setFootHeightVar, scrollToTop, closeSiteNav } from './ui.js';
+import { scrollToTop, closeSiteNav } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll, buildCustomize } from './screens/index.js';
 import { runLoading, cancelAnalysis } from './screens/loading.js';
@@ -237,7 +237,6 @@ export function go(id, opts={}){
   }else{
     foot.classList.add('hide');
   }
-  setFootHeightVar();
   if(id==='dashboard') buildDashboard();
   // Rebuilt on entry, not once at startup: whether to ask at all depends on
   // whether the report's inline ask was already answered, which is decided

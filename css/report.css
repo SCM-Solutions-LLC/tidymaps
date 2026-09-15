@@ -11,6 +11,12 @@
   font-size:15px;color:var(--ink-2);line-height:1.6;
 }
 .report-byline .sep{color:var(--line-2)}
+/* An action in the byline (Sign out) is a button, not a link to "#": it reads
+   as the link beside it and pads to a 44px target without growing the line. */
+.report-byline .byline-btn{
+  background:none;border:none;padding:10px 0;margin:-10px 0;font:inherit;color:inherit;cursor:pointer;
+  text-decoration:underline;text-decoration-color:var(--spot);text-decoration-thickness:1px;text-underline-offset:3px;
+}
 
 /* ---------- Plan hero layout ---------- */
 .plan-hero{
