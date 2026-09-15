@@ -80,6 +80,7 @@
  * -- plan record: one plan of one space (resetPlanRecord) --
  * @property {Object|null} ai                   the normalized plan — see normalizeAi
  * @property {string|null} [aiError]
+ * @property {{code:string, retryAfterSeconds:number|null}|null} [aiFailure]  why aiError, when the backend said (see analysisFailureCopy)
  * @property {{model:string,source:string,analyzedAt:number}|null} planMeta
  * @property {string|null} activeSpaceId
  * @property {Object[]|null} shopping
@@ -246,6 +247,7 @@ export function resetPlanRecord(target=state){
   if(target===state) startPlanInstance();
   target.ai=null;
   target.aiError=null;
+  target.aiFailure=null;
   target.planMeta=null;
   target.activeSpaceId=null;
   target.shopping=null;

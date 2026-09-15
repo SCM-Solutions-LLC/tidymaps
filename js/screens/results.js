@@ -8,7 +8,7 @@ import { planFromPhotos, planIsSample } from '../planProvenance.js';
 import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
-import { renderAfter as renderAfterApi, renderAfterErrorMessage } from '../api.js';
+import { renderAfter as renderAfterApi, renderAfterErrorMessage, analysisFailureCopy } from '../api.js';
 import { fileToScaledB64, RENDER_MAX_EDGE } from '../media.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch, persistAnswers } from '../db.js';
@@ -169,10 +169,10 @@ export function buildResults(){
   if(fb){
     const showFallback = state.aiError && state.planMeta && state.planMeta.source==='demo-fallback';
     fb.classList.toggle('hide', !showFallback);
-    if(showFallback) fb.innerHTML=`
+    const copy = showFallback ? analysisFailureCopy(state.aiError, state.aiFailure) : null;
+    if(copy) fb.innerHTML=`
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-      <div><strong>We couldn't analyze your photos this time.</strong> ${escapeHtml(state.aiError)}
-      The plan below is based on your selections, not your photos.
+      <div><strong>${escapeHtml(copy.heading)}</strong> ${escapeHtml(copy.detail)}
       <a href="#" onclick="retryAnalysis();return false" style="text-decoration:underline;font-weight:600">Retry analysis</a>
       · <a href="#" onclick="restart();return false" style="text-decoration:underline">Start over</a></div>`;
   }
@@ -1196,6 +1196,6 @@ export function syncCategoriesToResults(){
 }
 
 export function retryAnalysis(){
-  state.aiError=null; state.planMeta=null;
+  state.aiError=null; state.aiFailure=null; state.planMeta=null;
   go('loading'); runLoading();
 }
