@@ -4,36 +4,37 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #152 merged (`main` at `3652ddf`,
-15:23 UTC): every screen titles itself with an h1 and every page opens with
-a skip link that lands on `main` (the base h1 takes the old h2 size, the
-landing hero keeps its display size, the headings beneath moved up a level
-with their selectors). Before it, #151 (the small tap targets are 44px
-without growing: "pad, don't grow"), #150 (the 3D view's sliders are 44px
-targets in the row they had), #149 (the phone menu behaves like the dialog
-it looks like, `openSiteNav`/`closeSiteNav`/`toggleSiteNav` in
-`js/ui.js`), #148 (the progress rail stays full once the wizard is
-complete) and #147 (the shelf map tints the eye-level shelf with the
-accent). All client-only, so the dead deploy token (Production health #5,
-open item 11) does not apply. Pages runs 152 to 155 (#148 to #151) went
-green, the last at 15:21 UTC; run 156 (#152) was queued at the time of
-writing. That closes the first six lines of open item 12's batch 2; the
-seventh, the 3D drawing as a focusable widget the arrow keys can
-rearrange, is PR #153, open (draft) at the time of writing. Lines 8 to 10,
-the copy line and the last layout line are built, tested and
-browser-checked on local branches in this session (`wip/aria`,
-`wip/radio`, `wip/copy`, `wip/copy2`, `wip/layout`), each waiting its turn
-on the one PR branch; the session's branch is reset from `main` after each
-merge and the next line cherry-picked onto it. The six were also stacked
-in merge order on a scratch branch and the full suite run against the
-stack, with the three cross-line conflicts (heading ids in `index.html`,
-the accessibility statement's spelling, two tests appended to
-`site-hygiene`) resolved once there, so each remaining cherry-pick is
-clean. Lines 8 and 9 travel as one PR, both being ARIA attributes on the
-report; the copy line travels as two (the ten pure copy items, then the
-two behaviours: the autosave failure said once and the reload toast naming
-lost photos), with the rating-scale split left for its own PR because it
-needs a feedback column.
+**Last refreshed:** 2026-09-15, after PR #153 merged (`main` at `7d9883f`,
+15:42 UTC): the 3D drawing is a focusable `role=application` widget, named
+for the space and described by a visible keys line, and the arrow keys
+rearrange it through the same `canDrop` and `onDrop` as a pointer drag
+(`js/three/interact.js`), with a hidden live region reading each step.
+Before it, #152 (an h1 on every screen and a skip link on every page),
+#151 (the small tap targets are 44px without growing: "pad, don't grow"),
+#150 (the 3D view's sliders are 44px targets in the row they had), #149
+(the phone menu behaves like the dialog it looks like,
+`openSiteNav`/`closeSiteNav`/`toggleSiteNav` in `js/ui.js`), #148 (the
+progress rail stays full once the wizard is complete) and #147 (the shelf
+map tints the eye-level shelf with the accent). All client-only, so the
+dead deploy token (Production health #5, open item 11) does not apply.
+Pages runs 152 to 156 (#148 to #152) went green, the last at 15:40 UTC;
+run 157 (#153) was in progress at the time of writing. That closes the
+first seven lines of open item 12's batch 2; lines 8 and 9 (the rating
+buttons' ARIA state and the shelf list's role) are PR #154, open (draft)
+at the time of writing. Line 10, the copy line and the last layout line
+are built, tested and browser-checked on local branches in this session
+(`wip/radio`, `wip/copy`, `wip/copy2`, `wip/layout`), each waiting its
+turn on the one PR branch; the session's branch is reset from `main` after
+each merge and the next line cherry-picked onto it. The remaining lines
+were stacked in merge order on a scratch branch and the full suite run
+against the stack (282 passed, 1 pre-existing skip), with the three
+cross-line conflicts (heading ids in `index.html`, the accessibility
+statement's spelling, two tests appended to `site-hygiene`) resolved once
+there, so each remaining cherry-pick is clean. The copy line travels as
+two PRs (the ten pure copy items, then the two behaviours: the autosave
+failure said once and the reload toast naming lost photos), with the
+rating-scale split left for its own PR because it needs a feedback
+column.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2196,8 +2197,16 @@ Ordered by whether anyone can act on them today.
       one shelf down and enables Save; Escape restoring; along a shelf
       with the ends named), each proven red by neutering its own half.
       Browser-checked at 390 and 1280.
-    - Rating buttons carry no ARIA state (`js/screens/feedback.js` ~24-38).
-    - `aria-label` on a div (`results.js` ~807): add `role=list`.
+    - ~~Rating buttons carry no ARIA state (`js/screens/feedback.js` ~24-38).~~
+      **Done in #154.** Each rating button carries `aria-pressed`, kept in
+      step on every tap on the report's inline ask and on the feedback
+      screen, and each set is a `role=group` named by its question.
+    - ~~`aria-label` on a div (`results.js` ~807): add `role=list`.~~ **Done
+      in #154.** The shelf's items are `role=list` and each chip a
+      `listitem`, so the label attaches to something. Three browser tests
+      (state flips per tap and the groups are named; a report answer shows
+      pressed on the feedback screen; every shelf's items are a labelled
+      list), each proven red by neutering its own half.
     - Space cards: radiogroup with roving tabindex.
     - Copy: "green notes" (`results.js` ~269; nothing is green); Review shows
       "Room" and "Spot" as two rows after the merge (`wizard.js` ~728); "your

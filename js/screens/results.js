@@ -799,14 +799,16 @@ function itemsRow(m){
   const chips=items.map(it=>{
     const flags=(it.flags||[]).filter(f=>ITEM_FLAG_LABEL[f]);
     const title=flags.length?` title="${escapeHtml(flags.map(f=>ITEM_FLAG_LABEL[f]).join(', '))}"`:'';
-    return `<span class="mi${flags.length?' mi-flag':''}"${title}>${escapeHtml(it.name)}</span>`;
+    return `<span class="mi${flags.length?' mi-flag':''}" role="listitem"${title}>${escapeHtml(it.name)}</span>`;
   }).join('');
   /* "Items in this zone", not "identified here". applyCategoryEdits pushes the
      user's own contents-step taps into these same rows (personalize.js), so a
      reader who ticked "Camping gear" was shown it on a shelf as something the
      analysis had identified in their photo. The new name is true whichever
      source a chip came from. */
-  return `<div class="map-items" aria-label="Items in this zone">${chips}</div>`;
+  /* A name on a plain div is not read: aria-label needs a role to attach to.
+     The chips are a list, so the div is one. */
+  return `<div class="map-items" role="list" aria-label="Items in this zone">${chips}</div>`;
 }
 
 /* The plan's own cupboard, drawn the way the landing page draws Figure 1: an
