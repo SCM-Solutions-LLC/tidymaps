@@ -47,6 +47,14 @@ export function readableError(e){
   return message;
 }
 
+/* The part of an ApiError the report needs beyond its message: the code, so
+   the banner can tell a rate limit from an outage, and the wait. The message
+   alone used to travel, and the banner read the same for both. */
+export function failureOf(e){
+  if(!e || typeof e.code!=='string') return null;
+  return { code: e.code, retryAfterSeconds: (Number(e.retryAfterSeconds) > 0) ? Number(e.retryAfterSeconds) : null };
+}
+
 /* ---------- Loading ----------
 
    An analysis takes 70-90 seconds and Back is reachable the whole time, so a
@@ -136,7 +144,7 @@ export function runLoading(){
   /* Clearing the plan the build replaces, which is not the same act as
      committing the one it produces — that happens once, in enterResults(),
      behind the handoff guard. */
-  state.ai=null; state.aiError=null; state.planMeta=null; state.frames=[];
+  state.ai=null; state.aiError=null; state.aiFailure=null; state.planMeta=null; state.frames=[];
   state.afterRenderB64=null; state.afterRenderUrl=null;
 
   // Video: really extract frames client-side (thumbnails show even without a backend)
@@ -224,7 +232,7 @@ export function runLoading(){
       run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() } };
     })().catch(e=>{
       if(!isCurrent()) return;
-      run.result = { error: readableError(e) };
+      run.result = { error: readableError(e), failure: failureOf(e) };
     });
     /* A last resort, because finishLoading hands the whole screen to this one
        promise: if it never settles, the spinner runs forever with no banner and
@@ -304,6 +312,7 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
     state.ai = payload.ai;
     state.planMeta = payload.meta;
     state.aiError = payload.error || null;
+    state.aiFailure = payload.failure || null;
     track('plan_created', {
       space: state.space || 'unknown',
       source: payload.meta.source,
@@ -328,8 +337,12 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
     if(!isCurrent() || getCurrentScreen()!=='loading') return;
     const result=run.result || { error:'We could not read the plan that came back.' };
     if(result.error){
+      /* Most of api.js's messages already end "Showing the demo plan
+         instead."; the ones that do not (a rate limit says how long to wait)
+         get it appended as a sentence of its own. */
+      const tail = /demo plan/i.test(result.error) ? '' : ' Showing the demo plan instead.';
       document.getElementById('load-sub').innerHTML =
-        '<span style="color:var(--danger-ink)">'+escapeHtml(result.error)+' &mdash; showing the demo plan instead.</span>';
+        '<span style="color:var(--danger-ink)">'+escapeHtml(result.error)+tail+'</span>';
       if(fin){ fin.classList.remove('doing'); fin.classList.add('err'); }
       /* Re-checked inside the delay, not only before it. The user has the full
          1400ms to press Back, and the timer used to fire regardless — landing
@@ -347,7 +360,7 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
           return normalizeAi(scenario);
         }).catch(()=>null).then(ai=>{
           if(!isCurrent() || getCurrentScreen()!=='loading') return;
-          enterResults({ ai, error: result.error,
+          enterResults({ ai, error: result.error, failure: result.failure || null,
                          meta:{ model:'demo', source:'demo-fallback', analyzedAt: Date.now() } });
         });
       }, 1400);

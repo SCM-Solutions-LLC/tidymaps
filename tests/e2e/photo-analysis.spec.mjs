@@ -207,6 +207,35 @@ test('an empty plan object is a failed analysis, not a successful one', async ({
   expect(await page.locator('#res-steps .task').count()).toBeGreaterThan(0);
 });
 
+/* The limiter answers a 429 with retryAfterSeconds, and the report used to
+   put the same "We couldn't analyze your photos this time" over a rate limit
+   as over an outage, with a Retry link that would fail the same way. */
+async function analysisFails(page, status, body) {
+  await page.route('**/functions/v1/analyze-space', (route) =>
+    route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) }));
+  await driveToPhotos(page);
+  await page.setInputFiles('#photo-input', [PHOTO]);
+  await finishWizard(page);
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  return page.locator('#res-fallback-note');
+}
+
+test('a rate limit says how long to wait, and is not called a failure', async ({ page }) => {
+  const banner = await analysisFails(page, 429, { error: 'rate_limited', retryAfterSeconds: 1800 });
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText(/in about 30 minutes/);
+  await expect(banner).not.toContainText(/couldn.t analyze|failed|a little later/i);
+  await expect(banner).toContainText(/Retry analysis/);
+  expect(await page.locator('#res-steps .task').count()).toBeGreaterThan(0);
+});
+
+test('an outage still reads as one', async ({ page }) => {
+  const banner = await analysisFails(page, 500, { error: 'internal' });
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText(/couldn.t analyze your photos this time/i);
+  await expect(banner).not.toContainText(/minutes|limit/i);
+});
+
 test('leaving the loading screen cancels the build instead of being yanked back', async ({ page }) => {
   /* Analyses run long enough to press Back, and the request cannot be recalled,
      so the finished plan used to arrive later and throw the user onto the

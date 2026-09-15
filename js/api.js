@@ -33,6 +33,25 @@ function requestSignal(name, signal){
   return (typeof AbortSignal.any === 'function') ? AbortSignal.any([deadline, signal]) : deadline;
 }
 
+/* What a 429 names as the thing that ran out. Every function shares one
+   limiter, so this used to say "Analysis limit" on the photo preview too. */
+const LIMIT_SUBJECT = { 'analyze-space':'Analysis', 'render-after':'Photo preview' };
+
+/* How long a rate-limited caller is told to wait. The limiter answers in
+   fixed windows rather than an exact reset (1800 for the hourly cap, 21600
+   for the daily, 3600 for the global breaker, see check_and_log_usage), so
+   the copy says "about", and a missing or unusable value falls back to the
+   old vague reading rather than printing "in about NaN minutes". */
+export function waitText(seconds){
+  const s = Number(seconds);
+  if(!(s > 0)) return 'a little later';
+  if(s < 90) return 'in a minute';
+  if(s < 3600) return `in about ${Math.round(s/60)} minutes`;
+  if(s < 5400) return 'in about an hour';
+  if(s < 86400) return `in about ${Math.round(s/3600)} hours`;
+  return 'tomorrow';
+}
+
 /**
  * @param {string} name
  * @param {unknown} body
@@ -66,8 +85,11 @@ async function callFn(name, body, { signal }={}){
   try{ data = await res.json(); }catch(_){ /* non-JSON error body */ }
   if(!res.ok){
     if(res.status === 429){
-      throw new ApiError('Analysis limit reached for now. Try again a little later.', {
-        code:'rate_limited', retryAfterSeconds: data && data.retryAfterSeconds,
+      /* The wait goes into the message, because that is the one thing the
+         person can act on and the one thing this used to leave out. */
+      const retryAfterSeconds = (data && Number(data.retryAfterSeconds) > 0) ? Number(data.retryAfterSeconds) : null;
+      throw new ApiError(`${LIMIT_SUBJECT[name] || 'Request'} limit reached for now. Try again ${waitText(retryAfterSeconds)}.`, {
+        code:'rate_limited', retryAfterSeconds,
       });
     }
     if(res.status === 413) throw new ApiError('Those photos are too large. Try fewer or smaller photos.', { code:'too_large' });
@@ -129,6 +151,25 @@ export function submitFormErrorMessage(error, what){
   }
   if(code==='bad_email') return 'That email address was not accepted. Check it and try again.';
   return `That ${what} did not reach us. Nothing was lost. Try again in a moment.`;
+}
+
+/* The report's banner over a plan the analysis did not produce. A rate limit
+   is not an outage: nothing broke, the window's analyses are used up, and
+   "We couldn't analyze your photos this time" over a Retry link invited an
+   immediate retry that would fail the same way. `failure` is the ApiError's
+   code and wait, carried through state alongside the message. */
+export function analysisFailureCopy(message, failure){
+  const basis = 'The plan below is based on your selections, not your photos.';
+  if(failure && failure.code==='rate_limited'){
+    return {
+      heading: 'Analysis limit reached for now.',
+      detail: `Your photos were not looked at. Try again ${waitText(failure.retryAfterSeconds)}. ${basis}`,
+    };
+  }
+  return {
+    heading: 'We couldn\u2019t analyze your photos this time.',
+    detail: `${message || ''} ${basis}`.trim(),
+  };
 }
 
 export function renderAfterErrorMessage(error){
