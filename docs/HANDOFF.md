@@ -2525,8 +2525,32 @@ Ordered by whether anyone can act on them today.
       `escapeHtml` (`js/ui.js`) now escapes `'` as `&#39;` alongside the other
       four characters, and `products.js`'s duplicate `esc()` is gone in favor
       of importing the shared one.
-    - No retention purge for `usage_events` or `telemetry_events`. The
-      after-render is stored without a save (`results.js` ~503).
+    - ~~No retention purge for `usage_events` or `telemetry_events`. The
+      after-render is stored without a save (`results.js` ~503).~~ **Done in
+      #167.** `0011_event_retention.sql` adds `purge_old_events()`
+      (`security definer`, EXECUTE revoked from anon/authenticated, granted
+      only to `service_role`) and schedules it with `pg_cron` — installed
+      into the `extensions` schema rather than `public`, so this doesn't
+      hand batch 3.9 a second pg_net-shaped advisor finding to fix.
+      `usage_events` rows older than 30 days are purged (nothing anywhere
+      reads one older than a day: `check_and_log_usage` only ever looks back
+      an hour or a day); `telemetry_events` gets 180 days, since it feeds the
+      trend reports in `supabase/queries/telemetry.sql` rather than a
+      rate-limit window. Migrations are applied by hand, so this still needs
+      running against the live project.
+      Separately, `render-after` (~line 118) was writing its output to
+      storage and to the space's `after_render_path` as soon as a `spaceId`
+      was present — and `autoSaveSpace` creates that id, silently, the
+      moment a plan exists, well before any explicit save. That's a real gap
+      against the privacy page's specific promise: "they are uploaded to
+      your private account only when you save or share the space. The plan
+      itself saves automatically, your photos do not." The after-render now
+      only persists when `space_media` already has a `photo`/`frame` row for
+      that space — the same signal `coverUrl` already treats as "this
+      space's before photo was explicitly saved" — so a preview generated
+      before ever saving still renders and displays, it just isn't written
+      to storage until a real save (or share, which saves first) has
+      happened.
     - Supabase advisors: revoke EXECUTE on `handle_new_user()` from anon and
       authenticated; move `pg_net` out of public; wrap `auth.uid()` in
       `(select ...)` in five policies; index the `user_id` foreign keys on

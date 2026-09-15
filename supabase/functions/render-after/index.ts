@@ -114,6 +114,7 @@ Deno.serve(async (req) => {
 
   // Ownership check up front so we fail before spending on the render
   let spaceOwned = false;
+  let hasSavedPhoto = false;
   let previousRenderPath: string | null = null;
   if (body.spaceId && caller.userId) {
     const { data, error } = await admin.from('spaces')
@@ -126,6 +127,15 @@ Deno.serve(async (req) => {
     if (!data) return json(req, 403, { error: 'not_your_space' });
     spaceOwned = true;
     previousRenderPath = data.after_render_path ?? null;
+    /* The privacy page promises photos are uploaded "only when you save or
+       share the space" — autoSaveSpace creates this row, and spaceId, well
+       before that. coverUrl treats the same two kinds as the saved before
+       photo, so their presence is the same signal an explicit save (or a
+       share, which saves first) already left behind. */
+    const { data: media } = await admin.from('space_media')
+      .select('id').eq('space_id', body.spaceId)
+      .in('kind', ['photo', 'frame']).limit(1).maybeSingle();
+    hasSavedPhoto = !!media;
   }
 
   try {
@@ -219,7 +229,7 @@ Deno.serve(async (req) => {
     }
 
     let storagePath: string | null = null;
-    if (spaceOwned && body.spaceId && caller.userId) {
+    if (spaceOwned && hasSavedPhoto && body.spaceId && caller.userId) {
       const ext = outMime === 'image/jpeg' ? 'jpg' : 'png';
       storagePath = `${caller.userId}/${body.spaceId}/after/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await admin.storage.from('space-media')
