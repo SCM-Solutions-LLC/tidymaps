@@ -4,7 +4,7 @@
 
 Built by SCM Solutions LLC.
 
-**Live site:** https://scm-solutions-llc.github.io/tidymaps/
+**Live site:** https://scmsolutions.org/tidymaps/
 
 ## Deployment
 

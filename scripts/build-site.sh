@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 OUT="${1:-_site}"
 rm -rf "$OUT"
 mkdir -p "$OUT"
-cp -r *.html assets css data js media vendor "$OUT"/
+cp -r *.html robots.txt sitemap.xml assets css data js media vendor "$OUT"/
 mkdir -p "$OUT/supabase/functions/_shared"
 cp supabase/functions/_shared/telemetryEvents.js "$OUT/supabase/functions/_shared/"
 node scripts/inline-critical-css.mjs "$OUT"

@@ -4,9 +4,14 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #168 merged (`main` at `8462118`
-before it): batch 3 of open item 12 (performance, infrastructure, backend) is
-done through its Supabase-advisor item. #159 split the feedback rating
+**Last refreshed:** 2026-09-15, after PR #170 merged: batch 3 of open item 12
+(performance, infrastructure, backend) is closed. #169 declared
+`contents: read` on the three CI workflows that don't write through
+`GITHUB_TOKEN` (pinning actions to SHAs and the OTP/captcha check
+resolved themselves — see the open-items entry). #170 unified
+`theme-color` and added `color-scheme`/`robots.txt`/`sitemap.xml`,
+corrected the hero image's aspect ratio, and fixed the README's live-site
+URL to match the canonical. Earlier in batch 3: #159 split the feedback rating
 question into usefulness and willingness-to-pay. #160 builds a deploy-only
 `_site/` for Pages instead of uploading the whole checkout. #161 inlines the
 two critical stylesheets and async-loads the rest. #162 defers the two screen
@@ -30,7 +35,9 @@ findings this batch set out to fix (the `handle_new_user` EXECUTE grant,
 in `0009_touch_updated_at_search_path.sql`, so they were left alone rather
 than redone. Batch 3.5 (a lazy thunk map for the 14 layout builders) was also
 evaluated and deliberately left alone: see the open items list below for why.
-What's left of batch 3: CI hardening and SEO/dead-work cleanup (3.10, 3.11).
+**That closes batch 3 of open item 12** (#159 through #170). A handful
+of items inside 3.10/3.11 were deliberately deferred rather than done blind —
+they are explained inline at their own open-items entries below.
 
 Before that, PR #158 merged (`main` at `92e2f5d`):
 the toast sits over the running head, the step clip band is capped at the
@@ -2606,14 +2613,37 @@ Ordered by whether anyone can act on them today.
       (`auth.rate_limit.sign_in_sign_ups`/`token_verifications`), and adding
       a third-party captcha provider is a product call, not a code fix, so
       it is left to whoever owns that account.
-    - SEO: canonical is `scmsolutions.org/tidymaps` while the README says
+    - ~~SEO: canonical is `scmsolutions.org/tidymaps` while the README says
       github.io and CORS lists tidymaps.ai (did not resolve). Add `robots.txt`,
       `sitemap.xml`, JSON-LD, `apple-touch-icon`, `<meta name=color-scheme>`;
-      unify `theme-color`; the title is 72 chars.
-    - Dead work: `plan.features` is requested, normalized and shared but
+      unify `theme-color`; the title is 72 chars.~~ **Partly done in #170.**
+      `robots.txt` and `sitemap.xml` now ship at the site root (with
+      `build-site.sh` copying them into the deploy artifact); every page
+      declares `<meta name="color-scheme" content="light dark">`; and
+      `theme-color` is unified to `#b5522f` across all seven pages (six
+      subpages were drifting on `#c94a2e`, only `index.html` matched the
+      `--spot` design token). The README's Live site URL is updated to
+      `scmsolutions.org/tidymaps` to match the canonical.
+      Deliberately left for a later pass: JSON-LD (requires structured
+      product-metadata decisions), `apple-touch-icon` (needs a new PNG
+      binary asset that doesn't exist in the repo), the title's 72-char
+      length (copywriting call), and the `tidymaps.ai` entry in
+      `supabase/functions/_shared/cors.ts` (removing an origin from an
+      allowlist is a real production behavior change — worth the DNS check
+      before touching).
+    - ~~Dead work: `plan.features` is requested, normalized and shared but
       rendered nowhere; household counts are never read; `detected` is never
       set in production; `hero-3d.webp` is declared 522x700 and the file is
-      1100x858.
+      1100x858.~~ **Partly done in #170.** The hero image's declared
+      dimensions now match the file's actual 1100x858 (they were 522x700,
+      an inverted aspect ratio that caused layout shift on load). The
+      other three items (`plan.features`, household counts, `detected`)
+      are unreferenced state that spans server code, share payloads and
+      the state serializer — an "if you delete X, is the analysis prompt
+      still asked to produce X" audit — left for a session that has the
+      space to trace them properly, since removing a field that a prompt
+      still requests is exactly the kind of asymmetric break the CLAUDE.md
+      rules were written to catch.
     - Funnel: zero telemetry rows in 14 days, one real AI space on 09-08. Open
       item 6 stands. There is no in-app opt-out, and `cookies.html`'s
       no-banner reasoning ignores localStorage.
