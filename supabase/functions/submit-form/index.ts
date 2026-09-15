@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
   const parsed = await readJsonObject(req);
   if (!parsed) return json(req, 400, { error: 'invalid_body' });
   const body = parsed as unknown as {
-    kind?: string; email?: string; useful?: unknown; vs?: unknown;
+    kind?: string; email?: string; useful?: unknown; pay?: unknown; vs?: unknown;
     comments?: unknown; next_space?: unknown; nextSpace?: unknown;
   };
 
@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
   const { error } = await admin.from('feedback').insert({
     user_id: caller.userId,
     useful: text(body.useful),
+    pay: text(body.pay),
     vs: text(body.vs),
     comments: text(body.comments, MAX_TEXT),
     next_space: text(body.next_space ?? body.nextSpace),

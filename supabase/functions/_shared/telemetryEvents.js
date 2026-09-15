@@ -13,10 +13,13 @@ export const EVENT_NAMES = [
   'plan_created',         // { space, source, steps } — a plan was generated
   'step_checked',         // { index, total, checkedCount } — the >=3 signal
   'product_clicked',      // { retailer, productType } — shopping intent
-  'plan_rated',           // { useful, checkedCount, total, source } — the pay
-                          //   signal at the moment of tapping, before the rest
-                          //   of the form is filled in or abandoned
-  'feedback_submitted',   // { useful, vs, nextSpace } — incl. "I would pay for this"
+  'plan_rated',           // { useful, checkedCount, total, source } — the
+                          //   usefulness signal at the moment of tapping,
+                          //   before the rest of the form is filled in or
+                          //   abandoned
+  'feedback_submitted',   // { useful, pay, vs, nextSpace } — pay is the
+                          //   willingness-to-pay answer, its own question now
+                          //   rather than a fourth option on `useful`
   'share_link_created',   // {} — owner minted a read-only link
   'shared_plan_viewed',   // {} — someone opened a share link
   'after_render_requested', // { ok } — the before/after preview feature

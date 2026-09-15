@@ -234,16 +234,18 @@ test('reopening the same space keeps its feedback answers', () => {
   resetWizardAnswers(state);
   const row = JSON.parse(JSON.stringify(rowFromState('mine')));
   applyLoadedSpace({ data: { ...row, id: 'same' }, beforePhotoUrl: null, afterRenderUrl: null });
-  state.fbUseful = 'yes'; state.fbRated = true; state.fbSent = true;
+  state.fbUseful = 'yes'; state.fbPay = 'Maybe'; state.fbRated = true; state.fbSent = true;
 
   applyLoadedSpace({ data: { ...row, id: 'same' }, beforePhotoUrl: null, afterRenderUrl: null });
   assert.equal(state.fbSent, true, 'the same plan must not ask for feedback twice');
   assert.equal(state.fbRated, true);
   assert.equal(state.fbUseful, 'yes');
+  assert.equal(state.fbPay, 'Maybe');
 
   applyLoadedSpace({ data: { ...row, id: 'other' }, beforePhotoUrl: null, afterRenderUrl: null });
   assert.equal(state.fbSent, false, 'a different plan gets a fresh ask');
   assert.equal(state.fbUseful, null);
+  assert.equal(state.fbPay, null);
 });
 
 /* The data-integrity half of the bug. Opening a second space kept the first

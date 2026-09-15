@@ -171,7 +171,8 @@ export const SAVE_OPTS = [
   [SVG.columns,'Compare before &amp; after'],
   [SVG.users,'Share with family / roommate']
 ];
-export const FB_USEFUL = ['Not useful','Somewhat useful','Very useful','I would pay for this'];
+export const FB_USEFUL = ['Not useful','Somewhat useful','Very useful'];
+export const FB_PAY = ['No','Maybe','Yes, I would pay for this'];
 export const FB_VS = ['Yes, I want instructions','I mostly want the final image','I want both','I’m not sure'];
 export const FB_NEXT = ['Pantry','Closet','Garage','Attic','Kitchen cabinets','Laundry room','Kids’ room','Bathroom storage','Other'];
 

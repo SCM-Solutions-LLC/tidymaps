@@ -24,17 +24,17 @@ const pressed = (page, sel) => page.$$eval(sel, (els) => els.map((el) => el.getA
 test('the rating buttons on the report say which one is chosen', async ({ page }) => {
   await toSamplePlan(page);
   const opts = '#rate-opts .opt';
-  expect(await pressed(page, opts)).toEqual(['false', 'false', 'false', 'false']);
+  expect(await pressed(page, opts)).toEqual(['false', 'false', 'false']);
   await page.click(`${opts} >> text=Very useful`);
-  expect(await pressed(page, opts)).toEqual(['false', 'false', 'true', 'false']);
+  expect(await pressed(page, opts)).toEqual(['false', 'false', 'true']);
   await page.click(`${opts} >> text=Not useful`);
-  expect(await pressed(page, opts)).toEqual(['true', 'false', 'false', 'false']);
+  expect(await pressed(page, opts)).toEqual(['true', 'false', 'false']);
   // The follow-ups that unfold carry the same state, chips included.
   await page.click('#rate-next .chip >> text=Garage');
   const chips = await page.$$eval('#rate-next .chip', (els) => els.filter((el) => el.getAttribute('aria-pressed') === 'true').map((el) => el.textContent));
   expect(chips).toEqual(['Garage']);
   // Each group is named by its question.
-  for (const id of ['rate-opts', 'rate-vs', 'rate-next']) {
+  for (const id of ['rate-opts', 'rate-pay', 'rate-vs', 'rate-next']) {
     const group = page.locator(`#${id}`);
     await expect(group).toHaveAttribute('role', 'group');
     const by = await group.getAttribute('aria-labelledby');
@@ -47,8 +47,8 @@ test('the feedback screen repeats the state, and an answer given on the report i
   await page.click('#rate-opts .opt >> text=Somewhat useful');
   await page.evaluate(() => window.go('feedback'));
   await expect(page.locator('#screen-feedback')).toHaveClass(/active/);
-  expect(await pressed(page, '#fb-useful .opt')).toEqual(['false', 'true', 'false', 'false']);
-  for (const id of ['fb-useful', 'fb-vs', 'fb-next']) {
+  expect(await pressed(page, '#fb-useful .opt')).toEqual(['false', 'true', 'false']);
+  for (const id of ['fb-useful', 'fb-pay', 'fb-vs', 'fb-next']) {
     await expect(page.locator(`#${id}`)).toHaveAttribute('role', 'group');
   }
 });
