@@ -169,12 +169,19 @@ function cardArt(entry){
 
 function markSelected(wrap, active){
   /* Descendants, not children: on the space step the cards sit inside a
-     group per room. Every card this touches carries aria-pressed. */
-  [...wrap.querySelectorAll('[aria-pressed]')].forEach(card => {
+     group per room. Every card this touches carries aria-pressed, or
+     aria-checked where the cards are radios (the space step). */
+  [...wrap.querySelectorAll('[aria-pressed],[aria-checked]')].forEach(card => {
     const selected = card === active;
     card.classList.toggle('sel', selected);
-    card.setAttribute('aria-pressed', String(selected));
+    card.setAttribute(card.hasAttribute('aria-checked') ? 'aria-checked' : 'aria-pressed', String(selected));
   });
+}
+
+/* Roving tabindex for the space cards: one card is in the Tab order, the rest
+   are reached with the arrow keys. */
+function roveTo(wrap, card){
+  wrap.querySelectorAll('.room-card').forEach(c => { c.tabIndex = c === card ? 0 : -1; });
 }
 
 /* One screen for the nine spaces, grouped under their room the way the
@@ -185,6 +192,18 @@ function renderSpace(){
   const wrap = document.getElementById('space-cards');
   if(!wrap) return;
   wrap.innerHTML = '';
+  /* One answer among nine cards is a radio group: each card is a radio that
+     says whether it is checked, one card is in the Tab order (the chosen one,
+     or the first), and the arrow keys move between the cards and choose, the
+     way radios do. Nine buttons with aria-pressed read as nine separate
+     switches; a radio group reads as one question with nine answers and
+     says which is checked. */
+  wrap.setAttribute('role', 'radiogroup');
+  const question = wrap.closest('.screen')?.querySelector('h1,h2');
+  if(question){
+    if(!question.id) question.id = 'space-h';
+    wrap.setAttribute('aria-labelledby', question.id);
+  }
   ROOMS.forEach(room => {
     const group = document.createElement('div');
     group.className = 'wiz-space-group';
@@ -202,7 +221,9 @@ function renderSpace(){
       b.className = 'room-card' + (picked ? ' sel' : '');
       b.dataset.room = room.id;
       b.dataset.area = a.id;
-      b.setAttribute('aria-pressed', String(picked));
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(picked));
+      b.tabIndex = -1;
       b.innerHTML = `
         <div class="rc-img card-visual tone-${index % 4}">${cardArt(a)}</div>
         <span class="rc-check">${CHECK}</span>
@@ -221,13 +242,33 @@ function renderSpace(){
         }
         // Tapping the card that already holds the placeholder is still a choice.
         state.spaceTouched = true;
-        markSelected(wrap, b); updateGate();
+        markSelected(wrap, b); roveTo(wrap, b); updateGate();
       };
       cards.appendChild(b);
     });
     group.append(heading, cards);
     wrap.appendChild(group);
   });
+  const cards = [...wrap.querySelectorAll('.room-card')];
+  roveTo(wrap, cards.find(c => c.classList.contains('sel')) || cards[0]);
+  /* The wrap outlives its cards (innerHTML is cleared on every render), so
+     the keys are wired once. */
+  if(!wrap.dataset.keys){
+    wrap.dataset.keys = '1';
+    wrap.addEventListener('keydown', e => {
+      const all = [...wrap.querySelectorAll('.room-card')];
+      const at = all.indexOf(/** @type {HTMLElement} */ (document.activeElement));
+      if(at < 0) return;
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      const to = step ? (at + step + all.length) % all.length
+        : e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : -1;
+      if(to < 0) return;
+      e.preventDefault();
+      roveTo(wrap, all[to]);
+      all[to].focus();
+      all[to].click();
+    });
+  }
 }
 
 /* True if it is safe to proceed: nothing to lose, or the user said go ahead.

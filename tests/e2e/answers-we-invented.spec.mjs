@@ -177,7 +177,7 @@ test('no space card arrives ticked', async ({ page }) => {
   await expect(page.locator('#space-cards .room-card').first()).toBeVisible();
   expect(await page.locator('#space-cards .room-card.sel').count(),
     'the space step pre-selected an answer the user has not given').toBe(0);
-  expect(await page.locator('#space-cards .room-card[aria-pressed="true"]').count(),
+  expect(await page.locator('#space-cards .room-card[aria-checked="true"]').count(),
     'the space step tells a screen reader a space is chosen').toBe(0);
 });
 
