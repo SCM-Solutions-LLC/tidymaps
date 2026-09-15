@@ -95,6 +95,7 @@
  * @property {string|null} [afterRenderB64]
  * @property {string} [_beforeUrl]             object URL, revoked by clearGuestMedia
  * @property {boolean} fbUseful
+ * @property {string|null} fbPay
  * @property {string|null} fbVs
  * @property {string|null} fbNext
  * @property {boolean} fbRated
@@ -168,7 +169,7 @@ export const state = {
   // Feedback answers, shared by the inline ask on the report and the dedicated
   // feedback screen. fbRated gates the telemetry event (fire once per plan),
   // fbSent gates the database row (one submission per plan).
-  fbUseful:null, fbVs:null, fbNext:null, fbRated:false, fbSent:false,
+  fbUseful:null, fbPay:null, fbVs:null, fbNext:null, fbRated:false, fbSent:false,
 };
 
 /* ---------- Plan instance ----------
@@ -261,6 +262,7 @@ export function resetPlanRecord(target=state){
   // Feedback is about a specific plan, so a new plan gets a fresh ask rather
   // than showing the previous space's rating back to the user.
   target.fbUseful=null;
+  target.fbPay=null;
   target.fbVs=null;
   target.fbNext=null;
   target.fbRated=false;

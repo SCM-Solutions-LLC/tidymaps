@@ -1,4 +1,4 @@
-import { FB_USEFUL, FB_VS, FB_NEXT } from '../data.js';
+import { FB_USEFUL, FB_PAY, FB_VS, FB_NEXT } from '../data.js';
 import { ICON } from '../icons.js';
 import { state } from '../state.js';
 import { go } from '../router.js';
@@ -43,10 +43,18 @@ function optionList(el, items, cls, onPick, selected){
   });
 }
 
-/* The pay-for-it signal, recorded the moment it is tapped rather than when a
+/* The usefulness signal, recorded the moment it is tapped rather than when a
    form is completed. A rating with nothing after it is the answer we most need
    and the one most likely to be abandoned halfway; checkedCount rides along so
-   the reading can be joined to how much of the plan they actually worked. */
+   the reading can be joined to how much of the plan they actually worked.
+
+   Usefulness and willingness to pay used to be one four-option question
+   ("Very useful" and "I would pay for this" on the same scale), which forced
+   an answer that liked the plan enough to pay for it to be recorded as a
+   *different degree of usefulness* than one that didn't. They are two
+   questions now: this stays the tap-and-count signal, and the pay question
+   below sits with the rest of the form, answered or not, the same as `vs`
+   and `next`. */
 function rate(useful){
   state.fbUseful=useful;
   if(state.fbRated) return;
@@ -78,6 +86,7 @@ export function buildRate(){
     rate(t);
     document.getElementById('rate-more').classList.remove('hide');
   }, state.fbUseful);
+  optionList(document.getElementById('rate-pay'), FB_PAY, 'opt', t=>{ state.fbPay=t; }, state.fbPay);
   optionList(document.getElementById('rate-vs'), FB_VS, 'opt', t=>{ state.fbVs=t; }, state.fbVs);
   optionList(document.getElementById('rate-next'), FB_NEXT, 'chip', t=>{ state.fbNext=t; }, state.fbNext);
 }
@@ -101,6 +110,7 @@ export function buildFeedback(){
     if(state.fbSent) return;
   }
   optionList(document.getElementById('fb-useful'), FB_USEFUL, 'opt', rate, state.fbUseful);
+  optionList(document.getElementById('fb-pay'), FB_PAY, 'opt', t=>{ state.fbPay=t; }, state.fbPay);
   optionList(document.getElementById('fb-vs'), FB_VS, 'opt', t=>{ state.fbVs=t; }, state.fbVs);
   optionList(document.getElementById('fb-next'), FB_NEXT, 'chip', t=>{ state.fbNext=t; }, state.fbNext);
 }
@@ -130,6 +140,7 @@ async function sendFeedback(comments){
   try{
     await submitFeedbackRow({
       useful: state.fbUseful||null,
+      pay: state.fbPay||null,
       vs: state.fbVs||null,
       comments: comments||null,
       next_space: state.fbNext||null,
@@ -141,16 +152,18 @@ async function sendFeedback(comments){
     sending=false;
   }
   state.fbSent=true;
-  /* The pay-for-it signal: fbUseful is a fixed choice ("I would pay for
-     this" among them), joined against step_checked depth per anon_id.
-     Free-text comments deliberately stay out of telemetry.
+  /* The pay-for-it signal now lives in its own field, `pay`, rather than
+     hiding inside `useful`'s fourth option; both travel here, alongside `vs`
+     and `nextSpace`, joined against step_checked depth per anon_id via
+     plan_rated's checkedCount. Free-text comments deliberately stay out of
+     telemetry.
 
      After the write, not beside it. Counting submissions that never landed
      makes the one number this app steers by — how many people answered —
      larger than the table it is supposed to describe, and the gap grows with
      exactly the failures nobody would otherwise notice. */
   track('feedback_submitted', {
-    useful: state.fbUseful||'', vs: state.fbVs||'', nextSpace: state.fbNext||'',
+    useful: state.fbUseful||'', pay: state.fbPay||'', vs: state.fbVs||'', nextSpace: state.fbNext||'',
   });
   flush(); // the session often ends right after — don't wait the debounce
   return true;

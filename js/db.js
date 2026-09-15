@@ -323,7 +323,7 @@ export function applyLoadedSpace({ data, beforePhotoUrl, afterRenderUrl }){
      there re-asks someone who already answered, and takes a second row. */
   const sameSpace = data.id && data.id===state.activeSpaceId;
   const feedback = sameSpace
-    ? { fbUseful:state.fbUseful, fbVs:state.fbVs, fbNext:state.fbNext,
+    ? { fbUseful:state.fbUseful, fbPay:state.fbPay, fbVs:state.fbVs, fbNext:state.fbNext,
         fbRated:state.fbRated, fbSent:state.fbSent }
     : null;
   resetPlanRecord(state);

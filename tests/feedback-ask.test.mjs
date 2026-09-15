@@ -19,7 +19,7 @@ const report = html.slice(html.indexOf('id="screen-results"'), html.indexOf('id=
 
 test('the report asks the pay-for-it question itself', () => {
   assert.ok(report.includes('id="res-rate"'), 'no inline feedback card on the report');
-  for (const id of ['rate-ask', 'rate-opts', 'rate-more', 'rate-vs', 'rate-next', 'rate-text', 'rate-thanks']) {
+  for (const id of ['rate-ask', 'rate-opts', 'rate-more', 'rate-pay', 'rate-vs', 'rate-next', 'rate-text', 'rate-thanks']) {
     assert.ok(report.includes(`id="${id}"`), `inline ask is missing #${id}`);
   }
   assert.match(report, /onclick="sendRate\(\)"/, 'the inline ask has no way to submit');
@@ -31,8 +31,25 @@ test('the report asks the pay-for-it question itself', () => {
 test('the ask and the screen offer the same answers', () => {
   // Both surfaces read the same constants; a second hand-written copy of the
   // options is how the two data sets would quietly stop being comparable.
-  assert.match(feedback, /import \{ FB_USEFUL, FB_VS, FB_NEXT \} from '\.\.\/data\.js'/);
+  assert.match(feedback, /import \{ FB_USEFUL, FB_PAY, FB_VS, FB_NEXT \} from '\.\.\/data\.js'/);
   assert.doesNotMatch(report, /I would pay for this/, 'options are hardcoded in the markup');
+});
+
+/* The 2026-09-14 review's "Not changed, and why" note said the question
+   changed from "Is this plan worth doing?" to "How useful is this plan?" but
+   left "I would pay for this" sitting in the options, which answers a
+   different question than the one being asked. Usefulness and willingness to
+   pay are two separate questions now, each with its own answer set and its
+   own storage. */
+test('usefulness and willingness to pay are separate questions', () => {
+  const data = readFileSync(new URL('../js/data.js', import.meta.url), 'utf8');
+  const usefulLine = data.match(/export const FB_USEFUL = \[([^\]]*)\];/)[1];
+  assert.doesNotMatch(usefulLine, /pay/i, 'FB_USEFUL still carries a pay option');
+  assert.match(data, /export const FB_PAY = \[/, 'no separate FB_PAY answer set');
+  assert.match(feedback, /Id\('rate-pay'\)/, 'the inline ask never renders the pay question');
+  assert.match(feedback, /Id\('fb-pay'\)/, 'the dedicated screen never renders the pay question');
+  assert.match(feedback, /state\.fbPay=t/, 'a pay answer is never recorded');
+  assert.match(feedback, /pay: state\.fbPay/, 'the stored row never carries the pay answer');
 });
 
 test('the rating is recorded when tapped, not when a form is completed', () => {
@@ -73,7 +90,7 @@ test('a new plan gets a fresh ask', () => {
   // Feedback is about one plan of one space; carrying a rating across would
   // show the previous space's answer back to the user and suppress the ask.
   const reset = stateSrc.slice(stateSrc.indexOf('export function resetPlanRecord'), stateSrc.indexOf('// Demo plans must never'));
-  for (const field of ['fbUseful', 'fbVs', 'fbNext', 'fbRated', 'fbSent']) {
+  for (const field of ['fbUseful', 'fbPay', 'fbVs', 'fbNext', 'fbRated', 'fbSent']) {
     assert.match(reset, new RegExp(`target\\.${field}=`), `${field} survives a new plan`);
   }
 });

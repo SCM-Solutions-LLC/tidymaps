@@ -46,11 +46,12 @@ test('the report asks, unfolds, and sends without leaving the plan', async ({ pa
 
   // The follow-up questions stay out of the way until there is an answer.
   await expect(page.locator('#rate-more')).toBeHidden();
-  await page.click('#rate-opts .opt >> text=I would pay for this');
+  await page.click('#rate-opts .opt >> text=Very useful');
   await expect(page.locator('#rate-more')).toBeVisible();
   // Answering must not navigate: the whole point is asking where the value is.
   await expect(page.locator('#screen-results')).toBeVisible();
 
+  await page.click('#rate-pay .opt >> text=Yes, I would pay for this');
   await page.click('#rate-vs .opt >> text=I want both');
   await page.click('#rate-next .chip >> text=Garage');
   await page.fill('#rate-text', 'The zone map is the useful part.');
@@ -78,7 +79,8 @@ test('an unanswered report still leaves the full feedback screen working', async
   await expect(page.locator('#fb-form')).toBeVisible();
   await expect(page.locator('#fb-sent')).toBeHidden();
   // The options render on entry rather than only at startup.
-  await expect(page.locator('#fb-useful .opt')).toHaveCount(4);
+  await expect(page.locator('#fb-useful .opt')).toHaveCount(3);
+  await expect(page.locator('#fb-pay .opt')).toHaveCount(3);
 });
 
 /* Two buttons on the report's shopping card toasted "Shopping list saved" and
@@ -102,7 +104,8 @@ test('the shopping card downloads a real list instead of claiming it saved one',
 test('a feedback write that fails says so, and keeps the answers', async ({ page }) => {
   await toSamplePlan(page, { status: 500, body: { error: 'internal' } });
 
-  await page.click('#rate-opts .opt >> text=I would pay for this');
+  await page.click('#rate-opts .opt >> text=Very useful');
+  await page.click('#rate-pay .opt >> text=Yes, I would pay for this');
   await page.click('#rate-vs .opt >> text=I want both');
   await page.fill('#rate-text', 'The zone map is the useful part.');
   await page.click('#res-rate >> text=Send feedback');
@@ -111,7 +114,8 @@ test('a feedback write that fails says so, and keeps the answers', async ({ page
   await expect(page.locator('#rate-thanks')).toBeHidden();
   await expect(page.locator('#rate-ask')).toBeVisible();
   // The answers are still selected, so trying again is one tap and not five.
-  await expect(page.locator('#rate-opts .opt.sel')).toHaveText(/I would pay for this/);
+  await expect(page.locator('#rate-opts .opt.sel')).toHaveText(/Very useful/);
+  await expect(page.locator('#rate-pay .opt.sel')).toHaveText(/Yes, I would pay for this/);
   await expect(page.locator('#rate-vs .opt.sel')).toHaveText(/I want both/);
 
   // And the feedback screen must not show it as already answered either.

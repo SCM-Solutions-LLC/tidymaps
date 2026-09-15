@@ -4,12 +4,15 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #157 merged (`main` at `58fcd26`,
-16:56 UTC): a signed-in plan that is not being saved says so once (an
-expired sign-in by name; `sessionExpired` and `warnSaveFailed` in
-`js/db.js`, the refused patch kept without a retry) and the guest reload
-toast names the photos it lost (`hadMedia` on the draft, `lostMedia` from
-the restore). Before it, #156 (the ten pure copy items), #155 (the space
+**Last refreshed:** 2026-09-15, after PR #158 merged (`main` at `92e2f5d`):
+the toast sits over the running head, the step clip band is capped at the
+clip's width, the landing gallery lost a dead grouped-picker rule, and the
+brand link goes home. Pages run 162 went green. **That closes batch 2 of
+open item 12** (#147 through #158, all client-only, so the dead deploy
+token — Production health #5, open item 11 — applied to none of them).
+Before it, #157 (a signed-in plan that is not being saved says so once,
+`sessionExpired`/`warnSaveFailed` in `js/db.js`, and the guest reload toast
+names the photos it lost), #156 (the ten pure copy items), #155 (the space
 cards as a `radiogroup` with a roving Tab stop), #154 (the rating buttons'
 `aria-pressed` and the shelf list's `role=list`), #153 (the 3D drawing as
 a focusable `role=application` widget the arrow keys rearrange), #152 (an
@@ -18,26 +21,44 @@ targets are 44px without growing), #150 (the 3D view's sliders are 44px
 targets in the row they had), #149 (the phone menu behaves like the
 dialog it looks like), #148 (the progress rail stays full once the wizard
 is complete) and #147 (the shelf map tints the eye-level shelf with the
-accent). All client-only, so the dead deploy token (Production health #5,
-open item 11) does not apply. Pages runs 152 to 156 (#148 to #152), 158
-(#154) and 160 (#156, 16:53 UTC) went green; runs 157 (#153) and 159
-(#155) were cancelled by the run starting behind each, which is how Pages
-concurrency works, and the next run carried their content; run 161 (#157)
-was in progress at the time of writing. **The last line of open item
-12's batch 2 is PR #158**, open (draft) at the time of writing: the toast
-over the running head and sized by its text (it could only be half the
-viewport wide, which wrapped #157's longer notices into a five-line block
-on a phone), the step clip band capped at the clip's width, the landing
-gallery unboxed from a retired picker's rule, the brand link going home
-and the dashboard's Sign out a button. When it merges, batch 2 is done
-and **batch 3 (performance, infrastructure, backend) is next**; the one
-piece of batch 2 left behind is the rating-scale split ("I would pay"
-mixed into usefulness, `js/data.js` ~174), which needs a feedback column
-and its own PR. Each PR this session was cherry-picked from a local
-branch onto the one PR branch, reset from `main` after each merge; the
-five cross-line conflicts met along the way were resolved once on a
-scratch stack and the full suite run against it (282 passed, 1
-pre-existing skip) before any of them went up.
+accent).
+
+**This session first closed the one piece batch 2 left behind: the
+rating-scale split.** `js/data.js`'s `FB_USEFUL` used to carry "I would
+pay for this" as a fourth point on a usefulness scale, so someone who
+liked the plan enough to pay for it was recorded as a *different degree of
+usefulness* than someone who merely thought it was very useful — one
+question's answer options were actually answering two questions.
+`FB_USEFUL` is three options now (not/somewhat/very useful) and a new
+`FB_PAY` ('No'/'Maybe'/'Yes, I would pay for this') is its own question,
+"Would you pay for this?", rendered right after usefulness on both
+surfaces (the inline ask's `#rate-pay` and the dedicated screen's
+`#fb-pay`). It answers with the rest of the form rather than at the
+tap-and-count moment usefulness does — the same timing `vs` and `nextSpace`
+already had, so no new abandonment risk was introduced. `state.fbPay`
+joins `fbUseful` in the reset, the same-space carry-over, and the draft;
+`feedback.pay` is a new column (migration `0010_feedback_pay.sql`) and
+`submit-form` writes it. The telemetry side needed no new event and no
+redeploy: `feedback_submitted`'s prop set is not schema-checked per event
+name (`telemetryEvents.js sanitizeEvent` validates prop shape generically),
+so adding `pay` to its payload is a client-only change; only the comments
+describing both events were stale and are corrected. `submit-form.ts` and
+the migration do touch `supabase/`, so per the merged-not-deployed rule
+(Production health #5, open item 11) the column exists in the deployed
+schema only once someone applies the migration by hand, and the function
+change ships only once the deploy token is replaced (open item 11); until
+then rows write `pay: null` in production even after this merges. The new
+assertion (`tests/feedback-ask.test.mjs`, "usefulness and willingness to
+pay are separate questions") was proven red by neutering only the
+`FB_USEFUL` split, with a copied `js/data.js` restored from the copy
+afterwards, never `git checkout`. Browser-checked at 390 and 1280 on both
+surfaces.
+
+**Batch 3 (performance, infrastructure, backend) is next.** Each PR this
+session was cherry-picked from a local branch onto the one PR branch,
+reset from `main` after each merge; the five cross-line conflicts met
+along the way were resolved once on a scratch stack and the full suite run
+against it (282 passed, 1 pre-existing skip) before any of them went up.
 Before that, 2026-09-15, after PR #145 merged (`main` at `aef98a6`,
 12:44 UTC). **Batch 1 of open item 12 is done.** Four PRs this session, all
 client-only, so the dead deploy token (Production health #5, open item 11)
@@ -2252,9 +2273,10 @@ Ordered by whether anyone can act on them today.
       once-only notice, the kept patch and the draft flag; browser tests
       for a 401 on the report (notice once, no "Saved") and a reload with
       and without a photo. Each proven red by neutering its own half.
-      Still open from this line: the rating scale mixing usefulness with
+      ~~Still open from this line: the rating scale mixing usefulness with
       "I would pay" (`js/data.js` ~174), which needs a feedback column and
-      its own PR.
+      its own PR.~~ **Done in #159** (the rating-scale split), see the
+      header.
     - ~~Desktop step clips letterbox (`components.css` ~439, ~455); empty ruled
       cells in two-card room groups (`landing.css`); the toast covers the
       Summary heading; the brand link is `href="#"`.~~ **Done in #158.** The
