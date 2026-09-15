@@ -12,10 +12,10 @@ your photos and selections"), and it has a share reading now ("Shared plan ·
 based on the owner's photos", or "answers"), because "your photos" in the
 byline would otherwise have printed to a visitor who took none, the claim #138
 removed from the 3D view. Client-only, so the dead deploy token (Production
-health #5, open item 11) does not apply. Pages run 145 started at 05:16 UTC and
-was still running at this writing, so until it goes green the live site is
-#139's build. That closes the fourth line of open item 12's batch 1, with four
-lines left there.
+health #5, open item 11) does not apply. Pages run 145 went green at 05:30 UTC,
+so **the report's single credit and its share byline are live on the site.**
+That closes the fourth line of open item 12's batch 1, with four lines left
+there.
 Before that, 2026-09-15, after PR #138 merged (`main` at `c1ccb85`,
 04:08 UTC): the 3D view stops claiming photos and the visitor's own space on
 plans that had neither. One rule in `js/planProvenance.js` (`planFromPhotos`,
