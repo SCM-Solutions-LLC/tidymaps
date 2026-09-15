@@ -75,25 +75,72 @@ export function onSession(fn){
   return ()=>listeners.delete(fn);
 }
 
+/* Both sign-in calls run the library load and the request under one catch.
+   The load is a dynamic import of the vendored bundle, and on a first visit
+   with no connection it fails before supabase-js exists to report anything;
+   that failure used to leave the modal reading the loader's own text. */
 export async function sendCode(email){
-  await ensureClient();
-  const { error } = await client.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } });
-  if(error) throw new Error(friendly(error));
+  let error;
+  try{
+    const c = await ensureClient();
+    ({ error } = await c.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } }));
+  }catch(e){ error = e; }
+  if(error){
+    console.error('sign-in code send failed', error);
+    throw new Error(authErrorMessage(error, 'send'));
+  }
 }
 
 export async function verifyCode(email, token){
-  await ensureClient();
-  const { error } = await client.auth.verifyOtp({ email, token, type:'email' });
-  if(error) throw new Error(friendly(error));
+  let error;
+  try{
+    const c = await ensureClient();
+    ({ error } = await c.auth.verifyOtp({ email, token, type:'email' }));
+  }catch(e){ error = e; }
+  if(error){
+    console.error('sign-in verify failed', error);
+    throw new Error(authErrorMessage(error, 'verify'));
+  }
 }
 
 export async function signOut(){
   if(client) await client.auth.signOut();
 }
 
-function friendly(error){
-  const m=String(error && error.message || '');
-  if(/rate/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
-  if(/expired|invalid/i.test(m)) return 'That code didn’t match. Check the newest email and try again.';
-  return m || 'Sign-in failed. Please try again.';
+/* What the modal prints when a sign-in call fails. `stage` is 'send' or
+   'verify', because the same server text means different things on the two
+   steps: "invalid" is a code that did not match on verify and an address
+   that was refused on send, and the old one-size reading told someone whose
+   address was rejected to check the newest email for a code that never went.
+
+   supabase-js reports a request that got no answer as an
+   AuthRetryableFetchError carrying the browser's own fetch text ("Failed to
+   fetch" in Chrome, "Load failed" in Safari, "NetworkError when attempting to
+   fetch resource." in Firefox) with status 0, and a 5xx the same way with the
+   status. The library load failing is the same failure one step earlier, as
+   a TypeError from import(). None of that text is for a reader, and nothing
+   unrecognised is passed through any more either: the fallback is a sentence
+   about the step that failed, and the callers log the raw error instead. */
+const NETWORK_TEXT = /failed to fetch|load failed|networkerror|network request failed|dynamically imported module|importing a module script failed/i;
+
+export function authErrorMessage(error, stage='send'){
+  const m = String(error && error.message || '');
+  const status = Number(error && error.status) || 0;
+  const code = String(error && error.code || '');
+  const retryable = !!(error && error.name==='AuthRetryableFetchError');
+  if(status>=500) return 'Sign-in is temporarily unavailable. Try again in a minute.';
+  if(retryable || NETWORK_TEXT.test(m)) return 'Could not reach the sign-in service. Check your connection and try again.';
+  if(status===429 || /rate.?limit|too many|only request this after/i.test(m)){
+    return 'Too many attempts. Wait a minute and try again.';
+  }
+  if(stage==='verify'){
+    if(code==='otp_expired' || /expired|invalid|not found/i.test(m)){
+      return 'That code didn’t match. Check the newest email and try again.';
+    }
+    return 'Sign-in failed. Please try again.';
+  }
+  if(code==='email_address_invalid' || code==='validation_failed' || /invalid|validate|email address/i.test(m)){
+    return 'That email address was not accepted. Check it and try again.';
+  }
+  return 'The code did not send. Please try again.';
 }
