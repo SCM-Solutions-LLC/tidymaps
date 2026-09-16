@@ -2702,7 +2702,7 @@ Ordered by whether anyone can act on them today.
         and wrong". Left alone.
     - Funnel: zero telemetry rows in 14 days, one real AI space on 09-08. Open
       item 6 stands. ~~There is no in-app opt-out, and `cookies.html`'s
-      no-banner reasoning ignores localStorage.~~ **Done in #NNN.**
+      no-banner reasoning ignores localStorage.~~ **Done in #174.**
       `cookies.html` now hosts a one-tap opt-out at
       `#turning-the-counter-on-and-off` that writes `tidymap_optout_v1='off'`
       and clears `tidymap_anon_v1` in the same call; `js/telemetry.js` reads
