@@ -4,8 +4,22 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-16, after #174 merged: the in-app telemetry
-opt-out on `cookies.html` closes the last two code items in batch 3.9.
+**Last refreshed:** 2026-09-16, after #176 merged: the tap-targets e2e
+spec at `tests/e2e/tap-targets.spec.mjs:87` had a latent flake in its
+first `boundingBox` reads after `expandChapters` — a class flip removed
+`display:none` from the chapter's children but the helper returned in
+the same frame, so a rect read on the next line could catch pre-reflow
+numbers. `helpers.mjs`'s `expandChapters` now waits two rAFs at the end;
+all 14 e2e specs that call it read post-reflow. The full local suite
+passed (294 passed, 1 pre-existing skip, 12.8min). This closes the last
+code-shaped follow-up a sandbox session could pick up without external
+input: every remaining open item is blocked on the owner (Item 1
+browser walkthrough, Item 11 token rotation), copywriting/design (JSON-LD,
+`apple-touch-icon`, 72-char title), broader GH access (SHA pinning),
+business input (Item 7 SKUs), or product traffic (Item 6 funnel).
+
+Before #176, #174 merged: the in-app telemetry opt-out on `cookies.html`
+closes the last two code items in batch 3.9.
 `js/optout.js` is the new source of truth for the opt-out flag
 (`tidymap_optout_v1`) and the anonymous id it clears alongside;
 `js/telemetry.js` reads it as the last check in both `optedOut()` and
