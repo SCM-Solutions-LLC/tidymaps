@@ -811,8 +811,9 @@ local requests; kid/no-kid safety variants; product-link shape.
 - `track-events` edge function (live, v18) re-sanitizes every batch against
   `_shared/telemetryEvents.js`: 10-event allowlist, flat primitive props,
   80-char strings, 1KB/event, 25/batch. Client `js/telemetry.js`: random
-  localStorage `anon_id`, debounce + flush-on-hide, honors DNT/GPC, fails
-  silently.
+  localStorage `anon_id`, debounce + flush-on-hide, honors DNT/GPC and the
+  in-app opt-out at `cookies.html#turning-the-counter-on-and-off` (written
+  through the shared `js/optout.js` module), fails silently.
 - **It refuses to send from anything that is not a browser.** `optedOut()`
   checks `typeof document === 'undefined'` *before* `navigator.webdriver`,
   because the webdriver check catches Playwright and misses Node — and for a
@@ -2700,8 +2701,33 @@ Ordered by whether anyone can act on them today.
         "Correcting the previous refresh, because it was load-bearing
         and wrong". Left alone.
     - Funnel: zero telemetry rows in 14 days, one real AI space on 09-08. Open
-      item 6 stands. There is no in-app opt-out, and `cookies.html`'s
-      no-banner reasoning ignores localStorage.
+      item 6 stands. ~~There is no in-app opt-out, and `cookies.html`'s
+      no-banner reasoning ignores localStorage.~~ **Done in #NNN.**
+      `cookies.html` now hosts a one-tap opt-out at
+      `#turning-the-counter-on-and-off` that writes `tidymap_optout_v1='off'`
+      and clears `tidymap_anon_v1` in the same call; `js/telemetry.js` reads
+      the same key through the new shared `js/optout.js` module, so the two
+      agree by import rather than by string. `optedOut()` gains it as the
+      last check — DNT/GPC read first because a browser-level signal is a
+      stronger consent gesture than a page toggle, and it is what
+      `telemetryStatus()` reports so a GPC browser's silence still names GPC
+      and not the flag. The no-banner section now calls the anonymous counter
+      the one non-essential item on the list and hosts the toggle inline; the
+      paragraph and its code moved together. `privacy.html` points at the
+      same anchor. A visitor whose browser sends GPC sees no button, only a
+      status line naming GPC, so the page never offers control it cannot
+      honor. Six unit assertions in `tests/optout.test.mjs` and three
+      browser tests in `tests/e2e/telemetry-optout.spec.mjs`, each proven
+      red by neutering only its own behaviour: `isOptedOut()` returning
+      false constant; `setOptedOut` no longer clearing `ANON_KEY`; the new
+      branch removed from `telemetryStatus`; the ordering reversed; and in
+      the browser, `optedOut()`'s read removed, which produces a real
+      `track-events` POST the leak assertion names. One trap caught only in
+      a real browser: `.btn`'s `display:inline-flex` beats the UA
+      `[hidden]{display:none}` on specificity, so
+      `.optout .btn[hidden]{display:none}` sits in `css/legal.css` scoped
+      to the toggle. Backend/deploy state now names the opt-out alongside
+      DNT/GPC.
 
 ### Waiting on traffic
 

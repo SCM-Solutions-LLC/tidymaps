@@ -247,6 +247,35 @@ test('the terms carry the share-link redaction the privacy policy describes', ()
   }
 });
 
+test('cookies.html hosts the in-app opt-out and reads it from js/optout.js', () => {
+  /* Batch 3.9 named two gaps: the no-banner reasoning ignored the localStorage
+     the app actually keeps, and there was no in-app opt-out at all. Both close
+     together: the page acknowledges the counter as the one non-essential item
+     and offers a toggle right there. This test ties the promise to the code.
+
+     A `setOptedOut` export missing from js/optout.js means the page is
+     claiming an opt-out it cannot deliver, the same class of stale-legal-copy
+     bug as "we honor Do Not Track" over a `optedOut()` that stopped reading
+     the header. */
+  const optout = read('js/optout.js');
+  assert.match(optout, /export function setOptedOut/, 'js/optout.js no longer exports setOptedOut');
+  assert.match(optout, /export function isOptedOut/, 'js/optout.js no longer exports isOptedOut');
+  assert.match(optout, /export const OPTOUT_KEY = 'tidymap_optout_v1'/, 'OPTOUT_KEY name drifted; update cookies.html if this is intentional');
+
+  const page = source['cookies.html'];
+  assert.match(page, /id="turning-the-counter-on-and-off"/, 'the anchor privacy.html links to is gone');
+  assert.match(page, /id="optout-btn"/, 'the toggle button is missing from cookies.html');
+  assert.match(page, /id="optout-status"/, 'the toggle status line is missing from cookies.html');
+  assert.match(page, /from '\.\/js\/optout\.js'/, 'the cookies page no longer imports js/optout.js');
+  assert.match(page, /aria-live="polite"/, 'the status line is not announced');
+  assert.match(page, /<noscript>/, 'no fallback for the JS-off case');
+
+  /* privacy.html points at the same anchor. A link that 404s inside the site
+     is worse than none, and legal copy that promises an opt-out on a page
+     without one is the same shape of bug. */
+  assert.match(source['privacy.html'], /cookies\.html#turning-the-counter-on-and-off/, 'privacy.html no longer points at the in-app opt-out');
+});
+
 test('every provider the security page depends on is named in the privacy policy', () => {
   /* security.html lists the providers whose outages and protections the
      product inherits. A processor that handles personal data (Resend sees
