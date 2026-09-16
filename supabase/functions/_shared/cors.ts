@@ -2,8 +2,6 @@ const ALLOWED_ORIGINS = new Set([
   'https://scm-solutions-llc.github.io',
   'https://scmsolutions.org',
   'https://www.scmsolutions.org',
-  'https://tidymaps.ai',
-  'https://www.tidymaps.ai',
   'http://localhost:8000',
   'http://localhost:8123',
 ]);

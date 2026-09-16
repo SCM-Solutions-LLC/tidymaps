@@ -1742,7 +1742,7 @@ and the list is finished.
   code — check `ezbr_sha256` changed too. #109 took `render-after` from
   `2d822988…` to `7c448fba…`. All `verify_jwt: false` — they check JWTs themselves so
   guests can call them. CORS allowlist in `_shared/cors.ts` (Pages,
-  scmsolutions.org, tidymaps.ai, localhost:8000/8123). **Note 3000 is not on
+  scmsolutions.org, localhost:8000/8123). **Note 3000 is not on
   that list**, so a local dev server on that port gets a preflight failure and
   telemetry silently never sends.
 - **Production matches `main` automatically now.** Since 2026-08-12 the same
@@ -2639,11 +2639,20 @@ Ordered by whether anyone can act on them today.
       `scmsolutions.org/tidymaps` to match the canonical.
       Deliberately left for a later pass: JSON-LD (requires structured
       product-metadata decisions), `apple-touch-icon` (needs a new PNG
-      binary asset that doesn't exist in the repo), the title's 72-char
-      length (copywriting call), and the `tidymaps.ai` entry in
-      `supabase/functions/_shared/cors.ts` (removing an origin from an
-      allowlist is a real production behavior change — worth the DNS check
-      before touching).
+      binary asset that doesn't exist in the repo), and the title's
+      72-char length (copywriting call). The `tidymaps.ai` entry in
+      `supabase/functions/_shared/cors.ts` came out in this session: DNS
+      confirmed the name does not resolve (Node's `getaddrinfo` returns
+      `ENOTFOUND` while `anthropic.com` and `scmsolutions.org` resolve
+      fine from the same sandbox), so the two allowlist entries went with
+      it. Grepped for other references first — none in canonical URLs,
+      sitemap, README, or CI, so nothing else needed to change. The
+      change is a real production behavior shift, same shape as the
+      port-3000 note in Backend/deploy state: any browser reaching
+      `https://tidymaps.ai` through a stale cache or `/etc/hosts` now
+      gets its preflight redirected to the fallback origin and its
+      telemetry drops on the floor. Merged-not-deployed until item 11
+      rotates the deploy token.
     - ~~Dead work: `plan.features` is requested, normalized and shared but
       rendered nowhere; household counts are never read; `detected` is never
       set in production; `hero-3d.webp` is declared 522x700 and the file is
