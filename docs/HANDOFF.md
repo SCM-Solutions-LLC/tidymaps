@@ -4,14 +4,27 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-15, after PR #170 merged: batch 3 of open item 12
-(performance, infrastructure, backend) is closed. #169 declared
-`contents: read` on the three CI workflows that don't write through
-`GITHUB_TOKEN` (pinning actions to SHAs and the OTP/captcha check
-resolved themselves — see the open-items entry). #170 unified
-`theme-color` and added `color-scheme`/`robots.txt`/`sitemap.xml`,
-corrected the hero image's aspect ratio, and fixed the README's live-site
-URL to match the canonical. Earlier in batch 3: #159 split the feedback rating
+**Last refreshed:** 2026-09-16, after #174 merged: the in-app telemetry
+opt-out on `cookies.html` closes the last two code items in batch 3.9.
+`js/optout.js` is the new source of truth for the opt-out flag
+(`tidymap_optout_v1`) and the anonymous id it clears alongside;
+`js/telemetry.js` reads it as the last check in both `optedOut()` and
+`telemetryStatus()` (DNT/GPC still first, because a browser-level signal is
+the deeper reason to report). Since #170 also #171 (canary heartbeat via the
+Actions API, no new secret), #172 (`plan.features` removed symmetrically
+from prompt/schema/client/tests, pinned by a new test), and #173 (dropped
+the `tidymaps.ai` entries from the edge-function CORS allowlist after DNS
+confirmed the name does not resolve). **After #174, batch 3.9's remaining
+items are all owner/design/access-shaped, not code:** JSON-LD (product
+metadata decisions), `apple-touch-icon` (new PNG asset), 72-char title
+(copywriting), and pinning GH Actions to SHAs (needs broader-than-one-repo
+GH access). #170 unified `theme-color` and added
+`color-scheme`/`robots.txt`/`sitemap.xml`, corrected the hero image's
+aspect ratio, and fixed the README's live-site URL to match the canonical.
+#169 declared `contents: read` on the three CI workflows that don't write
+through `GITHUB_TOKEN` (pinning actions to SHAs and the OTP/captcha check
+resolved themselves — see the open-items entry). **Batch 3 of open item 12**
+(performance, infrastructure, backend) closed at #170. Earlier in batch 3: #159 split the feedback rating
 question into usefulness and willingness-to-pay. #160 builds a deploy-only
 `_site/` for Pages instead of uploading the whole checkout. #161 inlines the
 two critical stylesheets and async-loads the rest. #162 defers the two screen
@@ -1908,12 +1921,16 @@ Ordered by whether anyone can act on them today.
    failed render's allowance, this no longer costs a day's quota per failure.
    See "The photo preview render thread" above.
 
-   **This is the top of the list as of 08-27, because it is the only open item
-   that does not depend on anyone else.** Nobody has opened the app since
-   08-21 (Production health #9), so nothing on the "waiting on traffic" list can
-   move until somebody runs it — and running it once is exactly what this item
-   asks for. Twenty minutes of one person's browser closes item 1, produces the
-   `telemetryStatus()` reading item 6 needs, and generates the first funnel rows
+   **This is still the top of the list.** Two open items don't depend on
+   outside input: this one (twenty minutes of one person's browser) and
+   Item 11 (ten minutes of owner token rotation, gating every
+   `supabase/functions/` merge since 09-07). Nobody has opened the app
+   since 08-21 (Production health #9), so nothing on the "waiting on
+   traffic" list can move until somebody runs it — and running it once is
+   exactly what this item asks for. Twenty minutes of one person's browser
+   closes item 1, produces the `telemetryStatus()` reading item 6 needs
+   (there is a fifth possible answer now, `off: opted out on this device`,
+   courtesy of #174's in-app opt-out), and generates the first funnel rows
    in three weeks.
 2. ~~**Nothing alerts on a broken model path.**~~ **Built.**
    `.github/workflows/model-path-canary.yml` calls `analyze-space` for real
