@@ -12,8 +12,8 @@
    - Fire-and-forget: telemetry must never break or slow the app. */
 import { SUPABASE_URL, SUPABASE_ANON_KEY, backendConfigured } from './config.js';
 import { sanitizeEvent } from '../supabase/functions/_shared/telemetryEvents.js';
+import { ANON_KEY, isOptedOut } from './optout.js';
 
-const ANON_KEY = 'tidymap_anon_v1';
 const FLUSH_MS = 4000;
 const FLUSH_AT = 12; // keep batches under the server's 25-event cap
 
@@ -39,6 +39,11 @@ function optedOut() {
     const win = /** @type {any} */ (window);
     if (nav.doNotTrack === '1' || win.doNotTrack === '1') return true;
     if (nav.globalPrivacyControl) return true;
+    /* Last: the in-app opt-out on cookies.html. A browser-level signal is a
+       stronger consent gesture than a page toggle, so DNT/GPC read first and
+       report themselves in telemetryStatus() rather than being masked by
+       whatever the flag happens to be. */
+    if (isOptedOut()) return true;
   } catch (_) { /* privacy checks must never throw */ }
   return false;
 }
@@ -65,6 +70,7 @@ export function telemetryStatus() {
     const win = /** @type {any} */ (window);
     if (nav.doNotTrack === '1' || win.doNotTrack === '1') return 'off: Do Not Track';
     if (nav.globalPrivacyControl) return 'off: Global Privacy Control';
+    if (isOptedOut()) return 'off: opted out on this device';
   } catch (_) { /* privacy checks must never throw */ }
   return 'on';
 }

@@ -53,3 +53,14 @@
 /* Contact / effective-date block that closes each document. */
 .legal-foot{margin-top:44px;padding-top:22px;border-top:var(--rule-2)}
 .legal-foot p{font-size:14.5px;color:var(--ink)}
+
+/* The in-app opt-out on cookies.html. A ruled box so the interactive control
+   reads as one, distinct from the surrounding prose but still in the reading
+   column rather than off in a settings screen it does not deserve. */
+.optout{margin:16px 0;padding:15px 17px;border:var(--rule);background:var(--stock)}
+.optout-status{margin:0 0 12px;font-size:16.5px;line-height:1.55;color:var(--ink)}
+.optout .btn{margin:0}
+/* .btn sets display:inline-flex, and any explicit display beats the browser's
+   `[hidden] { display: none }` UA rule on specificity. Scoped so it fixes the
+   toggle here without changing how any other .btn on the site behaves. */
+.optout .btn[hidden]{display:none}

@@ -69,8 +69,16 @@
   </ul>
 
   <h2>Why there is no consent banner</h2>
-  <p>Because there is nothing to consent to that a banner would meaningfully change. There are no cookies, no third-party trackers, and no data sold or shared for advertising. Everything in the list above is either doing a job you asked for (remembering your plan, keeping you signed in) or is the anonymous counter, which switches itself off when your browser asks it to.</p>
-  <p>If you would rather not be counted, turn on Global Privacy Control or Do Not Track in your browser and TidyMap will stop collecting usage events entirely, on this device, with no further action from you.</p>
+  <p>A banner would ask about things this app does not do: it sets no cookies, uses no third-party trackers, and sells or shares nothing for advertising. What it does keep in your browser is on the list above. Every entry is either doing a job you asked for (remembering your plan, keeping you signed in) or is the anonymous counter, and that one has an opt-out on this page rather than behind a modal on every visit.</p>
+
+  <h2 id="turning-the-counter-on-and-off">Turning the counter on and off</h2>
+  <div class="optout" data-optout>
+    <p class="optout-status" id="optout-status" aria-live="polite"><strong>Checking your setting&hellip;</strong></p>
+    <button class="btn btn-ghost btn-sm" id="optout-btn" type="button" hidden></button>
+    <noscript><p>The one-tap opt-out needs JavaScript. Turn on Global Privacy Control or Do Not Track in your browser instead, and TidyMap will stop collecting usage events entirely on this device.</p></noscript>
+  </div>
+  <p>Turning it off clears the anonymous identifier for this browser (<code>tidymap_anon_v1</code>, above). Turning it back on starts a fresh one, so nothing that was collected before crosses that gap.</p>
+  <p>If you prefer a browser-level setting, turn on Do Not Track or Global Privacy Control. TidyMap honors either wherever that browser goes, with no in-app change. Brave, DuckDuckGo and Firefox send Global Privacy Control by default, and the toggle above will tell you when it sees one.</p>
 
   <h2>Clearing all of it</h2>
   <ul>
@@ -102,5 +110,47 @@
 </footer>
 
 <script src="js/year.js" defer></script>
+<script type="module">
+  import { isOptedOut, setOptedOut } from './js/optout.js';
+
+  const status = document.getElementById('optout-status');
+  const btn = document.getElementById('optout-btn');
+
+  /* The same two signals telemetryStatus() reads, in the same order. A page
+     that told a GPC visitor to tap the button anyway would be lying twice: the
+     backend would ignore the request either way, and the toggle would appear
+     to change nothing. */
+  function browserSignal() {
+    try {
+      const nav = navigator;
+      const win = window;
+      if (nav.doNotTrack === '1' || win.doNotTrack === '1') return 'Do Not Track';
+      if (nav.globalPrivacyControl) return 'Global Privacy Control';
+    } catch (_) { /* leave the flag alone */ }
+    return null;
+  }
+
+  function render() {
+    const signal = browserSignal();
+    if (signal) {
+      status.innerHTML = `<strong>Usage counting is off.</strong> Your browser sends ${signal}, and TidyMap honors it on every device this browser reaches.`;
+      btn.hidden = true;
+      return;
+    }
+    const off = isOptedOut();
+    status.innerHTML = off
+      ? '<strong>Usage counting is off in this browser.</strong>'
+      : '<strong>Usage counting is on in this browser.</strong>';
+    btn.hidden = false;
+    btn.textContent = off ? 'Turn it back on' : 'Turn it off';
+  }
+
+  btn.addEventListener('click', () => {
+    setOptedOut(!isOptedOut());
+    render();
+  });
+
+  render();
+</script>
 </body>
 </html>
