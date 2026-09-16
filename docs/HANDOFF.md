@@ -2647,16 +2647,49 @@ Ordered by whether anyone can act on them today.
     - ~~Dead work: `plan.features` is requested, normalized and shared but
       rendered nowhere; household counts are never read; `detected` is never
       set in production; `hero-3d.webp` is declared 522x700 and the file is
-      1100x858.~~ **Partly done in #170.** The hero image's declared
-      dimensions now match the file's actual 1100x858 (they were 522x700,
-      an inverted aspect ratio that caused layout shift on load). The
-      other three items (`plan.features`, household counts, `detected`)
-      are unreferenced state that spans server code, share payloads and
-      the state serializer — an "if you delete X, is the analysis prompt
-      still asked to produce X" audit — left for a session that has the
-      space to trace them properly, since removing a field that a prompt
-      still requests is exactly the kind of asymmetric break the CLAUDE.md
-      rules were written to catch.
+      1100x858.~~ **Done, mostly not the way the entry said.** The hero
+      image's declared dimensions moved to 1100x858 in #170. `plan.features`
+      is removed in this PR (see below). The other two flags in this
+      entry were wrong on their facts and are left as is:
+
+      - **`plan.features` (dead, removed).** Traced across every layer
+        (prompt → schema → client normalize → setup-structure filter →
+        results.js → share allowlist → share redact → state defaults →
+        wizard round-trip → 16 demo scenarios → 5 tests); nothing rendered
+        it. Removed symmetrically to keep the CLAUDE.md "validator never
+        stricter than its own prompt" rule intact — a new test in
+        `tests/plan-schema.test.mjs` (`plan.features is removed
+        symmetrically from the prompt and the schema`) pins the two sides
+        to move together, so a future re-introduction on one side without
+        the other fails CI. Older `spaces` rows still carry
+        `plan.features` in their stored JSONB; the schema now silently
+        strips it (zod's default is drop-unknown, not reject) and
+        `sharePayload.js`'s allowlist means it never travels through a
+        share link either. `DEMO_FEATURES` in `js/data.js` (a fallback for
+        the empty-state render that no longer exists) came out with it.
+      - **Household counts were NOT dead.** `state.household.kidCount` is
+        read by the report's masthead chip (`results.js ~107-108`), by
+        the share redaction (`sharePayload.js ~158` gates child-word
+        redaction on `kidCount > 0`) and by `householdAnswered` in
+        `js/wizard-data.js`. `petCount` is read by the wizard steppers
+        and the masthead chip. The audit's own trace records this. Only
+        the NESTED duplicates at `js/plan.js:247,249`
+        (`plan.household.kids.count`/`pets.count`, built for the analysis
+        context) have no named reader, but they still reach the model as
+        part of the JSON blob in `promptContext.js:80-82`, and the CLAUDE.md
+        rule "removing a field the prompt still consumes" applies to the
+        blob just as much as to a named field. Left alone.
+      - **`detected` was NOT dead either.** The `state.detected` field
+        is set by `runLocalDetection()` (`js/screens/capture.js:137`) on
+        the no-backend path, rendered as chips at capture and contents
+        (`#photo-detected-chips`, `#contents-detected`), injected into
+        the prompt when set (`promptContext.js:53-55`), and round-tripped
+        in the prefs blob. The entry's claim "never set in production"
+        conflates "no telemetry evidence of it firing" with "the code
+        path doesn't run", and the first proves nothing about the
+        second — this codebase learned the same lesson under
+        "Correcting the previous refresh, because it was load-bearing
+        and wrong". Left alone.
     - Funnel: zero telemetry rows in 14 days, one real AI space on 09-08. Open
       item 6 stands. There is no in-app opt-out, and `cookies.html`'s
       no-banner reasoning ignores localStorage.

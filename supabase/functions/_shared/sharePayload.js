@@ -44,7 +44,7 @@
 // keys over time; an allowlist means new private fields default to EXCLUDED.
 const PLAN_FIELDS = [
   'spaceType', 'summary', 'problems', 'opportunities',
-  'map', 'geometry', 'layout', 'features', 'steps', 'cats',
+  'map', 'geometry', 'layout', 'steps', 'cats',
   'existingLede', 'existing', 'dontBuy', 'cost', 'time',
   /* Whether anything actually looked at the space. Left off the allowlist, it
      defaulted to true on the way in (normalizeAi reads `observed !== false`),
@@ -222,7 +222,7 @@ const redactStrings = (patterns, arr) => (Array.isArray(arr)
 const TEXT_KEYS = {
   step: ['t', 'task', 'w', 'why', 'm', 'time'],
   row: ['lv', 'level', 'why'],
-  feature: ['ttl', 'title', 'sub', 'ft', 'fd'],
+  existing: ['title', 'ft', 'fd', 'detail'],
 };
 
 // Rewrites a field only when it is there, so a plan without a summary does
@@ -266,13 +266,12 @@ function redactPlan(patterns, plan) {
     });
   }
 
-  for (const key of ['features', 'existing']) {
-    if (!Array.isArray(out[key])) continue;
-    out[key] = out[key].map((entry) => {
+  if (Array.isArray(out.existing)) {
+    out.existing = out.existing.map((entry) => {
       if (typeof entry === 'string') return redactText(patterns, entry);
       if (!entry || typeof entry !== 'object') return entry;
       const e = { ...entry };
-      for (const k of TEXT_KEYS.feature) if (typeof e[k] === 'string') e[k] = redactText(patterns, e[k]);
+      for (const k of TEXT_KEYS.existing) if (typeof e[k] === 'string') e[k] = redactText(patterns, e[k]);
       return e;
     }).filter((entry) => entry !== '');
   }

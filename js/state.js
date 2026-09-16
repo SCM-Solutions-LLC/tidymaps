@@ -58,7 +58,6 @@
  * @property {string[]} cats
  * @property {boolean} catsTouched
  * @property {string[]} detected
- * @property {Object[]} features
  * @property {string|null} budget
  * @property {string|null} effort
  * @property {boolean} effortTouched
@@ -152,7 +151,7 @@ export const state = {
      after a toggle. */
   units:'imperial',
   upgrades:false,
-  cats:[], features:[],
+  cats:[],
   afterMode:'Use existing containers',
   uploadedFiles:[], uploadedVideo:null, frames:[],
   dims:null,   // {w_in,h_in,d_in,shelves} from the measurements step (stored in inches)
@@ -305,7 +304,7 @@ const freshHousehold = () => ({ adults:2, kidCount:0, petCount:0,
 const ANSWER_DEFAULTS = {
   room:'kitchen', space:'pantry', spaceTouched:false, goal:null, capture:null,
   setup:'cabinet', setupLabel:'Cabinet', setupTouched:false,
-  goals:[], styles:[], cats:[], catsTouched:false, detected:[], features:[],
+  goals:[], styles:[], cats:[], catsTouched:false, detected:[],
   budget:null, effort:'Weekend reset', effortTouched:false,
   shoppingPref:'Use what I have', shoppingTouched:false,
   /* The household counters start at two adults, and kids/pets present at

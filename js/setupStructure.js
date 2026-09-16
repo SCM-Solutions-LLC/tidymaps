@@ -347,10 +347,8 @@ export function scrubSurfaceProse(plan, archetype) {
   plan.safetyNotes = (plan.safetyNotes || []).filter(n => !drop(n)).map(fix);
   plan.steps = (plan.steps || []).filter(s => !drop(s.task))
     .map(s => ({ ...s, task: fix(s.task), why: fix(s.why) }));
-  // Titles need the rewrite too, not just the bodies: "Cabinet height" on a
-  // wall shelf and "5 metal shelves" on a two-deck rack are both title text.
-  plan.features = (plan.features || []).filter(f => !drop(f.title + ' ' + f.sub))
-    .map(f => ({ ...f, title: fix(f.title), sub: fix(f.sub) }));
+  // Titles need the rewrite too, not just the bodies: "5 metal shelves" on a
+  // two-deck rack is title text.
   plan.existing = (plan.existing || []).filter(e => !drop(e.title + ' ' + e.detail))
     .map(e => ({ ...e, title: fix(e.title), detail: fix(e.detail) }));
   /* A sentence that ENUMERATES surfaces cannot be reworded into a true one —

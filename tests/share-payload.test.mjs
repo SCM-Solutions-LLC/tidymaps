@@ -96,6 +96,18 @@ test('plan sanitizer is an allowlist: unknown/product fields are dropped', () =>
   assert.deepEqual(plan.time, { hours: 3, label: 'One afternoon' });
 });
 
+/* `plan.features` was the field the prompt asked the model to produce
+   ("existing storage features you can see") and nothing in the app rendered.
+   Older `spaces` rows still carry it in the stored JSONB, so a share must
+   still strip it. Once the removal ships this is a pin against reintroducing
+   the field: bring it back in the schema without a renderer and this fails. */
+test('plan.features from an older row is stripped from the shared payload', () => {
+  const oldRow = { ...FULL_ROW, plan: { ...FULL_ROW.plan,
+    features: [{ ico: 'layers', ttl: '5 shelves', sub: 'Top shelf hard to reach' }] } };
+  const plan = sanitizeSharedPlan(oldRow.plan, oldRow.household);
+  assert.equal(plan.features, undefined, 'features should not survive the allowlist');
+});
+
 test('malformed rows and plans degrade to null instead of throwing', () => {
   assert.equal(sharedSpacePayload(null), null);
   assert.equal(sanitizeSharedPlan(null), null);

@@ -106,7 +106,6 @@ export function normalizeAi(j){
     spaceType: s(j.spaceType)||'Space',
     summary: s(j.summary),
     cats: (pick(j.categories, j.cats)||[]).map(s).filter(Boolean),
-    features: (j.features||[]).map(f=>({ico:iconKey(pick(f.icon, f.ico)), ttl:s(pick(f.title, f.ttl)), sub:s(f.sub)})),
     problems: (j.problems||[]).map(s).filter(Boolean),
     opportunities: (j.opportunities||[]).map(s).filter(Boolean),
     map: rawMap.map((m,i)=>({

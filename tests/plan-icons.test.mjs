@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SVG, iconKey, iconFor, ICON_FALLBACK_KEY } from '../js/icons.js';
 import { normalizeAi } from '../js/plan.js';
-import { MAP, EXISTING, DEMO_FEATURES } from '../js/data.js';
+import { MAP, EXISTING } from '../js/data.js';
 
 /* Stored XSS through the plan's icon fields.
 
@@ -33,10 +33,9 @@ test('normalizeAi stores a table key, and the key renders as one of our icons', 
   const out = normalizeAi({
     map: [{ level: 'Top', ic: HOSTILE, zone: 'z', why: 'w', shelfIndex: 0 }],
     existing: [{ ico: HOSTILE, ft: 'Bins', fd: 'Reuse them' }],
-    features: [{ ico: HOSTILE, ttl: 'Shelves', sub: 'Five' }],
     geometry: { unit: 'in', width: 36, height: 72, depth: 16, shelfCount: 1, shelfYFracs: [0.1], estimated: false },
   });
-  for (const [field, value] of [['map[].ic', out.map[0].ic], ['existing[].ico', out.existing[0].ico], ['features[].ico', out.features[0].ico]]) {
+  for (const [field, value] of [['map[].ic', out.map[0].ic], ['existing[].ico', out.existing[0].ico]]) {
     assert.ok(Object.prototype.hasOwnProperty.call(SVG, value), `${field} is not a key into the icon table: ${JSON.stringify(value)}`);
     assert.ok(ours.has(iconFor(value)), `${field} did not render as one of our icons`);
   }
@@ -66,9 +65,8 @@ test('normalizeAi is idempotent on icons, so a share link renders what the owner
 });
 
 test('every keyword the prompt names resolves to a real icon', () => {
-  // supabase/functions/analyze-space/index.ts: map.icon and features.icon lists.
-  const prompt = ['up', 'eye', 'middle', 'down', 'door', 'hook', 'rod', 'drawer',
-    'shelf', 'basket', 'bin', 'vertical', 'horizontal', 'empty', 'missing'];
+  // supabase/functions/analyze-space/index.ts: map.icon list.
+  const prompt = ['up', 'eye', 'middle', 'down', 'door', 'hook', 'rod', 'drawer'];
   for (const k of prompt) {
     assert.ok(Object.prototype.hasOwnProperty.call(SVG, iconKey(k)), `prompt keyword "${k}" has no icon`);
   }
@@ -89,9 +87,9 @@ test('a keyword that names an Object prototype member is just unknown', () => {
 });
 
 test("the app's own sample plan follows the key contract", () => {
-  for (const [name, rows, field] of [['MAP', MAP, 'ic'], ['EXISTING', EXISTING, 'ico'], ['DEMO_FEATURES', DEMO_FEATURES, 'ico']]) {
+  for (const [name, rows, field] of [['MAP', MAP, 'ic'], ['EXISTING', EXISTING, 'ico']]) {
     for (const row of rows) {
-      assert.equal(iconKey(row[field]), row[field], `${name} row "${row.lv || row.ft || row.ttl}" holds ${JSON.stringify(row[field]).slice(0, 40)}, not a key`);
+      assert.equal(iconKey(row[field]), row[field], `${name} row "${row.lv || row.ft}" holds ${JSON.stringify(row[field]).slice(0, 40)}, not a key`);
     }
   }
 });

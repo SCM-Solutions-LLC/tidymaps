@@ -1,4 +1,4 @@
-import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_FEATURES, DEMO_CATS } from '../data.js';
+import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_CATS } from '../data.js';
 import { SVG, ICON, iconFor } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
@@ -22,7 +22,6 @@ import { buildRate } from './feedback.js';
 /* ---------- Results ---------- */
 export function buildResults(){
   const A=state.ai;
-  state.features=((A&&A.features.length)?A.features:DEMO_FEATURES).slice();
   // The contents step is authoritative when the user engaged with it;
   // otherwise the plan's own detected categories stand.
   if(!state.catsTouched || !state.cats.length){

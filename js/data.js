@@ -72,16 +72,6 @@ export const EFFORT = [
 ];
 
 /* Demo / mock AI output */
-export const DEMO_FEATURES = [
-  {ico:'layers',ttl:'5 shelves',sub:'Top shelf is hard to reach'},
-  {ico:'shoppingBag',ttl:'2 baskets',sub:'Currently underused'},
-  {ico:'archive',ttl:'1 deep bin',sub:'Good for overflow'},
-  {ico:'arrowsH',ttl:'Open shelf space on the right',sub:'Unused'},
-  {ico:'arrowsV',ttl:'Unused vertical space',sub:'Above the cans'},
-  {ico:'arrowDown',ttl:'Lower shelf',sub:'Can hold heavier items'},
-  {ico:'xCircle',ttl:'No visible hooks',sub:'Detected'},
-  {ico:'door',ttl:'No door rack',sub:'Detected'}
-];
 export const DEMO_CATS = ['Snacks','Canned goods','Pasta & grains','Baking supplies','Spices & sauces','Breakfast items','Paper goods','Bulk overflow','Kids’ snacks','Loose packets','Duplicate items','Possible expired items'];
 
 export const MAP = [

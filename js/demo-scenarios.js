@@ -16,16 +16,6 @@ function pantryScenario() {
     spaceType: 'Pantry',
     summary: 'A standard five-shelf pantry with a mix of snacks, canned goods, baking supplies, and breakfast items. Two baskets are underused and one deep bin sits near the bottom. The right side of the middle shelf is open, and several inches of vertical space above the cans is wasted. A few expired items and duplicate purchases are visible.',
     categories: ['Snacks', 'Canned goods', 'Pasta & grains', 'Baking supplies', 'Spices & sauces', 'Breakfast items', 'Paper goods', 'Bulk overflow', 'Kids’ snacks', 'Loose packets'],
-    features: [
-      {icon: 'layers', title: '5 shelves', sub: 'Top shelf is hard to reach'},
-      {icon: 'basket', title: '2 baskets', sub: 'Currently underused'},
-      {icon: 'bin', title: '1 deep bin', sub: 'Good for overflow'},
-      {icon: 'horizontal', title: 'Open shelf space on the right', sub: 'Unused'},
-      {icon: 'vertical', title: 'Unused vertical space', sub: 'Above the cans'},
-      {icon: 'down', title: 'Lower shelf', sub: 'Can hold heavier items'},
-      {icon: 'x', title: 'No visible hooks', sub: 'Detected'},
-      {icon: 'door', title: 'No door rack', sub: 'Detected'}
-    ],
     problems: [
       'Loose snack packets fall over and mix with other categories',
       'Cans are stacked two-deep so back items are invisible',
@@ -123,13 +113,6 @@ function cabinetScenario() {
     spaceType: 'Kitchen cabinet',
     summary: 'A 30-inch-wide kitchen cabinet with three adjustable shelves. Plates are stacked too high, mugs crowd the front blocking access to glasses behind them, and baking sheets lean at odd angles taking up floor space. A lazy-susan cutout sits empty in the corner. Food storage containers and their lids are mismatched across two shelves.',
     categories: ['Plates', 'Bowls', 'Mugs', 'Glasses', 'Cookware', 'Baking sheets', 'Food storage containers', 'Lids', 'Serving dishes'],
-    features: [
-      {icon: 'layers', title: '3 adjustable shelves', sub: 'Shelf heights can be changed'},
-      {icon: 'horizontal', title: 'Lazy-susan space in corner', sub: 'Currently empty'},
-      {icon: 'vertical', title: 'Vertical divider slots', sub: 'Built into the shelf frame'},
-      {icon: 'down', title: 'Pull-out potential', sub: 'Lower shelf tracks are present'},
-      {icon: 'door', title: 'Inside-door surface', sub: 'Could hold hooks or a small rack'}
-    ],
     problems: [
       'Plates stacked 12+ high risk chipping and are hard to grab from the bottom',
       'Mugs in front block access to glasses behind them',
@@ -202,13 +185,6 @@ function closetScenario() {
     spaceType: 'Closet',
     summary: 'A 48-inch-wide reach-in closet with a single hanging rod, one high shelf, and open floor space. Work clothes and casual wear share the same rod with no separation. Shoes are piled on the floor. The top shelf holds a jumble of bags, scarves, and seasonal items. The back of the door is unused.',
     categories: ['Work clothes', 'Casual wear', 'Seasonal outerwear', 'Shoes', 'Accessories', 'Bags & purses', 'Scarves & hats', 'Workout gear'],
-    features: [
-      {icon: 'horizontal', title: 'Single hanging rod', sub: '48 inches of rod space'},
-      {icon: 'up', title: 'Top shelf', sub: 'High and hard to reach'},
-      {icon: 'down', title: 'Open floor space', sub: 'Currently just piled shoes'},
-      {icon: 'door', title: 'Door back unused', sub: 'Good for hooks or an over-door rack'},
-      {icon: 'vertical', title: 'Side wall space', sub: 'Could hold hooks or a small shelf'}
-    ],
     problems: [
       'Work and casual clothes share one rod with no separation, making mornings slower',
       'Shoes are piled on the floor with no system. Pairs get separated',
@@ -285,13 +261,6 @@ function garageScenario() {
     spaceType: 'Garage shelf',
     summary: 'A 48-inch-wide metal shelving unit with five shelves in the garage. Tools, automotive supplies, garden equipment, and holiday decorations share space with little organization. Chemical cleaners and paint cans sit on the same shelf as sports gear. Heavy power tools are on an upper shelf. A pegboard area next to the unit is mostly empty.',
     categories: ['Hand tools', 'Power tools', 'Automotive supplies', 'Garden equipment', 'Sports gear', 'Holiday decorations', 'Hardware & fasteners', 'Chemicals & paint', 'Extension cords'],
-    features: [
-      {icon: 'layers', title: '5 metal shelves', sub: 'Each rated for 100+ lbs'},
-      {icon: 'horizontal', title: 'Wide shelf depth', sub: '18 inches deep'},
-      {icon: 'vertical', title: 'Pegboard on adjacent wall', sub: 'Mostly empty'},
-      {icon: 'down', title: 'Floor space in front', sub: 'Available for large items'},
-      {icon: 'bin', title: '3 random cardboard boxes', sub: 'Unlabeled'}
-    ],
     problems: [
       'Chemicals (paint thinner, cleaners) sit next to sports gear and kids’ toys',
       'Heavy power tools are on an upper shelf. Risk of injury when reaching up',
@@ -378,13 +347,6 @@ function laundryScenario() {
     spaceType: 'Laundry room',
     summary: 'Shelving above the washer and dryer with four levels, plus a folding surface. Detergent bottles crowd the front of the lowest shelf. Cleaning supplies are mixed with linens. Stain removal products are scattered, and the iron is wedged behind towels. Wall space beside the shelves is empty.',
     categories: ['Detergent & softener', 'Stain removal', 'Cleaning supplies', 'Towels & washcloths', 'Linens & sheets', 'Iron & steamer', 'Dryer supplies', 'Specialty wash items'],
-    features: [
-      {icon: 'layers', title: '4 shelves above washer/dryer', sub: 'Fixed bracket shelves'},
-      {icon: 'horizontal', title: 'Folding counter space', sub: 'Top of the dryer'},
-      {icon: 'bin', title: '1 laundry basket', sub: 'On the floor'},
-      {icon: 'vertical', title: 'Empty wall space', sub: 'To the right of shelves'},
-      {icon: 'x', title: 'No hooks or rod', sub: 'No drying bar installed'}
-    ],
     problems: [
       'Detergent bottles at the front block access to everything behind them',
       'Cleaning sprays are mixed in with clean towels and linens',
@@ -465,13 +427,6 @@ function kidsScenario() {
     spaceType: 'Kids’ storage',
     summary: 'A 36-inch-wide, 48-inch-tall shelving unit in a children’s room with four shelves. Toys, books, art supplies, and games are mixed together. Building blocks spill from an overflowing bin. Small game pieces and art supplies are loose on the same shelf. Books are stacked horizontally instead of upright. Everything is technically reachable by kids, but nothing has a clear home.',
     categories: ['Toys', 'Board games & puzzles', 'Art supplies', 'Books', 'Stuffed animals', 'Building blocks', 'Dress-up & costumes', 'School supplies'],
-    features: [
-      {icon: 'layers', title: '4 low shelves', sub: 'All within kid reach'},
-      {icon: 'bin', title: '2 fabric bins', sub: 'Both overflowing'},
-      {icon: 'horizontal', title: 'Wall hooks above', sub: '3 hooks installed'},
-      {icon: 'vertical', title: 'Book ledge potential', sub: 'Empty wall beside the shelf'},
-      {icon: 'down', title: 'Floor space in front', sub: 'Current play area'}
-    ],
     problems: [
       'No category separation. Toys, books, and art supplies are mixed on every shelf',
       'Small game pieces and art supplies pose a choking risk for younger children',
@@ -557,13 +512,6 @@ function atticScenario() {
     spaceType: 'Attic / storage area',
     summary: 'A 60-inch-wide shelving unit in an attic storage area with five shelves. Seasonal decorations, camping gear, archived documents, outgrown clothes, luggage, and memorabilia share space. Most boxes are cardboard with handwritten labels that have faded. The area has limited light and some items have been untouched for years. Rafters above the shelves offer additional hanging potential.',
     categories: ['Holiday decorations', 'Camping & outdoor gear', 'Luggage', 'Archived documents', 'Outgrown kids’ clothes', 'Memorabilia & keepsakes', 'Extra bedding & linens', 'Seasonal sports equipment'],
-    features: [
-      {icon: 'layers', title: '5 shelves', sub: 'Standard utility shelving'},
-      {icon: 'horizontal', title: 'Wide shelves', sub: '24 inches deep'},
-      {icon: 'up', title: 'Exposed rafters above', sub: 'Potential hanging storage'},
-      {icon: 'down', title: 'Deep floor space', sub: 'In front of and beside the shelf unit'},
-      {icon: 'x', title: 'Limited lighting', sub: 'Hard to read labels from a distance'}
-    ],
     problems: [
       'Faded handwritten labels make it impossible to find items without opening every box',
       'Cardboard boxes are deteriorating and some have moisture damage',
@@ -647,13 +595,6 @@ function otherScenario() {
     spaceType: 'Other',
     summary: 'A general-purpose storage area with four shelves. A mix of frequently used items, backup supplies, and seasonal odds and ends share space with no clear system. Items are placed wherever they fit rather than where they belong, and a few things have been here long enough that their purpose is forgotten.',
     categories: ['Frequently used items', 'Backup supplies', 'Seasonal items', 'Miscellaneous', 'Electronics & cables', 'Office supplies', 'Craft supplies', 'Household tools'],
-    features: [
-      {icon: 'layers', title: '4 shelves', sub: 'Standard utility shelving'},
-      {icon: 'horizontal', title: 'Moderate depth', sub: '14 inches deep'},
-      {icon: 'vertical', title: 'Some unused vertical space', sub: 'Between items and the shelf above'},
-      {icon: 'bin', title: '1 bin or basket', sub: 'Overflowing with miscellaneous items'},
-      {icon: 'x', title: 'No labels', sub: 'Nothing is marked'}
-    ],
     problems: [
       'No category system. Items are placed wherever they fit at the moment',
       'Frequently used items are blocked by rarely used ones',
@@ -732,13 +673,6 @@ function drawersScenario() {
     spaceType: 'Kitchen drawers',
     summary: 'A bank of four kitchen drawers doing four different jobs badly: utensils tangled in the top drawer, cooking tools jammed at angles below, towels mixed with gadgets, and a deep bottom drawer of lids without pots. Nothing has a fixed spot, so every drawer gets rummaged daily.',
     categories: ['Everyday utensils', 'Cooking tools', 'Kitchen towels', 'Food storage lids', 'Gadgets & rarely used tools', 'Foil & wraps', 'Takeout extras', 'Batteries & misc'],
-    features: [
-      {icon: 'drawer', title: '4 drawers', sub: 'One shallow, two standard, one deep'},
-      {icon: 'horizontal', title: 'Full-width top drawer', sub: 'Prime spot, currently mixed'},
-      {icon: 'bin', title: '1 loose utensil tray', sub: 'Too small for the drawer'},
-      {icon: 'down', title: 'Deep bottom drawer', sub: 'Good for tall or bulky items'},
-      {icon: 'empty', title: 'Wasted front strip', sub: 'Each drawer has unused space up front'}
-    ],
     problems: [
       'Utensils, gadgets, and takeout extras share drawers with no dividers',
       'The one utensil tray slides around and is too small for the drawer',
@@ -810,11 +744,6 @@ function junkScenario() {
     spaceType: 'Junk drawer',
     summary: 'One classic junk drawer: batteries rolling loose, a tangle of charging cables, takeout menus, three kinds of tape, pens that may or may not work, and small tools buried underneath. It all fits. It just has no zones, so finding anything means digging.',
     categories: ['Batteries', 'Pens & markers', 'Tape & adhesives', 'Small tools', 'Charging cables', 'Keys & spares', 'Paper & menus', 'Odds & ends'],
-    features: [
-      {icon: 'drawer', title: '1 wide drawer', sub: 'Standard depth, full extension'},
-      {icon: 'horizontal', title: 'Full-width space', sub: 'Fits 4–6 small trays'},
-      {icon: 'empty', title: 'No dividers', sub: 'Everything migrates and mixes'}
-    ],
     problems: [
       'No zones. Items migrate and bury each other',
       'Dead batteries mixed with fresh ones',
@@ -869,12 +798,6 @@ function bathroomScenario() {
     spaceType: 'Bathroom vanity',
     summary: 'An under-sink vanity cabinet plus two shallow drawers. Skincare, hair tools, cleaning sprays, and backstock all share the cabinet floor around the plumbing, so everything gets knocked over reaching past it. The drawers hold a mix of daily items and expired products.',
     categories: ['Daily skincare', 'Hair tools & products', 'Cleaning supplies', 'Backstock (soap, paper)', 'First aid', 'Travel & samples', 'Makeup', 'Expired products'],
-    features: [
-      {icon: 'door', title: 'Under-sink cabinet', sub: 'Tall but interrupted by plumbing'},
-      {icon: 'drawer', title: '2 shallow drawers', sub: 'Prime spots, currently mixed'},
-      {icon: 'vertical', title: 'Unused cabinet height', sub: 'Air above the floor pile'},
-      {icon: 'empty', title: 'Open floor corners', sub: 'Around the P-trap'}
-    ],
     problems: [
       'Cleaning chemicals sit within easy reach next to skincare',
       'Everything stacks on the cabinet floor, so back items are invisible',
@@ -948,12 +871,6 @@ function linenScenario() {
     spaceType: 'Linen closet',
     summary: 'A five-shelf linen closet where sheet sets have separated from their pillowcases, towels lean in unstable stacks, and spare blankets compress everything below them. The top shelf is nearly empty while the middle shelves overflow.',
     categories: ['Bath towels', 'Hand towels & washcloths', 'Sheet sets', 'Blankets & duvets', 'Guest bedding', 'Toiletry backstock', 'Beach towels', 'Heating pads & extras'],
-    features: [
-      {icon: 'shelf', title: '5 shelves', sub: 'Deep enough for double rows'},
-      {icon: 'up', title: 'Near-empty top shelf', sub: 'Perfect for rarely used bulk'},
-      {icon: 'vertical', title: 'Tall gaps between shelves', sub: 'Fits stacked bins'},
-      {icon: 'empty', title: 'Floor space', sub: 'Currently a laundry-basket parking spot'}
-    ],
     problems: [
       'Sheet sets split apart. Matching a set means unfolding stacks',
       'Towel stacks are too tall and topple when one is pulled',
@@ -1030,12 +947,6 @@ function fridgeScenario() {
     spaceType: 'Fridge & freezer',
     summary: 'A standard fridge where leftovers get lost behind condiments, produce wilts unseen in overstuffed drawers, and the door shelves carry heavy bottles they were not built for. The freezer below is a single avalanche of unlabeled bags.',
     categories: ['Leftovers', 'Fresh produce', 'Dairy & eggs', 'Condiments & sauces', 'Drinks', 'Raw meat & fish', 'Frozen meals', 'Frozen vegetables & fruit'],
-    features: [
-      {icon: 'shelf', title: '4 fridge shelves', sub: 'One height-adjustable'},
-      {icon: 'drawer', title: '2 crisper drawers', sub: 'Humidity controls unused'},
-      {icon: 'door', title: 'Door shelves', sub: 'Warmest zone in the fridge'},
-      {icon: 'down', title: 'Freezer drawer', sub: 'Deep, currently one big pile'}
-    ],
     problems: [
       'Leftovers disappear behind taller items and expire',
       'Raw meat sits above ready-to-eat food. A food-safety risk',
@@ -1113,13 +1024,6 @@ function walkinScenario() {
     spaceType: 'Walk-in closet',
     summary: 'A U-shaped walk-in closet mapped wall by wall: left wall, back wall, then right wall. Long clothes crowd a single rod, folded piles slump on the back shelves, shoes pile on the floor, and the high shelves hold an unplanned mix of bags and bedding. Every wall works harder once it has one clear job.',
     categories: ['Hanging clothes', 'Folded knits & tees', 'Shoes', 'Bags & purses', 'Seasonal clothing', 'Accessories & belts', 'Spare bedding', 'Laundry overflow'],
-    features: [
-      {icon: 'shelf', title: '3 walls of storage', sub: 'Left, back, and right. Mapped in walking order'},
-      {icon: 'hook', title: '2 hanging rods', sub: 'One sagging under double duty'},
-      {icon: 'up', title: 'High shelves on all walls', sub: 'Unplanned mix of bags and bedding'},
-      {icon: 'down', title: 'Open floor line', sub: 'Currently a shoe pile'},
-      {icon: 'empty', title: 'Back-wall shelf gap', sub: 'Half a shelf sits empty at eye level'}
-    ],
     problems: [
       'One rod carries long and short items, so nothing hangs freely',
       'Folded piles topple because shelves have no dividers or bins',
@@ -1203,12 +1107,6 @@ function dresserScenario() {
     spaceType: 'Dresser',
     summary: 'A four-drawer dresser where folding never survives the week. Everyday tops share a drawer with workout clothes, jeans are stacked so high the drawer jams, and the sock drawer is a single jumble. The top surface collects whatever was in someone’s hands at bedtime. Off-season overflow is wedged into every gap.',
     categories: ['Everyday tops', 'Pants & jeans', 'Underwear & socks', 'Pajamas', 'Workout clothes', 'Sweaters', 'Accessories', 'Off-season overflow'],
-    features: [
-      {icon: 'drawer', title: '4 drawers', sub: 'Two shallow on top, two deep below'},
-      {icon: 'horizontal', title: 'Top surface', sub: 'Currently a catch-all'},
-      {icon: 'vertical', title: 'Deep drawer height', sub: 'Enough for upright file-folding'},
-      {icon: 'empty', title: 'No dividers', sub: 'Folded stacks slump and mix'}
-    ],
     problems: [
       'Stacked folding hides every shirt below the top one',
       'Jeans pile so high the second drawer jams on opening',
@@ -1280,13 +1178,6 @@ function workbenchScenario() {
     spaceType: 'Workbench',
     summary: 'A garage workbench with a pegboard wall, one upper shelf, two drawers, and open space below. The bench surface is buried under half-finished projects, hand tools, and loose hardware. Power tools sit wherever they last landed, paint and adhesives mix with safety gear, and small fasteners live in unlabeled jars and pockets.',
     categories: ['Hand tools', 'Power tools', 'Screws & fasteners', 'Paint & supplies', 'Tape & adhesives', 'Safety gear', 'Batteries & cords'],
-    features: [
-      {icon: 'hook', title: 'Pegboard wall', sub: 'Mostly empty hooks'},
-      {icon: 'up', title: '1 upper shelf', sub: 'Runs the bench length'},
-      {icon: 'drawer', title: '2 bench drawers', sub: 'Currently mixed hardware'},
-      {icon: 'down', title: 'Open space below', sub: 'Fits bins or a small cabinet'},
-      {icon: 'horizontal', title: 'Full bench surface', sub: 'Buried under projects'}
-    ],
     problems: [
       'The bench surface is storage, so there is nowhere to actually work',
       'Small fasteners are scattered across jars, pockets, and the bench top',
