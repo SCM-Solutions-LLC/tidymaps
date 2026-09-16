@@ -17,6 +17,12 @@ export async function expandChapters(page) {
       if (head) head.setAttribute('aria-expanded', 'true');
     });
   });
+  // Uncollapsing removes display:none from the chapter's children; a rect read
+  // in the same frame catches pre-reflow numbers. Two rAFs is the shortest
+  // wait that lands after the browser has re-styled and laid out.
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
 }
 
 /* ---------- a signed-in visitor, offline ----------
