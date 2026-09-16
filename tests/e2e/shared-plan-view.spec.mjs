@@ -45,7 +45,6 @@ const PAYLOAD = {
       existingLede: 'You already have some good stuff in here.',
       existing: [{ ico: '<svg viewBox="0 0 24 24"></svg>', ft: 'Clear acrylic bins', fd: 'Buy a matching set.' }],
       dontBuy: 'Skip a new shelf unit. You have plenty of shelf space already.',
-      features: [{ ico: '<svg viewBox="0 0 24 24"></svg>', ttl: 'Multi-level wall shelving', sub: 'Five shelf levels' }],
       steps: [
         /* No `cite`: the citation is the owner's own wizard answer quoted back,
            and the server strips it now rather than relying on the report to

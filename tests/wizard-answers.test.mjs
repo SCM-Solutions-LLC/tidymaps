@@ -48,7 +48,6 @@ const FILLED = {
   cats: ['Power tools', 'Fasteners'],
   catsTouched: true,
   detected: ['drill', 'jar of screws'],
-  features: ['pegboard'],
   budget: '$100–250',
   effort: 'Full overhaul',
   effortTouched: true,

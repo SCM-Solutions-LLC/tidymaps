@@ -60,7 +60,6 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "spaceType": string,                         // e.g. "Pantry", "Closet"
   "summary": string,                           // ONE sentence, max 20 words: the space and its main problem
   "categories": [string],                      // visible item categories, e.g. "Canned goods","Snacks"
-  "features": [{"icon": string, "title": string, "sub": string}],  // existing storage features you can see. icon keyword: shelf|basket|bin|drawer|door|vertical|horizontal|down|up|hook|rod|empty|missing
   "problems": [string],                        // 2-4 items. Each is a SHORT PHRASE, max 10 words, no explanation
   "opportunities": [string],                   // 2-4 items. Each is a SHORT PHRASE, max 10 words, no explanation
   "map": [{                                    // 1-12 rows, one per storage level. NEVER more than 12.

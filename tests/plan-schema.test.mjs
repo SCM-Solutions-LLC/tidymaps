@@ -211,7 +211,7 @@ test('an icon past the keyword cap is rejected; every keyword the prompt names p
     .filter((line) => line.includes('"icon": string'))
     .flatMap((line) => [...line.slice(line.indexOf('//')).matchAll(/\b[a-z]+(?:\|[a-z]+)+\b/g)].map((m) => m[0]))
     .flatMap((run) => run.split('|'));
-  assert.ok(listed.length >= 15, `expected the prompt's icon keyword lists, found ${listed.length}`);
+  assert.ok(listed.length >= 5, `expected the prompt's icon keyword list, found ${listed.length}`);
   for (const icon of listed) {
     assert.equal(validatePlan(basePlan({ map: [row(icon)] }), noKidsContext).ok, true, `prompt keyword "${icon}" rejected`);
     assert.ok(icon.length <= PLAN_ICON_MAX_CHARS);
@@ -580,8 +580,25 @@ test('normalizing an already-normalized plan is a no-op, not a wipe', () => {
   assert.deepEqual(twice.map.map(m => m.lv), once.map.map(m => m.lv), 'zone levels blanked');
   assert.deepEqual(twice.map.map(m => m.ic), once.map.map(m => m.ic), 'zone icons reset to the fallback');
   assert.deepEqual(twice.existing, once.existing, 'reuse list blanked');
-  assert.deepEqual(twice.features, once.features, 'features blanked');
   for (const s of twice.steps) assert.ok(s.t && s.m !== '—' || s.m === once.steps[0].m, 'step time lost');
+});
+
+/* Symmetry: the prompt tells the model what fields to produce and the schema
+   validates what came back. Every version of an "invariant asked for more
+   than the prompt told" bug (recorded in HANDOFF §#1) has cost an 80-second
+   analysis, so this pins the two sides to move together on `features`. Bring
+   the field back in one side without the other and this fails. */
+test('plan.features is removed symmetrically from the prompt and the schema', () => {
+  const prompt = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  const schema = readFileSync(new URL('../supabase/functions/_shared/planSchema.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(prompt, /"features":/, 'the prompt still asks the model for features');
+  assert.doesNotMatch(schema, /^\s*features:\s/m, 'the schema still declares a features field');
+});
+
+test('a plan the model produces with a stray features array parses cleanly, features gone', () => {
+  const r = validatePlan({ ...basePlan(), features: [{ icon: 'shelf', title: 'anything', sub: 'anything' }] }, noKidsContext);
+  assert.equal(r.ok, true, `validation should pass: ${JSON.stringify(r.errors)}`);
+  assert.equal(r.value.features, undefined, 'features should be stripped by the schema');
 });
 
 /* ---------- steps and the shopping list have to agree ----------

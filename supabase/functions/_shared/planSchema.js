@@ -129,7 +129,6 @@ export const planSchema = z.object({
   spaceType: text(),
   summary: text(),
   categories: z.array(text()).optional(),
-  features: z.array(z.object({ icon: iconKeyword(), title: text(), sub: text() })).optional(),
   problems: z.array(text()).optional(),
   opportunities: z.array(text()).optional(),
   map: z.array(mapRowSchema).min(1),
