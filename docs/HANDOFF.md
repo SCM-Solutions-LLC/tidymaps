@@ -2043,6 +2043,17 @@ Ordered by whether anyone can act on them today.
    all — first deploy, rebased history, runs rolled off) exits 0 with a
    note, since the current run cannot be its own predecessor.
 
+   **Corrected 2026-09-29: it now counts any completed run, not only
+   successes.** The `ANTHROPIC_API_KEY` went invalid again around 09-19;
+   runs #31 to #40 all fired on schedule and all failed with
+   `authentication_error`. From day 3 the heartbeat also failed, telling the
+   owner "a previous scheduled fire was skipped" when none was, which is the
+   exact misdirection its own header promised to avoid. A failed run proves
+   the schedule is alive and already emails on its own, so the heartbeat now
+   asks for `status=completed`. The key itself still needs rotating by the
+   owner (Production health #3); the deploy token is still dead too
+   (Production health #5, runs 28 and 29 on 09-21 and 09-28).
+
    Every new behavioural assertion proven red by neutering only its own fix
    with file copies rather than `git checkout`: threshold to `Infinity` (4
    red, including the boundary case that underflows), the current-run skip
