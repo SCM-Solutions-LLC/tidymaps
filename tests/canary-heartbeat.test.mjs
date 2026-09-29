@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   STALE_THRESHOLD_HOURS,
   classifyHeartbeat,
-  pickLastSuccess,
+  pickLastCompleted,
   main,
 } from '../scripts/check-canary-heartbeat.mjs';
 
@@ -57,34 +57,41 @@ test('classifyHeartbeat: malformed timestamp is its own class, not silently fres
   assert.equal(v.raw, 'not a date');
 });
 
-test('pickLastSuccess: takes the newest successful run and skips the current one', () => {
+test('pickLastCompleted: takes the newest successful run and skips the current one', () => {
   const runs = [
-    { id: 'CURRENT', conclusion: 'success', updated_at: isoHoursAgo(0.1) },
-    { id: 'B', conclusion: 'success', updated_at: isoHoursAgo(24) },
-    { id: 'C', conclusion: 'success', updated_at: isoHoursAgo(48) },
+    { id: 'CURRENT', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(0.1) },
+    { id: 'B', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(24) },
+    { id: 'C', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(48) },
   ];
-  const r = pickLastSuccess(runs, 'CURRENT');
+  const r = pickLastCompleted(runs, 'CURRENT');
   assert.equal(r.id, 'B');
 });
 
-test('pickLastSuccess: ignores non-success conclusions even when listed', () => {
+test('pickLastCompleted: a failed run counts, because it proves the schedule fired', () => {
   const runs = [
-    { id: 'A', conclusion: 'failure', updated_at: isoHoursAgo(1) },
-    { id: 'B', conclusion: 'cancelled', updated_at: isoHoursAgo(2) },
-    { id: 'C', conclusion: 'success', updated_at: isoHoursAgo(3) },
+    { id: 'A', status: 'completed', conclusion: 'failure', updated_at: isoHoursAgo(1) },
+    { id: 'B', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(25) },
   ];
-  assert.equal(pickLastSuccess(runs, null)?.id, 'C');
+  assert.equal(pickLastCompleted(runs, null)?.id, 'A');
 });
 
-test('pickLastSuccess: an empty or missing array is null (bootstrap)', () => {
-  assert.equal(pickLastSuccess([], 'X'), null);
-  assert.equal(pickLastSuccess(null, 'X'), null);
+test('pickLastCompleted: skips runs that have not completed', () => {
+  const runs = [
+    { id: 'A', status: 'in_progress', conclusion: null, updated_at: isoHoursAgo(1) },
+    { id: 'B', status: 'completed', conclusion: 'failure', updated_at: isoHoursAgo(24) },
+  ];
+  assert.equal(pickLastCompleted(runs, null)?.id, 'B');
 });
 
-test('pickLastSuccess: compares run ids as strings so numeric ids match', () => {
-  const runs = [{ id: 12345, conclusion: 'success', updated_at: isoHoursAgo(2) }];
-  assert.equal(pickLastSuccess(runs, '12345'), null);
-  assert.equal(pickLastSuccess(runs, 12345), null);
+test('pickLastCompleted: an empty or missing array is null (bootstrap)', () => {
+  assert.equal(pickLastCompleted([], 'X'), null);
+  assert.equal(pickLastCompleted(null, 'X'), null);
+});
+
+test('pickLastCompleted: compares run ids as strings so numeric ids match', () => {
+  const runs = [{ id: 12345, status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(2) }];
+  assert.equal(pickLastCompleted(runs, '12345'), null);
+  assert.equal(pickLastCompleted(runs, 12345), null);
 });
 
 function stubEnv() {
@@ -133,18 +140,18 @@ async function runMain(opts) {
 }
 
 test('main: a fresh last run exits 0 and logs the age', async () => {
-  const runs = [{ id: 'B', conclusion: 'success', updated_at: isoHoursAgo(24), run_number: 7 }];
+  const runs = [{ id: 'B', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(24), run_number: 7 }];
   const { exits, logs } = await runMain({
     env: stubEnv(),
     now: NOW,
     fetchImpl: stubFetch(jsonResponse({ workflow_runs: runs })),
   });
   assert.deepEqual(exits, []);
-  assert.match(logs, /OK — last successful run/);
+  assert.match(logs, /OK — last completed run/);
 });
 
 test('main: a stale last run exits 1 under HEARTBEAT LOST', async () => {
-  const runs = [{ id: 'B', conclusion: 'success', updated_at: isoHoursAgo(48), run_number: 3 }];
+  const runs = [{ id: 'B', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(48), run_number: 3 }];
   const { exits, errs } = await runMain({
     env: stubEnv(),
     now: NOW,
@@ -205,12 +212,33 @@ test('main: a missing repo exits 1 as could-not-check', async () => {
   assert.match(errs, /GITHUB_REPOSITORY/);
 });
 
+test('main: a model-path outage is not reported as a skipped schedule', async () => {
+  /* Runs #31 to #40 (2026-09-19 to 09-28): every day fired, every day failed
+     on an invalid API key. Counting only successes made day 3 onward also
+     say HEARTBEAT LOST and blame the schedule. */
+  const runs = [
+    { id: 'D1', status: 'completed', conclusion: 'failure', updated_at: isoHoursAgo(24) },
+    { id: 'D2', status: 'completed', conclusion: 'failure', updated_at: isoHoursAgo(48) },
+    { id: 'D3', status: 'completed', conclusion: 'failure', updated_at: isoHoursAgo(72) },
+    { id: 'OK', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(242) },
+  ];
+  let requested = '';
+  const { exits, errs } = await runMain({
+    env: stubEnv(),
+    now: NOW,
+    fetchImpl: async (url) => { requested = url; return jsonResponse({ workflow_runs: runs }); },
+  });
+  assert.deepEqual(exits, []);
+  assert.doesNotMatch(errs, /HEARTBEAT LOST/);
+  assert.match(requested, /status=completed/);
+});
+
 test('main: the current run itself is never treated as its own predecessor', async () => {
   /* A stale actual-previous run must still trip the alert even when the
      current run is somehow returned first by the API. */
   const runs = [
-    { id: 'CURRENT', conclusion: 'success', updated_at: isoHoursAgo(0.1) },
-    { id: 'PREV', conclusion: 'success', updated_at: isoHoursAgo(60) },
+    { id: 'CURRENT', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(0.1) },
+    { id: 'PREV', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(60) },
   ];
   const { exits, errs } = await runMain({
     env: stubEnv(),

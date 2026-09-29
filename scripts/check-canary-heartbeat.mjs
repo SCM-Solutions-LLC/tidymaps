@@ -10,8 +10,16 @@
 
    This step reads the workflow's own recent run history through the GitHub
    Actions API — using GITHUB_TOKEN with `actions: read`, no new secret — and
-   fails if the last successful run is old enough that a scheduled fire must
+   fails if the last completed run is old enough that a scheduled fire must
    have been skipped.
+
+   "Completed", not "successful": the question is whether the schedule fired,
+   not whether the model path worked. A failed canary run proves the schedule
+   is alive, and it already emails the owner on its own. Counting only
+   successes made a model-path outage longer than 36h also report HEARTBEAT
+   LOST and tell the owner a fire was skipped when every day had run (runs
+   #31 to #40, 2026-09-19 to 09-28, all fired on schedule and all failed on
+   an invalid API key).
 
    Threshold: firings have landed between 44 minutes and 11 hours 21 minutes
    after their 06:20 UTC schedule (Production health #10, HANDOFF item 9).
@@ -25,14 +33,14 @@
 
    Three exit modes, following the canary's own precedent that a check which
    could not run must never report success:
-     - fresh (last success ≤ 36h ago): OK, exit 0.
-     - stale (last success > 36h ago): HEARTBEAT LOST, exit 1. A previous
+     - fresh (last completed run ≤ 36h ago): OK, exit 0.
+     - stale (last completed run > 36h ago): HEARTBEAT LOST, exit 1. A previous
        scheduled fire was skipped; look at the schedule and at whether the
        workflow was auto-disabled by GitHub for repo quiet.
      - could-not-check (API error, malformed data, missing env): exit 1 under
        its own header so nobody rotates the API key over a schedule issue.
 
-   Bootstrap (no prior successful run at all — first deploy of this alert, a
+   Bootstrap (no prior completed run at all — first deploy of this alert, a
    just-rebased branch, or the runs history rolled off): exit 0 with a note.
    The current run is running now; it cannot be its own predecessor.
 
@@ -45,15 +53,15 @@ export const STALE_THRESHOLD_HOURS = 36;
 const WORKFLOW_FILE = 'model-path-canary.yml';
 const RUNS_PAGE_SIZE = 20;
 
-/* Pick the most recent completed successful run, excluding the current one.
-   The runs API returns newest first, so the first match wins. */
-export function pickLastSuccess(runs, currentRunId) {
+/* Pick the most recent completed run of any conclusion, excluding the current
+   one. The runs API returns newest first, so the first match wins. */
+export function pickLastCompleted(runs, currentRunId) {
   if (!Array.isArray(runs)) return null;
   const currentId = currentRunId == null ? null : String(currentRunId);
   for (const r of runs) {
     if (!r || typeof r !== 'object') continue;
     if (currentId && String(r.id) === currentId) continue;
-    if (r.conclusion !== 'success') continue;
+    if (r.status !== 'completed') continue;
     if (typeof r.updated_at !== 'string') continue;
     return r;
   }
@@ -61,18 +69,18 @@ export function pickLastSuccess(runs, currentRunId) {
 }
 
 /* Pure classifier so the age boundary is testable without an API. */
-export function classifyHeartbeat(lastSuccessUpdatedAt, now = Date.now()) {
-  if (lastSuccessUpdatedAt == null) return { kind: 'bootstrap' };
-  const then = Date.parse(lastSuccessUpdatedAt);
-  if (!Number.isFinite(then)) return { kind: 'malformed', raw: lastSuccessUpdatedAt };
+export function classifyHeartbeat(lastUpdatedAt, now = Date.now()) {
+  if (lastUpdatedAt == null) return { kind: 'bootstrap' };
+  const then = Date.parse(lastUpdatedAt);
+  if (!Number.isFinite(then)) return { kind: 'malformed', raw: lastUpdatedAt };
   const ageHours = (now - then) / 3_600_000;
-  if (ageHours > STALE_THRESHOLD_HOURS) return { kind: 'stale', ageHours, at: lastSuccessUpdatedAt };
-  return { kind: 'fresh', ageHours, at: lastSuccessUpdatedAt };
+  if (ageHours > STALE_THRESHOLD_HOURS) return { kind: 'stale', ageHours, at: lastUpdatedAt };
+  return { kind: 'fresh', ageHours, at: lastUpdatedAt };
 }
 
-async function fetchRecentSuccessfulRuns({ token, repo, fetchImpl = fetch }) {
+async function fetchRecentCompletedRuns({ token, repo, fetchImpl = fetch }) {
   const url = `https://api.github.com/repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs`
-    + `?per_page=${RUNS_PAGE_SIZE}&status=success`;
+    + `?per_page=${RUNS_PAGE_SIZE}&status=completed`;
   const res = await fetchImpl(url, {
     headers: {
       accept: 'application/vnd.github+json',
@@ -137,7 +145,7 @@ export async function main({ env = process.env, now = Date.now(), fetchImpl = fe
 
   let runs;
   try {
-    runs = await fetchRecentSuccessfulRuns({ token, repo, fetchImpl });
+    runs = await fetchRecentCompletedRuns({ token, repo, fetchImpl });
   } catch (e) {
     return failCheck('the GitHub API request never completed', `${e.name}: ${e.message}`);
   }
@@ -145,24 +153,24 @@ export async function main({ env = process.env, now = Date.now(), fetchImpl = fe
     return failCheck('the GitHub API response had no workflow_runs array', `Payload keys: ${runs && typeof runs === 'object' ? Object.keys(runs).join(', ') : typeof runs}`);
   }
 
-  const last = pickLastSuccess(runs, currentRunId);
+  const last = pickLastCompleted(runs, currentRunId);
   const verdict = classifyHeartbeat(last?.updated_at, now);
 
   if (verdict.kind === 'malformed') {
     return failCheck('the previous run has a malformed updated_at', `updated_at: ${JSON.stringify(verdict.raw)}`);
   }
   if (verdict.kind === 'bootstrap') {
-    log('OK — no prior successful run to compare against (bootstrap or history rolled off). Not failing.');
+    log('OK — no prior completed run to compare against (bootstrap or history rolled off). Not failing.');
     return;
   }
   if (verdict.kind === 'stale') {
     const ageH = verdict.ageHours.toFixed(1);
     return failHeartbeat(
-      `the last successful run completed ${ageH}h ago (threshold ${STALE_THRESHOLD_HOURS}h)`,
-      `Last success at ${verdict.at} (run #${last?.run_number ?? '?'}, id ${last?.id ?? '?'}).`,
+      `the last run completed ${ageH}h ago (threshold ${STALE_THRESHOLD_HOURS}h)`,
+      `Last completed run at ${verdict.at} (run #${last?.run_number ?? '?'}, id ${last?.id ?? '?'}).`,
     );
   }
-  log(`OK — last successful run ${verdict.ageHours.toFixed(1)}h ago at ${verdict.at}.`);
+  log(`OK — last completed run ${verdict.ageHours.toFixed(1)}h ago at ${verdict.at}.`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
