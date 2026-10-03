@@ -3,7 +3,7 @@ import { SVG, ICON, iconFor } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
-import { areaFor, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
+import { areaFor, fmtFt, fmtIn, optionsForHousehold, SPACE_CFG } from '../wizard-data.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
 import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, fmtChecked, TYPE_LABEL } from '../catalog.js';
 import { productArt } from '../product-art.js';
@@ -118,8 +118,13 @@ export function buildResults(){
   }
   const chipEffort=document.getElementById('chip-effort');
   if(chipEffort){
-    chipEffort.textContent=[state.effort, A?A.time:''].filter(Boolean).join(' · ');
-    chipEffort.style.display=state.effort?'':'none';
+    /* A chip is a statement, like the household chip above. "Weekend reset"
+       was never said when the effort card was left as we set it, and the
+       plan's own Why panels now say so; the time is a fact about the
+       finished checklist and stands on its own. */
+    const effortSaid=state.effortTouched?state.effort:null;
+    chipEffort.textContent=[effortSaid, A?A.time:''].filter(Boolean).join(' · ');
+    chipEffort.style.display=chipEffort.textContent?'':'none';
   }
 
   // product-click intent, delegated so it survives re-renders of the list
@@ -1206,10 +1211,18 @@ export function setUpgrades(on){
 /* Called after analysis (see loading.js). The contents step's category list
    is authoritative when the user engaged with it: unticked categories leave
    every zone, added ones get a home in exactly one zone — then the whole
-   report renders from the edited plan. Works for both AI and demo plans. */
+   report renders from the edited plan. Works for both AI and demo plans.
+
+   The edit is handed the chip list the wizard actually showed (the same
+   expression renderContents in wizard.js draws from), because "unticked" is
+   only meaningful against what was on offer. Given the user's list alone, it
+   could remove only what the PLAN had listed, and the model does not list
+   everything it writes about: "Move all appliances to the floor zone" stayed
+   in a pantry plan whose owner never ticked Appliances. */
 export function syncCategoriesToResults(){
   if(state.ai && state.catsTouched && state.cats.length){
-    applyCategoryEdits(state.ai, state.cats);
+    const cfg = SPACE_CFG[state.space] || SPACE_CFG.pantry;
+    applyCategoryEdits(state.ai, state.cats, { offered: optionsForHousehold(cfg.categories, state.household) });
   }
   buildResults();
 }

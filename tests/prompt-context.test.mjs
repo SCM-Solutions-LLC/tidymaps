@@ -106,6 +106,11 @@ const NOT_IN_PROMPT = {
      sentence describes `shopping`, and it gates the enforced limit in the
      trusted block. Both renderings are asserted directly below instead. */
   shoppingTouched: 'selects the wording for `shopping` rather than adding text; asserted in its own test',
+  /* Same shape as shoppingTouched: each chooses which sentence describes the
+     answer it travels with (the categories list, the effort level), and both
+     renderings are asserted below. */
+  categoriesTouched: 'selects the wording for `categories` and `categoriesOffered`; asserted in its own test',
+  effortTouched: 'selects the wording for `effort`; asserted in its own test',
 };
 
 test('every answer the client sends reaches the prompt, or is listed as not needing to', async () => {
@@ -119,10 +124,15 @@ test('every answer the client sends reaches the prompt, or is listed as not need
   state.styles = ['Clear latching totes'];
   state.shoppingPref = 'Open to a few ideas'; state.shoppingTouched = true;
   state.detected = ['Paint cans'];
-  state.cats = ['Tools', 'Paint & chemicals'];
+  /* The touched flags are part of "fully answered". buildAnalysisContext now
+     sends categories only when the contents step was edited, so without this
+     line `categories` arrives as [] and the empty-value skip below waves it
+     through as an answer nobody gave, and the guard stops guarding the one
+     field it was written for. */
+  state.cats = ['Tools', 'Paint & chemicals']; state.catsTouched = true;
   state.prefs = new Set(['Labels and categories']);
   state.budget = 'Under $100';
-  state.effort = 'Full overhaul';
+  state.effort = 'Full overhaul'; state.effortTouched = true;
   state.dims = { w_in: 96, h_in: 84, d_in: 18 };
   state.household = { adults: 2, kidCount: 1, petCount: 1,
     kids: { present: 'yes', ages: ['Toddler'] }, pets: { present: 'yes', types: ['Dog'] },
@@ -198,7 +208,8 @@ test('an untouched shopping default is described as ours, not theirs', () => {
   assert.doesNotMatch(ours, /Their answer on buying storage/,
     'a preselection must not be reported to the model as the user\'s answer');
   assert.match(ours, /did not answer/);
-  assert.match(ours, /no preference either way/);
+  assert.match(ours, /the wizard's preselection, which they left in place/);
+  assert.doesNotMatch(ours, /\btreat\b/, 'the untrusted block describes; it never instructs');
 });
 
 /* A client built before `shoppingTouched` existed sends nothing for it. Those
@@ -215,4 +226,57 @@ test('the no-purchase limit is enforced only for a chosen answer', () => {
   // from before the field existed keeps the behaviour it was built against.
   assert.match(fn, /const untouchedDefault = ctx\.shoppingTouched === false;/);
   assert.match(fn, /ctx\.shopping === 'Use what I have' && !untouchedDefault/);
+});
+
+/* The contents step shows a fixed set of chips and the user ticks some. The
+   model used to see only the ticked ones, so it could not tell "the user
+   never had a chip for appliances" from "the user saw Appliances and left it
+   unticked", which is the difference between adding something to the plan and
+   respecting a choice to leave it out. The chips the step offered now travel
+   too, and the unticked ones are named as such. */
+test('the chips the contents step offered and the user left unticked are named', () => {
+  const rendered = buildContext({
+    categories: ['Snacks'], categoriesTouched: true,
+    categoriesOffered: ['Snacks', 'Appliances', 'Baking'],
+  });
+  assert.match(rendered, /What they say is in the space: Snacks\./);
+  assert.match(rendered, /Offered on the contents step and left unticked: Appliances, Baking\./);
+  assert.doesNotMatch(rendered, /unticked: [^.]*Snacks/, 'a ticked chip is not reported as unticked');
+});
+
+test('a contents step the user never touched is described as ours, not theirs', () => {
+  const rendered = buildContext({ categories: [], categoriesTouched: false, categoriesOffered: ['Snacks', 'Appliances'] });
+  assert.doesNotMatch(rendered, /their own edited list/);
+  assert.match(rendered, /did not edit/);
+  assert.match(rendered, /Snacks, Appliances/);
+});
+
+/* The photo step pre-ticks the chips it detected, so "I disagree with all of
+   it" is one tap per chip and ends with an edited list that is empty. That
+   case rendered nothing: the unticked list lived inside the "has entries"
+   branch, so the strongest correction a user can make to the contents step
+   reached the model as silence, indistinguishable from never having asked. */
+test('unticking every chip is an answer, and is described as one', () => {
+  const rendered = buildContext({ categories: [], categoriesTouched: true, categoriesOffered: ['Snacks', 'Appliances'] });
+  assert.match(rendered, /The contents step offered Snacks, Appliances; they unticked every one of them, so none is confirmed as present\./);
+  assert.doesNotMatch(rendered, /did not edit/, 'an emptied list is an edit, not an untouched step');
+  assert.doesNotMatch(rendered, /their own edited list/, 'there is no list to call theirs');
+  // A client that sends no flag at all keeps the old meaning: nothing to say.
+  assert.doesNotMatch(buildContext({ categories: [], categoriesOffered: ['Snacks'] }), /contents step/);
+});
+
+/* The effort card arrives preselected ("Weekend reset"), and the plain
+   "Effort level: Weekend reset." told the model the user had chosen it. */
+test('an untouched effort default is described as ours, not theirs', () => {
+  assert.match(buildContext({ effort: 'Weekend reset', effortTouched: true }), /Effort level: Weekend reset\./);
+  const ours = buildContext({ effort: 'Weekend reset', effortTouched: false });
+  assert.doesNotMatch(ours, /^Effort level: Weekend reset\.$/m);
+  assert.match(ours, /Effort level: "Weekend reset" is the wizard's preselection; they did not change it\./);
+  /* Everything in <user_context> is fenced as description the model must not
+     act on, so a sentence here that tells it how to weigh the answer is an
+     instruction sitting where the guard says there are none. The first
+     wording did exactly that ("treat it as no preference"). */
+  assert.doesNotMatch(ours, /\btreat\b/, 'the untrusted block describes; it never instructs');
+  // A client from before the flag existed keeps the old meaning.
+  assert.match(buildContext({ effort: 'Weekend reset' }), /Effort level: Weekend reset\./);
 });

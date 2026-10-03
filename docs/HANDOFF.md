@@ -291,6 +291,83 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-03 session changed, part 3 (the answers reach the plan; every row has a wall)
+
+Third of the six PRs from the owner's site review. The owner's walk-in
+pantry came back with twelve generic steps ("Sort items into the eight
+categories", "Move all appliances to the floor zone" though Appliances was
+never ticked) and a plan that never said which wall a zone was on. This PR
+is the client half: the answers are carried into the plan honestly, the plan
+contract gains the fields the report and the 3D view will read, and a pure
+placement model says which wall a row belongs to. The server prompt that
+tells the model to use the answers is the next PR; the report and the viewer
+that draw walls are the two after it.
+
+- **Plan contract** (`js/plan.js normalizeAi`, idempotent): map rows keep
+  `wall` (`left|back|right|front|floor`) and `tier` (0 = top of that wall);
+  steps keep `rows` (shelfIndex list, deduped, filtered to the map) and
+  `goal`; the plan keeps `spotted[{name,row,source:'photo'|'scope',included}]`
+  (at most 8). Only model- or template-supplied values are stored; everything
+  else is derived on read, so saved and shared plans need no backfill. `front`
+  joins `PLACES` on both client and server (the wall the door is in, for the
+  shelf over a walk-in's doorway).
+- **`js/placement.js`** (pure, 35 tests): `placementFor(map, {layout,
+  archetype})` returns `{kind:'room'|'unit', walls:[{id,label,rows}], byRow}`.
+  Wall source priority: `row.wall`, then `layout.sections` place, then the
+  level text before the colon, then `surface` (floor, door), else null (an
+  "Other" group). Explicit tiers are kept only when contiguous from 0, else
+  renumbered by their order. Labels: "Left wall", "Back wall", "Right wall",
+  "Front wall", "Floor", and "Door" when every front row is door-mounted.
+- **Walk-in and L templates** (`js/setupStructure.js`) carry `wall` on every
+  slot; "Back wall: eye level" is now an eye row. Rule: at least one eye row
+  per plan, at most one per wall (keyed on the row's `wall` field).
+- **Answers plumbing**: `buildAnalysisContext` sends `categories` only when
+  the contents step was touched, plus `categoriesTouched`,
+  `categoriesOffered` and `effortTouched`; `promptContext.js` describes an
+  untouched step as ours, an edited step with every chip unticked as "none is
+  confirmed", and lists the chips left unticked. Every sentence in the
+  untrusted block describes; none instructs (the shopping and effort lines
+  said "treat it as", and the trusted limits line no longer says "the effort
+  this user chose"). `recomputePrefs` no longer drops the household's "no
+  drilling" pref when a style card is tapped later (`wizard-data.js
+  mergePrefs`).
+- **`js/personalize.js`**: `applyCategoryEdits` also removes steps, product
+  needs, problems and opportunities that mention only unticked categories
+  (never below half the steps) and moves the removed items into `spotted`
+  with `source:'scope'`. A ticked chip is matched by its parts, so "Dry goods
+  & grains" covers the model's "dry goods" (the review found the whole-phrase
+  rule wiped a ticked category whenever the model wrote fewer words than the
+  chip); the unticked side still matches whole phrases, so ticking "Kids'
+  snacks" with "Snacks" unticked keeps the kids' snacks. `includeSpotted`
+  (pure, idempotent, the "Also in your photo" tap PR 5 wires) puts the item
+  on its original row, else the keyword fit, else the eye row, and adds one
+  protected "Find a spot for …" step pointing at that row; an included entry
+  survives the next category edit. `citeGoals` cites "You told us: “goal”"
+  only for goals the user gave. An untouched effort grows a plan only to the
+  floor of its range, with "Effort was left on our default, Weekend reset, so
+  this plan keeps to the shorter end of it"; a legacy row whose effort is not
+  the preselection is sized to what was chosen. `citeFace` no longer breaks
+  at the colon of "You told us:", which had reduced every goal cite on a demo
+  plan to a bare "You told us".
+- **Share payload**: `steps[].goal` joins `STEP_PRIVATE` (a goal can be a
+  kid-gated answer, which would tell a visitor a child lives in the home);
+  `spotted` stays out through `PLAN_FIELDS`, now pinned by a test.
+- **Viewer**: `mapForShelfCount` keeps `wall` only when every merged row
+  agrees, drops `tier`, and adds `srcRows` so `steps[].rows` can be
+  translated to a merged map. The masthead effort chip prints the time only
+  when the card was never touched (a chip is a statement).
+- Tests: `tests/placement.test.mjs`, `tests/personalize-scope.test.mjs`,
+  `tests/analysis-context.test.mjs`, `tests/wizard-prefs.test.mjs`, additions
+  to `tests/plan-normalize.test.mjs`, `tests/prompt-context.test.mjs`,
+  `tests/plan-schema.test.mjs`, `tests/share-payload.test.mjs`,
+  `tests/setup-structure.test.mjs` (an untouched-effort sweep across all 33
+  setups) and `tests/three-viewer-options.test.mjs`. Each new rule was shown
+  red with its line neutered. The adversarial review of this PR found the
+  `goal` leak, the over-removal, a wizard-prefs suite that passed with the
+  fix reverted, and an eye-row invariant keyed on level text.
+- Open from the review, deliberately left: a merged viewer row's joined `lv`
+  text still lets `wallFromLevel` read a wall from its head if a merged map
+  were ever fed back through `placementFor` (nothing does).
 ## What the 2026-10-03 session changed, part 2 (products that exist)
 
 Second of the six PRs from the owner's site review (the first, #181, is the

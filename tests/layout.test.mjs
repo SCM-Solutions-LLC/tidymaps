@@ -122,6 +122,25 @@ test('normalizeLayout clamps out-of-range rows', () => {
   }
 });
 
+/* A walk-in has a fourth wall: the one the door is in, with a shelf over the
+   doorway. 'front' is its place value and the newest one in PLACES, and a
+   place the client does not recognise is dropped to null without a word, so
+   the section would still draw, just on no wall. Pinned on the archetype
+   that sends it, with the other three walls alongside so a regression that
+   kept 'front' only by emptying PLACE_SET of everything else would also show. */
+test('normalizeLayout keeps place "front" on a walk-in section', () => {
+  const layout = normalizeLayout({
+    type: 'walkin-u',
+    sections: [
+      { id: 'left', label: 'Left wall', place: 'left', rows: [0, 1] },
+      { id: 'back', label: 'Back wall', place: 'back', rows: [2] },
+      { id: 'door', label: 'Door', place: 'front', rows: [3] },
+    ],
+  }, 4);
+  assert.deepEqual(layout.sections.map((s) => s.place), ['left', 'back', 'front']);
+  assert.deepEqual(layout.sections[2].rows, [3]);
+});
+
 // resolveLayout priority chain
 
 /* Priority is override > a setup the user actually chose > the AI's reading of

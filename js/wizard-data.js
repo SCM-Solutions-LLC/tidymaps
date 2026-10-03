@@ -400,6 +400,50 @@ export function prefsForStyles(styles) {
   return prefs;
 }
 
+/* Home constraints. Each chip is a preference the plan engine already handles;
+   the behaviour was live and unreachable, because the questions that used to
+   set it were removed and no style can derive it. The household step writes
+   these straight into state.prefs, which is what makes them reach both paths:
+   the deterministic engine reads prefs, and buildAnalysisContext forwards them
+   to the model. Lives here rather than in the screen so mergePrefs can tell
+   them apart from the prefs it rebuilds. */
+/** @type {[string, string][]} */
+export const HOME_CONSTRAINTS = [
+  ['Nothing drilled or mounted', 'No drilling or permanent installation'],
+];
+
+/* The one place state.prefs is assembled. Style prefs are derived from the
+   style cards and the shopping constraint from the shopping answer, so both
+   are rebuilt from scratch on every call; a pref that no longer has an answer
+   behind it has to disappear with it.
+
+   `shoppingTouched` false adds neither constraint. The preselected shopping
+   card is "Use what I have", and treating it as an answer once pinned the
+   budget to $0 and emptied every plan's product list under a sentence
+   claiming the user had asked for that; "Open to buying storage" is just as
+   much a claim about them. recomputePrefs owns the budget and upgrades side
+   effects of the same answer and keeps them in step with this rule.
+
+   `keep` is the exception to the rebuild: prefs the household step's chips
+   wrote into state.prefs directly, which nothing here can derive. Carried
+   forward from `previous` by name, and only those, so a stale style or
+   shopping pref cannot ride along. Defaults to the HOME_CONSTRAINTS prefs.
+
+   @param {{ styles?: string[], shoppingPref?: string, shoppingTouched?: boolean,
+             previous?: Iterable<string> | null, keep?: Iterable<string> }} answers
+   @returns {Set<string>} a new Set, never the one passed as `previous` */
+export function mergePrefs({ styles, shoppingPref, shoppingTouched, previous, keep }) {
+  const prefs = prefsForStyles(styles);
+  if (shoppingTouched) {
+    prefs.add(shoppingPref === 'Use what I have' ? 'Use only what I already own' : 'Open to buying storage');
+  }
+  const before = new Set(previous || []);
+  for (const pref of keep || HOME_CONSTRAINTS.map(([, p]) => p)) {
+    if (before.has(pref)) prefs.add(pref);
+  }
+  return prefs;
+}
+
 /* ---------- Measurement formatting ----------
    Everything the user types and everything stored stays in feet and inches —
    state.dims is the plan and 3D contract and does not move. Units are a

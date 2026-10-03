@@ -29,6 +29,65 @@ test('multiple plan zones can share one physical shelf',()=>{
   assert.match(mapped[0].zone,/Zone 1/);
 });
 
+/* A merged row used to spread its first row over the result, so a left-wall
+   row folded with a back-wall row came out wall:'left', tier:0, and the
+   renumbered shelfIndex left steps[].rows and spotted[].row (which index the
+   unmerged plan) pointing at the wrong shelf. */
+test('a merged row keeps a wall only when every row in it agrees, and says which plan rows it came from',()=>{
+  const rows=[
+    {shelfIndex:0,lv:'Left wall: high shelf',zone:'A',wall:'left',tier:0,items:[{name:'a'}]},
+    {shelfIndex:1,lv:'Back wall: eye level',zone:'B',wall:'back',tier:0,items:[{name:'b'}]},
+    {shelfIndex:2,lv:'Back wall: lower shelves',zone:'C',wall:'back',tier:1,items:[{name:'c'}]},
+    {shelfIndex:3,lv:'Right wall: full run',zone:'D',wall:'right',tier:0,items:[{name:'d'}]},
+  ];
+  const mapped=mapForShelfCount(rows,2);
+  assert.equal(mapped.length,2);
+  // Bucket 0 mixes the left and back walls: no wall, no tier.
+  assert.equal('wall' in mapped[0],false,`mixed bucket kept wall ${mapped[0].wall}`);
+  assert.equal('tier' in mapped[0],false,`mixed bucket kept tier ${mapped[0].tier}`);
+  assert.deepEqual(mapped[0].srcRows,[0,1]);
+  assert.equal(mapped[0].shelfIndex,0);
+  // Bucket 1 mixes back and right: same rule.
+  assert.equal('wall' in mapped[1],false);
+  assert.deepEqual(mapped[1].srcRows,[2,3]);
+  assert.equal(mapped[1].shelfIndex,1);
+  // Every other field is still the merge it was.
+  assert.equal(mapped[0].lv,'Left wall: high shelf + Back wall: eye level');
+  assert.equal(mapped[0].zone,'A + B');
+  assert.deepEqual(mapped[0].items.map(i=>i.name),['a','b']);
+
+  // A bucket whose rows share a wall keeps it, and sits where its top row sat.
+  const sameWall=mapForShelfCount([
+    {shelfIndex:0,lv:'Back wall: top',zone:'A',wall:'back',tier:0,items:[]},
+    {shelfIndex:1,lv:'Back wall: eye level',zone:'B',wall:'back',tier:1,items:[]},
+    {shelfIndex:2,lv:'Right wall: full run',zone:'C',wall:'right',tier:0,items:[]},
+  ],2);
+  assert.equal(sameWall[0].wall,'back');
+  assert.equal(sameWall[0].tier,0);
+  assert.deepEqual(sameWall[0].srcRows,[0,1]);
+  assert.equal(sameWall[1].wall,'right');
+  assert.equal(sameWall[1].tier,0);
+  assert.deepEqual(sameWall[1].srcRows,[2]);
+
+  // Rows that never had a wall do not grow one.
+  const unwalled=mapForShelfCount([{shelfIndex:0,lv:'A',items:[]},{shelfIndex:1,lv:'B',items:[]}],1);
+  assert.equal('wall' in unwalled[0],false);
+  assert.equal('tier' in unwalled[0],false);
+  assert.deepEqual(unwalled[0].srcRows,[0,1]);
+});
+
+test('an unmerged map comes back unchanged apart from srcRows',()=>{
+  const rows=[
+    {shelfIndex:0,lv:'Left wall: high shelf',zone:'A',wall:'left',tier:0,eye:false,items:[{name:'a'}],safety:{flag:null,why:null}},
+    {shelfIndex:1,lv:'Back wall: eye level',zone:'B',wall:'back',tier:0,eye:true,items:[{name:'b'}],safety:{flag:'keep-high',why:'w'}},
+  ];
+  const mapped=mapForShelfCount(rows,2);
+  assert.deepEqual(mapped,rows.map((row,i)=>({...row,srcRows:[i]})));
+  // Rows without a shelfIndex are numbered by position.
+  const bare=mapForShelfCount([{lv:'A'},{lv:'B'}],5);
+  assert.deepEqual(bare.map(r=>r.srcRows),[[0],[1]]);
+});
+
 test('L side auto follows explicit left section and otherwise uses right',()=>{
   assert.equal(inferLSide({sections:[{id:'left',rows:[0]}]}),'left');
   assert.equal(inferLSide({sections:[{id:'run-b',rows:[1]}]}),'right');

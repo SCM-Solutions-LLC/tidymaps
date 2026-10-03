@@ -84,17 +84,40 @@ export function geometryWithShelfHeight(geometry,index,height){
   return {...g,shelfYFracs:heights.map(value=>1-value/g.height),estimated:false};
 }
 
+/* Fold the plan's rows down to the number of shelves the viewer draws.
+   Every row that comes out carries srcRows, the shelfIndex values of the
+   plan rows it was made from, because the merged rows are renumbered and
+   the plan's own links (steps[].rows, spotted[].row) still index the
+   unmerged map. Without it a consumer that followed a step to "row 3" of a
+   three-shelf viewer was shown whatever plan row happened to fold there.
+
+   A merged row used to inherit its first row's wall and tier, so a left-wall
+   row folded with a back-wall row came out as the left wall's top shelf. The
+   wall is kept only when every row in the bucket agrees on it, and the tier
+   only alongside the wall, as the highest row's, since a row made from two
+   shelves sits where its top one sat. An unmerged map is returned as it
+   came, srcRows aside. */
 export function mapForShelfCount(map,count){
   const rows=Array.isArray(map)?map:[];
   const shelfCount=clamp(Math.round(Number(count)||rows.length||1),1,12);
-  if(rows.length<=shelfCount) return rows.map(row=>({...row}));
+  const srcIndex=(row,index)=>Number.isInteger(row.shelfIndex)?row.shelfIndex:index;
+  if(rows.length<=shelfCount) return rows.map((row,index)=>({...row,srcRows:[srcIndex(row,index)]}));
   const buckets=Array.from({length:shelfCount},()=>[]);
-  rows.forEach((row,index)=>buckets[Math.min(shelfCount-1,Math.floor(index*shelfCount/rows.length))].push(row));
-  return buckets.map((bucket,shelfIndex)=>{
+  rows.forEach((row,index)=>buckets[Math.min(shelfCount-1,Math.floor(index*shelfCount/rows.length))].push(index));
+  return buckets.map((members,shelfIndex)=>{
+    const bucket=members.map(index=>rows[index]);
     const safety=bucket.find(row=>row.safety&&row.safety.flag);
+    const first={...bucket[0]};
+    delete first.wall;
+    delete first.tier;
+    const wall=bucket.every(row=>row.wall===bucket[0].wall)?bucket[0].wall:null;
+    const tiers=bucket.map(row=>row.tier).filter(Number.isInteger);
     return {
-      ...bucket[0],
+      ...first,
+      ...(wall?{wall}:{}),
+      ...(wall&&tiers.length?{tier:Math.min(...tiers)}:{}),
       shelfIndex,
+      srcRows:members.map(index=>srcIndex(rows[index],index)),
       lv:bucket.map(row=>row.lv).filter(Boolean).join(' + '),
       zone:bucket.map(row=>row.zone).filter(Boolean).join(' + '),
       why:bucket.map(row=>row.why).filter(Boolean).join(' '),

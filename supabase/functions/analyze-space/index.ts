@@ -75,7 +75,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   }],
   "layout": {                                  // optional: classify the overall physical layout
     "type": "shelves"|"cabinet"|"l-run"|"walkin-u"|"closet-rod"|"drawer-bank"|"closet-system"|"under-bed"|"under-sink"|"counter"|"garage-rack"|"overhead-rack"|"workbench"|"fridge",
-    "sections": [{"id": string, "label": string, "place": "left"|"back"|"right"|"upper"|"lower"|"run-a"|"run-b"|"floor"|"bench"|"wall", "rows": [number]}]  // optional: for multi-wall or multi-section spaces, group map rows by physical section. Each shelfIndex appears in at most one section.
+    "sections": [{"id": string, "label": string, "place": "left"|"back"|"right"|"front"|"upper"|"lower"|"run-a"|"run-b"|"floor"|"bench"|"wall", "rows": [number]}]  // optional: for multi-wall or multi-section spaces, group map rows by physical section. Each shelfIndex appears in at most one section.
   } | null,                                    // null if the layout type is unclear from the photos
   "geometry": {                                // estimate from the photos if the user gave no dimensions
     "unit": "in", "width": number, "height": number, "depth": number,
@@ -102,7 +102,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
 
 Layout classification rules:
 - Classify layout.type to the closest archetype: shelves (open shelving unit), cabinet (enclosed cabinet with doors), l-run (L-shaped two perpendicular runs), walkin-u (walk-in closet or pantry with 2-3 walls), closet-rod (closet with hanging rod), closet-system (built-in closet with shelves, rods, and lower drawers), drawer-bank (stacked drawers), under-bed (low drawers or rolling bins below a bed), under-sink (under-sink cabinet with plumbing), counter (counter with upper cabinets, butler's pantry), garage-rack (open garage or utility rack), overhead-rack (ceiling-mounted storage), workbench (workbench with pegboard), fridge (refrigerator or freezer).
-- For multi-wall or multi-section spaces, add sections grouping map rows by physical location. Each shelfIndex must appear in at most one section. Use place values that match the physical position.
+- For multi-wall or multi-section spaces, add sections grouping map rows by physical location. Each shelfIndex must appear in at most one section. Use place values that match the physical position: front is the wall the door is in, for the shelf over a walk-in's doorway.
 - Set surface on every map row: hanging rods are "rod", drawers are "drawer", crisper or freezer compartments are "drawer", counter or bench tops are "worktop", floor zones are "floor", door-mounted storage is "door", pegboard walls are "pegboard". Regular shelves are "shelf". If the surface type is not clear, set null.
 - If the layout type is genuinely unclear from the photos, set layout to null. Never invent walls or sections you cannot see.
 - If the user selected a setup type, prefer a layout.type consistent with that choice unless the photos clearly show a different configuration.
@@ -271,7 +271,12 @@ Deno.serve(async (req) => {
     ...(!usesWhatTheyHave ? [
       '- productNeeds vs steps: if any step tells the user to use a turntable, riser, airtight container, door rack, hook rack or drawer organizer, that item MUST also appear in productNeeds — checked per item, so listing one product does not cover the others. A plan that instructs a purchase it does not list gives the user a shopping list missing the thing the step needs, and a cost that does not add up. Either list what they need to buy, or write the step to work with what is already in the space.',
     ] : []),
-    `- steps: return between ${minSteps} and ${maxSteps} steps, matching the effort level this user chose.`,
+    /* This line used to say the user had chosen the effort level, which was
+       false for the common case: the card arrives preselected, and the
+       untrusted block says so in as many words. The range is real either way,
+       it is read off ctx.effort whether or not anyone touched the card, so the
+       line names the range and not a choice. */
+    `- steps: return between ${minSteps} and ${maxSteps} steps, the range for this request's effort level.`,
     `- step length: every steps[].task must be ${STEP_TASK_MAX_WORDS} words or fewer and every steps[].why ${STEP_WHY_MAX_WORDS} or fewer. Aim well under both, at 8 and 12, because each step renders as one line beside a picture. Checked per step, so one long task rejects the whole plan.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
     `- text length: no string value may be longer than ${PLAN_TEXT_MAX_CHARS} characters, and every icon keyword ${PLAN_ICON_MAX_CHARS} or fewer. The word limits above are far tighter, so a plan that follows them never comes near these.`,
