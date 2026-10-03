@@ -291,6 +291,65 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-03 session changed, part 2 (products that exist)
+
+Second of the six PRs from the owner's site review (the first, #181, is the
+section below). The owner picked a turntable from a real plan and found
+Amazon listing it as unavailable. The catalog is a hand-curated file last
+looked at in July, and the deploy-time link check only flagged a 404 or 410,
+so it reported that very listing "ok 200" the same morning.
+
+- **`data/catalog.json`**: every product carries `checked` (when a person
+  last looked at the listing), `available` and `img` (null until a licensed
+  photo exists). Two entries are `available:false` with a `note`: the Copco
+  9" turntable (Amazon, unavailable 2026-10-03) and the Target mDesign 15"
+  bin (404 on the deploy check). Replacements need the owner's hand check;
+  the sandbox cannot reach amazon.com.
+- **`js/catalog.js`**: `loadCatalog` reports a failed fetch through
+  `catalogFailed()` and leaves the cache empty so the next screen retries (it
+  used to cache the empty list and every row read "No exact match");
+  `priceAsOf()` is the newest `checked` month among available products;
+  `rankProducts` never offers an unavailable product; `selectionFor` builds a
+  shopping entry (`checked` is the include checkbox, `checkedOn` the catalog
+  date: two different things); `reconcileSelection` re-reads a saved
+  selection from the catalog and flags it `unavailable` with `formerName` when
+  the product is gone, keeping only the user's quantity and checkbox.
+- **Shelf depth**: room-shaped setups are measured as a room, so a walk-in's
+  cards all said "Fits your 72" shelf depth", label sets included.
+  `shelfDepthFor(dims, setup)` is the 3D builders' formula (14-inch floor,
+  `walkin-u.js:45`), and `fitFor` judges depth as yes or no the way the viewer
+  does (`scene.js` `organizerRequestedD<=shelfD`); width and height keep the
+  half-inch "tight" band. Both were found by `demo-fit` flagging the plan's
+  own pick in three setups when the server's formula (no floor) and a
+  half-inch clearance were tried first. The server's `usableShelfDepth`
+  (`planSchema.js:434`) still lacks the floor: for a 4-foot walk-in it caps
+  `productNeeds.maxDims` at 9.6 inches while the drawn shelves are 14.
+  Reconcile in the server PR.
+- **Report card** (`results.js renderUpgrades`): draws `productArt(type)`
+  (the library's drawing) instead of a generic glyph, escapes every catalog
+  URL, shows "Checked Jul 2026", gives label sets no depth badge, and when a
+  saved product is gone shows "… is no longer sold" with a "Pick another"
+  select in the row (or the search links when nothing else fits). A failed
+  catalog load reaches `showUpgradesFailed`. The library hides unavailable
+  products.
+- **Availability check**: `scripts/product-availability.mjs` (pure,
+  unit-tested) classifies a retailer page as ok, unavailable, dead, blocked
+  or error from its status and wording; `scripts/check-product-links.mjs`
+  fetches each page, writes a JSON report with `--report=`, and exits 1 only
+  for a product the catalog still calls available that came back dead or
+  unavailable. `.github/workflows/product-availability.yml` runs it weekly
+  (Tuesdays 06:41 UTC) and uploads the report; a failed run emails the owner,
+  the same mechanism as the model-path canary. Its verdict is a prompt to
+  look, not a fact: a person confirms and edits the two fields. The
+  deploy-time step in `pages.yml` stays `continue-on-error` (bot blocking).
+- Tests: `tests/catalog-availability.test.mjs`, `tests/product-availability.test.mjs`,
+  and additions to `tests/products.test.mjs` and `tests/catalog-fit.test.mjs`;
+  each was run red before its fix (the classifier by emptying the Amazon
+  phrase list, the fit rules by removing the floor and the depth rule).
+- Later, once Amazon Associates is approved (the owner applied 2026-10): a
+  scheduled job fills `img`, `price_usd`, `available` and `checked` from
+  PA-API; the cards already render `img` when present.
+
 ## What the 2026-10-03 session changed (the warm redesign; "Sort it again" removed)
 
 The owner reviewed the live site on 2026-10-03 and sent eight items of
