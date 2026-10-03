@@ -23,8 +23,10 @@
 //   1. Structural. The fields whose PURPOSE is to carry household context come
 //      off the allowlist and out of the rows: safetyNotes (the schema calls
 //      them "household-specific placement notes"), map[].safety (flag and why
-//      both — the flag alone says a child lives here), steps[].cite (the
-//      owner's own answers, quoted at them), and the kid-frequent item flag.
+//      both — the flag alone says a child lives here), steps[].cite and
+//      steps[].goal (the owner's own answers, quoted at them: a goal reading
+//      "Kids can't reach their things" says who lives here as plainly as a
+//      safety.why does), and the kid-frequent item flag.
 //      The PLACEMENTS stay: the plan still puts the bleach up high, it just
 //      no longer says who it is being kept away from.
 //
@@ -60,9 +62,17 @@ const PLAN_FIELDS = [
 ];
 
 /* Per-row and per-step fields that are household context by construction. The
-   values are not inspected; the keys never reach a visitor. */
+   values are not inspected; the keys never reach a visitor.
+
+   `goal` joined `cite` the day normalizeAi started keeping it. It is the user's
+   own goal copied exactly, so it is `cite` under another key: their answer on
+   the step's face. The pattern pass further down scans only TEXT_KEYS.step,
+   and "kids" is not a word it knows, so a step filed under "Kids can't reach
+   their things" reached a visitor's JSON whole. Dropped here, by key, for the
+   reason the comment at the top gives for every container built to hold
+   household context: a scan can be paraphrased past, a missing key cannot. */
 const ROW_PRIVATE = ['safety'];
-const STEP_PRIVATE = ['cite'];
+const STEP_PRIVATE = ['cite', 'goal'];
 // Item flags describe the OBJECT (heavy, chemical, sharp, fragile) — except
 // this one, which describes who uses it.
 const PRIVATE_ITEM_FLAG = 'kid-frequent';

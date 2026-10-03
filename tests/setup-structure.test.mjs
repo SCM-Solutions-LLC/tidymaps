@@ -32,7 +32,7 @@ const KIDS = { adults: 2, kidCount: 2, petCount: 0, kids: { present: 'yes', ages
 const ALL_SETUPS = Object.entries(SETUP_TYPES).flatMap(([space, list]) =>
   list.map(t => ({ space, id: t.id, label: t.label })));
 
-function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping = 'Open to a few ideas', effort = 'Weekend reset', styles = null } = {}) {
+function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping = 'Open to a few ideas', effort = 'Weekend reset', effortTouched = true, styles = null } = {}) {
   const d = dimsFt || SETUP_DIMS[id];
   state.room = 'x'; state.space = space; state.setup = id;
   state.setupLabel = (SETUP_TYPES[space].find(t => t.id === id) || {}).label || id;
@@ -48,9 +48,11 @@ function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping =
   // Takes the effort from the caller. Hardcoding it here silently defeated
   // the sweep below, which set state.effort and then had it overwritten —
   // "33 setups x 3 efforts" was really one label run three times.
-  // Marked as chosen: an untouched effort now grows a plan only to the floor
-  // of its range (applyEffort), and these plans model answers the user gave.
-  state.effort = effort; state.effortTouched = true; state.household = household;
+  // Marked as chosen unless the caller says otherwise: an untouched effort
+  // grows a plan only to the floor of its range (applyEffort), and most of
+  // these plans model answers the user gave. The one sweep that passes false
+  // covers the path most users take, which is never opening the card.
+  state.effort = effort; state.effortTouched = effortTouched; state.household = household;
   return normalizeAi(getDemoScenario(scenarioKeyFor(space, id), null, household, buildAnalysisContext(), id));
 }
 
@@ -142,16 +144,6 @@ test('the setups whose scenario already fits are left alone', () => {
   assert.ok(p.map.some(m => m.surface === 'rod'), 'a walk-in closet still hangs clothes');
 });
 
-/* The wall a row sits on, read the way a reader reads it: the prefix before
-   the colon in the level name ("Left wall: eye level" is the left wall).
-   Rows with no prefix share one wall. Derived from the text rather than
-   m.wall so the rule holds for hand-written scenario rows too, which carry
-   no wall field. */
-function wallOfText(lv) {
-  const i = String(lv || '').indexOf(':');
-  return i < 0 ? '' : String(lv).slice(0, i).trim();
-}
-
 test('plan invariants hold for every setup: shelfCount, eye zones per wall, real targetZones', () => {
   for (const s of ALL_SETUPS) {
     for (const shopping of ['Use what I have', 'Open to a few ideas']) {
@@ -162,11 +154,18 @@ test('plan invariants hold for every setup: shelfCount, eye zones per wall, real
         /* At least one eye row per plan, at most one per wall. "Exactly one"
            was the rule while every setup was a single run of shelves; a
            walk-in has an eye level on each wall it shelves, and the report's
-           per-wall chapters each want to mark one. */
+           per-wall chapters each want to mark one.
+
+           Keyed on the row's own wall field, the one the report and the 3D
+           builders read. The wall used to be read off the level text, the
+           part before the colon, which made "Upper cabinet" and "Hanging
+           rod" walls of their own: a single unit could carry an eye row on
+           its upper cabinet and another on its counter and pass. Rows with
+           no wall are one unit and share the one allowance. */
         assert.ok(p.map.some(m => m.eye), `${at}: no eye-level zone`);
         const eyesByWall = new Map();
         for (const m of p.map.filter(m => m.eye)) {
-          const w = wallOfText(m.lv);
+          const w = m.wall || '';
           eyesByWall.set(w, (eyesByWall.get(w) || 0) + 1);
         }
         for (const [w, n] of eyesByWall) {
@@ -900,6 +899,26 @@ test('a bigger effort answer buys more plan, or says why it cannot', () => {
       if (cur.n > prev.n) continue;
       assert.ok(cur.explained,
         `${s.space}/${s.id}: "${cur.effort}" gives ${cur.n} steps, same as or fewer than "${prev.effort}" (${prev.n}), and says nothing about it`);
+    }
+  }
+});
+
+test('an effort nobody touched grows every plan to its floor and cites no choice', () => {
+  /* planFor marks the effort as chosen, so every sweep above walks the path
+     a user takes after opening the effort card. Most never open it: the card
+     arrives on "Weekend reset" and they move on. applyEffort grows that plan
+     only to the floor of the range, and must not write "You chose" on steps
+     nobody chose. No sweep covered it. Asserted as the property, not a
+     count: a space with fewer levels than the floor needs is allowed to stop
+     short, provided it says so. */
+  const [floor] = EFFORT_STEP_RANGES['Weekend reset'];
+  for (const s of ALL_SETUPS) {
+    const p = planFor(s, { effort: 'Weekend reset', effortTouched: false });
+    assert.ok(p.steps.length >= floor || shortfallNote(p),
+      `${s.space}/${s.id}: ${p.steps.length} steps, under the floor of ${floor}, and nothing says why`);
+    for (const st of p.steps) {
+      assert.ok(!/You chose/.test(st.w || ''),
+        `${s.space}/${s.id}: "${st.t}" cites a choice nobody made: "${st.w}"`);
     }
   }
 });

@@ -400,14 +400,21 @@ test('valid layout with sections is accepted', () => {
       { level: 'Left wall: top', icon: 'up', zone: 'Bulk', why: 'Rarely used.', shelfIndex: 0, safety: { flag: null, why: null }, surface: 'shelf' },
       { level: 'Left wall: bottom', icon: 'down', zone: 'Daily', why: 'Easy reach.', shelfIndex: 1, safety: { flag: null, why: null }, surface: 'shelf' },
       { level: 'Back wall: top', icon: 'up', zone: 'Overflow', why: 'Extra space.', shelfIndex: 2, safety: { flag: null, why: null }, surface: 'rod' },
+      { level: 'Over the door: shelf', icon: 'up', zone: 'Seasonal', why: 'Out of the way.', shelfIndex: 3, safety: { flag: null, why: null }, surface: 'shelf' },
     ],
-    shelfCount: 3,
+    shelfCount: 4,
   });
+  /* The third section is the wall the door is in. 'front' is the newest place
+     value and the only one with no row in any older fixture, so until this it
+     was pinned by nothing but the client/server array equality below, which a
+     schema that had dropped the value from its enum would have failed only if
+     the client dropped it too. This is the plan a walk-in actually sends. */
   plan.layout = {
     type: 'walkin-u',
     sections: [
       { id: 'left', label: 'Left wall', place: 'left', rows: [0, 1] },
       { id: 'back', label: 'Back wall', place: 'back', rows: [2] },
+      { id: 'door', label: 'Door', place: 'front', rows: [3] },
     ],
   };
   const result = validatePlan(plan, noKidsContext);
@@ -499,6 +506,24 @@ test('client PLACES match server PLACES exactly', () => {
   assert.deepEqual(CLIENT_PLACES, PLACES);
 });
 
+/* The schema enum and the prompt's enum are two copies of the same list, and
+   the prompt is a string, so nothing stops them drifting: a place the schema
+   accepts that the prompt never offers is a wall the model cannot name, and a
+   place the prompt offers that the schema rejects costs the user the whole
+   analysis. The prompt's copy is read back out of the source and compared to
+   the exported constant, so adding a value to one side without the other is a
+   red test rather than a production failure. */
+test('the prompt offers exactly the place values the schema accepts', () => {
+  const prompt = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  const enumMatch = prompt.match(/"place": ((?:"[a-z-]+"\|)+"[a-z-]+")/);
+  assert.ok(enumMatch, 'the layout.sections schema comment must list the place enum');
+  const offered = enumMatch[1].split('|').map((v) => v.replace(/"/g, ''));
+  assert.deepEqual(offered, PLACES);
+  // The one value whose meaning is not its name: the model has to be told.
+  assert.match(prompt, /front is the wall the door is in/,
+    'the layout rules must say what "front" means, or it is a word in a list');
+});
+
 /* A walk-in pantry analysis came back with shelfCount 13 and the entire plan
    was discarded over that one field: 81 seconds of work, one validation error,
    nothing shown to the user. The cap has always been in the schema, but the
@@ -544,7 +569,13 @@ test('the enforced-limits block is derived from the validator constants', () => 
 
   // The step range is read from the validator's own table, not retyped.
   assert.match(fn, /EFFORT_STEP_RANGES\[ctx\.effort as string\] \?\? DEFAULT_STEP_RANGE/);
-  assert.match(fn, /between \$\{minSteps\} and \$\{maxSteps\} steps/);
+  /* The range is interpolated, and the clause after it makes no claim about
+     who picked the effort: the card arrives preselected, so "the effort level
+     this user chose" was false whenever they left it, and contradicted the
+     untrusted block, which says in the same prompt that they did not. */
+  assert.match(fn, /between \$\{minSteps\} and \$\{maxSteps\} steps, the range for this request's effort level\./);
+  assert.doesNotMatch(fn, /effort level this user chose/,
+    'a preselected effort is not a choice, and the prompt must not call it one');
   assert.doesNotMatch(fn, /6-9 ordered steps/,
     'the old hardcoded range contradicted EFFORT_STEP_RANGES');
 

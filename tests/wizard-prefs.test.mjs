@@ -93,6 +93,24 @@ test('a stale shopping constraint in previous does not survive a changed answer'
   assert.ok(next.has(NO_DRILL));
 });
 
+test('recomputePrefs itself carries the household chip through a style change', async () => {
+  /* mergePrefs is the pure half, and the tests above pin it. The bug lived in
+     its caller: recomputePrefs in js/screens/wizard.js rebuilt state.prefs
+     from prefsForStyles alone, and this suite stayed green with that
+     reverted, because nothing here ran the screen's function. So the real one
+     runs here, against the real state object, with the household step's chip
+     already in it. */
+  const { recomputePrefs } = await import('../js/screens/wizard.js');
+  const { state } = await import('../js/state.js');
+  state.prefs = new Set([NO_DRILL]);
+  state.styles = ['Labeled bins'];
+  state.shoppingPref = 'Use what I have';
+  state.shoppingTouched = false;
+  recomputePrefs();
+  assert.ok(state.prefs.has(NO_DRILL), 'the household answer was dropped by the screen\'s rebuild');
+  assert.ok(state.prefs.has('Labels and categories'), 'the style answer still derives its pref');
+});
+
 test('HOME_CONSTRAINTS is still importable from the wizard screen module', async () => {
   /* post-plan-honesty.test.mjs and anything else that learned the old path
      keep working; the constant moved so the pure merge could read it. */

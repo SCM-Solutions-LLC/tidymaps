@@ -46,7 +46,7 @@ export const WALL_LABEL = {
   left: 'Left wall',
   back: 'Back wall',
   right: 'Right wall',
-  front: 'Front',
+  front: 'Front wall',
   floor: 'Floor',
 };
 
@@ -147,13 +147,19 @@ function wallForRow(row, shelfIndex, sectionWall) {
   return [null, null];
 }
 
-/* Tier numbers within one wall. The model's own `tier` is used when every
-   row on the wall has one and no two agree, because a half-numbered wall
-   (tiers 0, 2 and nothing) is a wall the model only half placed. Otherwise
-   the plan's top-to-bottom order stands in, which is right for the rows the
-   templates produce. A floor row is the bottom of its wall whatever its
-   tier says: "Left wall: floor" with tier 0 and a shelf with tier 1 is the
-   model mislabelling, not a floor above a shelf.
+/* Tier numbers within one wall. The model's own `tier` decides the order
+   when every row on the wall has one and no two agree, because a
+   half-numbered wall (tiers 0, 2 and nothing) is a wall the model only half
+   placed. Otherwise the plan's top-to-bottom order stands in, which is right
+   for the rows the templates produce. A floor row is the bottom of its wall
+   whatever its tier says: "Left wall: floor" with tier 0 and a shelf with
+   tier 1 is the model mislabelling, not a floor above a shelf.
+
+   The numbers themselves survive only when they already run 0, 1, 2 down
+   the sorted wall. A consumer reads `tier` against `tiers`, the count of
+   rows on that wall, so tiers 0 and 2 on a two-row wall handed it a row at
+   tier 2 of 2: a gap the model skipped became a shelf that is not there.
+   A wall with a gap keeps the model's order and is renumbered from 0.
    @param {{idx: number, row: any}[]} entries
    @returns {{idx: number, row: any, tier: number}[]} in tier order */
 function tierRows(entries) {
@@ -162,7 +168,7 @@ function tierRows(entries) {
   const isFloor = e => e.row.surface === 'floor' ? 1 : 0;
   const key = e => (explicit ? e.row.tier : e.idx);
   const ordered = entries.slice().sort((a, b) => (isFloor(a) - isFloor(b)) || (key(a) - key(b)));
-  const keepExplicit = explicit && ordered.every((e, k) => k === 0 || ordered[k - 1].row.tier < e.row.tier);
+  const keepExplicit = explicit && ordered.every((e, k) => e.row.tier === k);
   return ordered.map((e, k) => ({ idx: e.idx, row: e.row, tier: keepExplicit ? e.row.tier : k }));
 }
 

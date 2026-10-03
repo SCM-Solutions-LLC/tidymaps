@@ -35,7 +35,7 @@ const CABINET_ROWS = [
 test('WALLS and WALL_LABEL agree, and front is labelled plainly by default', () => {
   assert.deepEqual(WALLS, ['left', 'back', 'right', 'front', 'floor']);
   for (const w of WALLS) assert.ok(WALL_LABEL[w], `${w}: no label`);
-  assert.equal(WALL_LABEL.front, 'Front');
+  assert.equal(WALL_LABEL.front, 'Front wall');
 });
 
 // wallFromPlace
@@ -242,6 +242,31 @@ test('tiers that are missing on one row or repeated fall back to shelfIndex orde
   assert.equal(repeated.byRow.get(1).tier, 1);
 });
 
+test('explicit tiers with a gap keep their order but are renumbered from 0', () => {
+  /* Tiers 0 and 2 on a two-row wall are distinct, non-negative and
+     ascending, and used to pass through as given. A consumer reads tier
+     against tiers, so it was handed tier 2 of 2: the report drew a gap and
+     the 3D builder reached for a third shelf the wall does not have. */
+  const rows = [
+    row('Back wall: lower', { wall: 'back', tier: 2 }),
+    row('Back wall: top', { wall: 'back', tier: 0 }),
+  ];
+  const p = placementFor(rows);
+  assert.equal(p.byRow.get(1).tier, 0);
+  assert.equal(p.byRow.get(0).tier, 1);
+  assert.equal(p.byRow.get(0).tiers, 2);
+  assert.equal(p.byRow.get(1).tiers, 2);
+  // The explicit order still decides which row is on top.
+  assert.deepEqual(p.walls[0].rows, [1, 0]);
+  // Starting above 0 is a gap too.
+  const offset = placementFor([row('Left wall: a', { tier: 1 }), row('Left wall: b', { tier: 2 })]);
+  assert.equal(offset.byRow.get(0).tier, 0);
+  assert.equal(offset.byRow.get(1).tier, 1);
+  for (const pl of [p, offset]) {
+    for (const [, r] of pl.byRow) assert.ok(r.tier < r.tiers, `tier ${r.tier} is out of range for ${r.tiers} tiers`);
+  }
+});
+
 test('tiers are counted per wall, not per plan', () => {
   const p = placementFor(WALKIN_ROWS, { archetype: 'walkin-u' });
   assert.equal(p.byRow.get(0).tiers, 2);   // left wall: two rows
@@ -299,7 +324,7 @@ test('the front group is labelled "Door" when every row on it is a door surface'
   const doors = placementFor(CABINET_ROWS);
   assert.equal(doors.walls.find(w => w.id === 'front').label, 'Door');
   const mixed = placementFor([row('Door rack', { surface: 'door' }), row('Front shelf')]);
-  assert.equal(mixed.walls.find(w => w.id === 'front').label, 'Front');
+  assert.equal(mixed.walls.find(w => w.id === 'front').label, 'Front wall');
   assert.deepEqual(mixed.walls.find(w => w.id === 'front').rows, [0, 1]);
 });
 

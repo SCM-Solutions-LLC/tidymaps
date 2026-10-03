@@ -32,6 +32,15 @@
 
 import { goalIdFor, prefsForStyles, fmtIn } from './wizard-data.js';
 import { mentionsMissingSurface } from './setupStructure.js';
+import { resetWizardAnswers } from './state.js';
+
+/* The effort the wizard starts on, read from the answer defaults in
+   js/state.js (ANSWER_DEFAULTS) rather than retyped here: applyEffort's
+   untouched rule has to recognise the preselection, and a second copy of the
+   label would drift the day the wizard's default moved. state.js imports
+   nothing and runs nothing at load, so this costs no cycle and no DOM. The
+   cast is only because the resetter's parameter is typed as the app state. */
+const WIZARD_DEFAULT_EFFORT = resetWizardAnswers(/** @type {any} */ ({})).effort;
 
 /* The server validates a RANGE where the client aims at a point
    (supabase/functions/_shared/planSchema.js). Kept here so sizing can tell
@@ -103,8 +112,11 @@ function addStep(plan, step) {
    step's face it is a label, so it keeps the lead clause only: "You asked for
    labels and categories", not that sentence plus a clause about households.
    The break is the first sentence end, or a spaced dash for a cite written
-   before the copy stopped using them (a saved plan can still carry one). */
-const citeFace = (cite) => String(cite || '').split(/\s+[—–-]\s+|(?<=[.!?:])\s+/)[0].trim().replace(/[.,:]$/, '');
+   before the copy stopped using them (a saved plan can still carry one). A
+   colon that opens a quotation is not a break: "You told us: “Can't find
+   anything”." keeps the goal, which is the whole point of the face; it used
+   to come out as a bare "You told us". */
+const citeFace = (cite) => String(cite || '').split(/\s+[—–-]\s+|(?<=[.!?])\s+|(?<=:)\s+(?![“"])/)[0].trim().replace(/[.,:]$/, '');
 
 /* Does this step INSTRUCT the thing, or merely mention it?
 
@@ -965,12 +977,21 @@ function applyEffort(plan, answers, archetype) {
      the server contract, and nothing claimed past that. Trimming keeps the
      card's ceiling either way, since a plan over it is too long whoever set
      the dial. Strictly `=== false`: a saved plan or an older answer set has
-     no flag at all, and those keep today's target. */
-  const untouched = answers.effortTouched === false;
+     no flag at all, and those keep today's target.
+     The flag alone is not enough either. A row saved before the flag existed,
+     or a guest draft from then, restores effortTouched as false with whatever
+     effort the person chose at the time, so a "Full overhaul" came back sized
+     to the floor under a sentence saying the wizard starts there. The wizard
+     only ever starts on one effort; untouched means the flag says so AND the
+     effort is still that preselection. */
+  const untouched = answers.effortTouched === false && answers.effort === WIZARD_DEFAULT_EFFORT;
   const floor = (EFFORT_STEP_RANGES[answers.effort] || [])[0];
   const aim = (untouched && floor) ? floor : target;
+  /* The effort answer is about scope, not time (wizard-data.js EFFORT_OPTS),
+     and the rest of the product calls an untouched card "our default", so
+     the cite says that and claims no more than the flag backs. */
   const cite = untouched
-    ? `This plan is sized for a ${String(answers.effort).toLowerCase()}, the session length the wizard starts on.`
+    ? `Effort was left on our default, ${answers.effort}, so this plan keeps to the shorter end of it.`
     : `You chose “${answers.effort}”.`;
   /* Sizing runs after the surface scrub, so its own candidates have to be
      vetted here — a step added behind the scrub would be exactly the leak the
@@ -1036,7 +1057,12 @@ function applyEffort(plan, answers, archetype) {
   const short = aim - plan.steps.length;
   if ((floor && plan.steps.length < floor) || short >= 3) {
     plan.opportunities = plan.opportunities || [];
-    const note = `A ${String(answers.effort).toLowerCase()} of this space comes to ${plan.steps.length} steps, not ${aim}: `
+    // Nobody chose a session when the card was left alone, and the floor is
+    // a number shown nowhere, so the note names neither in that case.
+    const head = untouched
+      ? `This space comes to ${plan.steps.length} steps: `
+      : `A ${String(answers.effort).toLowerCase()} of this space comes to ${plan.steps.length} steps, not ${aim}: `;
+    const note = head
       + `there ${rowCount(plan) === 1 ? 'is one level' : `are ${rowCount(plan)} levels`} here and no more to plan. `
       + 'A longer session will not add to it.';
     if (!plan.opportunities.some(o => /comes to \d+ steps/.test(o))) plan.opportunities.push(note);
@@ -1178,6 +1204,28 @@ const catPhraseRe = (c) => new RegExp(
     .map(w => w.replace(/s$/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 's?')
     .join('[^a-z0-9]+') + '\\b', 'i');
 
+/* A chip's own parts. The wizard joins two things in one chip ("Dry goods &
+   grains", "Spices & oils") and the model writes about one of them at a time:
+   "Decant the dry goods into bins", never "the dry goods and grains". Matched
+   whole, the ticked chip went unseen in that step, so a passing mention of an
+   unticked one-word chip scoped the step out, and a map item named "Dry goods"
+   left its row with "Dry goods & grains" ticked. A WANTED chip therefore also
+   matches by each part. The REMOVED side keeps matching the whole phrase:
+   removal is the destructive half, and "oils" alone is thin evidence that a
+   step is about "Spices & oils". A chip with no joiner ("Kids' snacks") is one
+   part. */
+const catParts = (c) => {
+  const parts = String(c || '').split(/\s*(?:&|,|\band\b)\s*/i).map(x => x.trim()).filter(Boolean);
+  return parts.length ? parts : [String(c || '')];
+};
+
+/* The step includeSpotted writes, by name. applyCategoryEdits keeps it for an
+   included entry and includeSpotted refuses to write it twice, so both have to
+   spell it the same way. */
+// Item names arrive sentence-cased ("Small appliances"); mid-sentence the
+// capital goes, the way listOf does it for the engine's own steps.
+const spotStepTitle = (name) => `Find a spot for ${String(name).replace(/^[A-Z](?=[a-z])/, c => c.toLowerCase())}`;
+
 /* Where a thing with this name belongs: the first row whose zone, level or
    item names carry its first word. Shared by the category edit and the
    "Also in your photo" button so both put "Jars" on the same shelf. */
@@ -1232,28 +1280,45 @@ export function applyCategoryEdits(normalized, cats, { offered } = {}) {
     removed.push(c);
   }
   const removedRes = removed.map(catPhraseRe);
-  const wantRes = want.map(catPhraseRe);
-  const mentionsRemoved = (text) => removedRes.some(re => re.test(String(text || '')));
-  const mentionsWanted = (text) => wantRes.some(re => re.test(String(text || '')));
-  const scopedOut = (...texts) => { const t = texts.join(' '); return mentionsRemoved(t) && !mentionsWanted(t); };
+  const wantRes = want.flatMap(c => catParts(c).map(catPhraseRe));
 
   const spotted = Array.isArray(normalized.spotted) ? normalized.spotted : [];
   const spotIndex = (name) => spotted.findIndex(sp => sp && catStem(sp.name) === catStem(name));
+  /* An entry the user tapped Add on is a wanted thing, whatever the chips say.
+     includeSpotted puts a matching chip into the plan's list, but the wanted
+     set here comes from the wizard's own list (state.cats), which that push
+     never reaches, and the plan's list only widens what is removed. So the
+     next edit found "Appliances" unticked and took the item, its step and its
+     included flag away again, with nobody having asked. The included flag is
+     what survives normalizeAi (the _p mark on the step does not), so the flag
+     is what the protection reads: the name stays on its row, a step naming it
+     mentions a wanted thing, and the step this layer wrote for it is kept. */
+  const includedNames = spotted
+    .filter(sp => sp && sp.included === true && typeof sp.name === 'string' && sp.name.trim())
+    .map(sp => sp.name.trim());
+  const includedStems = new Set(includedNames.map(catStem));
+  const includedRes = includedNames.map(n => new RegExp('\\b' + esc(n) + '\\b', 'i'));
+  const isSpotStep = (st) => includedNames.some(n => stepTask(st) === spotStepTitle(n));
+
+  const mentionsRemoved = (text) => removedRes.some(re => re.test(String(text || '')));
+  const mentionsWanted = (text) => wantRes.some(re => re.test(String(text || '')))
+    || includedRes.some(re => re.test(String(text || '')));
+  const scopedOut = (...texts) => { const t = texts.join(' '); return mentionsRemoved(t) && !mentionsWanted(t); };
 
   const allZoneNames = new Set();
   normalized.map.forEach(m => {
     // Drop items that belong to a removed category (stem match catches
-    // "Snack packets" when "Snacks" was removed), and remember each one.
-    const gone = (m.items || []).filter(it => it && scopedOut(it.name));
+    // "Snack packets" when "Snacks" was removed), and remember each one. An
+    // item the user added back by name stays whatever its category says.
+    const gone = (m.items || []).filter(it => it && !includedStems.has(catStem(it.name)) && scopedOut(it.name));
     m.items = (m.items || []).filter(it => !gone.includes(it));
     m.items.forEach(it => allZoneNames.add(catStem(it.name)));
     for (const it of gone) {
       if (!it.name) continue;
-      const at = spotIndex(it.name);
-      /* Already offered back (the user included it, then unticked the chip):
-         it has just left the plan again, so say so and leave the entry alone.
+      /* Already offered back and still not taken: one entry, left alone. An
+         entry the user did take never gets here, since its item is kept above.
          Otherwise one new entry, up to the cap; what was there stays. */
-      if (at >= 0) { spotted[at].included = false; continue; }
+      if (spotIndex(it.name) >= 0) continue;
       if (spotted.length >= SPOTTED_MAX) continue;
       spotted.push({ name: it.name, row: rowIndex(normalized.map, m), source: 'scope', included: false });
     }
@@ -1269,7 +1334,11 @@ export function applyCategoryEdits(normalized, cats, { offered } = {}) {
       m.why = kept.join(' ').trim() || 'Placement updated to match your category list.';
     }
   });
-  normalized.spotted = spotted;
+  /* normalizeAi leaves `spotted` absent rather than empty, and a plan that is
+     edited and saved must not come back carrying an empty list the model never
+     wrote. Assigned only once there is something in it; when the plan already
+     had the list, this is the same array. */
+  if (spotted.length) normalized.spotted = spotted;
 
   /* Steps about only a removed category go with it. Never below half the
      checklist, all or nothing, the same guard as enforceArchetypeHonesty: a
@@ -1277,7 +1346,7 @@ export function applyCategoryEdits(normalized, cats, { offered } = {}) {
      scope, and two steps left of six is not a better answer than six. */
   if (Array.isArray(normalized.steps) && normalized.steps.length) {
     const before = normalized.steps.length;
-    const kept = normalized.steps.filter(st => !scopedOut(stepTask(st), stepWhy(st)));
+    const kept = normalized.steps.filter(st => isSpotStep(st) || !scopedOut(stepTask(st), stepWhy(st)));
     if (kept.length >= Math.ceil(before / 2)) normalized.steps = kept;
   }
   // A product bought for a category that is not here has nothing to hold.
@@ -1290,9 +1359,13 @@ export function applyCategoryEdits(normalized, cats, { offered } = {}) {
     if (Array.isArray(normalized[key])) normalized[key] = normalized[key].filter(o => !scopedOut(o));
   }
 
-  // Place added categories: best keyword fit against zone/level text, else eye level.
+  // Place added categories: best keyword fit against zone/level text, else eye
+  // level. A chip the map already holds by one of its parts ("Dry goods" for
+  // "Dry goods & grains") is present, not missing, so it gets no second item.
+  const present = (cat) => allZoneNames.has(catStem(cat))
+    || catParts(cat).some(part => [...allZoneNames].some(n => catPhraseRe(part).test(n)));
   for (const cat of want) {
-    if (allZoneNames.has(catStem(cat))) continue;
+    if (present(cat)) continue;
     const fit = keywordFit(normalized.map, cat)
       || normalized.map.find(m => m.eye)
       || normalized.map[0];
@@ -1311,9 +1384,16 @@ export function applyCategoryEdits(normalized, cats, { offered } = {}) {
    model saw that the user's chips left out, or something applyCategoryEdits
    removed; this brings it into the plan with a visible trace, the rule of
    the layer: on the shelf map (its own row when one was recorded, else the
-   keyword fit, else the eye row), in the category list when a wizard chip
-   matches it (so a later category edit keeps it rather than removing it
-   again), and as one protected step pointing at that row.
+   keyword fit, else the eye row), in the plan's category list when a wizard
+   chip matches it, and as one protected step pointing at that row.
+
+   The chip push is a convenience for the report's chip list and nothing more.
+   It used to claim it kept the item through a later category edit, and it
+   cannot: applyCategoryEdits takes its wanted set from the wizard's own list
+   (state.cats) and reads the plan's list only to widen what it removes. What
+   keeps the item is the entry's `included` flag, which that edit honours. A
+   caller that wants the chip ticked in the wizard adds it to state.cats
+   itself.
 
    Pure in the sense that matters for a button: idempotent. A second tap
    finds the item on its row, the chip in the list and a step naming it, and
@@ -1337,19 +1417,34 @@ export function includeSpotted(normalized, index, offered = null) {
     fit.items.push({ name, size: 'm', flags: [], added: true });
   }
 
-  const chip = (Array.isArray(offered) ? offered : [])
-    .find(c => catPhraseRe(c).test(name) || catPhraseRe(name).test(String(c || '')));
+  /* The chip that IS this thing, before the chip whose word it contains. The
+     first phrase match in list order put "Kids' snacks" into the list as
+     "Snacks", because "Snacks" comes first and its one word is in the name. So
+     the chip with the same stem wins, then the longest chip whose phrase the
+     name carries, and only then the loose direction, where the name's phrase
+     is found inside a chip ("Appliances" in "Small appliances"). */
+  const chips = (Array.isArray(offered) ? offered : []).filter(c => typeof c === 'string' && c.trim());
+  const chip = chips.find(c => catStem(c) === catStem(name))
+    || chips.filter(c => catPhraseRe(c).test(name)).sort((a, b) => b.length - a.length)[0]
+    || chips.find(c => catPhraseRe(name).test(c));
   if (chip) {
     normalized.cats = Array.isArray(normalized.cats) ? normalized.cats : [];
     if (!normalized.cats.some(c => catStem(c) === catStem(chip))) normalized.cats.push(chip);
   }
 
   normalized.steps = Array.isArray(normalized.steps) ? normalized.steps : [];
+  /* A step already naming the thing is enough, and the step this very button
+     wrote has to count as one: a name ending in anything but a letter, "Jars
+     (misc.)", has no word boundary after it for the regex to find, so a second
+     tap added a second step. The title is compared whole as well. */
+  const title = spotStepTitle(name);
   const nameRe = new RegExp('\\b' + esc(name) + '\\b', 'i');
-  if (!normalized.steps.some(st => nameRe.test(stepText(st)))) {
+  if (!normalized.steps.some(st => stepTask(st) === title || nameRe.test(stepText(st)))) {
     const row = fit ? rowIndex(rows, fit) : -1;
+    // Only a 'photo' entry is known to have come off a photo; a 'scope'
+    // entry can come from a plan built with no photo at all.
     normalized.steps.push({
-      t: `Find a spot for ${name}`, m: '5 min', w: 'You added it from your photo.',
+      t: title, m: '5 min', w: entry.source === 'photo' ? 'You added it from your photo.' : 'You added it back to the plan.',
       ...(row >= 0 ? { rows: [row] } : {}),
       _p: true,
     });
@@ -1376,7 +1471,8 @@ export function citeGoals(rawPlan, goals) {
   for (const st of rawPlan.steps) {
     if (!st || typeof st.goal !== 'string') continue;
     const goal = theirs.get(st.goal.trim().toLowerCase());
-    if (goal) st.cite = `You told us: "${goal}"`;
+    // The same face as the engine's own cites, curly quotes and all.
+    if (goal) st.cite = citeFace(`You told us: “${goal}”.`);
   }
   return rawPlan;
 }

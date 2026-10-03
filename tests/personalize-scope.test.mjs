@@ -86,10 +86,101 @@ test('the scope edit never drops the checklist below half its length', () => {
   assert.equal(plan.spotted.length, 1);
 });
 
+/* The half-length guard, at its boundary. Five steps, three of them about an
+   unticked category: dropping those leaves two, under ceil(5/2) = 3, so the
+   drop is refused and all five stay. Two such steps leave three, which is
+   exactly the line, and the drop goes through. */
+function fiveSteps(aboutAppliances) {
+  const plan = scopedFixture();
+  const about = ['Move all appliances to the floor zone', 'Unplug the appliances before moving them', 'Wipe under the appliances'];
+  const neutral = ['Face every can label-out', 'Decant dry goods into one row', 'Take a final photo'];
+  plan.steps = [...about.slice(0, aboutAppliances), ...neutral.slice(0, 5 - aboutAppliances)]
+    .map(t => ({ t, m: '5 min', w: '' }));
+  return plan;
+}
+
+test('the half-length guard rounds up: five steps keep all five at three removed, and go to three at two', () => {
+  const three = applyCategoryEdits(fiveSteps(3), WANTED, { offered: OFFERED });
+  assert.equal(three.steps.length, 5, 'kept 2 < ceil(5/2) = 3, so the drop is refused');
+  const two = applyCategoryEdits(fiveSteps(2), WANTED, { offered: OFFERED });
+  assert.equal(two.steps.length, 3, 'kept 3 >= ceil(5/2) = 3, so the drop goes through');
+});
+
+/* The wizard joins two things in one chip and the model writes about one of
+   them at a time. "Dry goods & grains" matched only as the whole phrase, so a
+   step about "the dry goods" counted as mentioning nothing the user wanted and
+   went out with the unticked chip it also named, and the map's "Dry goods"
+   item left the row while its chip was ticked. */
+test('a ticked chip is matched by its parts, so "Dry goods & grains" covers the dry goods', () => {
+  const plan = scopedFixture();
+  plan.cats = ['Dry goods', 'Canned goods', 'Snacks', 'Baking'];   // the model's own spelling
+  plan.map[0].items = [{ name: 'Dry goods', size: 'm', flags: [] }];
+  plan.steps.push({ t: 'Decant the dry goods and baking supplies into bins', m: '10 min', w: '' });
+  assert.ok(OFFERED.includes('Baking'), 'precondition: Baking is a chip the user left unticked');
+  applyCategoryEdits(plan, WANTED, { offered: OFFERED });
+  assert.ok(plan.map[0].items.some(i => i.name === 'Dry goods'), 'the dry goods are what "Dry goods & grains" means');
+  assert.match(stepText(plan), /Decant the dry goods and baking supplies/, 'a step about the dry goods is about a ticked chip');
+  assert.doesNotMatch(stepText(plan), /Move all appliances/, 'the removal itself still happens');
+});
+
+/* The removed side keeps matching whole phrases. "Kids' snacks" and "Snacks"
+   share a word, and the one the user ticked decides what that word means. */
+function snackFixture() {
+  return {
+    cats: ['Snacks', "Kids' snacks"],
+    map: [
+      { lv: 'Eye level', shelfIndex: 0, zone: 'Snacks', why: '', eye: true, items: [{ name: 'Snack packets', size: 'm', flags: [] }] },
+      { lv: 'Low shelf', shelfIndex: 1, zone: "Kids' snacks", why: '', eye: false, items: [{ name: "Kids' snacks", size: 'm', flags: [] }] },
+    ],
+    steps: [
+      { t: "Keep the kids' snacks low", m: '5 min', w: '' },
+      { t: 'Bin the snacks', m: '5 min', w: '' },
+      { t: 'Wipe the shelves', m: '5 min', w: '' },
+      { t: 'Take a final photo', m: '2 min', w: '' },
+    ],
+  };
+}
+const PANTRY_CHIPS = SPACE_CFG.pantry.categories;
+
+test("ticking only Kids' snacks keeps the kids' snacks and removes the snacks", () => {
+  assert.ok(PANTRY_CHIPS.includes('Snacks') && PANTRY_CHIPS.includes("Kids' snacks"), 'precondition: both chips are offered');
+  const plan = applyCategoryEdits(snackFixture(), ["Kids' snacks"], { offered: PANTRY_CHIPS });
+  assert.ok(plan.map[1].items.some(i => i.name === "Kids' snacks"), 'the ticked chip keeps its item');
+  assert.match(stepText(plan), /Keep the kids' snacks low/);
+  assert.equal(plan.map[0].items.some(i => i.name === 'Snack packets'), false, 'the unticked chip loses its item');
+  assert.doesNotMatch(stepText(plan), /Bin the snacks/);
+  assert.deepEqual(plan.spotted.map(s => s.name), ['Snack packets'], 'and the item is offered back');
+});
+
+test("ticking Snacks with Kids' snacks unticked removes nothing, which is a decision", () => {
+  /* "Kids' snacks" mentions a removed chip and a wanted one, and a thing that
+     mentions a wanted chip is never scoped out. The word they share makes the
+     kids' snacks a kind of snack, and the conservative side of the rule keeps
+     them. Pinned so a tightening of the rule has to be argued here. */
+  const plan = applyCategoryEdits(snackFixture(), ['Snacks'], { offered: PANTRY_CHIPS });
+  assert.ok(plan.map[0].items.some(i => i.name === 'Snack packets'));
+  assert.ok(plan.map[1].items.some(i => i.name === "Kids' snacks"), 'the kids\' snacks stay: they are snacks too');
+  assert.equal(plan.steps.length, 4, 'no step leaves');
+  assert.equal('spotted' in plan, false, 'nothing was removed, so nothing is offered back');
+});
+
+/* normalizeAi writes `spotted` only when there is something in it, and an
+   edited plan is saved back. An unconditional assignment gave every edited
+   plan an empty list the model never wrote. */
+test('a plan the edit removes nothing from gains no spotted list', () => {
+  const plan = scopedFixture();
+  applyCategoryEdits(plan, [...WANTED, 'Appliances'], { offered: OFFERED });
+  assert.equal(plan.map.flatMap(m => m.items).length >= 4, true, 'precondition: every item is still there');
+  assert.equal('spotted' in plan, false, 'absent rather than empty, as normalizeAi leaves it');
+});
+
 test('spotted entries dedupe by name, keep what was there, and stop at eight', () => {
   const plan = scopedFixture();
   plan.spotted = Array.from({ length: 7 }, (_, i) => ({ name: `Seen ${i}`, row: null, source: 'photo', included: false }));
-  plan.spotted.push({ name: 'small appliances', row: null, source: 'photo', included: true });
+  /* The model offered the same thing by a different spelling, and the user has
+     not taken it. (An entry they did take is a wanted thing, so its item never
+     leaves the map; that is pinned further down.) */
+  plan.spotted.push({ name: 'small appliances', row: null, source: 'photo', included: false });
   applyCategoryEdits(plan, WANTED, { offered: OFFERED });
   assert.equal(plan.spotted.length, 8, 'the existing eight stay; nothing is appended past the cap');
   assert.equal(plan.spotted.filter(s => /appliances/i.test(s.name)).length, 1, 'same name, one entry');
@@ -112,9 +203,11 @@ test('includeSpotted puts the item back on its row, in the category list, with o
   const item = floor.items.find(i => i.name === 'Small appliances');
   assert.deepEqual(item, { name: 'Small appliances', size: 'm', flags: [], added: true }, 'placed on the row it was removed from');
   assert.ok(plan.cats.includes('Appliances'), 'the matching wizard chip joins the category list');
-  const found = plan.steps.filter(s => /Small appliances/.test(s.t + ' ' + s.w));
+  const found = plan.steps.filter(s => /small appliances/i.test(s.t + ' ' + s.w));
   assert.equal(found.length, 1);
-  assert.deepEqual({ ...found[0] }, { t: 'Find a spot for Small appliances', m: '5 min', w: 'You added it from your photo.', rows: [2], _p: true });
+  // A 'scope' entry can come from a plan that never saw a photo, so the step
+  // does not claim one; mid-sentence the item's capital goes.
+  assert.deepEqual({ ...found[0] }, { t: 'Find a spot for small appliances', m: '5 min', w: 'You added it back to the plan.', rows: [2], _p: true });
 
   const once = JSON.stringify(plan);
   includeSpotted(plan, 0, OFFERED);
@@ -133,7 +226,7 @@ test('includeSpotted falls back to a keyword fit, then to the eye row', () => {
   includeSpotted(plan, 1);
   assert.ok(plan.map.find(m => m.eye).items.some(i => i.name === 'Pet food'), 'nothing fits, so the eye row');
   assert.deepEqual(plan.cats, WANTED, 'no offered list, so no chip is invented for them');
-  assert.equal(plan.steps.filter(s => /Canned soup|Pet food/.test(s.t)).length, 2, 'one step each');
+  assert.equal(plan.steps.filter(s => /canned soup|pet food/i.test(s.t)).length, 2, 'one step each');
   assert.ok(plan.steps.every(s => !/Find a spot/.test(s.t) || s._p), 'the added steps are protected from effort trimming');
 });
 
@@ -149,7 +242,59 @@ test('includeSpotted adds no step when one already names the item, and survives 
   assert.equal(includeSpotted(null, 0), null);
 });
 
+/* The Add button put the chip into the PLAN's list, and the next category
+   edit built its wanted set from the wizard's list, which never got it. So
+   apply, include, apply took the item off its row, flipped the entry back to
+   not included and dropped the step, with nobody having touched a chip. The
+   entry's included flag is what survives normalizeAi, so it is what the edit
+   now reads. */
+test('an included spotted item survives the next category edit', () => {
+  const plan = applyCategoryEdits(scopedFixture(), WANTED, { offered: OFFERED });
+  includeSpotted(plan, 0, OFFERED);
+  applyCategoryEdits(plan, WANTED, { offered: OFFERED });   // state.cats still has no Appliances chip
+  const floor = plan.map.find(m => m.shelfIndex === 2);
+  assert.ok(floor.items.some(i => i.name === 'Small appliances'), 'the item the user added back stays on its row');
+  assert.equal(plan.spotted[0].included, true, 'and is still marked as taken');
+  assert.equal(plan.steps.filter(s => s.t === 'Find a spot for small appliances').length, 1, 'its step is kept');
+  assert.deepEqual(plan.cats, WANTED, 'the wizard list stays authoritative for the chips themselves');
+});
+
+test('includeSpotted picks the chip that is the thing, not the first chip whose word it contains', () => {
+  const plan = scopedFixture();
+  plan.spotted = [
+    { name: "Kids' snacks", row: null, source: 'photo', included: false },
+    { name: "Kids' snack bars", row: null, source: 'photo', included: false },
+  ];
+  includeSpotted(plan, 0, ['Snacks', "Kids' snacks"]);
+  assert.deepEqual(plan.cats, [...WANTED, "Kids' snacks"], 'the same stem wins over the first match in list order');
+  const again = scopedFixture();
+  again.spotted = plan.spotted.map(e => ({ ...e, included: false }));
+  includeSpotted(again, 1, ['Snacks', "Kids' snacks"]);
+  assert.deepEqual(again.cats, [...WANTED, "Kids' snacks"], 'with no exact chip, the longest phrase the name carries');
+});
+
+test('includeSpotted is idempotent for a name the word boundary cannot close', () => {
+  const plan = scopedFixture();
+  plan.spotted = [{ name: 'Jars (misc.)', row: null, source: 'photo', included: false }];
+  includeSpotted(plan, 0, OFFERED);
+  includeSpotted(plan, 0, OFFERED);
+  assert.equal(plan.steps.filter(s => s.t === 'Find a spot for jars (misc.)').length, 1, 'one step, however many taps');
+  assert.equal(plan.map.flatMap(m => m.items).filter(i => i.name === 'Jars (misc.)').length, 1);
+});
+
 /* ---------- citeGoals: the model's own citation, checked against the user ---------- */
+
+/* The engine's own goal cites go through citeFace, which broke at the colon
+   of "You told us:" as if it ended a sentence, so every goal cite on a demo
+   plan read as a bare "You told us". A colon that opens a quotation is not
+   a break. */
+test('a goal cite keeps the goal on the step\'s face', () => {
+  const p = getDemoScenario('pantry', 'find', NO_KIDS, { goals: ["Can't find anything"] });
+  const cites = p.steps.map(s => s.cite).filter(Boolean);
+  assert.ok(cites.length > 0, 'precondition: the goal rule cited a step');
+  assert.ok(cites.includes('You told us: “Can\'t find anything”'), `faces: ${cites.join(' | ')}`);
+  assert.ok(!cites.includes('You told us'), 'a cite with nothing after the colon tells the reader nothing');
+});
 
 test('citeGoals cites a step only for a goal the user actually gave', () => {
   const raw = {
@@ -161,14 +306,14 @@ test('citeGoals cites a step only for a goal the user actually gave', () => {
   };
   assert.equal(citeGoals(raw, ["Can't find anything", ' Looks cluttered ']), raw);
   // The user's own spelling, in straight quotes, whatever case the model used.
-  assert.equal(raw.steps[0].cite, 'You told us: "Can\'t find anything"');
+  assert.equal(raw.steps[0].cite, 'You told us: “Can\'t find anything”', 'the same face as the engine\'s own cites');
   assert.equal(raw.steps[1].cite, undefined, 'a goal the user did not give is not quoted back to them');
   assert.equal(raw.steps[1].goal, 'Always running out of room', 'left alone, not scrubbed');
   assert.equal(raw.steps[2].cite, undefined);
 
   const trimmed = { steps: [{ task: 'Hide the noisy things', goal: 'looks cluttered' }] };
   citeGoals(trimmed, [' Looks cluttered ']);
-  assert.equal(trimmed.steps[0].cite, 'You told us: "Looks cluttered"', 'matching ignores case and surrounding space');
+  assert.equal(trimmed.steps[0].cite, 'You told us: “Looks cluttered”', 'matching ignores case and surrounding space');
 
   assert.equal(citeGoals(null, ['x']), null);
   assert.deepEqual(citeGoals({}, ['x']), {});
@@ -189,12 +334,29 @@ function fiveStepPantry() {
 }
 
 test('an untouched effort grows only to the floor of its range', () => {
-  const [floor] = EFFORT_STEP_RANGES['Full overhaul'];
-  const untouched = sizeToEffort(fiveStepPantry(), { effort: 'Full overhaul', effortTouched: false });
+  const [floor] = EFFORT_STEP_RANGES['Weekend reset'];
+  const untouched = sizeToEffort(fiveStepPantry(), { effort: 'Weekend reset', effortTouched: false });
   assert.equal(untouched.steps.length, floor, `expected the range floor (${floor}), got ${untouched.steps.length}`);
   assert.doesNotMatch(stepText(untouched), /You chose/, 'nothing was chosen, so no step may say so');
+  assert.match(stepText(untouched), /Effort was left on our default, Weekend reset/, 'the grown steps say whose answer it was');
+  assert.doesNotMatch(stepText(untouched), /session length|sized for/, 'effort is about scope, not time, and nothing was sized to the card');
   assert.equal((untouched.opportunities || []).some(o => /comes to \d+ steps/.test(o)), false,
     'the shortfall note is for a plan that could not reach what was asked, and nothing was asked');
+});
+
+test('a chosen effort under a stale untouched flag is sized to what was chosen', () => {
+  /* A row saved before the flag existed, or a guest draft from then, restores
+     effortTouched as false beside whatever effort the person chose at the
+     time. The wizard only ever starts on "Weekend reset", so an untouched
+     "Full overhaul" is a contradiction, and the flag is the half that is
+     wrong: sizing it to the floor under a sentence about the wizard's
+     preselection was two lies for one stale bit. */
+  const stale = sizeToEffort(fiveStepPantry(), { effort: 'Full overhaul', effortTouched: false });
+  const chosen = sizeToEffort(fiveStepPantry(), { effort: 'Full overhaul', effortTouched: true });
+  assert.equal(stale.steps.length, chosen.steps.length, 'sized exactly as the chosen overhaul is');
+  assert.ok(stale.steps.length > EFFORT_STEP_RANGES['Full overhaul'][0], 'past the floor an untouched effort stops at');
+  assert.doesNotMatch(stepText(stale), /our default|preselected/, 'the wizard never preselected an overhaul');
+  assert.match(stepText(stale), /You chose “Full overhaul”/);
 });
 
 test('a touched or legacy effort answer keeps today\'s target', () => {

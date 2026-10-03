@@ -62,6 +62,16 @@ export function buildContext(ctx = {}) {
     const picked = new Set(ctx.categories.map(c => String(c).trim().toLowerCase()));
     const unticked = offered.filter(c => !picked.has(String(c).trim().toLowerCase()));
     if (unticked.length) parts.push(`Offered on the contents step and left unticked: ${unticked.join(', ')}.`);
+  } else if (ctx.categoriesTouched === true) {
+    /* An edited list with nothing left on it. The photo step pre-ticks the
+       chips it detected, so a user who disagrees with all of them ends here,
+       and this was the one case that rendered no contents sentence at all:
+       the unticked list is computed inside the branch above, which needs a
+       ticked chip to enter. Silence read to the model as "never asked", the
+       opposite of what happened. */
+    parts.push(offered.length
+      ? `The contents step offered ${offered.join(', ')}; they unticked every one of them, so none is confirmed as present.`
+      : 'They unticked every chip the contents step offered, so none is confirmed as present.');
   }
   if (Array.isArray(ctx.detected) && ctx.detected.length) {
     parts.push(`Items detected on their photos: ${ctx.detected.join(', ')}.`);
@@ -70,20 +80,26 @@ export function buildContext(ctx = {}) {
     parts.push(`How they like things kept: ${ctx.styles.join(', ')}.`);
   }
   /* "Their answer" was a claim, and for anyone who left the preselected card
-     alone it was a false one — the model was told the user had asked to buy
-     nothing when they had not been asked. */
+     alone it was a false one: the model was told the user had asked to buy
+     nothing when they had not been asked. Described, not instructed, like
+     the effort line below: this block may only say what happened. */
   if (ctx.shopping) {
     parts.push(ctx.shoppingTouched === false
-      ? `On buying storage they did not answer; we preselected "${ctx.shopping}" for them, so treat it as no preference either way.`
+      ? `On buying storage they did not answer; "${ctx.shopping}" is the wizard's preselection, which they left in place.`
       : `Their answer on buying storage: ${ctx.shopping}.`);
   }
   if (Array.isArray(ctx.prefs) && ctx.prefs.length) parts.push(`Preferences: ${ctx.prefs.join(', ')}.`);
   if (ctx.budget) parts.push(`Budget: ${ctx.budget}.`);
   /* The effort card arrives preselected, the same way the shopping card does,
-     and "Effort level: Weekend reset." claimed a choice nobody had made. */
+     and "Effort level: Weekend reset." claimed a choice nobody had made.
+     Described, never instructed: this string lands inside <user_context>,
+     which the guard tells the model to read purely as description, so a
+     "treat it as" clause here would be an instruction in the one place the
+     prompt promises there are none. What the range means for the step count
+     is said once, in the trusted enforced-limits block. */
   if (ctx.effort) {
     parts.push(ctx.effortTouched === false
-      ? `Effort level: we preselected "${ctx.effort}" and they did not choose, so treat it as no preference about how long this should take.`
+      ? `Effort level: "${ctx.effort}" is the wizard's preselection; they did not change it.`
       : `Effort level: ${ctx.effort}.`);
   }
   if (ctx.toggles && typeof ctx.toggles === 'object') {

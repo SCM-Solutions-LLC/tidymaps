@@ -163,6 +163,29 @@ test('a step keeps its instruction and loses the answer it quotes back', () => {
   assert.equal(plan.steps[0].w, 'Everyone can refile.');
 });
 
+/* `goal` is `cite` under another key: the user's own goal, copied exactly, so
+   a step can be filed under the thing that bugs them. It survived normalizeAi
+   and so reached spaces.plan, and from there this payload, where the pattern
+   pass could not help: it scans only the step's prose keys, and "kids" is not
+   a word it knows. Dropped structurally, like cite. The `spotted` list is the
+   same kind of thing one level up (what the user unticked, moved aside for the
+   owner's "Also in your photo" row) and PLAN_FIELDS already leaves it out;
+   pinned here so a later allowlist edit cannot bring it along. */
+test('a step loses the goal it was filed under, and the plan its spotted list', () => {
+  const plan = sanitizeSharedPlan({
+    steps: [{ t: 'Move the snacks down', m: '10 min', w: 'Low shelves are easy to reach.',
+      goal: "Kids can't reach their things", rows: [3] }],
+    spotted: ['Appliances'],
+  }, {});
+  assert.equal(plan.steps[0].goal, undefined, 'the goal is the owner\'s answer, quoted at them');
+  assert.equal(plan.steps[0].t, 'Move the snacks down');
+  assert.equal(plan.steps[0].m, '10 min');
+  assert.equal(plan.steps[0].w, 'Low shelves are easy to reach.');
+  assert.deepEqual(plan.steps[0].rows, [3], 'the shelves a step works on are placement, and stay');
+  assert.equal(plan.spotted, undefined);
+  assert.ok(!JSON.stringify(plan).includes('Kids'), 'the goal leaked under some other key');
+});
+
 /* ---------- what the household itself said ---------- */
 
 test('the free-text note does not survive being quoted into the plan', () => {

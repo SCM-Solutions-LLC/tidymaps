@@ -117,8 +117,13 @@ export function buildResults(){
   }
   const chipEffort=document.getElementById('chip-effort');
   if(chipEffort){
-    chipEffort.textContent=[state.effort, A?A.time:''].filter(Boolean).join(' · ');
-    chipEffort.style.display=state.effort?'':'none';
+    /* A chip is a statement, like the household chip above. "Weekend reset"
+       was never said when the effort card was left as we set it, and the
+       plan's own Why panels now say so; the time is a fact about the
+       finished checklist and stands on its own. */
+    const effortSaid=state.effortTouched?state.effort:null;
+    chipEffort.textContent=[effortSaid, A?A.time:''].filter(Boolean).join(' · ');
+    chipEffort.style.display=chipEffort.textContent?'':'none';
   }
 
   // product-click intent, delegated so it survives re-renders of the list
