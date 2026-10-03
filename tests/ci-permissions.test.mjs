@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 /* GITHUB_TOKEN defaults to read/write on many repos unless the workflow says
-   otherwise. None of these three jobs writes through it — they checkout,
+   otherwise. None of these jobs writes through it — they checkout,
    install, and either test or deploy to Supabase with its own access token —
    so each should declare the read-only default explicitly rather than rely
    on whatever the repo's own token settings happen to be. pages.yml already
    does this (it needs `pages: write` and `id-token: write` for the Pages
    deploy), so it is not re-asserted here. */
-const WORKFLOWS = ['test', 'supabase-functions', 'model-path-canary'];
+const WORKFLOWS = ['test', 'supabase-functions', 'model-path-canary', 'product-availability'];
 
 test('CI workflows that never write through GITHUB_TOKEN declare read-only permissions', () => {
   for (const name of WORKFLOWS) {

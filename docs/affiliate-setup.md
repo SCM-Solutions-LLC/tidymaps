@@ -65,9 +65,15 @@ program actually accepts you.
 - **Don't let commissions pick the products.** The catalog is hand-checked and
   the plan chooses by fit. Keeping that true is both the honest position and
   the one the homepage now states out loud under "Product links".
-- **Prices go stale.** Amazon in particular forbids displaying a scraped price
-  as current. `scripts/check-product-links.mjs` re-checks the catalog; the plan
-  shows a "checked on" date next to any price.
+- **Prices go stale, and so do products.** Amazon in particular forbids
+  displaying a scraped price as current. Every entry in `data/catalog.json`
+  carries `checked` (when a person last looked at the listing) and `available`
+  (whether it could still be bought); the plan shows the checked date beside
+  each product and never offers one marked unavailable. A weekly workflow
+  (`.github/workflows/product-availability.yml`, running
+  `scripts/check-product-links.mjs`) reads each retailer page and fails, which
+  emails the owner, when a product still marked available has gone. Its verdict
+  is a prompt to look: a person confirms and edits the two fields.
 - **Email is special.** Amazon prohibits affiliate links in email entirely. If
   the newsletter ever recommends products, link to a page on the site instead.
 
@@ -79,8 +85,10 @@ to: showing a retailer's photography means either their image API or a
 hotlink, and both have a cost.
 
 - **Amazon** photos require the Product Advertising API, which requires an
-  approved Associates account with qualifying sales. Until then, displaying
-  their images is outside the licence.
+  approved Associates account with qualifying sales. The owner is applying
+  (October 2026). Until approval, displaying their images is outside the
+  licence; once it lands, a scheduled job can fill `img`, `price_usd`,
+  `available` and `checked` from the API, and nothing on the cards changes.
 - **Impact-based programs** (Target, Walmart, The Container Store) generally
   provide an approved product feed with image URLs once you're accepted.
 - **Hotlinking a URL scraped off a product page** works until the retailer

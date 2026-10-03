@@ -65,6 +65,12 @@ The Playwright browser is not installed in the web sandbox; use
   funnel.
 - **An entry nothing references is usually a decision, not a backlog item.**
   Check `git log` before rebuilding it.
+- **A review agent that neuters code to prove a test red can leave the
+  neutered line behind.** Point reviewers at a copy (`git archive HEAD | tar
+  -x -C <dir>`) or a separate worktree, and diff the tree against what you
+  meant to change before committing; `git add -A` after a review once
+  committed a shelf-depth formula with two of its terms missing, and the only
+  test on it passed either way.
 
 ## Conventions
 

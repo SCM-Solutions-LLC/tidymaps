@@ -291,6 +291,112 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-03 session changed, part 2 (products that exist)
+
+Second of the six PRs from the owner's site review (the first, #181, is the
+section below). The owner picked a turntable from a real plan and found
+Amazon listing it as unavailable. The catalog is a hand-curated file last
+looked at in July, and the deploy-time link check only flagged a 404 or 410,
+so it reported that very listing "ok 200" the same morning.
+
+- **`data/catalog.json`**: every product carries `checked` (when a person
+  last looked at the listing), `available` and `img` (null until a licensed
+  photo exists). Two entries are `available:false` with a `note`: the Copco
+  9" turntable (Amazon, unavailable 2026-10-03) and the Target mDesign 15"
+  bin (404 on the deploy check). Replacements need the owner's hand check;
+  the sandbox cannot reach amazon.com.
+- **`js/catalog.js`**: `loadCatalog` reports a failed fetch through
+  `catalogFailed()` and leaves the cache empty so the next screen retries (it
+  used to cache the empty list and every row read "No exact match");
+  `priceAsOf()` is the newest `checked` month among available products;
+  `rankProducts` never offers an unavailable product; `selectionFor` builds a
+  shopping entry (`checked` is the include checkbox, `checkedOn` the catalog
+  date: two different things); `reconcileSelection` re-reads a saved
+  selection from the catalog and, when the product is gone, degrades the row
+  to the no-match shape (the type's label, no retailer, no price) with
+  `unavailable`, `formerName` for the card's notice and `formerProductId` so a
+  product that comes back on sale is restored on the next load rather than
+  reading "no longer sold" for good. The summary list, the exported list
+  (`planExport.js`, which also stops pricing a missing product at $0.00) and
+  the 3D legend all read `name`, so they stop naming the dead product
+  together. `fmtChecked` ("Jul 2026", "Oct 3, 2026") serves the card and
+  both "Prices approximate, checked …" notes.
+- **Shelf depth**: room-shaped setups are measured as a room, so a walk-in's
+  cards all said "Fits your 72" shelf depth", label sets included.
+  `shelfDepthFor(dims, setupOrArchetype)` is the 3D builders' formula
+  (14-inch floor, `walkin-u.js:45`), and `fitFor` judges depth as yes or no
+  the way the viewer does (`scene.js` `organizerRequestedD<=shelfD`); width
+  and height keep the half-inch "tight" band. The archetype comes from
+  `currentArchetype()`, which is `resolveLayout` with the viewer's own inputs
+  (a layout picked in the viewer, a touched setup, the photos' layout, the
+  preselected setup, in that order), not `state.setup`: the wizard preselects
+  a cabinet for every area and most people leave it, so a walk-in the photos
+  revealed was still judged against 72 inches here while the viewer drew
+  14-inch shelves. The viewer's add-an-organizer (`shelfMaxDims`) caps depth
+  by the same function, and the viewer reports its unsaved layout chip
+  through `setLiveLayoutOverride` so a pick made between a chip tap and Save
+  is judged against the layout being drawn. `tests/catalog-fit.test.mjs` pins
+  every term of the formula (the 18-inch cap, the half-room term, the 8-inch
+  floor, the L-run factor): the delta review of this PR found two of them
+  missing from a commit, left behind by a review agent that had neutered the
+  line to prove a test red, and no test had noticed (see the new CLAUDE.md
+  rule). Both were found by `demo-fit` flagging the plan's
+  own pick in three setups when the server's formula (no floor) and a
+  half-inch clearance were tried first. The server's `usableShelfDepth`
+  (`planSchema.js:434`) still lacks the floor: for a 4-foot walk-in it caps
+  `productNeeds.maxDims` at 9.6 inches while the drawn shelves are 14.
+  Reconcile in the server PR.
+- **Report card** (`results.js renderUpgrades`): draws `productArt(type)`
+  (the library's drawing, with heavier strokes for the 54 to 76px box)
+  instead of a generic glyph, escapes every catalog URL and option value,
+  shows "Listing checked Jul 2026" (a bare "Checked" under the include
+  checkbox read as the tick's state), gives label sets and safety latches no
+  depth badge, and when a saved product is gone shows "No longer sold:
+  <name>. Pick another below." with a 44px "Pick another product" select in
+  the row (or the search links when nothing else fits); picking one moves
+  focus to the new product link. The summary list marks such a row "(pick a
+  product)". A failed catalog load reaches `showUpgradesFailed`, and
+  `renderUpgrades` keeps that state when "Remove all upgrades" (outside the
+  list) fires afterwards; tapped while the catalog is still loading it says
+  so, leaves the skeleton alone and is honoured when the rows land (they
+  used to arrive ticked after a toast that said they were removed); it used
+  to throw on a fresh plan or rebuild rows from a saved selection the
+  catalog never confirmed. The library hides
+  unavailable products in both the list and the category chips.
+- **Availability check**: `scripts/product-availability.mjs` (pure,
+  unit-tested) classifies a retailer page as ok, unavailable, dead, moved
+  (the request ended on another host), blocked or error from its status,
+  final URL, content type and wording; `scripts/check-product-links.mjs`
+  fetches each page under an honest bot user agent (a browser string would
+  be a scraper posing as a person on the sites whose affiliate terms the
+  owner is applying under; a blocked page is reported as unknown), reads at
+  most 1 MB of body, writes a JSON report with `--report=`, and exits 1 only
+  for a product the catalog still calls available that came back dead,
+  unavailable or moved. `.github/workflows/product-availability.yml` runs it weekly
+  (Tuesdays 06:41 UTC) and uploads the report; a failed run emails the owner,
+  the same mechanism as the model-path canary. Its verdict is a prompt to
+  look, not a fact: a person confirms and edits the two fields. The
+  deploy-time step in `pages.yml` stays `continue-on-error` (bot blocking).
+- Tests: `tests/catalog-availability.test.mjs`, `tests/product-availability.test.mjs`,
+  `tests/e2e/product-unavailable.spec.mjs` (the gone-product row at phone
+  width, the picker's height, the summary and export agreeing, focus after a
+  pick, and "Remove all upgrades" after a failed catalog load, with a saved
+  selection, and during the load), and additions
+  to `tests/products.test.mjs`, `tests/catalog-fit.test.mjs`,
+  `tests/plan-export.test.mjs` and `tests/ci-permissions.test.mjs`; each was
+  run red before its fix (the classifier by emptying the Amazon phrase list,
+  the fit rules by removing the floor and the depth rule, and every later
+  rule by neutering that one line: the `available` filter in `priceAsOf`,
+  the name reset and `formerProductId` in `reconcileSelection`, the
+  `catalogFailed` guards, the archetype lookup, the `moved` verdict). The
+  adversarial review of this PR found most of these, including three
+  tests that passed against neutered code (a regex a code comment satisfied,
+  a filter one of two call sites satisfied, and a `priceAsOf` stub with no
+  unavailable product).
+- Later, once Amazon Associates is approved (the owner applied 2026-10): a
+  scheduled job fills `img`, `price_usd`, `available` and `checked` from
+  PA-API; the cards already render `img` when present.
+
 ## What the 2026-10-03 session changed (the warm redesign; "Sort it again" removed)
 
 The owner reviewed the live site on 2026-10-03 and sent eight items of
@@ -866,10 +972,20 @@ feature-flagged affiliate tags (`js/affiliates.js`), and since PR #38 a
 browsable product library page (`js/screens/products.js`). Blocked on business,
 not code: deeper SKU curation and real affiliate/associate IDs. Product cards
 draw their category (`js/product-art.js`) because no retailer photo can be
-displayed without an image API (Amazon's needs an approved Associates account)
-or a hotlink that breaks on URL rotation. Opt-in live link checker:
-`npm run check:links` (not in CI — retailer bot-blocking false-fails from
-datacenter IPs).
+displayed without an image API (Amazon's needs an approved Associates account;
+the owner applied 2026-10) or a hotlink that breaks on URL rotation. Since
+2026-10-03 every catalog entry carries `checked`, `available` and `img`; the
+matcher skips unavailable products, a saved plan whose product has gone says
+so, and `scripts/check-product-links.mjs` reads each retailer page for
+"unavailable" wording and runs weekly from
+`.github/workflows/product-availability.yml` (a failed run emails the owner).
+It also runs on deploy in `pages.yml` with `continue-on-error`, because
+datacenter IPs get bot-blocked; the scheduled run is the signal. The client
+matcher judges depth against the shelf depth the 3D builders draw (14-inch
+floor, `js/catalog.js shelfDepthFor`); the server's `usableShelfDepth`
+(`planSchema.js:434`) lacks that floor, so for a 4-foot walk-in the server
+caps `productNeeds.maxDims` at 9.6 inches while the drawn shelves are 14.
+Reconcile in the server PR.
 
 ### #6 Share links + photo promise (PR #23) — DEPLOYED
 - Migration `0005_sharing.sql`: unique nullable `spaces.share_id`.
@@ -2897,7 +3013,14 @@ Ordered by whether anyone can act on them today.
 
 7. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in
    `js/affiliates.js`. Every entry is still an empty string, so all 30 catalog
-   products link plain and no disclosure renders.
+   products link plain and no disclosure renders. **Two entries are marked
+   `available:false` and need a hand-picked replacement the owner has checked
+   on the retailer's page** (the sandbox cannot reach amazon.com): the Copco
+   9" turntable (`copco-basics-lazy-susan-9in`, Amazon listed it unavailable
+   2026-10-03) and the Target mDesign 15" bin
+   (`mdesign-open-front-bin-15in-2pk`, 404 on the 2026-10-03 deploy check).
+   Also wanted: a drawer organizer narrower than 12", since the only two are
+   15.5" and 16" wide and no scenario's drawer fits either.
 
 ### Known gap, no owner
 

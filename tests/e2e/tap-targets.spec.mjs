@@ -43,6 +43,13 @@ async function openSample(page) {
   await page.goto('/index.html');
   await page.getByRole('button', { name: 'View a sample plan' }).click();
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  /* The shopping chapter renders in two passes: a skeleton, then the product
+     rows once the catalog fetch lands. A probe that scrolls to "Download list"
+     between the two measures a page that is about to move, and under a full
+     parallel run it did: the band 4px above the button landed on the row that
+     had just grown in above it. Wait for the rows, so what is measured is what
+     the reader taps. */
+  await expect(page.locator('#res-upgrades .prod').first()).toBeVisible({ timeout: 15_000 });
   await expandChapters(page);
 }
 

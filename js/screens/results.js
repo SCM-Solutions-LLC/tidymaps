@@ -5,7 +5,8 @@ import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
 import { areaFor, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
-import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
+import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, fmtChecked, TYPE_LABEL } from '../catalog.js';
+import { productArt } from '../product-art.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
 import { renderAfter as renderAfterApi, renderAfterErrorMessage, analysisFailureCopy } from '../api.js';
@@ -352,13 +353,20 @@ export function buildResults(){
   // upgrades / shopping — catalog-matched, dimension-aware.
   // The catalog is a separate fetch, so this section is empty until it lands
   // and then N product rows drop in at once. Reserve the space first, and give
-  // the wait an end: loadCatalog swallows its own errors into an empty list, so
-  // without this the section would sit blank under a visible heading forever.
+  // the wait an end: a fetch that fails resolves to an empty catalog with
+  // catalogFailed() set, which is "we could not load it", not "no match".
   setUpgrades(state.upgrades);
   showUpgradesSkeleton();
   loadCatalog()
-    .then(()=>{ initShopping(); renderUpgrades(); })
-    .catch(()=>{ showUpgradesFailed(); });
+    .then(()=>{
+      const pending=uncheckAllPending; uncheckAllPending=false;
+      if(catalogFailed()){ showUpgradesFailed(); return; }
+      initShopping();
+      // "Remove all upgrades" was tapped while the rows were still on their way.
+      if(pending){ state.shopping.forEach(s=>{ s.checked=false; }); persistShopping(); toast('All upgrades removed. You\'re on the $0 plan.'); }
+      renderUpgrades();
+    })
+    .catch(()=>{ uncheckAllPending=false; showUpgradesFailed(); });
 
   // photorealistic before/after (only when we have the user's photo)
   setupAfterPhoto();
@@ -543,41 +551,19 @@ export async function generateAfter(){
   }
 }
 
-const TYPE_ICON={
-  'clear-bin':'box','basket':'shoppingBag','turntable':'refreshCw','can-riser':'barChart',
-  'shelf-riser':'trendingUp','door-rack':'layoutGrid','airtight-container':'lock',
-  'drawer-organizer':'columns','hook-rack':'tag','label-set':'tag','safety-latch':'lock',
-};
-
 // Build (or keep a restored) shopping selection: one entry per product need
 function initShopping(){
   const needs=activeProductNeeds();
   const valid=state.shopping && state.shopping.length===needs.length &&
     state.shopping.every(s=>s && typeof s.needIdx==='number');
   if(valid){
-    state.shopping.forEach((selection,i)=>{
-      const need=needs[selection.needIdx]||needs[i];
-      const match=matchProducts(need).find(entry=>entry.product.id===selection.productId);
-      selection.type=need.type;
-      if(match) selection.dims_in={...match.product.dims_in};
-    });
+    /* Re-read each saved product from the catalog. A product that has gone,
+       or been marked unavailable since the plan was saved, used to come back
+       as a live link to a dead listing with its old price in the total. */
+    state.shopping=state.shopping.map((selection,i)=>reconcileSelection(selection, needs[selection.needIdx]||needs[i], catalogProducts()));
     return;
   }
-  state.shopping=needs.map((need,i)=>{
-    const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
-    return {
-      needIdx:i, checked:true, qty:need.qty,
-      type:need.type,
-      productId: top?top.product.id:null,
-      name: top?top.product.name:TYPE_LABEL[need.type],
-      price_usd: top?top.product.price_usd:null,
-      url: top?top.product.url:null,
-      retailer: top?top.product.retailer:null,
-      img: top?(top.product.img||null):null,
-      fit: top?top.fit:'unknown',
-      dims_in:top?{...top.product.dims_in}:null,
-    };
-  });
+  state.shopping=needs.map((need,i)=>selectionFor(need,i));
 }
 
 /* Append a product need the user asked for, keeping state.shopping in step.
@@ -597,20 +583,8 @@ export function addProductNeed(need){
     return false;
   }
   needs.push(need);
-  const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
   state.shopping=state.shopping||[];
-  state.shopping.push({
-    needIdx: needs.length-1, checked:true, qty:need.qty,
-    type:need.type,
-    productId: top?top.product.id:null,
-    name: top?top.product.name:TYPE_LABEL[need.type],
-    price_usd: top?top.product.price_usd:null,
-    url: top?top.product.url:null,
-    retailer: top?top.product.retailer:null,
-    img: top?(top.product.img||null):null,
-    fit: top?top.fit:'unknown',
-    dims_in: top?{...top.product.dims_in}:null,
-  });
+  state.shopping.push(selectionFor(need, needs.length-1));
   if(getSession()) updateSpacePatch({ plan: state.ai, shopping: state.shopping });
   else persistGuestDraft();
   // the cost tile and the list are both downstream of what just changed
@@ -650,30 +624,51 @@ function showUpgradesFailed(){
 }
 
 export function renderUpgrades(){
+  /* "Remove all upgrades" sits outside this list and stays clickable after a
+     catalog load failed, when state.shopping was never reconciled (a saved
+     plan) or is still null (a fresh one). Rows built from a saved selection
+     the catalog never confirmed are the claim this card exists not to make,
+     so the failed state stays up until a load succeeds. Clicked while the
+     catalog is still loading, there is nothing to remove yet: the skeleton
+     stays, and the rows arrive when the load lands. */
+  if(catalogFailed()){ showUpgradesFailed(); renderShopping(); return; }
+  if(!Array.isArray(state.shopping)){ renderShopping(); return; }
   const needs=activeProductNeeds();
   document.getElementById('res-upgrades').removeAttribute('aria-busy');
   document.getElementById('res-upgrades').innerHTML=needs.map((need,i)=>{
     const sel=state.shopping[i];
     const options=matchProducts(need).filter(m=>m.fit!=='no-fit').slice(0,4);
-    const badge=fitBadge(sel.fit);
+    const badge=fitBadge(sel.fit, need.type);
     const links=searchLinks(need).map(l=>
-      `<a href="${l.url}" target="_blank" rel="${affiliateRel(l.retailer)}" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
+      `<a href="${escapeHtml(l.url)}" target="_blank" rel="${affiliateRel(l.retailer)}" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
     const img=sel.img
-      ?`<img src="${sel.img}" alt="" loading="lazy" onerror="this.parentElement.classList.add('noimg');this.remove()">`
+      ?`<img src="${escapeHtml(sel.img)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('noimg');this.remove()">`
       :'';
-    const picker=options.length>1?`
-      <label class="field" style="margin:10px 0 0"><span>Swap for a different product</span>
-      <select onchange="pickProduct(${i},this.value)" style="padding:9px 11px;font-size:13px">
-        ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
+    /* The picker lives under "Details" while the pick is fine. When the saved
+       product is no longer sold it is the first thing the row needs, so it
+       moves up beside the notice. */
+    const picker=(options.length>1 || (sel.unavailable && options.length))?`
+      <label class="field" style="margin:10px 0 0"><span>${sel.unavailable?'Pick another product':'Swap for a different product'}</span>
+      <select onchange="pickProduct(${i},this.value)">
+        ${sel.unavailable?'<option value="" selected disabled>Choose one</option>':''}${options.map(o=>`<option value="${escapeHtml(o.product.id)}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
       </select></label>`:'';
+    /* "Listing", not a bare "Checked": the row's first control is the include
+       checkbox, and a bare "Checked Jul 2026" two lines under it reads as the
+       tick's state. */
+    const checkedOn=sel.checkedOn?` <span class="pchecked">Listing checked ${escapeHtml(fmtChecked(sel.checkedOn))}</span>`:'';
     const main=sel.productId?`
-      <a class="pname" href="${withAffiliate(sel.url, sel.retailer)}" target="_blank" rel="${affiliateRel(sel.retailer)}">${escapeHtml(sel.name)}</a>
-      <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}</div>`:
+      <a class="pname" href="${escapeHtml(withAffiliate(sel.url, sel.retailer))}" target="_blank" rel="${affiliateRel(sel.retailer)}">${escapeHtml(sel.name)}</a>
+      <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}${checkedOn}</div>`:
+      /* Status first, then the name: a catalog name is up to 80 characters
+         of commas and inch marks, and "…, 2 Pack, Clear is no longer sold"
+         lands the verb on the wrong noun. */
+      sel.unavailable?`
+      <div class="pretail punavailable">No longer sold: <span class="pformer">${escapeHtml(sel.formerName||'the product we suggested')}</span>.${options.length?' Pick another below.':` Search instead: ${links}`}</div>${picker}`:
       `<div class="pretail">No exact match in our catalog. Search: ${links}</div>`;
     return `
     <div class="prod${sel.checked?'':' excluded'}">
       <label class="pcheck"><input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list"></label>
-      <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${SVG[TYPE_ICON[need.type]]||SVG.box}</span></span>
+      <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${productArt(need.type)}</span></span>
       <div>
         <h3>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${
           /* Everything else in this list is what the model recommended from the
@@ -690,8 +685,8 @@ export function renderUpgrades(){
             <span>${SVG.mapPin} ${escapeHtml(need.targetZone||'Anywhere')}</span>
             ${need.maxDims?`<span>${SVG.ruler} Max ${fmtIn(need.maxDims.w_in, isMetric())}w × ${fmtIn(need.maxDims.h_in, isMetric())}h × ${fmtIn(need.maxDims.d_in, isMetric())}d</span>`:''}
           </div>
-          ${picker}
-          <div class="small muted" style="margin-top:10px">Search instead: ${links}</div>
+          ${sel.unavailable?'':picker}
+          ${sel.unavailable&&!options.length?'':`<div class="small muted" style="margin-top:10px">Search instead: ${links}</div>`}
         </details>
       </div>
       <span class="cost">${sel.price_usd!=null?'$'+Math.round(sel.price_usd*sel.qty):'–'}</span>
@@ -707,10 +702,16 @@ export function pickProduct(i, productId){
   Object.assign(state.shopping[i],{
     type:need.type,
     productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd,
-    url:m.product.url, retailer:m.product.retailer, img:m.product.img||null, fit:m.fit,
-    dims_in:{...m.product.dims_in},
+    url:m.product.url, retailer:m.product.retailer, img:m.product.img||null,
+    checkedOn:m.product.checked||null, fit:m.fit,
+    dims_in:{...m.product.dims_in}, unavailable:false, formerName:null, formerProductId:null,
   });
   renderUpgrades();
+  // The re-render dropped the select that had focus; put it on the row's
+  // product link, or its checkbox, so a keyboard reader is not sent to the top.
+  const row=document.querySelectorAll('#res-upgrades .prod')[i];
+  const next=row&&(row.querySelector('.pname')||row.querySelector('input'));
+  if(next) next.focus();
   persistShopping();
 }
 
@@ -720,7 +721,17 @@ export function toggleUpgrade(i){
   renderShopping();
   persistShopping();
 }
+/* Tapped while the catalog is still loading, there is nothing to untick yet,
+   and the rows that land a moment later would all arrive ticked, undoing the
+   tap after a toast that said it was done. The tap is remembered instead and
+   honoured when the load lands (or forgotten if the load fails). */
+let uncheckAllPending=false;
 export function uncheckAllUpgrades(){
+  if(!Array.isArray(state.shopping) && !catalogFailed()){
+    uncheckAllPending=true;
+    toast('Removing all upgrades once the product list loads.');
+    return;
+  }
   (state.shopping||[]).forEach(s=>{ s.checked=false; });
   renderUpgrades();
   persistShopping();
@@ -750,14 +761,14 @@ export function renderShopping(){
   const picked=(state.shopping||[]).filter(s=>s.checked);
   const list=document.getElementById('res-shopping');
   list.innerHTML=picked.length?picked.map(s=>
-    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
+    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}${s.unavailable?' <span class="muted">(no product yet)</span>':''}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
     '<li><span class="muted">No items selected. You\'re on the $0 plan.</span></li>';
   const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
   const unpriced=picked.some(s=>s.price_usd==null);
   document.getElementById('res-shop-total').textContent=(total?'$'+Math.round(total):'$0')+(unpriced?'+':'');
   const asOf=priceAsOf();
   const note=document.getElementById('res-price-asof');
-  if(note) note.textContent=(asOf?`Prices approximate, checked ${asOf}. Links open the retailer's page.`:'')
+  if(note) note.textContent=(asOf?`Prices approximate, checked ${fmtChecked(asOf)}. Links open the retailer's page.`:'')
     +(affiliatesConfigured()?' '+AFFILIATE_DISCLOSURE:'');
 }
 /* Practical, real tips matched to what each step asks the user to do */

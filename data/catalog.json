@@ -12,7 +12,10 @@
       "retailer": "Target",
       "url": "https://www.target.com/p/idesign-kitchen-binz-plastic-deep-stackable-organizer-with-handle-clear-kitchen-cabinet-storage-14-5-34-x-8-34-x-6-34/-/A-93534698",
       "tags": ["clear", "stackable", "handles", "deep", "pantry", "bpa-free"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "home-edit-large-bin-10x10",
@@ -24,7 +27,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/The-Home-Edit-Large-Bin-10-x-10-x-6-Plastic-Modular-Storage-System/400392358",
       "tags": ["clear", "stackable", "modular", "pantry", "closet"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "home-edit-xl-bin-10x20",
@@ -36,7 +42,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/The-Home-Edit-Everything-XL-Storage-Bin-Clear-Plastic-Stackable-Organizer-10-x-20-x-6/336757126",
       "tags": ["clear", "stackable", "extra-deep", "closet", "garage"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "mdesign-open-front-bin-xl-2pk",
@@ -48,7 +57,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/mDesign-Household-Stackable-Organizer-Bathrooms/dp/B01CF5D6M6",
       "tags": ["clear", "stackable", "open-front", "2-pack", "pantry", "kids"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "mdesign-open-front-bin-15in-2pk",
@@ -60,7 +72,11 @@
       "retailer": "Target",
       "url": "https://www.target.com/p/mdesign-stackable-plastic-food-storage-bin-open-front-x-large-2-pack-clear/-/A-81209588",
       "tags": ["clear", "stackable", "open-front", "wide", "shallow", "2-pack"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-10-03",
+      "available": false,
+      "note": "The Target page returned 404 on the 2026-10-03 deploy-time link check."
     },
     {
       "id": "brightroom-y-weave-basket-medium",
@@ -72,7 +88,10 @@
       "retailer": "Target",
       "url": "https://www.target.com/p/y-weave-medium-decorative-storage-basket-brightroom/-/A-53816617",
       "tags": ["woven", "plastic", "cube-compatible", "closet", "kids"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "brightroom-y-weave-basket-half-medium",
@@ -84,7 +103,10 @@
       "retailer": "Target",
       "url": "https://www.target.com/p/y-weave-half-medium-decorative-storage-basket-brightroom/-/A-52649009",
       "tags": ["woven", "plastic", "narrow", "cube-compatible", "closet"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "ikea-risatorp-wire-basket",
@@ -96,7 +118,10 @@
       "retailer": "IKEA",
       "url": "https://www.ikea.com/us/en/p/risatorp-wire-basket-white-90281618/",
       "tags": ["wire", "metal", "wood-handle", "pantry", "produce"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "copco-basics-lazy-susan-9in",
@@ -108,7 +133,11 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/Copco-Basics-Non-Skid-Cabinet-Turntable/dp/B088N867YS",
       "tags": ["non-skid", "raised-rim", "cabinet", "spice", "fridge-safe"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-10-03",
+      "available": false,
+      "note": "Amazon listed it as currently unavailable on 2026-10-03 (owner report)."
     },
     {
       "id": "copco-basics-lazy-susan-12in",
@@ -120,7 +149,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/Copco-2555-0190-Non-Skid-Cabinet-Turntable/dp/B0036OQWTU",
       "tags": ["non-skid", "raised-rim", "cabinet", "pantry"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "oxo-good-grips-turntable-16in",
@@ -132,7 +164,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/Multi-Purpose-Turntable-16-inch/131483980",
       "tags": ["non-slip", "large", "deep-shelf", "countertop", "corner-cabinet"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "simplehouseware-can-rack-36-chrome",
@@ -144,7 +179,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/SimpleHouseware-Stackable-Rack-Organizer-Chrome/dp/B01IIXR2II",
       "tags": ["3-tier", "stackable", "adjustable-dividers", "metal", "pantry"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "simplehouseware-can-rack-36-white",
@@ -156,7 +194,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/SimpleHouseware-Stackable-Rack-Organizer-White/dp/B07JD3WNWR",
       "tags": ["3-tier", "stackable", "adjustable-dividers", "metal", "pantry"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "simple-trending-can-rack-36-white",
@@ -168,7 +209,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/Simple-Trending-Organizer-Stackable-Dispenser/dp/B07RWCQWN1",
       "tags": ["3-tier", "stackable", "adjustable-dividers", "metal", "pantry"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "ikea-variera-shelf-insert-11in",
@@ -180,7 +224,10 @@
       "retailer": "IKEA",
       "url": "https://www.ikea.com/us/en/p/variera-shelf-insert-white-60136623/",
       "tags": ["steel", "connectable", "cabinet", "doubles-shelf-space"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "simplehouseware-expandable-shelf-large",
@@ -192,7 +239,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/SimpleHouseware-Expandable-Stackable-Kitchen-Organizer/dp/B01K07MZDC",
       "tags": ["expandable", "stackable", "steel", "cabinet", "counter"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "simplehouseware-counter-shelf-white",
@@ -204,7 +254,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/SimpleHouseware-Expandable-Stackable-Kitchen-Organizer/dp/B07NPWHJ9B",
       "tags": ["expandable", "stackable", "metal-top", "cabinet", "shallow"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "smart-design-over-door-pantry-organizer-6-basket",
@@ -216,7 +269,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/Smart-Design-Over-the-Door-Pantry-Organizer-Rack-w-6-Baskets-18-5-x-63-2-inch-White/229160202",
       "tags": ["over-door", "6-baskets", "steel", "adjustable", "pantry", "spice"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "simplehouseware-over-cabinet-door-organizer",
@@ -228,7 +284,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/SimpleHouseware-Cabinet-Organizer-Holder-Silver/dp/B01LXKKVPK",
       "tags": ["over-cabinet-door", "steel", "cutting-boards", "bakeware", "no-drill"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "oxo-pop-container-big-square-short-2-8qt",
@@ -240,7 +299,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/OXO-Good-Grips-POP-Container-Big-Square-Short-2-8-Qt/5250807410",
       "tags": ["airtight", "clear", "stackable", "push-button", "bpa-free", "pantry"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "oxo-pop-container-big-square-medium-4-4qt",
@@ -252,7 +314,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/OXO-Good-Grips-POP-Container/dp/B07856RRDW",
       "tags": ["airtight", "clear", "stackable", "push-button", "flour", "5lb-bag"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "oxo-pop-container-big-square-tall-6qt",
@@ -264,7 +329,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/OXO-Good-Grips-POP-Container/dp/B077VLC4BB",
       "tags": ["airtight", "clear", "stackable", "push-button", "cereal", "bulk"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "madesmart-classic-large-silverware-tray",
@@ -276,7 +344,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/Madesmart-Classic-Large-Silverware-Tray-with-6-Compartment-White/16664865",
       "tags": ["6-compartment", "soft-grip", "non-slip", "kitchen-drawer", "bpa-free"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "oxo-large-expandable-utensil-organizer",
@@ -288,7 +359,10 @@
       "retailer": "The Container Store",
       "url": "https://www.containerstore.com/s/drawer-organizers/oxo-good-grips-large-expandable-utensil-organizer/1d?productId=10031128",
       "tags": ["expandable", "adjustable-dividers", "kitchen-drawer", "expands-to-22in"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "ikea-kubbis-rack-7-hooks",
@@ -300,7 +374,10 @@
       "retailer": "IKEA",
       "url": "https://www.ikea.com/us/en/p/kubbis-rack-with-7-hooks-white-10289576/",
       "tags": ["wall-mount", "7-hooks", "solid-wood", "entryway", "kids", "backpacks"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "home-it-mop-broom-holder-5-slot",
@@ -312,7 +389,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/HOME-Broom-Holder-Wall-Mount/dp/B00EJU3SWY",
       "tags": ["wall-mount", "garage", "laundry", "5-slots", "6-hooks", "holds-11-tools"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "home-edit-clear-pantry-labels-24pk",
@@ -324,7 +404,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/The-Home-Edit-Clear-Pantry-Labels-Pack-of-24/734977634",
       "tags": ["labels", "water-resistant", "removable", "script", "pantry", "per-label-size"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "talented-kitchen-157-pantry-labels",
@@ -336,7 +419,10 @@
       "retailer": "Amazon",
       "url": "https://www.amazon.com/Script-Pantry-Labels-Preprinted-Organization/dp/B07J4XKTZP",
       "tags": ["labels", "preprinted", "water-resistant", "vinyl", "labels-1-to-1.5in", "per-label-size"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "safety-1st-adhesive-magnetic-lock-8-locks-2-keys",
@@ -348,7 +434,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/Safety-1st-Adhesive-Magnetic-Lock-System-8-Locks-and-2-Keys-White-Toddler/586894580",
       "tags": ["kid-safe", "magnetic", "adhesive-mount", "no-drill", "cabinet", "package-dims"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     },
     {
       "id": "munchkin-xtraguard-dual-action-latches-2pk",
@@ -360,7 +449,10 @@
       "retailer": "Walmart",
       "url": "https://www.walmart.com/ip/Munchkin-XTRAGUARD-Dual-Action-Multi-Use-Safety-Baby-Latches-2-Pack/22879317",
       "tags": ["kid-safe", "dual-action", "flexible-strap", "adhesive-mount", "cabinet", "appliance", "package-dims"],
-      "dimsVerified": "cross-referenced"
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-07",
+      "available": true
     }
   ]
 }
