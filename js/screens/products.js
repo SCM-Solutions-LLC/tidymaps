@@ -1,6 +1,6 @@
 import { ROOMS, AREAS, SETUP_TYPES, fmtIn } from '../wizard-data.js';
 import { isMetric } from '../state.js';
-import { loadCatalog, priceAsOf, TYPE_LABEL } from '../catalog.js';
+import { loadCatalog, priceAsOf, fmtChecked, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { productArt } from '../product-art.js';
 import { go } from '../router.js';
@@ -99,7 +99,9 @@ function typeBlock(need, products){
    narrows to a room, at which point that room's spaces all open. */
 function areaBlock(room, area, open){
   const needs = needsFor(area.id).filter(n => filters.type === 'all' || n.type === filters.type);
-  const groups = needs.map(n => ({ need: n, items: catalog.products.filter(p => p.type === n.type) }))
+  // A product marked unavailable stays in the file (saved plans reconcile
+  // against it) but is not something to browse.
+  const groups = needs.map(n => ({ need: n, items: catalog.products.filter(p => p.type === n.type && p.available !== false) }))
     .filter(g => g.items.length);
   if(!groups.length) return '';
   const count = groups.reduce((sum, g) => sum + g.items.length, 0);
@@ -127,7 +129,7 @@ function renderFilters(){
   roomWrap.innerHTML = chip('all', 'All rooms', filters.room === 'all')
     + ROOMS.map(r => chip(r.id, r.label, filters.room === r.id)).join('');
   // Only categories that some space actually asks for, in catalog order.
-  const used = [...new Set(catalog.products.map(p => p.type))];
+  const used = [...new Set(catalog.products.filter(p => p.available !== false).map(p => p.type))];
   typeWrap.innerHTML = chip('all', 'Everything', filters.type === 'all')
     + used.map(t => chip(t, TYPE_LABEL[t] || t, filters.type === t)).join('');
 }
@@ -148,7 +150,7 @@ function renderList(){
   const note = document.getElementById('prod-asof');
   // This page carries every affiliate link on the site, so the FTC disclosure
   // that already accompanies the report's shopping card belongs here too.
-  if(note) note.textContent = (asOf ? `Prices approximate, checked ${asOf}. Links open the retailer's own page.` : '')
+  if(note) note.textContent = (asOf ? `Prices approximate, checked ${fmtChecked(asOf)}. Links open the retailer's own page.` : '')
     + (affiliatesConfigured() ? ' ' + AFFILIATE_DISCLOSURE : '');
 }
 
