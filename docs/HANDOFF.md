@@ -4,7 +4,34 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-09-16, after #176 merged: the tap-targets e2e
+**Last refreshed:** 2026-10-03, after #179 merged (`main` at `6ad3040`).
+**Both owner blockers from the 09-14 and 09-19 outages are cleared.** The
+`ANTHROPIC_API_KEY` was rotated 09-29 to a dedicated key with no expiry
+(Production health #3), and the `SUPABASE_ACCESS_TOKEN` secret was replaced
+10-03 with one scoped to the TidyMap Edge Functions project, read-write,
+**expiring 2027-10-01** (Production health #5, open items 11 and 13).
+"Deploy edge functions" run 30 (`workflow_dispatch`, 10-03 00:41 UTC, `main`
+at `6ad3040`) went green, the first success since run 19 on 09-07 after ten
+red runs, and the canary (run 45, 00:43 UTC) went green on the same commit.
+Production functions equal `main` again, so the merged-not-deployed rule in
+open item 11 is retired: a PR that touches `supabase/functions/` deploys on
+merge, and a red deploy run means something new. Migrations 0010 to 0012 are
+applied (checked against the project's migration list 10-03), so the `pay`
+write that run 30 shipped has its column. #178 and #179 made the canary
+heartbeat count any completed run, then fetch runs unfiltered and filter on
+`status` itself (open item 9). This session also moved every GitHub Action in
+the four workflows to a version that runs on Node 24: checkout 6, setup-node
+6, configure-pages 6, upload-pages-artifact 5, deploy-pages 5, upload-artifact
+7. Two of those are not the obvious bump: `upload-artifact@v5` still runs on
+Node 20, and `upload-pages-artifact@v4` pins a Node 20 `upload-artifact`
+internally, so v5 is the first that is Node 24 end to end. v5 also leaves out
+dotfiles by default, which costs nothing here (nothing under the directories
+`scripts/build-site.sh` copies starts with a dot). Not verified from the
+sandbox: `pages.yml`, `supabase-functions.yml` and the canary on the new
+versions, which first run after merge (`supabase-functions.yml` runs on that
+merge because its own file changed; it redeploys unchanged functions).
+
+Before that, 2026-09-16, after #176 merged: the tap-targets e2e
 spec at `tests/e2e/tap-targets.spec.mjs:87` had a latent flake in its
 first `boundingBox` reads after `expandChapters` — a class flip removed
 `display:none` from the chapter's children but the helper returned in
@@ -1526,7 +1553,8 @@ and the list is finished.
    in total, both holding this app's own SVG in `ic`, none matching
    `onerror|onload|<script|javascript:|<iframe|<image`, and none with a
    `share_id` set. Nothing was exploited, and nothing is currently shared.
-5. **The function deploy token is dead (09-14).** "Deploy edge functions" run
+5. ~~**The function deploy token is dead (09-14).**~~ **Replaced 2026-10-03,
+   run 30 green (see the end of this item).** "Deploy edge functions" run
    20 (weekly, 09-14 12:43 UTC) and run 21 (the #134 merge) both failed at the
    deploy step with `unexpected deploy status 401: {"message":"Unauthorized"}`.
    The token check step passed, so the secret is set; Supabase no longer
@@ -1547,6 +1575,16 @@ and the list is finished.
      rather than waiting for Monday's schedule. Read the function back:
      `analyze-space`'s `ezbr_sha256` must change. A session can trigger the
      re-run but cannot rotate the secret.
+
+   **Replaced 2026-10-03.** The owner minted a token scoped to the TidyMap
+   Edge Functions project, read-write, and replaced the repository secret.
+   Run 30 (`workflow_dispatch`, 10-03 00:41 UTC, `main` at `6ad3040`) went
+   green, after ten red runs (20 to 29). It deployed `main`, so what the dead
+   token held back (#134's string caps, #173's CORS change, #159's `pay`
+   write in `submit-form`) is live; the migration it depends on, 0010, was
+   already applied. **The new token expires 2027-10-01.** The failure will
+   look the same as this one (a 401 at the deploy step, a red run, an email),
+   so open item 13 carries the date.
 
    **Confirmed working again 2026-08-21.** Three `analyze-space` POSTs on
    08-20 (04:25, 16:56, 19:17) all returned 200, no 502s anywhere in the 24h
@@ -2051,8 +2089,9 @@ Ordered by whether anyone can act on them today.
    exact misdirection its own header promised to avoid. A failed run proves
    the schedule is alive and already emails on its own, so the heartbeat now
    asks for `status=completed`. The key itself still needs rotating by the
-   owner (Production health #3); the deploy token is still dead too
-   (Production health #5, runs 28 and 29 on 09-21 and 09-28).
+   owner (Production health #3); the deploy token was still dead too
+   (Production health #5, runs 28 and 29 on 09-21 and 09-28). Both were
+   replaced afterwards: the key 09-29, the token 10-03.
 
    **And unfiltered, 2026-10-03.** Run #44 (10-02) asked the API for
    `status=completed` and got a list whose newest entry was #41 from 09-29,
@@ -2086,10 +2125,10 @@ Ordered by whether anyone can act on them today.
     softening the matcher back to shared-word matching; that put organizers
     on the wrong level and then warned that they did not fit.
 
-11. **Replace the function deploy token.** Owner-only, ten minutes, and it
-    gates every server-side item below. Production health #5 has the steps.
-    Until it is done, treat any PR that touches `supabase/functions/` as
-    merged-not-deployed, and say so in its handoff line.
+11. ~~**Replace the function deploy token.**~~ **Done 2026-10-03.** The
+    secret was replaced and run 30 deployed `main` (Production health #5).
+    The merged-not-deployed rule is retired; the new token's expiry is
+    tracked in item 13. Mentions of the rule in earlier entries are history.
 
 12. **The 2026-09-14 site review, everything except item 1.** A full pass
     (security, browser UI/UX with axe at 390 and 1280, throttled performance,
@@ -2777,6 +2816,23 @@ Ordered by whether anyone can act on them today.
       `.optout .btn[hidden]{display:none}` sits in `css/legal.css` scoped
       to the toggle. Backend/deploy state now names the opt-out alongside
       DNT/GPC.
+
+13. **Owner housekeeping left from the 09-29 and 10-03 rotations.** None of
+    this is code and a session cannot do it.
+    - **Delete the old Anthropic keys.** The 09-29 key is dedicated and has no
+      expiry; per the owner's 10-03 note the keys it replaced have not been
+      deleted yet. Do it in the Anthropic console.
+    - **Enable a billing alert** in the Anthropic console. The 08-04 outage
+      ran two weeks unnoticed and the 09-19 one was caught by the canary;
+      neither was a spend signal. An alert is the only check that would
+      notice a key that is leaking rather than dead.
+    - **Rotate the Supabase deploy token before 2027-10-01** (Production
+      health #5). A calendar reminder is the whole mechanism; nothing in the
+      repo warns before it expires.
+    - ~~Bump the GitHub Actions off Node 20.~~ **Done in the PR that carries
+      this entry**; the header has the versions and what stays unverified
+      until it merges. Pinning actions to SHAs is still open and still needs
+      broader GitHub access.
 
 ### Waiting on traffic
 
