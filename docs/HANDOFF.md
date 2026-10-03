@@ -874,7 +874,12 @@ so, and `scripts/check-product-links.mjs` reads each retailer page for
 "unavailable" wording and runs weekly from
 `.github/workflows/product-availability.yml` (a failed run emails the owner).
 It also runs on deploy in `pages.yml` with `continue-on-error`, because
-datacenter IPs get bot-blocked; the scheduled run is the signal.
+datacenter IPs get bot-blocked; the scheduled run is the signal. The client
+matcher judges depth against the shelf depth the 3D builders draw (14-inch
+floor, `js/catalog.js shelfDepthFor`); the server's `usableShelfDepth`
+(`planSchema.js:434`) lacks that floor, so for a 4-foot walk-in the server
+caps `productNeeds.maxDims` at 9.6 inches while the drawn shelves are 14.
+Reconcile in the server PR.
 
 ### #6 Share links + photo promise (PR #23) — DEPLOYED
 - Migration `0005_sharing.sql`: unique nullable `spaces.share_id`.

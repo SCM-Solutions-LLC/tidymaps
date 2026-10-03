@@ -72,6 +72,15 @@ test('a room-shaped space is measured as a room, but products sit on its shelves
   assert.match(fitBadge('fits', 'clear-bin').txt, /14" shelf depth/, 'the badge names the shelf, not the room');
   assert.equal(fitBadge('fits', 'label-set').txt, '', 'a label set has no depth to fit');
 
+  // The 3D builders draw a 4-foot walk-in with 14-inch shelves (their floor);
+  // the matcher has to agree, or the plan's pick is flagged in its own view.
+  assert.equal(shelfDepthFor({ w_in: 48, h_in: 96, d_in: 48 }, 'walkinL'), 14, 'the builders\' 14-inch floor is missing');
+  state.setup = 'walkinL';
+  state.dims = { w_in: 48, h_in: 96, d_in: 48, shelves: null };
+  assert.equal(fitFor({ dims_in: { w: 6.3, h: 5.3, d: 13.6 } }, { type: 'basket', maxDims: null }), 'fits',
+    'depth is yes or no, as in the 3D view: a basket that fills the shelf is not "tight"');
+  assert.equal(fitFor({ dims_in: { w: 6.3, h: 5.3, d: 14.2 } }, { type: 'basket', maxDims: null }), 'no-fit');
+
   state.setup = 'cabinet';
   state.dims = { w_in: 36, h_in: 78, d_in: 18, shelves: null };
   assert.equal(shelfDepthFor(state.dims, 'cabinet'), 18, 'a cabinet\'s measured depth is its shelf depth');

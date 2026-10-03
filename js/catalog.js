@@ -48,10 +48,12 @@ export const CARCASS_WIDTH_ALLOWANCE = 3.5;
 /* Room-shaped setups (walk-ins, L-shapes) are measured as a room: the depth
    is floor, not shelf, so judging a bin against it called a 20-inch bin a fit
    and badged every product "Fits your 72" shelf depth". Their shelving is 14
-   to 18 inches deep; the formula is the one the 3D builders
-   (js/three/layouts/walkin-u.js, l-run.js) and the server's usableShelfDepth
-   (planSchema.js) use, so the three never disagree. Anything else is a unit
-   whose measured depth is its shelf depth. */
+   to 18 inches deep. The formula is the 3D builders' own
+   (js/three/layouts/walkin-u.js, l-run.js), 14-inch floor included, because
+   the fit note in the 3D view is what a pick is judged by in the end; the
+   server's usableShelfDepth (planSchema.js) lacks that floor, which HANDOFF
+   records for the server PR. Anything else is a unit whose measured depth is
+   its shelf depth. */
 const ROOM_SHELF_FACTOR={'walkin-u':0.2,'l-run':0.22};
 export function shelfDepthFor(dims, setup){
   const depth=Number(dims && dims.d_in)||0;
@@ -59,7 +61,8 @@ export function shelfDepthFor(dims, setup){
   const factor=ROOM_SHELF_FACTOR[SETUP_ARCHETYPE[setup]];
   if(!factor) return depth;
   const width=Number(dims && dims.w_in)||depth;
-  return Math.max(8, Math.min(18, Math.min(width, depth)*factor));
+  const smallest=Math.min(width, depth);
+  return Math.max(8, Math.min(18, Math.max(14, smallest*factor), smallest*0.5));
 }
 
 // Door racks and hook racks mount on a door, wall, or pegboard — outside the
@@ -85,17 +88,23 @@ export function fitFor(product, need){
     // 16-inch tray fits the 14.5 inches its drawers actually have.
     w: tighter(md.w_in, measured.w_in ? measured.w_in-CARCASS_WIDTH_ALLOWANCE : null),
     h: tighter(md.h_in, measured.h_in),
-    d: tighter(md.d_in, shelfD ? shelfD-0.5 : null),
+    d: tighter(md.d_in, shelfD || null),
   };
   let margin=Infinity, known=false;
   for(const axis of ['w','h','d']){
     const lim=limits[axis];
     if(!lim) continue;
     known=true;
-    margin=Math.min(margin, lim - product.dims_in[axis]);
+    const room=lim - product.dims_in[axis];
+    if(room<0) return 'no-fit';
+    /* Depth is a yes or no, the way the 3D view judges it (depth <= shelf
+       depth): a basket that fills a shelf front to back is a fit, not a tight
+       one. Calling it tight ranked a $5 basket behind an $18 one whose three
+       copies then did not fit the zone's width in 3D, and the plan's own
+       view flagged the plan's own pick. */
+    if(axis!=='d') margin=Math.min(margin, room);
   }
   if(!known) return 'unknown';
-  if(margin<0) return 'no-fit';
   return margin>=0.5 ? 'fits' : 'tight';
 }
 
