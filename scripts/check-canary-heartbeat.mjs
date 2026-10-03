@@ -21,6 +21,13 @@
    #31 to #40, 2026-09-19 to 09-28, all fired on schedule and all failed on
    an invalid API key).
 
+   The list is fetched unfiltered and filtered here, never with the API's
+   `status=` parameter. On 2026-10-02 run #44 asked for `status=completed`
+   and got a list whose newest entry was #41, missing #42 and #43, which had
+   both completed on schedule. The same query answered correctly before and
+   after, so the filtered listing can lag. The plain listing is the one the
+   Actions tab shows; pickLastCompleted already skips runs still in flight.
+
    Threshold: firings have landed between 44 minutes and 11 hours 21 minutes
    after their 06:20 UTC schedule (Production health #10, HANDOFF item 9).
    The gap between two consecutive completions on a 24h schedule is
@@ -80,7 +87,7 @@ export function classifyHeartbeat(lastUpdatedAt, now = Date.now()) {
 
 async function fetchRecentCompletedRuns({ token, repo, fetchImpl = fetch }) {
   const url = `https://api.github.com/repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs`
-    + `?per_page=${RUNS_PAGE_SIZE}&status=completed`;
+    + `?per_page=${RUNS_PAGE_SIZE}`;
   const res = await fetchImpl(url, {
     headers: {
       accept: 'application/vnd.github+json',

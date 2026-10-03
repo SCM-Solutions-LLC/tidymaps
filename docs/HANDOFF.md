@@ -2054,6 +2054,13 @@ Ordered by whether anyone can act on them today.
    owner (Production health #3); the deploy token is still dead too
    (Production health #5, runs 28 and 29 on 09-21 and 09-28).
 
+   **And unfiltered, 2026-10-03.** Run #44 (10-02) asked the API for
+   `status=completed` and got a list whose newest entry was #41 from 09-29,
+   missing #42 and #43, which had both completed. It reported HEARTBEAT LOST
+   while the model call in the same run had passed. The same query answered
+   correctly on the runs before and after, so the filtered listing lags. The
+   script now fetches the plain listing and filters on `status` itself.
+
    Every new behavioural assertion proven red by neutering only its own fix
    with file copies rather than `git checkout`: threshold to `Infinity` (4
    red, including the boundary case that underflows), the current-run skip

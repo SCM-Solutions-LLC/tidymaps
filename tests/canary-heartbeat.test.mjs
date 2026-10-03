@@ -230,7 +230,25 @@ test('main: a model-path outage is not reported as a skipped schedule', async ()
   });
   assert.deepEqual(exits, []);
   assert.doesNotMatch(errs, /HEARTBEAT LOST/);
-  assert.match(requested, /status=completed/);
+  assert.doesNotMatch(requested, /status=/,
+    'the status= filter lagged in production (run #44); filter client-side instead');
+});
+
+test('main: in-flight runs in the unfiltered list do not count as heartbeats', async () => {
+  /* The unfiltered listing includes the current run and anything queued, so
+     the client-side status check is what keeps them out. */
+  const runs = [
+    { id: 'CURRENT', status: 'in_progress', conclusion: null, updated_at: isoHoursAgo(0) },
+    { id: 'Q', status: 'queued', conclusion: null, updated_at: isoHoursAgo(0.5) },
+    { id: 'OLD', status: 'completed', conclusion: 'success', updated_at: isoHoursAgo(60) },
+  ];
+  const { exits, errs } = await runMain({
+    env: stubEnv(),
+    now: NOW,
+    fetchImpl: stubFetch(jsonResponse({ workflow_runs: runs })),
+  });
+  assert.deepEqual(exits, [1]);
+  assert.match(errs, /HEARTBEAT LOST/);
 });
 
 test('main: the current run itself is never treated as its own predecessor', async () => {
