@@ -357,9 +357,11 @@ so it reported that very listing "ok 200" the same morning.
   focus to the new product link. The summary list marks such a row "(pick a
   product)". A failed catalog load reaches `showUpgradesFailed`, and
   `renderUpgrades` keeps that state when "Remove all upgrades" (outside the
-  list) fires afterwards, and leaves the skeleton alone when it fires while
-  the catalog is still loading; it used to throw on a fresh plan or rebuild
-  rows from a saved selection the catalog never confirmed. The library hides
+  list) fires afterwards; tapped while the catalog is still loading it says
+  so, leaves the skeleton alone and is honoured when the rows land (they
+  used to arrive ticked after a toast that said they were removed); it used
+  to throw on a fresh plan or rebuild rows from a saved selection the
+  catalog never confirmed. The library hides
   unavailable products in both the list and the category chips.
 - **Availability check**: `scripts/product-availability.mjs` (pure,
   unit-tested) classifies a retailer page as ok, unavailable, dead, moved

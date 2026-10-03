@@ -114,6 +114,11 @@ test('removing all upgrades before the catalog has loaded neither throws nor cla
   await page.evaluate(() => window.uncheckAllUpgrades());
   await expect(page.locator('#res-upgrades .sk-list')).toBeVisible();
   await expect(page.locator('#res-upgrades .load-failed')).toHaveCount(0);
+  await expect(page.locator('#toast')).toContainText('once the product list loads');
+  // The tap is honoured when the rows land: none of them arrives ticked.
   await expect(page.locator('#res-upgrades .prod').first()).toBeVisible({ timeout: 15_000 });
+  const rows = await page.locator('#res-upgrades .prod').count();
+  await expect(page.locator('#res-upgrades .prod.excluded')).toHaveCount(rows);
+  await expect(page.locator('#res-shop-total')).toHaveText('$0');
   expect(errors).toEqual([]);
 });

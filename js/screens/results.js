@@ -358,8 +358,15 @@ export function buildResults(){
   setUpgrades(state.upgrades);
   showUpgradesSkeleton();
   loadCatalog()
-    .then(()=>{ if(catalogFailed()){ showUpgradesFailed(); return; } initShopping(); renderUpgrades(); })
-    .catch(()=>{ showUpgradesFailed(); });
+    .then(()=>{
+      const pending=uncheckAllPending; uncheckAllPending=false;
+      if(catalogFailed()){ showUpgradesFailed(); return; }
+      initShopping();
+      // "Remove all upgrades" was tapped while the rows were still on their way.
+      if(pending){ state.shopping.forEach(s=>{ s.checked=false; }); persistShopping(); toast('All upgrades removed. You\'re on the $0 plan.'); }
+      renderUpgrades();
+    })
+    .catch(()=>{ uncheckAllPending=false; showUpgradesFailed(); });
 
   // photorealistic before/after (only when we have the user's photo)
   setupAfterPhoto();
@@ -714,7 +721,17 @@ export function toggleUpgrade(i){
   renderShopping();
   persistShopping();
 }
+/* Tapped while the catalog is still loading, there is nothing to untick yet,
+   and the rows that land a moment later would all arrive ticked, undoing the
+   tap after a toast that said it was done. The tap is remembered instead and
+   honoured when the load lands (or forgotten if the load fails). */
+let uncheckAllPending=false;
 export function uncheckAllUpgrades(){
+  if(!Array.isArray(state.shopping) && !catalogFailed()){
+    uncheckAllPending=true;
+    toast('Removing all upgrades once the product list loads.');
+    return;
+  }
   (state.shopping||[]).forEach(s=>{ s.checked=false; });
   renderUpgrades();
   persistShopping();
