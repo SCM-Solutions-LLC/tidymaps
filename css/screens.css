@@ -11,9 +11,9 @@
   .wiz{grid-template-columns:7fr 4fr;gap:52px}
   .wiz-rail{display:block;position:sticky;top:calc(var(--appbar-h,57px) + 22px)}
 }
-.rail-note{font-size:14px;color:var(--ink);line-height:1.55;padding:12px 14px;border:var(--rule);background:var(--tint);margin-bottom:26px}
+.rail-note{font-size:14px;color:var(--ink);line-height:1.55;padding:14px 16px;border:1px solid var(--butter-l);border-radius:var(--radius);background:var(--butter-f);margin-bottom:26px}
 .rail-note strong{color:var(--ink-2);font-weight:600}
-.rail-sum{border-top:1px solid var(--line-2);padding-top:14px}
+.rail-sum{border-top:1px solid var(--line);padding-top:14px}
 .rail-sum .rs-h{font-size:10px;font-weight:600;color:var(--ink-3);margin-bottom:10px}
 .rail-sum dl{margin:0;display:grid;gap:8px}
 .rail-sum .rs-row{display:grid;grid-template-columns:86px 1fr;gap:10px;align-items:baseline}
@@ -26,47 +26,47 @@
 @media(min-width:640px){.dash-grid{grid-template-columns:1fr 1fr}}
 @media(min-width:980px){.dash-grid{grid-template-columns:1fr 1fr 1fr}}
 .dash-card{
-  background:var(--stock);border:var(--rule);
+  background:var(--stock);border:var(--rule);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);
   overflow:hidden;display:flex;flex-direction:column;
-  text-align:left;padding:0;transition:box-shadow .2s;
+  text-align:left;padding:0;transition:box-shadow .2s,transform .2s;
 }
-.dash-card:hover{box-shadow:inset 0 0 0 1px var(--ink)}
-.dash-cover{aspect-ratio:16/9;background:var(--tint);position:relative;overflow:hidden;border-bottom:var(--rule)}
+.dash-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.dash-cover{aspect-ratio:16/9;background:var(--tint);position:relative;overflow:hidden}
 .dash-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.dash-cover .dc-type{position:absolute;left:10px;top:10px;font-family:var(--sans);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--ink);padding:3px 7px;color:var(--stock)}
+.dash-cover .dc-type{position:absolute;left:10px;top:10px;font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.01em;text-transform:none;background:var(--ink);border-radius:var(--radius-pill);padding:3px 10px;color:var(--stock)}
 /* The feedback screen's follow-up questions: h2 under the screen's h1, set
    at the size the questions were. */
 .fb-q{font-size:clamp(17px,3vw,19px);letter-spacing:var(--tracking-tight);line-height:1.15;margin-top:28px}
 .dash-body{padding:14px 16px 15px}
 .dash-body h2{margin:0;font-family:var(--sans);font-size:19px;font-weight:800;letter-spacing:-.01em}
-.dash-meta{font-family:var(--sans);font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--spot-ink);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
-.dash-prog{height:4px;background:var(--tint);overflow:hidden;margin-top:12px}
+.dash-meta{font-family:var(--sans);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--spot-ink);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.dash-prog{height:6px;background:var(--tint);border-radius:var(--radius-pill);overflow:hidden;margin-top:12px}
 .dash-prog > i{display:block;height:100%;background:var(--primary)}
 .dash-acts{display:flex;gap:8px;margin-top:12px}
 .dash-acts .del{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:12px;padding:6px}
 .dash-acts .del:hover{color:var(--clay)}
 .dash-new{
-  border:1px dashed var(--ink);background:none;font-family:var(--sans);
+  border:1.5px dashed var(--line-2);border-radius:var(--radius-lg);background:none;font-family:var(--sans);
   display:grid;place-items:center;min-height:180px;color:var(--ink-3);
   font-weight:600;font-size:15px;transition:.15s;
 }
-.dash-new:hover{border-style:solid;color:var(--ink);background:var(--tint)}
+.dash-new:hover{border-color:var(--spot);color:var(--ink);background:var(--tint)}
 .dash-empty{grid-column:1/-1;text-align:center;padding:30px 10px;color:var(--ink-3)}
 
 /* ---------- 3D viewer ---------- */
 
 .v3d-controls{margin-top:22px;display:grid;gap:20px}
-.v3d-label{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);margin-bottom:10px}
+.v3d-label{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);margin-bottom:10px}
 
 .v3d-layout-chips{display:flex;flex-wrap:wrap;gap:8px}
 .v3d-chip{
   display:inline-flex;align-items:center;gap:7px;
   font-size:14px;font-weight:600;color:var(--ink);
-  background:var(--stock);border:var(--rule);
+  background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);
   padding:9px 16px;cursor:pointer;transition:.15s;
 }
 .v3d-chip:hover{background:var(--tint)}
-.v3d-chip.sel{background:var(--spot);border-color:var(--ink);color:var(--stock)}
+.v3d-chip.sel{background:var(--spot);border-color:var(--spot);color:var(--stock)}
 .v3d-chip.sel svg{color:var(--stock)}
 .v3d-chip svg{color:var(--ink)}
 
@@ -84,21 +84,21 @@
   display:block;width:100%;height:44px;margin:-20px 0;
   -webkit-appearance:none;appearance:none;background:none;outline:none;cursor:pointer;
 }
-.v3d-dim input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--ink)}
-.v3d-dim input[type=range]::-moz-range-track{height:4px;background:var(--ink)}
+.v3d-dim input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:var(--radius-pill);background:var(--line-2)}
+.v3d-dim input[type=range]::-moz-range-track{height:6px;border-radius:var(--radius-pill);background:var(--line-2)}
 .v3d-dim input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;margin-top:-7px;
-  background:var(--spot);border:2px solid var(--ink);cursor:grab;
+  -webkit-appearance:none;width:20px;height:20px;margin-top:-7px;border-radius:50%;
+  background:var(--spot);border:3px solid var(--stock);box-shadow:var(--shadow);cursor:grab;
 }
 .v3d-dim input[type=range]::-moz-range-thumb{
-  width:18px;height:18px;border-radius:0;border:2px solid var(--ink);
-  background:var(--spot);cursor:grab;
+  width:20px;height:20px;border-radius:50%;border:3px solid var(--stock);
+  background:var(--spot);box-shadow:var(--shadow);cursor:grab;
 }
 .v3d-dim input[type=range]:focus-visible{outline:2px solid var(--spot);outline-offset:-12px}
 .v3d-structure{padding-top:18px;border-top:1px solid var(--line)}
 
 /* The second tier: everything numeric, behind one click. */
-.v3d-advanced{border:var(--rule);background:var(--stock)}
+.v3d-advanced{border:var(--rule);border-radius:var(--radius);background:var(--stock)}
 .v3d-advanced>summary{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:12px 14px;cursor:pointer;list-style:none;
@@ -123,9 +123,9 @@
 .v3d-shelf-controls{display:grid;gap:18px;max-width:420px}
 .v3d-shelf-height-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .v3d-shelf-heights{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}
-.v3d-shelf-height{padding:10px 12px;border:var(--rule);background:var(--stock)}
+.v3d-shelf-height{padding:10px 12px;border:var(--rule);border-radius:var(--radius-sm);background:var(--stock)}
 .v3d-shelf-height span{font-size:12px;margin-bottom:5px}
-.v3d-fit-note{margin:10px 0 0;padding:9px 10px;background:var(--warn-bg);color:var(--warn-ink);border:var(--rule)}
+.v3d-fit-note{margin:10px 0 0;padding:9px 12px;background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line);border-radius:var(--radius-sm)}
 /* the harder case: selected organizers that cannot be placed at all */
 .v3d-fit-note.danger{background:var(--danger-bg);color:var(--danger-ink);border-color:var(--danger-line)}
 
@@ -148,7 +148,7 @@
 @media(min-width:880px){.v3d-body{grid-template-columns:1fr 280px}}
 
 .v3d-main{min-width:0}
-.v3d-wrap{border:var(--rule-2);overflow:hidden;background:var(--tint);position:relative}
+.v3d-wrap{border:var(--rule);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;background:var(--tint);position:relative}
 .v3d-wrap canvas{display:block;width:100%;height:min(68vh,560px);touch-action:none;cursor:grab}
 .v3d-wrap canvas:active{cursor:grabbing}
 /* The drawing takes keyboard focus (it is a widget, not a picture); the ring
@@ -191,7 +191,7 @@
 .v3d-labels-toggle{
   display:flex;align-items:center;gap:9px;
   margin:0 0 14px;padding:9px 10px;min-height:44px;
-  border:var(--rule);font-family:var(--sans);
+  border:var(--rule);border-radius:var(--radius-sm);font-family:var(--sans);
   font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;
 }
 .v3d-labels-toggle:hover{background:var(--tint)}
@@ -201,13 +201,13 @@
   border-top:1px solid var(--line);cursor:pointer;transition:.15s;
 }
 .v3d-zone-item:hover{background:var(--surface)}
-.v3d-zone-item .vz-dot{width:12px;height:12px;flex:none;margin-top:4px;border:1px solid var(--ink)}
+.v3d-zone-item .vz-dot{width:12px;height:12px;flex:none;margin-top:4px;border-radius:50%;border:1px solid oklch(0.27 0.02 40 / .35)}
 .v3d-zone-item h3{font-size:15px;font-weight:700;margin:0}
 .v3d-zone-item p{font-size:13px;color:var(--ink-3);margin:3px 0 0;line-height:1.45}
 .v3d-organizers{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
 .v3d-organizer-list{display:flex;flex-wrap:wrap;gap:7px}
-.v3d-organizer-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:var(--rule);background:var(--stock);font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink)}
-.v3d-organizer-chip i{width:10px;height:10px;background:var(--tint);border:1px solid var(--ink)}
+.v3d-organizer-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:var(--rule-2);border-radius:var(--radius-pill);background:var(--stock);font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink)}
+.v3d-organizer-chip i{width:10px;height:10px;border-radius:3px;background:var(--tint);border:1px solid oklch(0.27 0.02 40 / .35)}
 .v3d-organizer-chip[data-type="basket"] i{background:var(--spot)}
 .v3d-organizer-chip[data-type="divider"] i{background:var(--stock)}
 .v3d-organizer-chip[data-type="turntable"] i{border-radius:50%;background:var(--tint-2)}

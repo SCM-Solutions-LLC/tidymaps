@@ -135,9 +135,9 @@ function fillProductArt(){
 
 /* ---------- Figure 1: the sort ----------
    The items start where the mess left them and slide into their zones once
-   the figure is on screen. One authored moment, played when it can be seen;
-   "Sort it again" replays it. Reduced motion draws the finished figure
-   (css/landing.css), so nothing here has to check the preference. */
+   the figure is on screen. One authored moment, played once when it can be
+   seen. Reduced motion draws the finished figure (css/landing.css), so
+   nothing here has to check the preference. */
 function initFigure(){
   const fig=document.getElementById('fig-el');
   if(!fig) return;
@@ -150,12 +150,6 @@ function initFigure(){
   }else{
     setTimeout(sort,350);
   }
-  const replay=document.getElementById('fig-replay');
-  if(replay) replay.addEventListener('click',()=>{
-    fig.classList.remove('sorted');
-    // two frames so the removal paints before the class returns
-    requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(sort,500)));
-  });
 }
 
 /* ---------- Appbar scroll rule ---------- */

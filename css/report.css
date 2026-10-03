@@ -3,8 +3,8 @@
    ============================================================ */
 
 /* ---------- Masthead ---------- */
-.report-mast{padding:8px 0 26px;border-bottom:var(--rule-2)}
-.dash-count{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--spot-ink);margin:10px 0 0}
+.report-mast{padding:8px 0 26px;border-bottom:var(--rule)}
+.dash-count{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--spot-ink);margin:10px 0 0}
 .report-mast h1{font-size:clamp(30px,5.4vw,44px);margin-top:14px;max-width:20ch}
 .report-byline{
   display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:14px;
@@ -31,12 +31,12 @@
 .plan-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
 .plan-chip{
   font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink);
-  background:var(--stock);border:var(--rule);
-  padding:8px 12px;
+  background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);
+  padding:8px 14px;
 }
 
 .plan-hero-photo{position:relative;margin:0;min-width:0}
-.plan-hero-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border:var(--rule)}
+.plan-hero-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border:var(--rule);border-radius:var(--radius-lg)}
 .plan-hero-photo.illustrated img{
   object-fit:contain;padding:0;aspect-ratio:auto;
   background:var(--stock);
@@ -45,8 +45,8 @@
 .plan-3d-badge{
   position:absolute;bottom:16px;right:16px;
   display:inline-flex;align-items:center;gap:7px;
-  font-family:var(--sans);font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);
-  background:var(--stock);border:var(--rule);padding:10px 14px;cursor:pointer;
+  font-family:var(--sans);font-size:14px;font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--ink);
+  background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);padding:10px 16px;cursor:pointer;
   transition:.15s;
 }
 .plan-hero-photo.illustrated .plan-3d-badge{position:static;display:inline-flex;margin-top:12px}
@@ -85,8 +85,8 @@
 }
 .report-toc ol::-webkit-scrollbar{display:none}
 .report-toc a{
-  display:block;padding:11px 14px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12.5px;font-weight:800;
-  letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
+  display:block;padding:11px 14px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13.5px;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--ink);
   white-space:nowrap;transition:color .15s;border-bottom:3px solid transparent;
 }
 .report-toc a:hover{color:var(--spot-ink)}
@@ -99,7 +99,7 @@
     align-self:start;padding-top:34px;
     background:none;border-bottom:none;margin:0;padding-left:0;padding-right:0;
   }
-  .report-toc .toc-h{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);margin-bottom:10px;padding-bottom:8px;border-bottom:var(--rule-2)}
+  .report-toc .toc-h{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);margin-bottom:10px;padding-bottom:8px;border-bottom:var(--rule)}
   .report-toc ol{display:grid;gap:2px;overflow:visible}
   /* The entries carry the chapter headings' own words now, and the longest
      of them is wider than the column: they wrap here, where the phone bar
@@ -119,9 +119,10 @@
 .chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 60px)}
 @media(min-width:960px){.chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 16px)}}
 /* The head is the chapter's fold control, and a one-line head was 39px tall.
-   Six of the 16px below it are padding now, so the target is 45px and the
-   chapter body starts where it did. */
-.ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:10px;border-top:var(--rule-2);padding:14px 0 6px}
+   Seven of the 17px below it are padding now, so the target clears 44px on a
+   phone (the soft 1px rule above it used to be 2px of ink, and that pixel
+   mattered) and the chapter body starts where it did. */
+.ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:10px;border-top:var(--rule);padding:14px 0 7px}
 .ch-head .ch-titles{min-width:0}
 .ch-head h2{font-size:clamp(20px,3.2vw,24px);letter-spacing:-.02em}
 /* Survives the fold, unlike .ch-sub, because it is the only hint a reader gets
@@ -129,9 +130,9 @@
    it to the right of the head, clear of the chevron. */
 .ch-flag{
   flex:none;margin-left:auto;margin-right:6px;align-self:center;
-  font-family:var(--sans);font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--stock);background:var(--spot);
-  padding:4px 8px;white-space:nowrap;
+  font-family:var(--sans);font-size:12.5px;font-weight:700;letter-spacing:.01em;text-transform:none;
+  color:var(--stock);background:var(--spot);border-radius:var(--radius-pill);
+  padding:4px 11px;white-space:nowrap;
 }
 .ch-head .ch-sub{font-size:13.5px;color:var(--ink-3);margin-top:6px;line-height:1.5}
 
@@ -141,7 +142,7 @@
 /* KPI band: hairline-separated mono figures, no tiles */
 .report .kpis{
   grid-template-columns:repeat(2,1fr);gap:0;margin-top:22px;
-  border-top:var(--rule-2);border-bottom:var(--rule);
+  border-top:var(--rule);border-bottom:var(--rule);
 }
 @media(min-width:560px){.report .kpis{grid-template-columns:repeat(4,1fr)}}
 .report .kpis{grid-template-columns:1fr}
@@ -150,47 +151,47 @@
   background:none;border:none;border-radius:0;padding:9px 0;
   border-bottom:var(--rule);display:flex;justify-content:space-between;gap:16px;align-items:baseline;
 }
-.report .kpi .k{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink)}
+.report .kpi .k{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink)}
 .report .kpi .v{font-family:var(--serif);font-size:17px;font-weight:600;margin:0;font-variant-numeric:tabular-nums;text-align:right}
 @media(min-width:560px){.report .kpi:nth-child(odd){padding-right:20px;border-right:var(--rule)}.report .kpi:nth-child(even){padding-left:20px}}
 
 /* Safety margin notes (populated when the plan carries household flags) */
 .safety-note{
   display:flex;gap:10px;align-items:flex-start;margin-top:14px;
-  padding:12px 14px;border:var(--rule);
-  background:var(--tint);
+  padding:14px 16px;border:1px solid var(--sage-l);border-radius:var(--radius);
+  background:var(--sage-f);
   font-size:14px;color:var(--ink);line-height:1.5;
 }
-.safety-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--spot-ink)}
+.safety-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--sage-d)}
 
 /* Report hero: the user's own photo, photography-forward. The corner tag
    says what it is — the captured "before", not a recommendation. */
-#report-hero{position:relative;margin-top:20px;overflow:hidden;border:var(--rule)}
+#report-hero{position:relative;margin-top:20px;overflow:hidden;border:var(--rule);border-radius:var(--radius-lg)}
 #report-hero img{width:100%;max-height:420px;object-fit:cover;display:block}
 #report-hero .hero-tag{
   position:absolute;left:12px;bottom:12px;font-size:11.5px;font-weight:600;
   background:rgba(0,0,0,.55);color:var(--stock);
-  border-radius:0;padding:4px 8px;pointer-events:none;
+  border-radius:var(--radius-pill);padding:4px 8px;pointer-events:none;
 }
 
 /* Before/after slider: the before photo is the base layer and the after
    render is clipped to the right of the divider, so each half sits under
    its own label — "Before" left, "After" right. Dragged via a full-bleed
    invisible range input. */
-.ba-slider{position:relative;overflow:hidden;border:var(--rule);background:var(--tint)}
+.ba-slider{position:relative;overflow:hidden;border:var(--rule);border-radius:var(--radius-lg);background:var(--tint)}
 .ba-slider img{width:100%;display:block;max-height:480px;object-fit:cover}
 .ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 0 0 var(--pos,50%))}
 .ba-slider .ba-divider{
   position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;
-  background:var(--stock);outline:1px solid var(--ink);pointer-events:none;
+  background:var(--stock);outline:1px solid oklch(0.27 0.02 40 / .35);pointer-events:none;
 }
 .ba-slider .ba-divider::after{
   content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:34px;height:34px;border-radius:50%;background:var(--stock);border:2px solid var(--ink);
+  width:34px;height:34px;border-radius:50%;background:var(--stock);border:2px solid var(--spot);box-shadow:var(--shadow);
 }
 .ba-slider .ba-tag{
   position:absolute;top:10px;font-size:11.5px;font-weight:600;
-  background:rgba(0,0,0,.55);color:var(--stock);border-radius:0;padding:4px 8px;pointer-events:none;
+  background:rgba(0,0,0,.55);color:var(--stock);border-radius:var(--radius-pill);padding:4px 8px;pointer-events:none;
 }
 .ba-slider .ba-tag.b{left:10px}
 .ba-slider .ba-tag.a{right:10px;background:var(--spot)}
@@ -202,7 +203,7 @@
 /* The inline feedback ask. Set apart from the report body — it is the one
    thing on this screen asking rather than telling — but without a heavier
    surface than the chapters it follows. */
-.plan-rate{margin-top:48px;padding:24px;border:var(--rule-2);background:var(--tint)}
+.plan-rate{margin-top:48px;padding:24px;border:1px solid var(--butter-l);border-radius:var(--radius-lg);background:var(--butter-f)}
 .plan-rate h2{font-family:var(--sans);font-size:22px;line-height:1.15}
 .plan-rate h3{font-size:14px;font-weight:600;color:var(--ink-2)}
 .plan-rate textarea{width:100%;min-height:76px}
@@ -211,7 +212,7 @@
 @media (max-width:600px){.plan-rate{padding:18px}.plan-rate .grid{grid-template-columns:1fr}}
 
 /* Chapter end actions */
-.report-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:52px;padding-top:22px;border-top:var(--rule-2)}
+.report-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:52px;padding-top:22px;border-top:var(--rule)}
 
 /* Collapsible chapters: tap the heading to fold a section away */
 .chapter .ch-head{cursor:pointer;position:relative;user-select:none;padding-right:28px}
@@ -228,15 +229,15 @@
 /* The items the plan identified on a level. Quiet by design: this is evidence
    the plan is about the user's own space, not another list to read. */
 .map-items{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.map-items .mi{font-family:var(--sans);font-size:12.5px;line-height:1.5;padding:2px 8px;
-  background:var(--stock);color:var(--ink);border:var(--rule)}
+.map-items .mi{font-family:var(--sans);font-size:13px;line-height:1.5;
+  background:var(--stock);color:var(--ink);border:var(--rule);border-radius:var(--radius-pill);padding:2px 10px}
 .map-items .mi-flag{background:var(--tint)}
 
 /* A folded chapter should still say what is inside it. */
 .chapter.collapsed .ch-sub{display:none}
-/* Folded, the head used to end flush; the 6px of padding it carries now for
+/* Folded, the head used to end flush; the 7px of padding it carries now for
    the tap target are given back here so a folded chapter is the height it was. */
-.chapter.collapsed .ch-head{margin-bottom:-6px}
+.chapter.collapsed .ch-head{margin-bottom:-7px}
 
 
 /* ---------- Print / Save as PDF ----------

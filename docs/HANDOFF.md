@@ -291,6 +291,51 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-03 session changed (the warm redesign; "Sort it again" removed)
+
+The owner reviewed the live site on 2026-10-03 and sent eight items of
+feedback. The session traced each to a cause and wrote one plan; this PR
+(from `claude/awesome-maxwell-f46n87`) carries the first two items, and the
+other six are planned as five follow-up PRs in this order: products that
+exist (catalog `checked`/`available`, shelf-depth fit, weekly availability
+check), client plumbing plus a shared wall-placement model, the server prompt
+told to use the questionnaire answers, the report rebuilt around walls with an
+"Also in your photo" row, and the 3D viewer split into View / Adjust with the
+walk-in tier bug fixed. The reasoning for each is in the PR description.
+
+- **"Sort it again" is gone** (`index.html`, `js/screens/landing.js
+  initFigure`, `css/landing.css`). It always landed on the same configuration
+  because the sort ends on the plan's fixed zones; a reshuffle would only
+  re-scatter the start and make the plan look arbitrary. `tests/design.test.mjs`
+  asserts the control stays absent; it went red with the button restored.
+- **The Home-Economics Manual look is replaced by "The Warm Shelf"**
+  (`DESIGN.md` rewritten). The owner found the manual clinical: black and
+  white, square corners, hard rules. Now: cream `--paper`, white cards with
+  10/16/24px corners and low warm shadows, pill buttons, sentence-case labels
+  (no `text-transform:uppercase` anywhere), soft `--line`/`--line-2`/
+  `--field-line` borders instead of ink rules, and sage, butter and sky
+  supporting fields (`--sage-f/-l/-d` and friends in `css/tokens.css`) beside
+  the unchanged terracotta `--spot`. `--ink-3` is a warm brown rather than the
+  accent, so secondary text stopped reading orange. Figure 1 and its legend
+  take the four zone colours (sky, peach for eye level, butter, sage); the
+  space cards cycle them by re-pointing `--tint`/`--tint-2` inside
+  `.card-visual.tone-N`, which recolours the drawing's own fills along with
+  the stage; `planElevationSvg` draws a rounded case with coloured shelves.
+  The report's "Where things go" rows still tint the eye-level label peach;
+  the per-wall report PR replaces that with an icon and the word.
+- The report's chapter head lost a pixel when `--rule-2` went from 2px of ink
+  to a 1px soft line; `.ch-head` bottom padding is 7px now so the fold control
+  clears 44px on a phone (`tests/e2e/tap-targets.spec.mjs` caught it).
+- Not re-rendered: the Remotion step clips. Their band colour (`--tint`)
+  moved from oklch(0.95 0.014 65) to oklch(0.952 0.02 80), which is not
+  visible at clip size. A larger palette change still means `tokens.ts` and
+  `node render-steps.mjs --force` (see the 09-07 section).
+- Gates: lint, types, 653 node tests and the full e2e suite (293 passed, then
+  the tap-target spec re-run green after the fix above) were green locally.
+  Browser-checked at 1280 and 390: landing, every wizard step, the loading
+  screen, the report, the 3D viewer, the product library, the sign-in modal,
+  the dashboard, the mobile menu and the legal pages.
+
 ## What the 2026-09-08 session changed (open item 10: 33 setups, one 3D view each)
 
 **The measurement first, because the item's own number was a proxy.** Item
