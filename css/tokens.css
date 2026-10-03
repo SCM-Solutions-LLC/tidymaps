@@ -1,10 +1,10 @@
 /* ============================================================
-   TidyMap — The Home-Economics Manual
-   White stock, off-black ink, warm-grey fields, and one
-   terracotta accent that carries the buttons, the selected
-   states and the marks inside the figures. No gradients, no
-   shadows; corners are cut square. Archivo sets everything.
-   Figures are inked cupboard elevations.
+   TidyMap — The Warm Shelf
+   Cream paper, white cards, soft rounded corners and light
+   shadows. One terracotta accent carries the buttons and the
+   selected states; sage, butter and sky are supporting fields
+   for zones, tips and callouts. Archivo sets everything, in
+   sentence case. Figures are inked cupboard elevations.
    ============================================================ */
 
 /* Self-hosted typefaces (SIL OFL, see vendor/fonts/) */
@@ -30,34 +30,50 @@
   --serif:var(--sans);
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
-  /* ---- Ink, stock, grey and terracotta ---------------------------------
-     Off-black ink on white stock. Content fields sit on a warm grey that is
-     grey, not cream. One accent, a terracotta held under 80% saturation,
-     carries every button, selected state, progress mark and figure label;
-     white type on it clears 4.6:1 and its darker cut, --spot-ink, clears
-     5:1 as small text on white. The accent's own tint marks the eye-level
-     zone in a figure, the one place a field is not grey. */
-  --stock:     oklch(0.992 0.004 75);  /* warm white, a shade off pure */
-  --ink:       oklch(0.25 0.012 45);   /* off-black, warm */
-  --draw:      oklch(0.40 0.022 45);   /* the drawings' line: softer than type ink */
+  /* ---- Paper, cards, ink and the colour family ------------------------
+     The page is warm cream paper; cards, inputs and buttons sit on it in
+     near-white. Ink is a soft warm brown-black. Borders are a light warm
+     line, not ink, so a card is outlined rather than boxed in. One accent,
+     a terracotta held under 80% saturation, carries every primary button,
+     selected state and progress mark; white type on it clears 4.6:1 and its
+     darker cut, --spot-ink, clears 5:1 as small text on cream. Supporting
+     colours (sage, butter, sky, and the accent's own peach) are soft fields
+     with a deep ink of their own for text; they colour zones, tips and
+     callouts, and never carry a button. */
+  --paper:     oklch(0.977 0.014 82);  /* the page: warm cream */
+  --stock:     oklch(0.999 0.004 82);  /* cards, inputs, buttons at rest */
+  --ink:       oklch(0.27 0.02 40);    /* soft warm brown-black */
+  --draw:      oklch(0.46 0.03 42);    /* the drawings' line: softer than type ink */
   --spot:      oklch(0.56 0.13 36);    /* terracotta: buttons, marks */
   --spot-deep: oklch(0.48 0.125 36);   /* pressed / hover */
-  --spot-ink:  oklch(0.49 0.125 36);   /* small accent text on white */
+  --spot-ink:  oklch(0.49 0.125 36);   /* small accent text on cream */
   --brass:     var(--spot);            /* figure label rule: the accent */
-  --tint:      oklch(0.95 0.014 65);   /* warm stone, content fields */
-  --tint-2:    oklch(0.93 0.032 45);   /* accent tint, the eye-level zone */
+  --tint:      oklch(0.952 0.02 80);   /* warm sand, content fields */
+  --tint-2:    oklch(0.925 0.05 48);   /* peach: the accent screened to a field */
+  --sel-bg:    oklch(0.968 0.026 50);  /* selected card: the faintest peach */
+  --line:      oklch(0.885 0.02 72);   /* soft border and divider */
+  --line-2:    oklch(0.82 0.025 68);   /* firmer border: dashed frames, small buttons */
+  --field-line: oklch(0.62 0.035 58);  /* form-control edge: clears 3:1 on white */
+
+  --sage-f:    oklch(0.94 0.038 150);  /* sage field */
+  --sage-l:    oklch(0.80 0.07 150);   /* sage edge */
+  --sage-d:    oklch(0.37 0.075 150);  /* sage text, 8:1 on its field */
+  --butter-f:  oklch(0.955 0.06 92);   /* butter field */
+  --butter-l:  oklch(0.84 0.10 88);    /* butter edge */
+  --butter-d:  oklch(0.40 0.08 70);    /* butter text */
+  --sky-f:     oklch(0.94 0.028 235);  /* sky field */
+  --sky-l:     oklch(0.80 0.06 232);   /* sky edge */
+  --sky-d:     oklch(0.38 0.08 245);   /* sky text */
 
   /* ---- Names the stylesheets already speak ------------------------------
      Kept so the wizard, report, viewer and library resolve without a rename
      sweep. Every one lands on the stock, the tint, an ink, or the plate. */
-  --bg:        var(--stock);
+  --bg:        var(--paper);
   --surface:   var(--stock);
   --surface-2: var(--tint);
   --surface-3: var(--tint-2);
   --ink-2:     var(--ink);
-  --ink-3:     var(--spot-ink);   /* secondary text is tinted, never grey */
-  --line:      var(--ink);
-  --line-2:    var(--ink);
+  --ink-3:     oklch(0.45 0.035 45); /* secondary text: warm brown, about 7:1 on cream */
 
   --primary:      var(--spot);
   --primary-2:    var(--spot-deep);
@@ -65,65 +81,65 @@
   --primary-line: var(--spot);
   --primary-ink:  var(--spot-ink);
 
-  /* the second colour family the old palette had folds into the plate */
-  --sage:      var(--spot);
-  --sage-2:    var(--spot-deep);
-  --sage-bg:   var(--tint);
-  --sage-line: var(--spot);
-  --sage-ink:  var(--spot-ink);
-  --honey:     var(--tint-2);
-  --honey-2:   var(--spot-ink);
+  /* the supporting colour families */
+  --sage:      oklch(0.58 0.09 150);
+  --sage-2:    oklch(0.50 0.09 150);
+  --sage-bg:   var(--sage-f);
+  --sage-line: var(--sage-l);
+  --sage-ink:  var(--sage-d);
+  --honey:     var(--butter-f);
+  --honey-2:   oklch(0.64 0.12 82);
 
   /* ---- Semantic states -------------------------------------------------
      Rule of use stays: never encode state by hue alone; pair every one with
-     an icon or a word. Success and info are the plate. Warning is ink on the
-     tint. Danger is the one exception to two colours: a correction pencil,
-     used for nothing but a failure, so it can never be mistaken for a call
-     to action. */
-  --success:      var(--spot);
-  --success-ink:  var(--spot-ink);
-  --success-bg:   var(--tint);
-  --success-line: var(--spot);
+     an icon or a word. Success is sage, info is sky, warning is butter with
+     a deep amber ink, danger is the one red, used for nothing but a failure
+     so it can never be mistaken for a call to action. */
+  --success:      var(--sage);
+  --success-ink:  var(--sage-d);
+  --success-bg:   var(--sage-f);
+  --success-line: var(--sage-l);
 
-  --warn:      var(--ink);
-  --warn-ink:  var(--ink);
-  --warn-bg:   var(--tint);
-  --warn-line: var(--ink);
+  --warn:      oklch(0.52 0.11 70);
+  --warn-ink:  var(--butter-d);
+  --warn-bg:   var(--butter-f);
+  --warn-line: var(--butter-l);
 
   --danger:      oklch(0.52 0.19 28);
   --danger-ink:  oklch(0.45 0.18 28);
   --danger-bg:   oklch(0.96 0.025 28);
   --danger-line: oklch(0.52 0.19 28);
 
-  --info:      var(--spot);
-  --info-ink:  var(--spot-ink);
-  --info-bg:   var(--tint);
-  --info-line: var(--spot);
+  --info:      oklch(0.55 0.10 240);
+  --info-ink:  var(--sky-d);
+  --info-bg:   var(--sky-f);
+  --info-line: var(--sky-l);
 
   --teal:      var(--info);
   --teal-bg:   var(--info-bg);
   --teal-line: var(--info-line);
   --teal-ink:  var(--info-ink);
-  --good:      var(--success);
-  --clay:      var(--warn);
-  --clay-bg:   var(--warn-bg);
+  --good:      oklch(0.47 0.10 152);
+  --clay:      oklch(0.46 0.09 55);
+  --clay-bg:   var(--butter-f);
   --focus:     var(--spot);
 
-  /* Print has no rounded corners and casts no shadow. */
-  --radius: 0;
-  --radius-sm: 0;
-  --radius-lg: 0;
-  --shadow-sm: none;
-  --shadow: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --rule: 1px solid var(--ink);
-  --rule-2: 2px solid var(--ink);
+  /* Soft edges: cards round at 16px, controls at 10px, chips and buttons are
+     pills. Shadows are low and warm, never grey. */
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px oklch(0.35 0.03 50 / .07);
+  --shadow: 0 1px 3px oklch(0.35 0.03 50 / .06), 0 8px 24px -10px oklch(0.35 0.03 50 / .16);
+  --shadow-md: 0 2px 6px oklch(0.35 0.03 50 / .07), 0 14px 32px -12px oklch(0.35 0.03 50 / .2);
+  --shadow-lg: 0 4px 10px oklch(0.35 0.03 50 / .08), 0 22px 44px -16px oklch(0.35 0.03 50 / .26);
+  --rule: 1px solid var(--line);
+  --rule-2: 1px solid var(--line-2);
   --maxw: 760px;
 
-  /* Motion: inked in one stroke. One exponential ease-out for arrivals, a
-     physical settle for things that stand for objects, and short durations
-     because print does not linger. */
+  /* Motion: one exponential ease-out for arrivals, a physical settle for
+     things that stand for objects, and short durations. */
   --ease: cubic-bezier(.2,.7,.2,1);
   --ease-out: cubic-bezier(.16,.84,.28,1);
   --ease-physical: cubic-bezier(.34,1.32,.48,1);
@@ -131,13 +147,13 @@
   --dur: .18s;
   --dur-slow: .34s;
 
-  /* Type. Titles are Archivo at its widest and heaviest; labels are Archivo
-     narrowed, in caps, letterspaced like a shelf label. */
-  --display-stretch: 118%;
-  --label-stretch: 80%;
+  /* Type. Titles are Archivo at a firm weight; labels are Archivo at its
+     normal width in sentence case, a little tighter than reading text. */
+  --display-stretch: 100%;
+  --label-stretch: 100%;
   --tracking-display: -0.028em;
   --tracking-tight: -0.012em;
-  --tracking-label: 0.09em;
+  --tracking-label: 0.005em;
   --leading-display: 0.98;
 
   --paper-grain: none;

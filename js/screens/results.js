@@ -821,7 +821,8 @@ function itemsRow(m){
 function plate(){
   const cs=getComputedStyle(document.documentElement);
   const v=(name,fb)=>(cs.getPropertyValue(name)||'').trim()||fb;
-  return { ink:v('--draw','#5a524b'), spot:v('--spot','#b5522f'), tint:v('--tint','#f3f2f0'), tint2:v('--tint-2','#f4e3dc') };
+  return { ink:v('--draw','#5a524b'), spot:v('--spot','#b5522f'), tint:v('--tint','#f3f2f0'), tint2:v('--tint-2','#f4e3dc'),
+    fields:[v('--sky-f','#dbeaf5'),v('--butter-f','#f8efc6'),v('--sage-f','#dcefdc'),v('--tint','#f3f2f0')] };
 }
 const EL_GLYPHS={
   jar:'<path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="l"/>',
@@ -834,14 +835,20 @@ const EL_GLYPHS={
 const EL_SIZE={jar:[32,46],can:[28,36],box:[46,72],bottle:[24,64],bag:[44,52],bin:[116,54]};
 const EL_ROWS=[['bag','box','bottle','bag'],['jar','jar','can','can','bag','bottle'],['bin','jar','jar','bottle'],['bin','bin','bag'],['box','box','bag','can'],['bin','jar','bag']];
 function planElevationSvg(map){
-  const { ink:EL_INK, spot:EL_SPOT, tint:EL_TINT, tint2:EL_TINT2 }=plate();
+  const { ink:EL_INK, spot:EL_SPOT, tint2:EL_TINT2, fields:EL_FIELDS }=plate();
   const rows=(map||[]).slice(0,6); const n=Math.max(rows.length,2);
   const W=760, top=24, left=30, caseW=700, shelfH=Math.round(440/n), H=top+shelfH*n+26;
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one shelf per zone">`
-    +`<style>.c{fill:none;stroke:${EL_INK};stroke-width:2.5;stroke-linejoin:round}.o{stroke-width:4}.g{fill:#fff;stroke:${EL_INK};stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.g .l{stroke:${EL_SPOT};stroke-width:2.6}`
-    +`.z{font:800 16px Archivo,Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;fill:${EL_INK}}.e{fill:${EL_SPOT}}</style>`;
-  rows.forEach((m,i)=>{ out+=`<rect x="${left+2}" y="${top+shelfH*i+2}" width="${caseW-4}" height="${shelfH-4}" fill="${m.eye?EL_TINT2:EL_TINT}"/>`; });
-  out+=`<rect class="c o" x="${left}" y="${top}" width="${caseW}" height="${shelfH*n}"/>`;
+    +`<style>.c{fill:none;stroke:${EL_INK};stroke-width:2.5;stroke-linejoin:round}.o{stroke-width:3}.g{fill:#fff;stroke:${EL_INK};stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.g .l{stroke:${EL_SPOT};stroke-width:2.6}`
+    +`.z{font:700 18px Archivo,Helvetica,Arial,sans-serif;letter-spacing:0;fill:${EL_INK}}.e{fill:${EL_SPOT}}</style>`;
+  // Each shelf is a soft colour field clipped to the rounded case; the
+  // eye-level shelf keeps the accent's peach, the others cycle the supporting
+  // colours so the zones read as separate places before any label is read.
+  out+=`<defs><clipPath id="cx"><rect x="${left+1}" y="${top+1}" width="${caseW-2}" height="${shelfH*n-2}" rx="19"/></clipPath></defs><g clip-path="url(#cx)">`;
+  let fi=0;
+  rows.forEach((m,i)=>{ out+=`<rect x="${left}" y="${top+shelfH*i}" width="${caseW}" height="${shelfH}" fill="${m.eye?EL_TINT2:EL_FIELDS[fi++%EL_FIELDS.length]}"/>`; });
+  out+='</g>';
+  out+=`<rect class="c o" x="${left}" y="${top}" width="${caseW}" height="${shelfH*n}" rx="20"/>`;
   rows.forEach((m,i)=>{
     const base=top+shelfH*(i+1);
     if(i<n-1) out+=`<line class="c" x1="${left}" y1="${base}" x2="${left+caseW}" y2="${base}"/>`;

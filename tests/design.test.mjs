@@ -61,7 +61,7 @@ test('Figure 1 draws the sort, with reduced motion showing the finished figure',
   assert.ok(landing.includes('id="fig-el"'), 'Figure 1 is missing');
   assert.ok(landing.includes('class="f-items"'), 'Figure 1 has no items to sort');
   assert.ok((landing.match(/class="it/g) || []).length >= 12, 'Figure 1 has too few items to read as a pantry');
-  assert.ok(landing.includes('id="fig-replay"'), 'the replay control is missing');
+  assert.ok(!landing.includes('fig-replay'), 'the replay control is back: the sort is one authored moment, and replaying it always lands on the same plan');
   assert.match(landingCss, /\.fig-el\.sorted \.f-items \.it\{transform:none\}/, 'sorted items no longer land in place');
   const reduced = landingCss.slice(landingCss.indexOf('@media(prefers-reduced-motion:reduce)'));
   assert.match(reduced, /\.f-items \.it\{transform:none\}/, 'reduced motion does not show the finished figure');
@@ -133,14 +133,21 @@ test('the plan hero placeholder is a decodable image, not a truncated one', () =
     'results.js sets a good illustration without clearing a stale hide');
 });
 
-// The Home-Economics Manual: white stock, off-black ink, warm-grey fields,
-// one terracotta accent. Print casts no shadow and has no rounded corners.
-test('one terracotta accent, grey fields, no ambient gradients', () => {
+// The Warm Shelf: cream paper, white cards, soft corners and low warm shadows,
+// terracotta as the one button colour with sage, butter and sky as supporting
+// fields. The owner asked for this on 2026-10-03 because the square, one-ink
+// manual look read as clinical. Ambient gradients and glass stay out.
+test('terracotta buttons, soft corners, supporting colours, no ambient gradients', () => {
   assert.ok(tokens.includes('--spot:      oklch(0.56 0.13 36)'), 'the accent colour drifted');
-  assert.ok(tokens.includes('--brass:     var(--spot)'), 'a second accent is back');
-  assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at the plate');
-  assert.ok(tokens.includes('--radius: 0;'), 'rounded corners are back');
-  assert.ok(tokens.includes('--shadow: none;'), 'shadows are back');
+  assert.ok(tokens.includes('--brass:     var(--spot)'), 'a second accent is carrying the figure label');
+  assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at terracotta');
+  assert.match(tokens, /--radius: 1[2-8]px;/, 'cards lost their soft corners');
+  assert.match(tokens, /--radius-pill: 999px;/, 'the pill radius is gone');
+  assert.ok(!tokens.includes('--shadow: none;'), 'shadows were flattened again');
+  for (const family of ['sage', 'butter', 'sky']) {
+    assert.ok(tokens.includes(`--${family}-f:`), `the ${family} field is missing`);
+  }
+  assert.ok(!tokens.includes('--line:      var(--ink)'), 'borders are hard ink again');
   for (const css of [landingCss, baseCss, tokens]) {
     assert.ok(!css.includes('radial-gradient'), 'ambient gradient present');
     assert.ok(!css.includes('backdrop-filter'), 'glass surface present');
@@ -182,8 +189,13 @@ test('the shelf map tints the eye-level zone, and only that zone, with the accen
   assert.match(landingCss, /\.f-zone-eye\{fill:var\(--tint-2\)\}/, 'Figure 1 eye-level zone is not the accent tint');
 });
 
-test('buttons are not universal pills', () => {
-  assert.ok(!baseCss.includes('border-radius:999px'), 'pill buttons are back');
+// Buttons are pills and labels are sentence case; the narrowed, letterspaced
+// caps of the manual look are what made the site read as a form.
+test('buttons are pills and no label is set in caps', () => {
+  assert.match(baseCss, /\.btn\{[^}]*border-radius:var\(--radius-pill\)/, 'buttons are not pills');
+  for (const [name, css] of [['base', baseCss], ['landing', landingCss]]) {
+    assert.ok(!css.includes('text-transform:uppercase'), `${name}.css still sets a caps label`);
+  }
 });
 
 test('report uses ordinary language, not decorative chapters', () => {

@@ -18,7 +18,7 @@
 .legal strong{color:var(--ink)}
 .legal a{color:var(--spot-ink);text-decoration:underline;text-decoration-color:var(--spot);text-underline-offset:3px}
 
-.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:30px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--ink);text-decoration:none}
+.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:30px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);text-decoration:none}
 .back:hover{color:var(--ink)}
 
 /* The lede under the title: what this document is for, before the clauses. */
@@ -30,34 +30,34 @@
    a row whose items move between pages is harder to scan than a static one. */
 .legal-nav{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 34px;padding:0;list-style:none}
 .legal-nav a{
-  display:block;padding:6px 11px;border:var(--rule);
-  font-family:var(--sans);font-stretch:var(--label-stretch);font-size:12px;font-weight:800;
-  letter-spacing:.06em;text-transform:uppercase;color:var(--ink);text-decoration:none;background:var(--stock);
+  display:block;padding:7px 14px;border:var(--rule-2);border-radius:var(--radius-pill);
+  font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--ink);text-decoration:none;background:var(--stock);
 }
 .legal-nav a:hover{background:var(--tint)}
 .legal-nav a[aria-current="page"]{
-  background:var(--spot);border-color:var(--ink);color:var(--stock);
+  background:var(--spot);border-color:var(--spot);color:var(--stock);
 }
 
 /* Callout for the one or two things on a page that carry real consequence —
    the safety disclaimer on the terms, the "what to do first" on security.
    Not decoration: these are the lines a reader skimming past would regret. */
 .legal-note{
-  margin:20px 0;padding:15px 17px;border:var(--rule);
-  background:var(--tint);
+  margin:20px 0;padding:16px 18px;border:1px solid var(--butter-l);border-radius:var(--radius);
+  background:var(--butter-f);
 }
 .legal-note p{margin:0;color:var(--ink)}
 .legal-note p + p{margin-top:9px}
 .legal-note strong{color:var(--ink)}
 
 /* Contact / effective-date block that closes each document. */
-.legal-foot{margin-top:44px;padding-top:22px;border-top:var(--rule-2)}
+.legal-foot{margin-top:44px;padding-top:22px;border-top:var(--rule)}
 .legal-foot p{font-size:14.5px;color:var(--ink)}
 
-/* The in-app opt-out on cookies.html. A ruled box so the interactive control
+/* The in-app opt-out on cookies.html. A bordered card so the interactive control
    reads as one, distinct from the surrounding prose but still in the reading
    column rather than off in a settings screen it does not deserve. */
-.optout{margin:16px 0;padding:15px 17px;border:var(--rule);background:var(--stock)}
+.optout{margin:16px 0;padding:16px 18px;border:var(--rule);border-radius:var(--radius);background:var(--stock)}
 .optout-status{margin:0 0 12px;font-size:16.5px;line-height:1.55;color:var(--ink)}
 .optout .btn{margin:0}
 /* .btn sets display:inline-flex, and any explicit display beats the browser's

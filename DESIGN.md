@@ -1,14 +1,30 @@
 ---
 name: TidyMap
-description: A shelf-by-shelf organization plan, set like a home-economics manual: off-black ink on white stock, warm-grey fields, one terracotta accent.
+description: A shelf-by-shelf organization plan on warm cream paper: white cards with soft corners and low shadows, one terracotta accent for every button, and sage, butter and sky as supporting fields.
 colors:
-  stock: "#ffffff"
-  ink: "oklch(0.24 0.006 50)"
-  spot: "oklch(0.56 0.125 40)"
-  spot-deep: "oklch(0.48 0.12 40)"
-  spot-ink: "oklch(0.49 0.12 40)"
-  tint: "oklch(0.955 0.004 60)"
-  tint-2: "oklch(0.935 0.028 45)"
+  paper: "oklch(0.977 0.014 82)"
+  stock: "oklch(0.999 0.004 82)"
+  ink: "oklch(0.27 0.02 40)"
+  ink-3: "oklch(0.45 0.035 45)"
+  draw: "oklch(0.46 0.03 42)"
+  spot: "oklch(0.56 0.13 36)"
+  spot-deep: "oklch(0.48 0.125 36)"
+  spot-ink: "oklch(0.49 0.125 36)"
+  tint: "oklch(0.952 0.02 80)"
+  tint-2: "oklch(0.925 0.05 48)"
+  sel-bg: "oklch(0.968 0.026 50)"
+  line: "oklch(0.885 0.02 72)"
+  line-2: "oklch(0.82 0.025 68)"
+  field-line: "oklch(0.62 0.035 58)"
+  sage-f: "oklch(0.94 0.038 150)"
+  sage-l: "oklch(0.80 0.07 150)"
+  sage-d: "oklch(0.37 0.075 150)"
+  butter-f: "oklch(0.955 0.06 92)"
+  butter-l: "oklch(0.84 0.10 88)"
+  butter-d: "oklch(0.40 0.08 70)"
+  sky-f: "oklch(0.94 0.028 235)"
+  sky-l: "oklch(0.80 0.06 232)"
+  sky-d: "oklch(0.38 0.08 245)"
   danger: "oklch(0.52 0.19 28)"
   danger-ink: "oklch(0.45 0.18 28)"
   danger-bg: "oklch(0.96 0.025 28)"
@@ -45,20 +61,25 @@ typography:
     letterSpacing: "normal"
   label:
     fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
-    fontSize: "12px"
+    fontSize: "13px"
     fontWeight: 700
     lineHeight: 1.1
-    letterSpacing: "0.09em"
-    fontVariation: "wdth 80"
+    letterSpacing: "0.005em"
   button:
     fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
-    fontSize: "14px"
-    fontWeight: 800
+    fontSize: "15px"
+    fontWeight: 700
     lineHeight: 1
-    letterSpacing: "0.06em"
-    fontVariation: "wdth 90"
+    letterSpacing: "0.01em"
 rounded:
-  none: "0"
+  sm: "10px"
+  md: "16px"
+  lg: "24px"
+  pill: "999px"
+shadow:
+  sm: "0 1px 2px oklch(0.35 0.03 50 / .07)"
+  md: "0 1px 3px oklch(0.35 0.03 50 / .06), 0 8px 24px -10px oklch(0.35 0.03 50 / .16)"
+  lg: "0 4px 10px oklch(0.35 0.03 50 / .08), 0 22px 44px -16px oklch(0.35 0.03 50 / .26)"
 spacing:
   xs: "8px"
   sm: "12px"
@@ -71,220 +92,238 @@ components:
     backgroundColor: "{colors.spot}"
     textColor: "{colors.stock}"
     typography: "{typography.button}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.pill}"
     padding: "14px 22px"
   button-primary-hover:
     backgroundColor: "{colors.spot-deep}"
-  button-primary-active:
-    backgroundColor: "{colors.ink}"
   button-ghost:
     backgroundColor: "{colors.stock}"
     textColor: "{colors.ink}"
+    borderColor: "{colors.line-2}"
     typography: "{typography.button}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.pill}"
     padding: "14px 22px"
   button-ghost-hover:
     backgroundColor: "{colors.tint}"
-  button-ghost-active:
-    backgroundColor: "{colors.tint-2}"
   button-sm:
-    padding: "11px 14px"
+    padding: "11px 16px"
   chip:
     backgroundColor: "{colors.stock}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    borderColor: "{colors.line-2}"
+    rounded: "{rounded.pill}"
     padding: "9px 16px"
-  chip-hover:
-    backgroundColor: "{colors.tint}"
   chip-selected:
     backgroundColor: "{colors.spot}"
     textColor: "{colors.stock}"
   input:
     backgroundColor: "{colors.stock}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    borderColor: "{colors.field-line}"
+    rounded: "{rounded.sm}"
     padding: "12px 14px"
   card:
     backgroundColor: "{colors.stock}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    borderColor: "{colors.line}"
+    rounded: "{rounded.md}"
+    shadow: "{shadow.sm}"
     padding: "clamp(18px, 4vw, 26px)"
-  option-selected:
-    backgroundColor: "{colors.tint}"
-    textColor: "{colors.ink}"
+  card-selected:
+    backgroundColor: "{colors.sel-bg}"
+    borderColor: "{colors.spot}"
   figure-number:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.stock}"
+    backgroundColor: "{colors.tint-2}"
+    textColor: "{colors.spot-ink}"
     typography: "{typography.label}"
-    padding: "3px 7px 2px"
+    rounded: "{rounded.pill}"
+    padding: "3px 10px"
   flag:
     backgroundColor: "{colors.spot}"
     textColor: "{colors.stock}"
-    padding: "2px 7px"
+    rounded: "{rounded.pill}"
+    padding: "2px 10px"
   signup-panel:
-    backgroundColor: "{colors.tint}"
+    backgroundColor: "{colors.tint-2}"
     textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
     padding: "clamp(22px, 3.5vw, 32px) clamp(20px, 3.5vw, 36px)"
   note-panel:
-    backgroundColor: "{colors.tint}"
+    backgroundColor: "{colors.butter-f}"
+    borderColor: "{colors.butter-l}"
     textColor: "{colors.ink}"
-    padding: "12px 14px"
+    rounded: "{rounded.md}"
+    padding: "14px 16px"
 ---
 
 # Design System: TidyMap
 
 ## Overview
 
-**Creative North Star: "The Home-Economics Manual"**
+**Creative North Star: "The Warm Shelf"**
 
-TidyMap is printed the way a mid-century home-economics textbook was: white stock, one warm off-black ink for text, rules, and figure strokes, a warm-grey field for anything that holds content, and one terracotta accent that does the pointing. A plan is a lesson. The landing page opens as a split spread: the chapter title and its lede on the left, Figure 1 on the right, an inked pantry elevation whose jumbled items slide into labeled zones with a legend beneath. The three parts of a plan follow as zig-zag product rows drawn in the app's own language; the method is a numbered list; the reply card at the foot is the signup. Wizard steps are lessons with a step counter in the running head; the results screen is the Plan chapter with a contents column, figure tables, and printed stage marks; the products page is the appendix; legal pages are back-matter.
+TidyMap looks like a well-kept pantry feels: warm, tidy, and easy to be in. The page is cream paper; everything that holds content sits on it as a white card with soft corners and a low, warm shadow. One terracotta carries every button, selected state and progress mark. Three quiet supporting colours, sage, butter and sky, colour the zones in a figure, the tips, the callouts and the space cards, so a page has variety without noise. Archivo sets everything, in sentence case: no letterspaced caps, no second face.
 
-Density is that of a printed page rather than a dashboard: a section rhythm of 64 to 104px between chapters, a 760px reading measure for lessons and 1100px for spreads, 1px ink rules doing the work that borders, shadows, and cards would do elsewhere. The accent is spent carefully: buttons, selected states, the progress rail, the step counter, the label stroke on every drawn item, the numerals in the method list. Depth is refused: no shadows, no gradient surfaces, no rounded corners.
+This replaced the "Home-Economics Manual" direction of 2026-09-07 (white stock, off-black ink, square corners, 1px ink rules, one accent, no shadows). The owner reviewed the shipped site on 2026-10-03 and found it clinical: "too structured and black/white, too many sharp corners and harsh lines." The mechanism that made the manual work, inked cupboard elevations with one terracotta label stroke per item, stays; the chrome around it softened.
 
-Confirmed visual rejections: neutral grey type (secondary text is the accent printed dark); hue as the only carrier of state; the photo-left, headline-right, three-feature-card arrangement; kickers above headings; drop shadows and lifted cards; a second typeface.
+Density is a comfortable reading page rather than a dashboard: a section rhythm of 64 to 104px, a 760px measure for lessons and 1100px for spreads. Separation is done by cards and space, not rules: a list of things is a stack of rounded cards with 10 to 14px between them, and a section head stands alone with air above it.
 
 **Key Characteristics:**
-- One ink, two papers, one accent: off-black is text, rule, and figure stroke; stock and warm grey are the only fields; terracotta is the button, the selected state, and the mark inside a figure.
-- Archivo alone, on its width axis: titles at 700 in moderate sizes, labels narrowed to 80% in letterspaced caps, buttons at 90%, reading text at normal width.
-- Figures are inked cupboard elevations: ink strokes, white-filled items, flat grey zones, the eye-level zone in the accent tint, and one terracotta label stroke per item.
-- Rules, not boxes: 1px and 2px ink rules separate, frame, and underline; corners are square.
-- State is a printed mark (empty square, half-filled square, filled square) or a word, never a colour alone.
-- Motion is one stroke: exponential ease-out, 120 to 340ms for UI, one long 1.15s sort for Figure 1.
+- Cream paper, white cards, soft brown-black ink. Borders are a light warm line, so a card is outlined, never boxed in.
+- Terracotta is the button, the selected state, the progress mark and the label stroke inside every drawing. It is never a field, except screened to peach for the eye-level zone and the signup card.
+- Sage, butter and sky are fields with a deep ink of their own for text. They colour zones, tips, callouts and the space cards. They never carry a button.
+- Archivo alone, in sentence case. Titles 700 at moderate sizes; labels 700 at 13px with almost no tracking; buttons 700 at 15px.
+- Corners: 10px on controls, 16px on cards, 24px on the large frames (the figure, the 3D stage, the modal), pills on buttons and chips.
+- Shadows are low and warm, one tier per surface: cards at rest take the small one, a lifted card or the toast the medium, the modal the large.
+- Figures are inked cupboard elevations with a rounded case: items white-filled with round-capped strokes, one terracotta label stroke each, zones as soft colour fields.
+- Motion is one stroke: exponential ease-out, 120 to 340ms for UI, one long 1.15s sort for Figure 1, played once.
 
 ## Colors
 
-A one-ink job on two papers with a terracotta accent: warm off-black on white stock, warm grey for content fields, terracotta for every button and mark, and a correction-pencil red reserved for failure.
+### Paper and ink
+- **Paper** (`paper`): the page. Warm cream, a shade off white.
+- **Stock** (`stock`): cards, inputs, buttons at rest, and the fill of every inked item in a figure. Near white, so a card reads as lifted off the cream.
+- **Ink** (`ink`): text and headings. A soft warm brown-black, never pure black.
+- **Secondary ink** (`ink-3`): subtitles, metadata, helper text, placeholders. Warm brown, about 7:1 on cream.
+- **Drawing line** (`draw`): the stroke of every cupboard drawing, softer than type ink.
+- **Line** (`line`) and **Line 2** (`line-2`): card borders and dividers (`line`), chips, ghost buttons and dashed frames (`line-2`). Both are light and warm.
+- **Field line** (`field-line`): the edge of a form control (inputs, checkboxes, radios, the empty step dot). Clears 3:1 on white so a control is identifiable.
 
-### Primary
-- **Terracotta** (`spot`): the accent, held under 80% saturation so white type on it clears 4.6:1. Primary buttons, the brand square, selected chips, segments, unit toggles and the current legal-nav item, the progress rail and progress bars, the "Kid safe" flag and chapter badges, the numerals in the method list, the label stroke on every inked item (`.f-lbl`, `.art-el .lbl`), the border and inset ring on a selected card, the range-slider thumb, the caret, the selection highlight, and the global focus ring. `--brass`, `--primary`, `--sage`, `--success`, `--info`, and `--focus` all alias to it.
-- **Terracotta, Pressed** (`spot-deep`): the accent deepened for a primary button's hover. Not used anywhere else.
-- **Terracotta, Printed Dark** (`spot-ink`): the accent dark enough for small text on white (clears 5:1). The only secondary-text colour: step counters, dashboard metadata, muted notes, placeholder text, link hover, the "Eye level" note heading in figures, the current chapter in the contents column, done-task text, the latch stroke in Figure 1.
+### Accent
+- **Terracotta** (`spot`): primary buttons, the brand mark, selected chips and segments, the progress rail and bars, the "Kid safe" flag and chapter badges, the numerals in the method list, the label stroke on every inked item, the border and inset ring on a selected card, the range thumb, the caret, the selection highlight and the focus ring.
+- **Terracotta, pressed** (`spot-deep`): hover on a primary button.
+- **Terracotta, printed dark** (`spot-ink`): links, the step counter in the running head, dashboard counts, the eye-level heading in Figure 1's legend.
+- **Peach** (`tint-2`): the accent screened to a field. The eye-level zone in every figure, the signup card, the first space card's stage, the active press on ghost buttons.
+- **Selected** (`sel-bg`): the faintest peach, the fill of a selected card behind its terracotta border.
+- **Sand** (`tint`): the ordinary content field: hover fill on ghost buttons, chips and options, the step-art band, the product filters panel, the clip band behind step animations.
 
-### Neutral
-- **Off-Black Ink** (`ink`): text, headings, every rule and border, figure strokes, the figure-number tab, the dashboard type badge, the modal frame, the pressed state of a primary button. `--line`, `--line-2`, `--ink-2`, and `--warn` resolve here.
-- **White Stock** (`stock`): page, cards, buttons at rest, inputs, and the fill of every inked item in a figure.
-- **Warm Grey** (`tint`): every field that carries content. Hover fill on ghost buttons, chips, cards and options; selected options; the ordinary zones in a figure; the card-art stage; the step-art band; the signup, rail note, helper, safety note, product filters, plan-rate and legal callout panels; the rail track behind the progress bar.
-- **Accent Tint** (`tint-2`): the accent screened to a field. The eye-level zone in every figure (the one place a field is not grey), the highlighted zone in the "What you get" figure, the active press on ghost buttons and segments, the deeper of the two fills in card elevations.
+### Supporting fields
+Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`).
+- **Sage**: success, safety notes, the "Reach-in" and second space cards, Figure 1's floor zone, the "How it works" second numeral.
+- **Butter**: warnings and notes (the rail note, the plan-rate panel, legal callouts, fit notes), the third space cards, Figure 1's lower shelf.
+- **Sky**: information callouts, the fourth space cards, Figure 1's top shelf, the "How it works" third numeral.
 
 ### Semantic
-- **Correction Pencil** (`danger`, `danger-ink`, `danger-bg`): the one exception, used for nothing but a failure (invalid email, unplaceable organizer). Success and info are the accent; warning is ink on warm grey.
+- **Success** is sage, **info** is sky, **warning** is butter with a deep amber ink.
+- **Correction pencil** (`danger`, `danger-ink`, `danger-bg`): the one red, used for nothing but a failure (invalid email, unplaceable organizer), so it can never be mistaken for a call to action.
 
 ### Named Rules
-**The One-Accent Rule.** Terracotta is the only colour that is not ink, stock, or grey. A button, a selected thing, a progress mark, and a figure label all share it; a new colour is a new plate and does not get one.
-**The Accent-Is-Small Rule.** Terracotta appears as a button, a stroke, a numeral, a small tab, or a dark word. The only field it may tint is the eye-level zone in a figure, at `tint-2`.
-**The No-Grey-Type Rule.** Secondary text is `spot-ink`, borders are `ink`, disabled state is opacity 0.45 on the full-colour element. The one grey in the system is a field (`tint`), never a letterform or a rule.
-**The Correction-Pencil Rule.** Red appears only on a failure, never on a call to action, badge, or highlight, so it can never be mistaken for one.
-**The Marked-State Rule.** Never encode state by hue alone. Pair every state with a printed mark (empty, half, filled square), a strikethrough, or a word.
+**The One-Button Rule.** Terracotta is the only colour a button, a selected thing or a progress mark may take. Sage, butter and sky are fields and text, never controls.
+**The Accent-Is-Small Rule.** Terracotta appears as a button, a stroke, a numeral, a pill or a dark word. The only fields it may tint are peach: eye level in a figure, the signup card, a selected card.
+**The Field-Has-Its-Own-Ink Rule.** Text on a sage, butter or sky field uses that family's deep ink, never the accent or grey.
+**The Correction-Pencil Rule.** Red appears only on a failure.
+**The Marked-State Rule.** Never encode state by hue alone. Pair every state with a mark (filled, half-filled or empty dot), a strikethrough, an icon or a word.
 
 ## Typography
 
-**Display Font:** Archivo variable, width axis 62 to 125% (with -apple-system, Helvetica Neue, Arial)
+**Display Font:** Archivo variable (with -apple-system, Helvetica Neue, Arial)
 **Body Font:** Archivo (same face; `--serif` aliases to it)
-**Label/Mono Font:** Archivo narrowed to 80% width for labels and 90% for buttons; system monospace is declared but unused in shipped surfaces
+**Label Font:** Archivo at its normal width, sentence case
 
-**Character:** One grotesque, played across its width axis. Titles are firm (700) but held to moderate sizes, so hierarchy comes from weight, rules, and space rather than scale; labels are narrowed and letterspaced like a shelf label; reading text is Archivo at rest.
+**Character:** One grotesque at rest. Titles are firm (700) but held to moderate sizes, so hierarchy comes from weight, cards and space rather than scale. Labels are small, bold and in sentence case. Nothing on the site is set in caps.
 
 ### Hierarchy
-- **Display** (Archivo 700, `clamp(32px, 4.2vw, 46px)`, 1.08, -0.022em): h1 only. The landing hero at 20ch max; the legal h1 at `clamp(30px, 5vw, 42px)`. The report and plan-hero h2 step up to `clamp(30px, 4vw, 44px)` because they open a chapter.
-- **Headline** (Archivo 700, `clamp(26px, 3.4vw, 34px)`, 1.12, -0.018em): h2 section heads, sitting on a 1px rule with 18px above. The room heading in the spaces gallery is the same voice at `clamp(22px, 2.4vw, 26px)`, centred on a rule.
-- **Title** (Archivo 700, `clamp(17px, 3vw, 19px)`, 1.15, -0.012em): h3 card names, method-step titles, list items. Card names and dashboard names run 800 at 18 to 19px; product-shot titles 22px; h4 is 16px / 700.
-- **Lede** (Archivo 400, `clamp(16px, 1.6vw, 18px)`, 1.6): the paragraph under the hero title, 44ch max. Section subtitles run 17px; the legal lede 19px / 1.55.
+- **Display** (Archivo 700, `clamp(32px, 4.2vw, 46px)`, 1.08, -0.022em): h1 only. The landing hero at 22ch max; the legal h1 at `clamp(30px, 5vw, 42px)`. The report and plan-hero h2 step up to `clamp(30px, 4vw, 44px)` because they open a chapter.
+- **Headline** (Archivo 700, `clamp(26px, 3.4vw, 34px)`, 1.12, -0.018em): h2 section heads. The room heading in the spaces gallery is the same voice at `clamp(22px, 2.4vw, 26px)`, centred.
+- **Title** (Archivo 700, `clamp(17px, 3vw, 19px)`, 1.15, -0.012em): h3 card names, method-step titles, list items. Card names run 800 at 18 to 19px; product-shot titles 22px; h4 is 16px / 700.
+- **Lede** (Archivo 400, `clamp(16px, 1.6vw, 18px)`, 1.6): the paragraph under the hero title, 44ch max. Section subtitles run 17px.
 - **Body** (Archivo 400, 16px, 1.6): reading text. Small is 14px / 1.5; figure captions and table cells 14 to 15.5px; legal prose 16.5px / 1.7.
-- **Label** (Archivo 700 to 800, 12px, 0.09em, uppercase, width 80%): figure numbers, column heads, nav items, step counters, the contents heading, legend headings, the "Sort it again" control. Zone names inside a figure are Archivo 800 at 16px with 0.08em.
-- **Button** (Archivo 800, 14px, 0.06em, uppercase, width 90%): every button label; small buttons drop to 12.5px; the hero primary sits at 15px 24px padding.
+- **Label** (Archivo 700, 13px, 0.005em, sentence case): figure numbers, column heads, nav items, step counters, the contents heading, legend headings. Zone names inside a figure are Archivo 700 at 18px.
+- **Button** (Archivo 700, 15px, 0.01em, sentence case): every button label; small buttons drop to 13.5px; the hero primary sits at 16px with 16px 28px padding.
 
 ### Named Rules
-**The One-Family Rule.** Archivo sets everything. There is no display serif; a heading that needs more presence gets a rule, a figure number, or more space, never a second face.
-**The Firm-Moderate Rule.** Titles are weight 700 at moderate sizes (46px ceiling on the h1). Scale is not the lever; weight and rules are.
-**The Narrow-Label Rule.** A caps label is Archivo at 80% width with 0.09em tracking; buttons are the same voice at 90%. Regular-width Archivo is for reading and for card names, never for a label.
-**The Figure-Number Rule.** A figure is captioned "Fig. n" in a white-on-ink label tab; the number sits inside the caption or the h3, never above a heading.
+**The One-Family Rule.** Archivo sets everything. A heading that needs more presence gets a card, a numeral or more space, never a second face.
+**The Sentence-Case Rule.** No `text-transform: uppercase` anywhere. A label is small and bold, not loud.
+**The Firm-Moderate Rule.** Titles are weight 700 at moderate sizes (46px ceiling on the h1). Scale is not the lever; weight and space are.
+**The Figure-Number Rule.** A figure is captioned "Fig. n" in a small peach pill; the number sits inside the caption or the h3, never above a heading.
 
 ## Layout
 
-Two measures: lessons read at 760px (`--maxw`; legal text at 680px); the landing page, report, and dashboard spread to 1100px. Page gutter is 18px, rising to 24px at 560px. The running head (sticky, 1px rule beneath, thickening to 2px on scroll) and the flow footer (fixed, 2px rule above) are the page furniture; the progress rail under the running head is a 3px warm-grey track with the accent advancing along it.
+Two measures: lessons read at 760px (`--maxw`; legal text at 680px); the landing page, report and dashboard spread to 1100px. Page gutter is 18px, rising to 24px at 560px. The running head is sticky and white with a soft line beneath, taking the small shadow once the page scrolls; the flow footer is fixed and white with a soft line above and a faint upward shadow. The progress rail under the running head is a 3px sand track with the accent advancing along it, its leading edge rounded.
 
-The hero is a split spread from 960px: copy and Figure 1 in equal halves, 56px between, so the headline holds two lines at its own size; below that it stacks with the figure beneath the copy. Figure 1 carries its legend as a two-column ruled list (one column below 520px) and its caption last.
+The hero is a split spread from 960px: copy and Figure 1 in equal halves, 56px between; below that it stacks with the figure beneath the copy. Figure 1 sits in a white card with 24px corners and the medium shadow; its legend is four colour-matched cards in a two-column grid (one column below 520px), and its caption last.
 
-Section rhythm on the landing page is `clamp(64px, 10vh, 104px)` above each h2. Inside a section: 30 to 34px to the first block, 12 to 16px between cards, 10 to 12px inside lists. Rules do the separating: lists and tables are stacks of rows with a 1px rule beneath each and a 1px or 2px rule on top of the whole.
+Section rhythm on the landing page is `clamp(64px, 10vh, 104px)` above each h2. Inside a section: 30 to 34px to the first block, 12 to 16px between cards, 10 to 12px inside lists. Lists are stacks of rounded cards, not ruled rows.
 
-Grids: space cards run two across on a phone, centred flex rows of up to three at 240px from 560px; the product-shot rows alternate figure and caption (5fr / 7fr, caption on the right for odd rows, left for even) from 760px; the method list is 52px numeral, 280px title, fluid text from 720px; the promise list is two columns from 720px; the credibility spread is 5fr / 4fr from 880px; the report is a 190px sticky contents column plus fluid from 960px, and a horizontally scrolling caps bar beneath the running head below that; the wizard is question plus sticky rail from 900px.
+Grids: space cards run two across on a phone, centred flex rows of up to three at 240px from 560px; the product-shot rows alternate figure and caption (5fr / 7fr) from 760px; the method list is three cards with a 48px numeral disc, 280px title and fluid text from 720px; the promise list is four coloured cards in two columns from 720px; the credibility spread is 5fr / 4fr from 880px; the report is a 190px sticky contents column plus fluid from 960px, and a horizontally scrolling bar beneath the running head below that; the wizard is question plus sticky rail from 900px.
 
-Breakpoints in use: 420, 480, 520, 560, 640, 700, 720, 760, 780, 860, 880, 900, 960, 980px. The nav collapses to a hamburger at 859px (measured: the row needs 777px); the wordmark yields to the brand square below 430px.
+Breakpoints in use: 420, 480, 520, 560, 640, 700, 720, 760, 780, 860, 880, 900, 960, 980px. The nav collapses to a hamburger at 859px; the wordmark yields to the brand mark below 430px.
 
 ## Elevation & Depth
 
-Print casts no shadow. Every shadow token is `none`, corners are 0, and there are no gradient surfaces. Depth is conveyed by ink weight and paper: a 1px rule for a card or row, a 2px rule for a panel that matters (modal, signup, plan-rate, chapter head), a 1px rule with 18px of air above a section title. The order of surfaces is stock, then warm grey, then accent tint: a hovered card goes to grey, a pressed one to accent tint, and a selected one gets an accent border plus a 1px inset accent ring.
-
-The modal backdrop is a 60% dark scrim over the page, not a blur. The only lifts are 1px down on button press and 2 to 3px up on card hover, both transforms without shadow.
+Depth is paper, card and shadow. The page is cream; a card is white with a `line` border and the small shadow, so it lifts a hair off the paper. A hovered card rises 2 to 3px and takes the medium shadow; a selected card keeps its shadow and adds a terracotta border, a 1px inset terracotta ring and the faint `sel-bg` fill. The modal takes the large shadow over a 50% ink scrim. The toast is an ink pill with the medium shadow. No surface uses a gradient or a blur.
 
 ### Named Rules
-**The Rule-Not-Shadow Rule.** To separate or frame, add a rule (1px ink or 2px ink). Never a shadow, never a gradient, never a radius.
-**The Inset-Ring Rule.** A selected or hovered card marks itself with `inset 0 0 0 1px` (accent on selectables, ink on dashboard cards) inside its border, so the mark stays within the box and the layout does not shift.
+**The One-Tier Rule.** Each surface takes one shadow tier: small at rest, medium when lifted or floating, large for the modal. Nothing stacks shadows.
+**The Inset-Ring Rule.** A selected card marks itself with `inset 0 0 0 1px` terracotta inside its border, so the mark stays within the box and the layout does not shift.
+**The Warm-Shadow Rule.** Every shadow is the warm ink at low alpha, never neutral grey.
 
 ## Shapes
 
-Every corner is square (radius 0, including focus rings and the range thumb). Borders are 1px solid ink at rest; 2px for load-bearing frames; dashed 1px ink for provisional containers (the helper note, the "new space" card, a skipped task). Figures are drawn with round line joins and caps: 4px for the case outline, 2.5px for shelves, 2.4px for items, 2.6px accent for the label stroke on each item; card-scale elevations (`.art-el`) drop to 1px for items, 1.6px for the case, and 1.2px accent for the label. Zones are flat rectangles inside the case: warm grey, or accent tint for eye level. The figure number is an ink tab; the brand mark is a 30px accent square carrying a white pin. Stage marks are 16px squares with a 2px ink border: empty, half-filled with a hard-edged fill, or fully filled. Task checks in the report are 44px squares of the same construction, filling with the accent when done.
+Corners: 10px on controls (inputs, selects, the clip band, the icon tiles on feature cards), 16px on cards and panels, 24px on the large frames (Figure 1's card, the 3D stage, the modal, space cards, the review card, the signup card), pills on buttons, chips, tags, flags, segmented controls and the toast, and circles on the step dots, the task check, the stepper buttons, the range thumbs and the floating check on a selected card. Borders are 1px `line` on cards, 1.5px `line-2` on selectable cards and chips, 1.5px `field-line` on form controls, dashed `line-2` for provisional containers (the helper note, the "new space" card, the add-photo tile, a skipped task).
+
+Figures are drawn with round line joins and caps: a 2.6px case outline with 18px corners, 1.8px shelves, 1.9px items, 2.2px accent for the label stroke; card-scale elevations (`.art-el`) drop to 0.9px for items, 1.3px for the case, 1.1px accent for the label. Zones are flat colour fields inside the case: sky, peach (eye level), butter, sage. The figure number is a peach pill; the brand mark is a 32px terracotta square with 11px corners carrying a white pin. Step marks are 18px circles with a `field-line` border: empty, half-filled with the accent, or filled with the accent, paired with a strikethrough when done. Task checks in the report are 44px circles of the same construction, filling with the accent when done.
 
 ## Components
 
 ### Buttons
-A button is a ruled box with a caps label: the primary one is printed in the accent, the ghost is the same box left unprinted.
-- **Shape:** square corners (0), 1px border on both variants (accent on primary, ink on ghost).
-- **Primary:** accent fill, white label; 14px 22px padding; 15px 24px in the hero.
-- **Hover / Focus:** hover deepens to `spot-deep`; active goes to ink and drops 1px; focus-visible is a 2px accent outline offset 2px. Transitions 180ms on colour, 120ms on transform.
-- **Ghost:** white fill, ink label; hover to warm grey, active to accent tint.
-- **Small:** 11px 14px padding at 12.5px. Disabled is opacity 0.45.
-- **Text buttons** (nav, back, replay, home links): label style in ink, hover to `spot-ink`; nav items draw a 2px accent underline on hover; home links are Archivo 600 with a 1px accent underline, hover to ink.
+A pill with a sentence-case label. The primary one is terracotta; the ghost is the same pill on white.
+- **Shape:** pill, 1px border on both variants (terracotta on primary, `line-2` on ghost).
+- **Primary:** terracotta fill, white label, a 1px warm shadow; 14px 22px padding; 16px 28px in the hero.
+- **Hover / Focus:** hover deepens to `spot-deep`; active deepens further and drops 1px; focus-visible is a 2px terracotta outline offset 2px. Transitions 180ms on colour, 120ms on transform.
+- **Ghost:** white fill, ink label; hover to sand, active to peach.
+- **Small:** 11px 16px padding at 13.5px. Disabled is opacity 0.45.
+- **Text buttons** (nav, back, home links): label style in ink, hover to `spot-ink`; nav items draw a 2px terracotta underline on hover; home links are Archivo 600 with a 1px terracotta underline, hover to ink.
 
 ### Chips
-- **Style:** white, 1px ink border, 9px 16px, Archivo 600 at 14px.
-- **State:** hover to warm grey; selected fills with the accent and white text. Segmented yes/no controls and the unit toggle are the same construction sharing one border with the selected segment accent-filled. The legal-page sibling nav is a chip row with the current page accent-filled.
-- **Tags** (small, non-interactive): warm-grey fill, ink border, 12.5px; semantic variants use the correction pencil only for danger.
+- **Style:** white pill, 1.5px `line-2` border, 9px 16px, Archivo 600 at 14px.
+- **State:** hover to sand; selected fills terracotta with white text. Segmented yes/no controls and the unit toggle are a pill track with 3px padding and the selected segment as a terracotta pill inside it. The legal-page sibling nav is a chip row with the current page terracotta.
+- **Tags** (small, non-interactive): sand pill, `line` border, 13.5px; semantic variants use sage, butter and sky, and the correction pencil only for danger.
 
 ### Cards / Containers
-- **Corner Style:** square.
-- **Background:** white; warm grey for panels that are notes, callouts, or asks (signup, rail note, helper, safety note, legal note, product filters, plan-rate).
-- **Shadow Strategy:** none (see Elevation). Selection is an accent border plus 1px inset accent ring; dashboard cards take an ink ring on hover.
-- **Border:** 1px ink; 2px ink for the modal, signup, and plan-rate panels.
+- **Corner Style:** 16px; 24px for space cards, the review card, the signup card, the 3D stage and the modal.
+- **Background:** white; sand for the product filters and the step-art band; butter for notes and asks (rail note, plan-rate, legal note, fit note); sage for safety notes and detected-items panels; sky for information callouts; peach for the signup card.
+- **Shadow Strategy:** small at rest, medium on hover (see Elevation). Selection is a terracotta border plus 1px inset ring plus `sel-bg`.
+- **Border:** 1px `line`; 1.5px `line-2` on selectable cards.
 - **Internal Padding:** `clamp(18px, 4vw, 26px)`; option rows 15px 16px; card labels 12px 16px 14px.
-- **Space cards:** warm-grey art stage at 4/3 (3/2 on the landing gallery), 1px rule beneath, name in Archivo 800 at 18px; hover lifts 3px with the accent ring and nudges the drawing 5% upward; selected shows a 28px accent check square in the corner.
+- **Space cards:** a coloured art stage at 4/3 (3/2 on the landing gallery) that cycles peach, sage, butter and sky by position, name in Archivo 800 at 18px; hover lifts 3px with the terracotta ring and medium shadow and nudges the drawing 5% upward; selected shows a 28px terracotta check disc in the corner.
 
 ### Inputs / Fields
-- **Style:** white, 1px ink border, 12px 14px, Archivo at 15px; labels in Archivo 600 at 14px above. Placeholder text is `spot-ink`. The signup input shares its right edge with the button. Range sliders carry an 18px square accent thumb with a 2px ink border.
-- **Focus:** 2px accent outline, no offset (the ring sits on the border). Free-text areas take the inset accent ring instead.
+- **Style:** white, 1.5px `field-line` border, 10px corners, 12px 14px, Archivo at 15px; labels in Archivo 600 at 14px above. Placeholder text is `ink-3`. The signup input is a pill with its button beside it. Range sliders carry a 20px terracotta disc thumb with a white border and the small shadow on a 6px `line-2` track.
+- **Focus:** 2px terracotta outline, no offset. Free-text areas take the inset terracotta ring instead.
 - **Error:** correction-pencil border and outline with a 320ms shake (none under reduced motion).
 
 ### Navigation
-- **Running head:** sticky white bar with a 1px rule beneath; brand as a 30px accent square with a white pin plus the wordmark in Archivo 800 at 19px; nav items in label style with an accent underline drawn on hover; a step counter ("Step 1 of 11") in `spot-ink` on wizard screens; below 860px the nav folds into a full-width stacked list of 48px rows separated by rules.
-- **Report contents:** a sticky 190px column with a 2px-ruled heading and 1px-ruled rows (Archivo 600 at 13.5px), current chapter in `spot-ink`; below 960px it becomes a scrolling caps bar under the running head with an accent underline on the current chapter.
-- **Flow footer:** fixed, white, 2px rule above, back link in label style at left, primary button at right, 44px minimum targets.
+- **Running head:** sticky white bar with a soft line beneath, small shadow once scrolled; brand as a 32px terracotta rounded square with a white pin plus the wordmark in Archivo 800 at 19px; nav items in label style with a terracotta underline drawn on hover; a step counter ("Step 1 of 11") in `spot-ink` on wizard screens; below 860px the nav folds into a white dropdown with 24px bottom corners and the medium shadow, 48px rows separated by soft lines.
+- **Report contents:** a sticky 190px column with a soft-lined heading and soft-lined rows (Archivo 600 at 13.5px), current chapter in `spot-ink`; below 960px it becomes a scrolling bar under the running head with a terracotta underline on the current chapter.
+- **Flow footer:** fixed, white, soft line above with a faint upward shadow, back link in label style at left, primary pill at right, 44px minimum targets.
 
 ### Figures (signature)
-An inked cupboard elevation: a 4px ink case, 2.5px shelves, items drawn white-filled with 2.4px round-capped ink strokes and a 2.6px accent label stroke on each, zones as flat warm-grey rectangles with the eye-level shelf in accent tint, and a legend beneath in label-style headings (the eye-level heading in `spot-ink`) over 14px notes. Figure 1 on the landing page is the interactive version: items begin displaced and rotated and travel to their zone over 1.15s on the exponential ease-out, staggered 55ms per item; zones screen in after 1.1s; a "Sort it again" control appears after 2.6s. Under reduced motion the finished figure is shown and the replay hidden.
+An inked cupboard elevation: a 2.6px case with 18px corners, 1.8px shelves, items drawn white-filled with 1.9px round-capped strokes and a 2.2px terracotta label stroke on each, zones as soft colour fields clipped to the rounded case (sky, peach for eye level, butter, sage), and a legend beneath as four colour-matched cards, each heading in that family's deep ink over 14px notes. Figure 1 on the landing page is the interactive version: items begin displaced and rotated and travel to their zone over 1.15s on the exponential ease-out, staggered 55ms per item; zones screen in after 1.1s. It plays once. There is no replay: the sort always ends on the same plan, so a button would only repeat it. Under reduced motion the finished figure is shown.
 
-The same vocabulary scales down to the card elevations (`EL_ART`, `SETUP_ART`, `productArt`): a 96 by 72 viewBox, 1px ink items, 1.6px case, 1.2px accent label stroke, fills re-inked from the stylesheet to stock, warm grey, and accent tint. Each card carries one ambient storage motion (a drawer pulling, a door opening, a bin sliding, a shirt swaying, a jar lifting) looping at 4.1 to 5.4s, quickening on hover. The plan report's hero (`planElevationSvg`) draws one shelf per zone from the same glyphs, reading `--ink`, `--spot`, `--tint`, and `--tint-2` from the tokens at render time.
+The same vocabulary scales down to the card elevations (`EL_ART`, `SETUP_ART`, `productArt`): a 96 by 72 viewBox, 0.9px items, 1.3px case, 1.1px accent label stroke, fills re-inked from the stylesheet to stock and the card's own tint and peach, so the four card tones colour the drawing's zones along with its stage. Each card carries one ambient storage motion (a drawer pulling, a door opening, a bin sliding, a shirt swaying, a jar lifting) looping at 4.1 to 5.4s, quickening on hover. The plan report's hero (`planElevationSvg`) draws one shelf per zone from the same glyphs in a rounded case, the eye-level shelf in peach and the others cycling sky, butter, sage and sand, reading its colours from the tokens at render time. The report's "Where things go" rows still carry a peach label field on the eye-level row; the per-wall report replaces that with an icon and the word.
 
 ### Stage marks (signature)
-Progress is printed, never coloured alone: a 16px ink-bordered square that is empty (to do), half-filled (in progress), or full (done), with done rows struck through in ink and their text in `spot-ink`. Task checks in the report are 44px versions carrying the step number until done, when the number gives way to a white check on the accent. Progress bars are an 8 to 9px ink-bordered track with the accent advancing.
+Progress is a mark, never a colour alone: an 18px `field-line` circle that is empty (to do), half-filled with the accent (in progress), or filled with the accent (done), with done rows struck through and their text in `spot-ink`. Task checks in the report are 44px circles carrying the step number until done, when the number gives way to a white check on terracotta. Progress bars are a 10px pill track with the accent advancing.
 
 ### Motion
-Inked in one stroke. `--ease` (0.2,0.7,0.2,1) for state changes, `--ease-out` (0.16,0.84,0.28,1) for arrivals, `--ease-physical` (0.34,1.32,0.48,1) for things that stand for objects. Durations 120ms (transform), 180ms (colour), 340ms (slow), 400ms for a screen rising 10px into place, 450ms for the rail, 540ms for a card arriving with a 55ms stagger. Every animation is disabled under `prefers-reduced-motion`.
+One stroke. `--ease` (0.2,0.7,0.2,1) for state changes, `--ease-out` (0.16,0.84,0.28,1) for arrivals, `--ease-physical` (0.34,1.32,0.48,1) for things that stand for objects. Durations 120ms (transform), 180ms (colour), 340ms (slow), 400ms for a screen rising 10px into place, 450ms for the rail, 540ms for a card arriving with a 55ms stagger. Every animation is disabled under `prefers-reduced-motion`.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** resolve every colour to stock, warm grey, or the off-black ink; terracotta is a button, a stroke, a numeral, a tab, or a dark word; the correction pencil is for a failure only.
-- **Do** separate with rules: 1px ink between rows, 2px ink to frame a panel, 1px ink with 18px of air above a section title.
-- **Do** set titles in Archivo 700 at moderate sizes, labels in Archivo narrow (80%) caps at 12px with 0.09em tracking, buttons at 90% width, and reading text in Archivo at 16px / 1.6.
-- **Do** caption every drawing "Fig. n" in the ink tab and draw it in the elevation voice: white-filled items, round-capped ink strokes, one terracotta label stroke per item, flat grey zones, eye level in the accent tint.
-- **Do** mark state with a printed square (empty, half, full), a strikethrough, or a word, and pair any hue with one of those.
-- **Do** keep focus rings 2px accent outlines with square corners, and keep touch targets at 44px minimum.
+- **Do** put content on a white card with soft corners and the small shadow, on cream paper; separate with space and cards, not rules.
+- **Do** keep terracotta for buttons, selected states, progress marks and the label stroke in drawings; use sage, butter and sky as fields with their own deep ink for text.
+- **Do** set every label in sentence case: Archivo 700 at 13px, almost no tracking.
+- **Do** caption every drawing "Fig. n" in the peach pill and draw it in the elevation voice: white-filled items, round-capped strokes, one terracotta label stroke per item, soft colour zones with eye level in peach.
+- **Do** mark state with a dot (empty, half, full), a strikethrough, an icon or a word, and pair any hue with one of those.
+- **Do** keep focus rings 2px terracotta outlines and touch targets at 44px minimum.
 
 ### Don't:
-- **Don't** set grey type or a grey rule; the one grey is the `tint` field, and secondary text is `spot-ink`.
-- **Don't** add a box-shadow, a gradient surface, or a corner radius.
-- **Don't** put a kicker or eyebrow above a heading; the figure number lives inside the caption or the h3.
-- **Don't** fill a panel, a card, or a section with terracotta, or let the accent be the only thing that says "selected".
-- **Don't** use red, terracotta, or any hue as the sole carrier of a state.
-- **Don't** introduce a second typeface; the display voice is Archivo 700, and the h1 does not exceed 46px.
-- **Don't** arrange a section as photo-left, headline-right, three feature cards.
+- **Don't** set any text in caps, or add tracking to a label.
+- **Don't** draw a hard ink border or a 1px ink rule; borders are `line`, `line-2` or `field-line`.
+- **Don't** colour a button, a selected state or a progress mark with anything but terracotta.
+- **Don't** fill a panel with terracotta; peach is the only accent field, and only for eye level, the signup card and a selected card.
+- **Don't** use red, terracotta or any hue as the sole carrier of a state.
+- **Don't** add a gradient surface, a blur or a second typeface, and keep the h1 at or under 46px.
+- **Don't** put a kicker or eyebrow above a heading.
