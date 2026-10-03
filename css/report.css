@@ -119,9 +119,10 @@
 .chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 60px)}
 @media(min-width:960px){.chapter,.plan-rate{scroll-margin-top:calc(var(--appbar-h,57px) + 16px)}}
 /* The head is the chapter's fold control, and a one-line head was 39px tall.
-   Six of the 16px below it are padding now, so the target is 45px and the
-   chapter body starts where it did. */
-.ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:10px;border-top:var(--rule);padding:14px 0 6px}
+   Seven of the 17px below it are padding now, so the target clears 44px on a
+   phone (the soft 1px rule above it used to be 2px of ink, and that pixel
+   mattered) and the chapter body starts where it did. */
+.ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:10px;border-top:var(--rule);padding:14px 0 7px}
 .ch-head .ch-titles{min-width:0}
 .ch-head h2{font-size:clamp(20px,3.2vw,24px);letter-spacing:-.02em}
 /* Survives the fold, unlike .ch-sub, because it is the only hint a reader gets
@@ -234,9 +235,9 @@
 
 /* A folded chapter should still say what is inside it. */
 .chapter.collapsed .ch-sub{display:none}
-/* Folded, the head used to end flush; the 6px of padding it carries now for
+/* Folded, the head used to end flush; the 7px of padding it carries now for
    the tap target are given back here so a folded chapter is the height it was. */
-.chapter.collapsed .ch-head{margin-bottom:-6px}
+.chapter.collapsed .ch-head{margin-bottom:-7px}
 
 
 /* ---------- Print / Save as PDF ----------
