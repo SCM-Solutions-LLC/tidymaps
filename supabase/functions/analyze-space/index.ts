@@ -2,7 +2,7 @@ import { preflight, json } from '../_shared/cors.ts';
 import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
-import { validatePlan, stepRangeFor, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, usableShelfDepth, ARCHETYPES,
+import { validatePlan, stepRangeFor, effortUntouched, listConfirmed as hasConfirmedList, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, usableShelfDepth, ARCHETYPES,
          KID_REACH_IN, YOUNG_KID_MAX_AGE, STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS,
          PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
@@ -104,10 +104,10 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
 }
 
 Using the user's answers (the <user_context> block at the end describes them; these rules say how they shape the plan):
-- Their contents list, when "About this request" says they confirmed one, is the plan's scope: categories, map items, zones and steps cover those things and nothing else. Anything else you can see goes ONLY in "spotted", never into a step, a zone or productNeeds, with one exception: a chemical or sharp item you can see is always placed on the map and flagged, whatever the list says, so the safety rules can act on it. When "About this request" says there is no confirmed list, the scope is what the photos show and "spotted" stays empty.
+- Their contents list, when "About this request" says they confirmed one, is the plan's scope: categories, map items, zones and steps cover those things and nothing else. Anything else you can see goes ONLY in "spotted", never into a step, a zone or productNeeds, with one exception: a chemical or sharp item you can see is always placed on the map with its item flag ("chemical" or "sharp"), whatever the list says, so the safety rules can act on it; the row's safety.flag still follows the household rules below. When "About this request" says there is no confirmed list, the scope is what the photos show and "spotted" stays empty.
 - Each goal they gave gets a step that answers it, with the goal copied exactly into that step's "goal", as far as the step range in "Enforced limits" allows; with more goals than steps, a step may serve several goals and carries the one it answers most. Never set "goal" on a step that answers none of their goals, and never invent a goal.
 - Their styles and preferences shape the plan: "No drilling or permanent installation" rules out hook racks, screw-on door racks and any step that mounts something; a style such as labeled bins shows up in the zones and the steps.
-- Steps name the real items and categories of this space ("Move the stand mixer to the floor zone", "Group cans by type"), never a count of them ("the eight categories") and never a thing that is not in their list or the photos. Put the where in "rows" (the shelfIndex values the step works on), so the task itself stays short.
+- Steps name the real items and categories of this space ("Move the stand mixer to the floor zone", "Group cans by type"), never a count of them ("the eight categories") and never a thing outside the plan's scope (their confirmed list, or what the photos show when there is none). Put the where in "rows" (the shelfIndex values the step works on), so the task itself stays short.
 - Use as many steps as the work needs, inside the range in "Enforced limits". Never pad to the top of the range with generic steps; a short, specific plan beats a long, general one.
 - In a multi-wall space set "wall" and "tier" on every map row, and mark "eye" on one row per wall, the row at eye height on that wall.
 
@@ -330,19 +330,16 @@ Deno.serve(async (req) => {
      instruction that lives inside the data. */
   const count = (v: unknown) => Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()).length : 0;
   const goalCount = count(ctx.goals);
-  /* A list is confirmed when the user edited the step and ticked something.
-     A client from before the flag existed sends no flag, and for it a list
-     it sends is theirs (the untrusted block already describes it that way),
-     so the two halves of the prompt agree about the same request. */
-  const listConfirmed = ctx.categoriesTouched === true
-    ? count(ctx.categories) > 0
-    : ctx.categoriesTouched === undefined && count(ctx.categories) > 0;
-  const categoryCount = listConfirmed ? count(ctx.categories) : 0;
+  /* The validator's own reading of the flags, so the two halves of the
+     prompt and the repair pass agree about the same request (a client from
+     before the flags sends a list without one, and that list is theirs). */
+  const confirmed = hasConfirmedList(ctx);
+  const categoryCount = confirmed ? count(ctx.categories) : 0;
   const styleCount = count(ctx.styles) + count(ctx.prefs);
   const aboutRequest = [
     '',
     'About this request (counts only; their own words are in the user_context block at the end):',
-    listConfirmed
+    confirmed
       ? `- Contents: the user confirmed a contents list of ${categoryCount} ${categoryCount === 1 ? 'category' : 'categories'}. That list is the plan's scope; anything else you see goes only in "spotted".`
       : ctx.categoriesTouched === true
         ? '- Contents: the user edited the contents step and left every option unticked, so there is no confirmed list. The scope is what the photos show, and "spotted" stays empty.'
@@ -350,11 +347,11 @@ Deno.serve(async (req) => {
     goalCount
       ? `- Goals: ${goalCount} given. Each gets a step with "goal" set to it where the step range allows.`
       : '- Goals: none given, so no step carries a "goal".',
-    ctx.effortTouched === false
+    effortUntouched(ctx)
       ? '- Effort: left on our preselection. Use the number of steps the work needs inside the range in "Enforced limits"; do not pad.'
-      : ctx.effortTouched === true
-        ? '- Effort: chosen by the user. Size the plan to it, inside the range in "Enforced limits".'
-        : '- Effort: the step range in "Enforced limits" applies.',
+      : ctx.effortTouched === undefined
+        ? '- Effort: the step range in "Enforced limits" applies.'
+        : '- Effort: chosen by the user. Size the plan to it, inside the range in "Enforced limits".',
     styleCount
       ? `- Styles and preferences: ${styleCount} given. They shape the zones, the steps and any product.`
       : '- Styles and preferences: none given.',

@@ -47,8 +47,27 @@ export const DEFAULT_STEP_RANGE = [4, 10];
    sends no `effortTouched`, and for it the effort's own range still applies,
    exactly as before. */
 export function stepRangeFor(context) {
-  if (context && context.effortTouched === false) return DEFAULT_STEP_RANGE;
+  if (effortUntouched(context)) return DEFAULT_STEP_RANGE;
   return knownEffort(context) ? EFFORT_STEP_RANGES[context.effort] : DEFAULT_STEP_RANGE;
+}
+/* The effort the wizard preselects (js/state.js ANSWER_DEFAULTS; a test holds
+   the two equal). An untouched flag is only a preselection when the label is
+   still this one: a row saved before the flag existed restores the flag as
+   false beside whatever effort the person chose then, and the client reads
+   it the same way (js/personalize.js applyEffort). */
+export const PRESELECTED_EFFORT = 'Weekend reset';
+export function effortUntouched(context) {
+  return !!context && context.effortTouched === false && context.effort === PRESELECTED_EFFORT;
+}
+/* Whether the request carries a contents list the user confirmed: they
+   edited the step and ticked something, or they are on a client from before
+   the flag existed, for which a list it sends is theirs. The prompt's two
+   halves and the repair pass all read this one function. */
+export function listConfirmed(context) {
+  if (!context) return false;
+  const n = Array.isArray(context.categories) ? context.categories.filter((x) => typeof x === 'string' && x.trim()).length : 0;
+  if (context.categoriesTouched === true) return n > 0;
+  return context.categoriesTouched === undefined && n > 0;
 }
 /* The effort label is user-supplied; looked up as an own property so a label
    like "constructor" is an unknown effort, not a prototype function. */
@@ -372,7 +391,7 @@ function checkInvariants(plan, context) {
   if (plan.steps.length < minSteps || plan.steps.length > maxSteps) {
     // The label is printed only when it is one of ours: this message goes
     // back to the model as a trusted correction turn.
-    const forWhom = context && context.effortTouched === false
+    const forWhom = effortUntouched(context)
       ? 'an effort left on the preselection (the general range applies)'
       : `effort "${knownEffort(context) ? context.effort : 'unspecified'}"`;
     errors.push(`steps: expected ${minSteps}-${maxSteps} steps for ${forWhom}, got ${plan.steps.length}`);
@@ -513,7 +532,7 @@ export function usableShelfDepth(archetype, dims) {
    the map does not have is dropped, lists are deduped and capped, and a field
    left with nothing in it is removed rather than left empty, which is the
    shape the client's normalizeAi expects (absent, not empty). */
-function repairOptionalFields(plan) {
+function repairOptionalFields(plan, context) {
   const count = plan.geometry.shelfCount;
   const validRow = (r) => Number.isInteger(r) && r >= 0 && r < count;
   for (const step of plan.steps) {
@@ -521,8 +540,10 @@ function repairOptionalFields(plan) {
     if (rows.length) step.rows = rows; else delete step.rows;
     if (typeof step.goal === 'string' && step.goal.trim()) step.goal = step.goal.trim(); else delete step.goal;
   }
+  // With no confirmed list the scope is the photos and the prompt says
+  // spotted stays empty; a list sent anyway is dropped, not a rejection.
   const seenSpotted = new Set();
-  const spotted = (Array.isArray(plan.spotted) ? plan.spotted : [])
+  const spotted = (listConfirmed(context) && Array.isArray(plan.spotted) ? plan.spotted : [])
     .filter((s) => s && typeof s.name === 'string' && s.name.trim())
     .map((s) => ({ name: s.name.trim(), row: validRow(s.row) ? s.row : null }))
     .filter((s) => { const k = s.name.toLowerCase(); if (seenSpotted.has(k)) return false; seenSpotted.add(k); return true; })
@@ -556,7 +577,8 @@ export function planQuality(plan, context = {}) {
     goalsCovered: covered.size,
     spotted: Array.isArray(plan.spotted) ? plan.spotted.length : 0,
     categoriesEdited: context.categoriesTouched === true,
-    effortTouched: context.effortTouched !== false,
+    listConfirmed: listConfirmed(context),
+    effortTouched: !effortUntouched(context),
   };
 }
 
@@ -624,7 +646,7 @@ export function validatePlan(raw, context = {}) {
   // and the optional row references are checked against that count.
   alignShelfCount(structural.data);
   normalizeShelfYFracs(structural.data.geometry);
-  repairOptionalFields(structural.data);
+  repairOptionalFields(structural.data, context);
   const errors = checkInvariants(structural.data, context);
   if (errors.length) {
     return { ok: false, value: null, errors };

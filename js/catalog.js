@@ -63,8 +63,8 @@ export const CARCASS_WIDTH_ALLOWANCE = 3.5;
    to 18 inches deep. The formula is the 3D builders' own
    (js/three/layouts/walkin-u.js, l-run.js), 14-inch floor included, because
    the fit note in the 3D view is what a pick is judged by in the end; the
-   server's usableShelfDepth (planSchema.js) lacks that floor, which HANDOFF
-   records for the server PR. Anything else is a unit whose measured depth is
+   server's usableShelfDepth (planSchema.js) is the same expression, and a
+   test holds the two equal. Anything else is a unit whose measured depth is
    its shelf depth. The second argument is a setup id or an archetype. */
 const ROOM_SHELF_FACTOR={'walkin-u':0.2,'l-run':0.22};
 export function shelfDepthFor(dims, setupOrArchetype){

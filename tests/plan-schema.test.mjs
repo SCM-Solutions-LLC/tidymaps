@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, stepRangeFor, knownEffort, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, ARCHETYPES, SURFACES, PLACES, usableShelfDepth,
+import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, stepRangeFor, knownEffort, effortUntouched, PRESELECTED_EFFORT, listConfirmed, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, ARCHETYPES, SURFACES, PLACES, usableShelfDepth,
          STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS, PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../supabase/functions/_shared/planSchema.js';
 import {
   ARCHETYPES as CLIENT_ARCHETYPES,
@@ -9,6 +9,8 @@ import {
   PLACES as CLIENT_PLACES,
 } from '../js/layout.js';
 import { WALLS as CLIENT_WALLS } from '../js/placement.js';
+import { SPOTTED_MAX as CLIENT_SPOTTED_MAX } from '../js/plan.js';
+import { resetWizardAnswers } from '../js/state.js';
 
 /* Minimal, schema-valid plan skeleton. Each test overrides only what it's
    exercising, so a failure always points at the field the test is actually
@@ -579,8 +581,13 @@ test('the enforced-limits block is derived from the validator constants', () => 
      this user chose" was false whenever they left it, and contradicted the
      untrusted block, which says in the same prompt that they did not. */
   assert.match(fn, /between \$\{minSteps\} and \$\{maxSteps\} steps, the range for this request's effort level\. Use the count the work needs/);
-  // The caps the repair pass applies are told from the same constants.
-  assert.match(fn, /"spotted" keeps at most \$\{SPOTTED_MAX\} entries and "rows" at most \$\{STEP_ROWS_MAX\} per step/);
+  // The caps the repair pass applies are told from the same constants, on a
+  // live line of the enforced block (not a commented one).
+  const enfStart = fn.indexOf('const enforced = [');
+  const enfEnd = fn.indexOf("].join('\\n');", enfStart);
+  assert.ok(enfStart > 0 && enfEnd > enfStart, 'the enforced block must exist');
+  const enforced = fn.slice(enfStart, enfEnd);
+  assert.match(enforced, /^\s*`- optional fields:[^\n]*"spotted" keeps at most \$\{SPOTTED_MAX\} entries and "rows" at most \$\{STEP_ROWS_MAX\} per step/m);
   assert.doesNotMatch(fn, /effort level this user chose/,
     'a preselected effort is not a choice, and the prompt must not call it one');
   assert.doesNotMatch(fn, /6-9 ordered steps/,
@@ -971,6 +978,15 @@ test('the prompt gives the two height rules in opposite directions, on purpose',
 test('an effort left on the preselection is held to the general range, a chosen one to its own', () => {
   assert.deepEqual(stepRangeFor({ effort: 'Weekend reset', effortTouched: false }), DEFAULT_STEP_RANGE);
   assert.deepEqual(stepRangeFor({ effort: 'Weekend reset', effortTouched: true }), EFFORT_STEP_RANGES['Weekend reset']);
+  // The wizard preselects one effort, and the server's copy of that label is
+  // held to the client's. An untouched flag beside any other label is a row
+  // saved before the flag existed, with an effort the person did choose.
+  assert.equal(PRESELECTED_EFFORT, resetWizardAnswers(/** @type {any} */ ({})).effort);
+  assert.equal(effortUntouched({ effort: 'Full overhaul', effortTouched: false }), false);
+  assert.deepEqual(stepRangeFor({ effort: 'Full overhaul', effortTouched: false }), EFFORT_STEP_RANGES['Full overhaul'],
+    'a chosen overhaul under a stale flag keeps its own range');
+  assert.match(validatePlan(basePlan({ steps: basePlan().steps.slice(0, 5) }), { effort: 'Full overhaul', effortTouched: false }).errors.join('\n'),
+    /expected 9-14 steps for effort "Full overhaul"/);
   // A client from before the flag existed sends none, and keeps the old meaning.
   assert.deepEqual(stepRangeFor({ effort: 'Weekend reset' }), EFFORT_STEP_RANGES['Weekend reset']);
   assert.deepEqual(stepRangeFor({}), DEFAULT_STEP_RANGE);
@@ -1019,7 +1035,7 @@ test('a bad wall, tier, rows, goal, spotted or place is dropped, never a reason 
     'not an entry',
     ...Array.from({ length: 9 }, (_, i) => ({ name: `Extra ${i}` })),
   ];
-  const result = validatePlan(plan, { effort: 'Weekend project', effortTouched: true });
+  const result = validatePlan(plan, { effort: 'Weekend project', effortTouched: true, categoriesTouched: true, categories: ['Canned goods'] });
   assert.equal(result.ok, true, result.errors && result.errors.join('; '));
   const v = result.value;
   assert.equal('wall' in v.map[0], false, 'an unknown wall is dropped');
@@ -1042,9 +1058,24 @@ test('a bad wall, tier, rows, goal, spotted or place is dropped, never a reason 
   assert.equal(v.spotted[2].name, 'Extra 0', 'an empty name and a non-entry are dropped');
 
   // The same thing seen twice is one entry.
+  const confirmedList = { effort: 'Weekend project', categoriesTouched: true, categories: ['Pet supplies'] };
   const twice = basePlan();
   twice.spotted = [{ name: 'Dog food', row: 0 }, { name: 'dog food ', row: 1 }, { name: 'Leash' }];
-  assert.deepEqual(validatePlan(twice, { effort: 'Weekend project' }).value.spotted.map((s) => s.name), ['Dog food', 'Leash']);
+  assert.deepEqual(validatePlan(twice, confirmedList).value.spotted.map((s) => s.name), ['Dog food', 'Leash']);
+
+  // With no confirmed list the scope is the photos, so there is nothing to
+  // set aside: a list sent anyway is dropped, never a reason to reject.
+  assert.equal(listConfirmed({ categoriesTouched: true, categories: ['Cans'] }), true);
+  assert.equal(listConfirmed({ categories: ['Cans'] }), true, 'a client from before the flag that sends a list has confirmed it');
+  assert.equal(listConfirmed({ categoriesTouched: true, categories: [] }), false, 'every chip unticked is no list');
+  assert.equal(listConfirmed({ categoriesTouched: false, categories: ['Cans'] }), false, 'a step left alone confirms nothing');
+  assert.equal(listConfirmed({}), false);
+  for (const ctx of [{ effort: 'Weekend project' }, { effort: 'Weekend project', categoriesTouched: false, categories: ['Cans'] }, { effort: 'Weekend project', categoriesTouched: true, categories: [] }]) {
+    const r = validatePlan(twice, ctx);
+    assert.equal(r.ok, true, r.errors && r.errors.join('; '));
+    assert.equal('spotted' in r.value, false, `spotted must be dropped for ${JSON.stringify(ctx)}`);
+  }
+  assert.equal(validatePlan(twice, { effort: 'Weekend project', categories: ['Pet supplies'] }).value.spotted.length, 2, 'an old client\'s list keeps its spotted');
 
   // Too many rows on one step are cut to the cap the prompt states.
   const many = basePlan({ steps: [...basePlan().steps.slice(0, 6), { task: 'Do it', time: '1 min', why: 'Yes.', rows: [0, 1, 0, 1, 0, 1] }] });
@@ -1067,7 +1098,7 @@ test('client WALLS match server WALLS, and the prompt offers exactly those walls
   assert.deepEqual(CLIENT_WALLS, WALLS);
   const prompt = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
   // Interpolated from the constant rather than retyped, so the two cannot drift.
-  assert.match(prompt, /"wall": \$\{WALLS\.map\(\(w\) => `"\$\{w\}"`\)\.join\('\|'\)\}\|null/);
+  assert.match(prompt, /"wall": \$\{WALLS[\s\S]{0,80}?\}\|null/, 'the wall enum in the schema comment must come from WALLS');
   assert.match(prompt, /front is the wall the door is in, floor is the floor itself/);
 });
 
@@ -1088,11 +1119,14 @@ test('the answers section and the request facts are trusted text built without u
   assert.match(head, /goes ONLY in "spotted"/);
   assert.match(head, /Never pad to the top of the range/);
   assert.match(head, /never a count of them/);
-  assert.match(head, /chemical or sharp item you can see is always placed on the map and flagged/,
+  assert.match(head, /chemical or sharp item you can see is always placed on the map with its item flag/,
     'the scope rule must not keep a visible hazard away from the safety rules');
   assert.match(head, /as far as the step range in "Enforced limits" allows/,
     'seven goals cannot each get a step inside a Quick refresh');
   assert.match(head, /"No drilling or permanent installation"/, 'quote the preference the wizard sends, not a paraphrase');
+  assert.match(head, /never a thing outside the plan's scope \(their confirmed list, or what the photos show when there is none\)/,
+    'the steps bullet must not re-admit into steps what the scope bullet sends to spotted');
+  assert.doesNotMatch(head, /not in their list or the photos/);
   assert.doesNotMatch(head, /"No drilling or mounting"/);
 
   const start = fn.indexOf('const aboutRequest = [');
@@ -1106,18 +1140,29 @@ test('the answers section and the request facts are trusted text built without u
   for (const h of holes) {
     assert.match(h, /^(goalCount|categoryCount|styleCount)$|^categoryCount === 1 \? 'category' : 'categories'$/, `unexpected interpolation in the trusted facts block: \${${h}}`);
   }
+  // Nothing from the context is read inside the block at all, however it is
+  // spelled (concatenation, join, stringify), and the three names are counts.
+  const conditionsOnly = block.replace(/effortUntouched\(ctx\)|ctx\.effortTouched === undefined|hasConfirmedList\(ctx\)|ctx\.categoriesTouched === true/g, '');
+  assert.doesNotMatch(conditionsOnly, /ctx\.|ctx\b|body\.|JSON\.stringify|\.join\(|\+ *\(/, 'the trusted facts block must be built from the three counts and the boolean branch tests only');
+  const facts = fn.slice(fn.indexOf('const count = '), start);
+  assert.match(facts, /const count = \(v: unknown\) => Array\.isArray\(v\) \? v\.filter\(\(x\) => typeof x === 'string' && x\.trim\(\)\)\.length : 0;/);
+  assert.match(facts, /const goalCount = count\(ctx\.goals\);/);
+  assert.match(facts, /const categoryCount = confirmed \? count\(ctx\.categories\) : 0;/);
+  assert.match(facts, /const styleCount = count\(ctx\.styles\) \+ count\(ctx\.prefs\);/);
   assert.match(block, /left on our preselection/);
   assert.match(block, /left every option unticked/);
   assert.match(block, /confirmed a contents list of/);
   assert.match(block, /no confirmed list/);
   assert.match(block, /the step range in "Enforced limits" applies/, 'a client that sends no effort flag is told neither "chosen" nor "left"');
   assert.doesNotMatch(block, /edited it/);
-  // The branches themselves: three ways for the effort flag, and a list
-  // from a client without the contents flag counts as confirmed.
-  assert.match(block, /ctx\.effortTouched === false\s*\?[\s\S]*?:\s*ctx\.effortTouched === true\s*\?/,
-    'the effort line must branch on false, true and absent separately');
-  const facts = fn.slice(fn.indexOf('const listConfirmed'), start);
-  assert.match(facts, /ctx\.categoriesTouched === undefined && count\(ctx\.categories\) > 0/,
+  // The branches themselves: the preselection test is the validator's own
+  // (flag and label), an absent flag claims no choice, and the list test is
+  // the validator's listConfirmed, so the two halves cannot drift.
+  assert.match(block, /effortUntouched\(ctx\)\s*\?[\s\S]*?:\s*(ctx\.)?effortTouched === undefined\s*\?/,
+    'the effort line must branch on the preselection, an absent flag and a choice');
+  assert.match(facts, /const confirmed = hasConfirmedList\(ctx\);/);
+  const schemaSrc2 = readFileSync(new URL('../supabase/functions/_shared/planSchema.js', import.meta.url), 'utf8');
+  assert.match(schemaSrc2, /return context\.categoriesTouched === undefined && n > 0;/,
     'a client from before the flag that sends a list must be read as having confirmed it');
 
   // Order in the prompt: head, enforced limits, request facts, then the untrusted block.
@@ -1132,31 +1177,43 @@ test('planQuality counts whether the answers reached the plan, and nothing else'
     ],
     steps: [
       ...basePlan().steps.slice(0, 5),
-      { task: 'Move the mixer down', time: '5 min', why: 'Heavy.', rows: [1], goal: "can't find anything " },
+      { task: 'Move the mixer down', time: '5 min', why: 'Heavy.', rows: [1], goal: "CAN'T FIND ANYTHING " },
       { task: 'Label the bins', time: '5 min', why: 'Clear.', goal: 'A goal the user never gave' },
     ],
   });
   plan.spotted = [{ name: 'Nespresso', row: 1 }];
   const ctx = { goals: ["Can't find anything", 'Looks cluttered'], categoriesTouched: true, effortTouched: false };
-  const q = planQuality(validatePlan(plan, { ...ctx, effort: 'Weekend reset' }).value, ctx);
+  const r1 = validatePlan(plan, { ...ctx, effort: 'Weekend reset' });
+  assert.equal(r1.ok, true, r1.errors && r1.errors.join('; '));
+  const q = planQuality(r1.value, ctx);
   assert.deepEqual(q, {
     mapRows: 2, rowsWithWall: 2, eyeRows: 1, steps: 7, stepsWithRows: 1,
-    goalsGiven: 2, goalsCovered: 1, spotted: 1, categoriesEdited: true, effortTouched: false,
-  });
+    goalsGiven: 2, goalsCovered: 1, spotted: 0, categoriesEdited: true, listConfirmed: false, effortTouched: true,
+  }, 'no list was confirmed, so the spotted entry was dropped and the plan counts none; a Weekend reset flag without the label is not a preselection');
+  const listCtx = { ...ctx, effort: 'Weekend reset', categories: ['Cans'] };
+  const r2 = validatePlan(plan, listCtx);
+  assert.equal(r2.ok, true, r2.errors && r2.errors.join('; '));
+  const withList = planQuality(r2.value, listCtx);
+  assert.equal(withList.spotted, 1);
+  assert.equal(withList.listConfirmed, true);
+  assert.equal(withList.effortTouched, false, 'the preselection, left alone');
   assert.ok(!JSON.stringify(q).includes('Nespresso') && !JSON.stringify(q).includes('find anything'), 'counts only');
   // A client from before the flags logs as not edited and effort touched,
   // the same reading the prompt gives that client.
   const old = planQuality(validatePlan(basePlan(), { effort: 'Weekend project' }).value, {});
   assert.equal(old.categoriesEdited, false);
+  assert.equal(old.listConfirmed, false);
   assert.equal(old.effortTouched, true);
   assert.equal(planQuality(validatePlan(basePlan(), { effort: 'Weekend project' }).value, { categoriesTouched: false, effortTouched: true }).categoriesEdited, false);
+  assert.equal(planQuality(validatePlan(basePlan(), { effort: 'Weekend project' }).value, { effort: 'Full overhaul', effortTouched: false }).effortTouched, true,
+    'a chosen overhaul under a stale flag counts as touched');
   // The log line runs for an accepted plan, inside the branch that returns it.
   const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
   const okStart = fn.indexOf('if (validation.ok) {');
   const okEnd = fn.indexOf('return json(req, 200', okStart);
   assert.ok(okStart > 0 && okEnd > okStart);
   const okBlock = fn.slice(okStart, okEnd);
-  assert.match(okBlock, /console\.log\('analyze-space plan quality'/);
+  assert.match(okBlock, /^\s*console\.log\('analyze-space plan quality'/m, 'the log line must be live, not commented out');
   assert.match(okBlock, /planQuality\(validation\.value, body\.context \?\? \{\}\)/);
 });
 
@@ -1164,14 +1221,10 @@ test('planQuality counts whether the answers reached the plan, and nothing else'
    as two literals. Raising one without the others would have the prompt
    promise what the client then truncates. */
 test('the spotted cap is the same number on both sides', () => {
-  const plan = readFileSync(new URL('../js/plan.js', import.meta.url), 'utf8');
+  assert.equal(CLIENT_SPOTTED_MAX, SPOTTED_MAX, 'js/plan.js caps spotted at a different number from the server');
   const personalize = readFileSync(new URL('../js/personalize.js', import.meta.url), 'utf8');
-  const client = plan.match(/spotted[\s\S]{0,600}?\.slice\(0,\s*(\d+)\)/);
-  assert.ok(client, 'normalizeAi must cap spotted with a slice');
-  assert.equal(Number(client[1]), SPOTTED_MAX, 'js/plan.js normalizeAi caps spotted at a different number');
-  const edits = personalize.match(/const SPOTTED_MAX = (\d+);/);
-  assert.ok(edits, 'applyCategoryEdits must declare its cap');
-  assert.equal(Number(edits[1]), SPOTTED_MAX, 'js/personalize.js caps spotted at a different number');
+  assert.match(personalize, /import \{ SPOTTED_MAX \} from '\.\/plan\.js';/, 'applyCategoryEdits must read the one client cap, not its own literal');
+  assert.doesNotMatch(personalize, /const SPOTTED_MAX = \d+;/);
 });
 
 /* The server capped a 4-foot walk-in's maxDims at 9.6 inches while the

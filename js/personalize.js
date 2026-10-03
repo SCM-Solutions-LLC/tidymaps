@@ -33,6 +33,7 @@
 import { goalIdFor, prefsForStyles, fmtIn } from './wizard-data.js';
 import { mentionsMissingSurface } from './setupStructure.js';
 import { resetWizardAnswers } from './state.js';
+import { SPOTTED_MAX } from './plan.js';
 
 /* The effort the wizard starts on, read from the answer defaults in
    js/state.js (ANSWER_DEFAULTS) rather than retyped here: applyEffort's
@@ -1241,7 +1242,6 @@ function keywordFit(rows, name) {
 const rowIndex = (rows, m) => (m && Number.isInteger(m.shelfIndex)) ? m.shelfIndex : rows.indexOf(m);
 
 /* The report offers back at most this many things the plan left out. */
-const SPOTTED_MAX = 8;
 
 /* `offered` is the chip list the wizard showed for this space and household
    (SPACE_CFG[space].categories through optionsForHousehold). Without it the

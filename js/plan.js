@@ -6,6 +6,10 @@ import { normalizeLayout, surfaceFromIcon, SURFACES, SETUP_ARCHETYPE } from './l
 import { kidAgeYears, optionsForHousehold, SPACE_CFG } from './wizard-data.js';
 import { WALLS } from './placement.js';
 
+// The cap on spotted items, the same number the server states to the model
+// (supabase/functions/_shared/planSchema.js SPOTTED_MAX; a test holds them equal).
+export const SPOTTED_MAX = 8;
+
 /* ============================================================
    Plan contract v2: raw model JSON -> the exact shapes the UI renders.
    The edge function returns the model's JSON untouched; all validation,
@@ -123,7 +127,7 @@ export function normalizeAi(j){
      the steps below. */
   const spotted = (Array.isArray(j.spotted)?j.spotted:[])
     .filter(e=>e && typeof e.name==='string' && e.name.trim())
-    .slice(0,8)
+    .slice(0,SPOTTED_MAX)
     .map(e=>{
       const r = intOrNone(e.row);
       return {
