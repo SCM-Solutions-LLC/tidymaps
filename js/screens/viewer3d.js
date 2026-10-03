@@ -5,7 +5,7 @@ import { go } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
 import { LEVEL_NOUN } from '../setupStructure.js';
 import { PRODUCT_TYPES } from '../plan.js';
-import { TYPE_LABEL } from '../catalog.js';
+import { TYPE_LABEL, shelfDepthFor } from '../catalog.js';
 import { addProductNeed } from './results.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
@@ -418,10 +418,13 @@ const ORGANIZER_LABELS={
 
    maxDims comes from the level it is going on, so the fit badge and the
    "does not fit" warning mean the same thing for an added item as for a
-   recommended one. */
-function shelfMaxDims(geometry, levelIndex){
+   recommended one. Depth is the shelf's, by the same rule fitFor applies
+   (js/catalog.js shelfDepthFor): for a walk-in, geometry.depth is the room,
+   and an item added here used to be capped at 72 inches under a badge that
+   said the shelves were 14. */
+function shelfMaxDims(geometry, levelIndex, archetype){
   const rows=Math.max(1,geometry.shelfCount||1);
-  const usableDepth=Math.max(4,(geometry.depth||14)-0.5);
+  const usableDepth=Math.max(4,shelfDepthFor({w_in:geometry.width, d_in:geometry.depth}, archetype)||(geometry.depth||14));
   const usableWidth=Math.max(4,(geometry.width||30)-1);
   const fracs=Array.isArray(geometry.shelfYFracs)?geometry.shelfYFracs:[];
   // the gap to the level above is the headroom an organizer has to fit under
@@ -450,12 +453,12 @@ function populateAddOrganizer(){
     const type=typeSel.value;
     const idx=Math.max(0,Math.min(rows.length-1,Number(levelSel.value)||0));
     const level=rows[idx];
-    const {geometry}=currentSceneInput();
+    const {geometry,resolved}=currentSceneInput();
     const need={
       type, qty:1,
       purpose:`You added this from the 3D view for the ${(level.lv||'shelf').toLowerCase()}.`,
       targetZone:level.lv||`Level ${idx+1}`,
-      maxDims:shelfMaxDims(geometry,idx),
+      maxDims:shelfMaxDims(geometry,idx,resolved.type),
       priority:'nice',
       addedByUser:true,
     };

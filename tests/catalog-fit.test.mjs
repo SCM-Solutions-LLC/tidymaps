@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fitFor, fitBadge, shelfDepthFor } from '../js/catalog.js';
+import { fitFor, fitBadge, shelfDepthFor, searchLinks, currentArchetype } from '../js/catalog.js';
 import { state } from '../js/state.js';
 
 /* Fit verdicts must respect the TIGHTER of the two constraints: the need's
@@ -71,6 +71,8 @@ test('a room-shaped space is measured as a room, but products sit on its shelves
   assert.equal(fitFor({ dims_in: { w: 10, h: 8, d: 12 } }, need), 'fits');
   assert.match(fitBadge('fits', 'clear-bin').txt, /14" shelf depth/, 'the badge names the shelf, not the room');
   assert.equal(fitBadge('fits', 'label-set').txt, '', 'a label set has no depth to fit');
+  assert.equal(fitBadge('fits', 'safety-latch').txt, '', 'a latch screws to a door; a shelf depth means nothing for it');
+  assert.ok(Math.abs(shelfDepthFor(state.dims, 'walkin-u') - 14.4) < 1e-9, 'an archetype is accepted in place of a setup id');
 
   // The 3D builders draw a 4-foot walk-in with 14-inch shelves (their floor);
   // the matcher has to agree, or the plan's pick is flagged in its own view.
@@ -85,4 +87,35 @@ test('a room-shaped space is measured as a room, but products sit on its shelves
   state.dims = { w_in: 36, h_in: 78, d_in: 18, shelves: null };
   assert.equal(shelfDepthFor(state.dims, 'cabinet'), 18, 'a cabinet\'s measured depth is its shelf depth');
   assert.match(fitBadge('fits', 'clear-bin').txt, /18" shelf depth/);
+});
+
+/* The card and the 3D view have to judge the same bin against the same
+   shelf. The wizard preselects a cabinet for every area and most people leave
+   it, so when the photos show a walk-in the viewer draws 14-inch shelving
+   (resolveLayout) while a fit keyed on state.setup still used the room's 72
+   inches: a 20-inch bin "fit", the badge said 72, and the viewer flagged it. */
+test('the shelf depth follows the layout the 3D view draws, not the preselected setup', () => {
+  state.space = 'pantry';
+  state.setup = 'cabinet'; state.setupTouched = false;
+  state.dims = { w_in: 72, h_in: 96, d_in: 72, shelves: null };
+  state.ai = { layout: { type: 'walkin-u', sections: [] }, map: [] };
+  state.planMeta = { model: 'test', source: 'ai', analyzedAt: 0 };
+  state.arrangement = null;
+  try {
+    assert.equal(currentArchetype(), 'walkin-u');
+    const need = { type: 'clear-bin', maxDims: null };
+    assert.equal(fitFor({ dims_in: { w: 10, h: 8, d: 20 } }, need), 'no-fit', 'a 20-inch bin is judged against the walk-in shelving the viewer draws');
+    assert.match(fitBadge('fits', 'clear-bin').txt, /14" shelf depth/);
+    assert.match(searchLinks(need)[0].url, /max%2014%20inch%20deep/);
+
+    // A layout picked in the 3D view outranks everything there, and so here.
+    state.setup = 'walkin'; state.setupTouched = true;
+    state.arrangement = { layoutOverride: 'shelves' };
+    assert.equal(currentArchetype(), 'shelves');
+    assert.equal(fitFor({ dims_in: { w: 10, h: 8, d: 20 } }, need), 'fits', 'open shelving is as deep as it was measured');
+    assert.match(fitBadge('fits', 'clear-bin').txt, /72" shelf depth/);
+  } finally {
+    state.ai = null; state.planMeta = null; state.arrangement = null;
+    state.setup = 'cabinet'; state.setupTouched = false;
+  }
 });

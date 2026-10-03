@@ -5,7 +5,7 @@ import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
 import { areaFor, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
-import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
+import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, fmtChecked, TYPE_LABEL } from '../catalog.js';
 import { productArt } from '../product-art.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -544,15 +544,6 @@ export async function generateAfter(){
   }
 }
 
-/* The catalog's check date, for the card: "2026-07" reads "Jul 2026" and a
-   full date "Oct 3, 2026". */
-function fmtChecked(s){
-  const [y,m,d]=String(s||'').split('-').map(Number);
-  if(!y||!m) return String(s||'');
-  const month=new Date(Date.UTC(y,m-1,d||1)).toLocaleString('en-US',{month:'short',timeZone:'UTC'});
-  return d?`${month} ${d}, ${y}`:`${month} ${y}`;
-}
-
 // Build (or keep a restored) shopping selection: one entry per product need
 function initShopping(){
   const needs=activeProductNeeds();
@@ -626,6 +617,12 @@ function showUpgradesFailed(){
 }
 
 export function renderUpgrades(){
+  /* "Remove all upgrades" sits outside this list and stays clickable after a
+     catalog load failed, when state.shopping was never reconciled (a saved
+     plan) or is still null (a fresh one). Rows built from a saved selection
+     the catalog never confirmed are the claim this card exists not to make,
+     so the failed state stays up until a load succeeds. */
+  if(catalogFailed() || !Array.isArray(state.shopping)){ showUpgradesFailed(); renderShopping(); return; }
   const needs=activeProductNeeds();
   document.getElementById('res-upgrades').removeAttribute('aria-busy');
   document.getElementById('res-upgrades').innerHTML=needs.map((need,i)=>{
@@ -641,16 +638,22 @@ export function renderUpgrades(){
        product is no longer sold it is the first thing the row needs, so it
        moves up beside the notice. */
     const picker=(options.length>1 || (sel.unavailable && options.length))?`
-      <label class="field" style="margin:10px 0 0"><span>${sel.unavailable?'Pick another':'Swap for a different product'}</span>
-      <select onchange="pickProduct(${i},this.value)" style="padding:9px 11px;font-size:13px">
-        ${sel.unavailable?'<option value="" selected disabled>Choose one</option>':''}${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
+      <label class="field" style="margin:10px 0 0"><span>${sel.unavailable?'Pick another product':'Swap for a different product'}</span>
+      <select onchange="pickProduct(${i},this.value)">
+        ${sel.unavailable?'<option value="" selected disabled>Choose one</option>':''}${options.map(o=>`<option value="${escapeHtml(o.product.id)}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
       </select></label>`:'';
-    const checkedOn=sel.checkedOn?` <span class="pchecked">Checked ${escapeHtml(fmtChecked(sel.checkedOn))}</span>`:'';
+    /* "Listing", not a bare "Checked": the row's first control is the include
+       checkbox, and a bare "Checked Jul 2026" two lines under it reads as the
+       tick's state. */
+    const checkedOn=sel.checkedOn?` <span class="pchecked">Listing checked ${escapeHtml(fmtChecked(sel.checkedOn))}</span>`:'';
     const main=sel.productId?`
       <a class="pname" href="${escapeHtml(withAffiliate(sel.url, sel.retailer))}" target="_blank" rel="${affiliateRel(sel.retailer)}">${escapeHtml(sel.name)}</a>
       <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}${checkedOn}</div>`:
+      /* Status first, then the name: a catalog name is up to 80 characters
+         of commas and inch marks, and "…, 2 Pack, Clear is no longer sold"
+         lands the verb on the wrong noun. */
       sel.unavailable?`
-      <div class="pretail punavailable">${escapeHtml(sel.formerName||'The product we suggested')} is no longer sold.${options.length?'':` Search instead: ${links}`}</div>${picker}`:
+      <div class="pretail punavailable">No longer sold: <span class="pformer">${escapeHtml(sel.formerName||'the product we suggested')}</span>.${options.length?' Pick another below.':` Search instead: ${links}`}</div>${picker}`:
       `<div class="pretail">No exact match in our catalog. Search: ${links}</div>`;
     return `
     <div class="prod${sel.checked?'':' excluded'}">
@@ -673,7 +676,7 @@ export function renderUpgrades(){
             ${need.maxDims?`<span>${SVG.ruler} Max ${fmtIn(need.maxDims.w_in, isMetric())}w × ${fmtIn(need.maxDims.h_in, isMetric())}h × ${fmtIn(need.maxDims.d_in, isMetric())}d</span>`:''}
           </div>
           ${sel.unavailable?'':picker}
-          <div class="small muted" style="margin-top:10px">Search instead: ${links}</div>
+          ${sel.unavailable&&!options.length?'':`<div class="small muted" style="margin-top:10px">Search instead: ${links}</div>`}
         </details>
       </div>
       <span class="cost">${sel.price_usd!=null?'$'+Math.round(sel.price_usd*sel.qty):'–'}</span>
@@ -691,9 +694,14 @@ export function pickProduct(i, productId){
     productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd,
     url:m.product.url, retailer:m.product.retailer, img:m.product.img||null,
     checkedOn:m.product.checked||null, fit:m.fit,
-    dims_in:{...m.product.dims_in}, unavailable:false, formerName:null,
+    dims_in:{...m.product.dims_in}, unavailable:false, formerName:null, formerProductId:null,
   });
   renderUpgrades();
+  // The re-render dropped the select that had focus; put it on the row's
+  // product link, or its checkbox, so a keyboard reader is not sent to the top.
+  const row=document.querySelectorAll('#res-upgrades .prod')[i];
+  const next=row&&(row.querySelector('.pname')||row.querySelector('input'));
+  if(next) next.focus();
   persistShopping();
 }
 
@@ -733,14 +741,14 @@ export function renderShopping(){
   const picked=(state.shopping||[]).filter(s=>s.checked);
   const list=document.getElementById('res-shopping');
   list.innerHTML=picked.length?picked.map(s=>
-    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
+    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}${s.unavailable?' <span class="muted">(pick a product)</span>':''}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
     '<li><span class="muted">No items selected. You\'re on the $0 plan.</span></li>';
   const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
   const unpriced=picked.some(s=>s.price_usd==null);
   document.getElementById('res-shop-total').textContent=(total?'$'+Math.round(total):'$0')+(unpriced?'+':'');
   const asOf=priceAsOf();
   const note=document.getElementById('res-price-asof');
-  if(note) note.textContent=(asOf?`Prices approximate, checked ${asOf}. Links open the retailer's page.`:'')
+  if(note) note.textContent=(asOf?`Prices approximate, checked ${fmtChecked(asOf)}. Links open the retailer's page.`:'')
     +(affiliatesConfigured()?' '+AFFILIATE_DISCLOSURE:'');
 }
 /* Practical, real tips matched to what each step asks the user to do */

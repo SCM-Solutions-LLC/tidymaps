@@ -6,8 +6,11 @@
    - ok           the page loaded and nothing on it says the product is gone
    - unavailable  the page loaded and says so ("Currently unavailable", "Sold out")
    - dead         404 or 410, or a retailer's own "we couldn't find that page"
-   - blocked      a bot wall, a 403/429/503, or an empty body: the page could not
-                  be read, which is not the same as the product being fine
+   - moved        the request ended on another retailer's host (or none), so
+                  whatever loaded is not the listing the catalog links to
+   - blocked      a bot wall, a 403/429/503, an empty or non-HTML body: the
+                  page could not be read, which is not the same as the product
+                  being fine
    - error        the request itself failed (timeout, DNS, reset)
 
    Page scraping is a best effort. A retailer can reword a button, and a
@@ -56,11 +59,18 @@ export function retailerHost(url) {
   }
 }
 
-export function classifyAvailability({ status = 0, body = '', url = '', error = null } = {}) {
+export function classifyAvailability({ status = 0, body = '', url = '', finalUrl = '', contentType = '', error = null } = {}) {
   if (error) return { state: 'error', reason: String(error) };
   if (status === 404 || status === 410) return { state: 'dead', reason: `http ${status}` };
   if (status === 403 || status === 429 || status === 503 || status === 0) return { state: 'blocked', reason: `http ${status}` };
   if (status >= 400) return { state: 'error', reason: `http ${status}` };
+  // Redirects are followed, so the page in hand may not be the retailer's at
+  // all; its wording would then be judged by the wrong phrase table, and a
+  // search page or a parked domain would read "ok".
+  if (finalUrl && retailerHost(finalUrl) !== retailerHost(url)) {
+    return { state: 'moved', reason: `redirected to ${retailerHost(finalUrl) || 'an unknown host'}` };
+  }
+  if (contentType && !/html|xml/i.test(contentType)) return { state: 'blocked', reason: `not a page (${contentType.split(';')[0].trim()})` };
   const text = String(body || '').toLowerCase();
   if (!text.trim()) return { state: 'blocked', reason: 'empty body' };
   const rules = PHRASES[retailerHost(url)] || {};
@@ -76,11 +86,13 @@ export function classifyAvailability({ status = 0, body = '', url = '', error = 
 
 /* The run fails only on products the catalog still calls available: a product
    already marked unavailable is known, and a blocked page is unknown rather
-   than bad. */
+   than bad. A link that no longer lands on the retailer is a failure too: the
+   plan would be sending someone somewhere else. */
+const FAILING = new Set(['dead', 'unavailable', 'moved']);
 export function summarize(results) {
   const counts = {};
   for (const r of results) counts[r.verdict] = (counts[r.verdict] || 0) + 1;
-  const failing = results.filter(r => r.catalogSays === 'available' && (r.verdict === 'dead' || r.verdict === 'unavailable'));
+  const failing = results.filter(r => r.catalogSays === 'available' && FAILING.has(r.verdict));
   const backInStock = results.filter(r => r.catalogSays === 'unavailable' && r.verdict === 'ok');
   return { counts, failing, backInStock };
 }

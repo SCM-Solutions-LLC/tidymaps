@@ -31,6 +31,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        with:
+          # The job only reads third-party pages; nothing here pushes.
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: 22

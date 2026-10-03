@@ -100,6 +100,26 @@ test('a $0 plan exports "nothing to buy" — never the demo pantry list', () => 
   assert.ok(!/snack|can rack|lazy susan/i.test(txt), `pantry demo products leaked into a workbench $0 list:\n${txt}`);
 });
 
+/* A saved plan can point at a product that has since stopped being sold.
+   reconcileSelection then labels the row by its type; the list people send
+   themselves must not tell them to buy the thing the screen says is gone. */
+test('a product nobody can buy is not on the list to buy', () => {
+  state.space = 'pantry';
+  state.dims = null;
+  state.ai = normalizeAi(getDemoScenario('pantry', null, NO_KIDS));
+  const needs = activeProductNeeds();
+  assert.ok(needs.length > 1);
+  state.shopping = needs.map((n, i) => ({
+    needIdx: i, checked: i === 0, qty: 1, type: n.type, productId: null,
+    unavailable: true, formerName: 'Old thing', formerProductId: 'old-thing', name: 'Clear bin', price_usd: null, url: null, retailer: null,
+  }));
+  const txt = shoppingListText();
+  assert.ok(!/Old thing/.test(txt), `the retired product is still on the list:\n${txt}`);
+  assert.match(txt, /1 x Clear bin\n {4}no product picked yet: the one we suggested is no longer sold/);
+  assert.ok(!/Estimated total/.test(txt), 'nothing priced, so no total');
+  state.shopping = null;
+});
+
 test('with no plan at all, the demo needs still back the sample report', () => {
   state.ai = null;
   assert.ok(activeProductNeeds().length > 0);

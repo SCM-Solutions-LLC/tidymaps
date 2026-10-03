@@ -66,8 +66,15 @@ test('the plan draws the product category, hides nothing behind a generic glyph,
   assert.ok(!/SVG\[TYPE_ICON/.test(results), 'the generic type glyph is back on the shopping card');
   assert.match(results, /src="\$\{escapeHtml\(sel\.img\)\}"/, 'the product image URL is interpolated unescaped');
   assert.match(results, /href="\$\{escapeHtml\(withAffiliate\(sel\.url/, 'the product URL is interpolated unescaped');
-  assert.match(results, /catalogFailed\(\)/, 'a catalog that fails to load no longer reaches the failed state');
-  assert.match(js, /available\s*!==\s*false/, 'the library lists products that are no longer sold');
+  // The branch itself, not the name: a comment two lines up mentions the call too.
+  assert.match(results, /if\(catalogFailed\(\)\)\{\s*showUpgradesFailed\(\);\s*return;/, 'a catalog that fails to load no longer reaches the failed state');
+  assert.match(results, /if\(catalogFailed\(\)\s*\|\|\s*!Array\.isArray\(state\.shopping\)\)\{\s*showUpgradesFailed\(\);/,
+    'a re-render after a failed load (say, "Remove all upgrades") builds rows the catalog never confirmed');
+});
+
+test('the library hides products that are no longer sold, in the list and in the category chips', () => {
+  assert.match(js, /catalog\.products\.filter\(p => p\.type === n\.type && p\.available !== false\)/, 'areaBlock lists products that are no longer sold');
+  assert.match(js, /catalog\.products\.filter\(p => p\.available !== false\)\.map\(p => p\.type\)/, 'the type chips offer a category whose only products are gone');
 });
 
 test('every space that asks for a category has products to show for it', () => {

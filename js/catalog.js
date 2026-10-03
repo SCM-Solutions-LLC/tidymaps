@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { withAffiliate } from './affiliates.js';
-import { SETUP_ARCHETYPE } from './layout.js';
+import { SETUP_ARCHETYPE, resolveLayout } from './layout.js';
+import { planFromPhotos } from './planProvenance.js';
 
 /* Dimension-aware product matching against the curated catalog
    (data/catalog.json: real SKUs with cross-referenced dimensions). Every entry
@@ -41,6 +42,15 @@ export function priceAsOf(){
   return newest ? newest.slice(0,7) : (catalog.priceAsOf||'');
 }
 
+/* A check date for people: "2026-07" reads "Jul 2026" and a full date
+   "Oct 3, 2026". Anything else comes back as it was. */
+export function fmtChecked(s){
+  const [y,m,d]=String(s||'').split('-').map(Number);
+  if(!y||!m) return String(s||'');
+  const month=new Date(Date.UTC(y,m-1,d||1)).toLocaleString('en-US',{month:'short',timeZone:'UTC'});
+  return d?`${month} ${d}, ${y}`:`${month} ${y}`;
+}
+
 // Width lost to the carcass sides and the play inside them: two 0.75-inch
 // panels and two inches, matching `usable` in js/three/layouts/*.js.
 export const CARCASS_WIDTH_ALLOWANCE = 3.5;
@@ -53,16 +63,33 @@ export const CARCASS_WIDTH_ALLOWANCE = 3.5;
    the fit note in the 3D view is what a pick is judged by in the end; the
    server's usableShelfDepth (planSchema.js) lacks that floor, which HANDOFF
    records for the server PR. Anything else is a unit whose measured depth is
-   its shelf depth. */
+   its shelf depth. The second argument is a setup id or an archetype. */
 const ROOM_SHELF_FACTOR={'walkin-u':0.2,'l-run':0.22};
-export function shelfDepthFor(dims, setup){
+export function shelfDepthFor(dims, setupOrArchetype){
   const depth=Number(dims && dims.d_in)||0;
   if(!depth) return null;
-  const factor=ROOM_SHELF_FACTOR[SETUP_ARCHETYPE[setup]];
+  const factor=ROOM_SHELF_FACTOR[SETUP_ARCHETYPE[setupOrArchetype]||setupOrArchetype];
   if(!factor) return depth;
   const width=Number(dims && dims.w_in)||depth;
   const smallest=Math.min(width, depth);
-  return Math.max(8, Math.min(18, Math.max(14, smallest*factor), smallest*0.5));
+  return Math.max(14, smallest*factor);
+}
+
+/* The archetype the 3D view draws, resolved the way the viewer resolves it
+   (js/screens/viewer3d.js currentLayout): a layout picked in the viewer, then
+   a setup the user touched, then what the photos showed, then the preselected
+   setup. state.setup alone is not it. The wizard preselects a cabinet for
+   every area and most people leave it, so a walk-in the photos revealed was
+   still judged against the room's 72 inches here while the viewer drew
+   14-inch shelves, and the card and the 3D view disagreed about the same
+   bin. */
+export function currentArchetype(){
+  return resolveLayout({
+    ai: state.ai, setup: state.setup, setupTouched: state.setupTouched,
+    aiFromPhotos: planFromPhotos(), scenarioKey: state.space,
+    override: state.arrangement && state.arrangement.layoutOverride,
+    map: null,
+  }).type;
 }
 
 // Door racks and hook racks mount on a door, wall, or pegboard — outside the
@@ -79,7 +106,7 @@ export function fitFor(product, need){
   // tray on a 9″ shelf was badged "Fits your 9″ shelf depth".
   const md = need.maxDims || {};
   const measured = MOUNTS_OUTSIDE.has(need.type) ? {} : (state.dims || {});
-  const shelfD = shelfDepthFor(measured, state.setup);
+  const shelfD = shelfDepthFor(measured, currentArchetype());
   const tighter = (a, b) => (a && b) ? Math.min(a, b) : (a || b || null);
   const limits={
     // The measured width is the outside of the carcass. Its sides and the
@@ -145,33 +172,45 @@ export function selectionFor(need, needIdx){
    that has since left the catalog, or been marked unavailable, used to come
    back as a live link to a dead listing with its old price in the total.
    Re-read everything about the product from the catalog, and keep only what is
-   the user's: the quantity, the include checkbox, and which need it answers. */
+   the user's: the quantity, the include checkbox, and which need it answers.
+
+   A product that cannot be bought degrades the row to the shape selectionFor
+   gives a need nothing matched (the type's label, no retailer, no price), so
+   the summary list, the exported list and the 3D legend stop naming it; the
+   card keeps `formerName` for its notice. Its id stays as `formerProductId`:
+   "currently unavailable" is often temporary, and a product that comes back
+   is restored on the next load instead of staying "no longer sold" for good. */
 export function reconcileSelection(selection, need, products){
-  const product=(products||[]).find(p=>p.id===selection.productId);
+  const id=selection.productId||selection.formerProductId||null;
+  const product=id?(products||[]).find(p=>p.id===id):null;
   const base={...selection, type:need.type};
   if(product && product.available!==false){
-    delete base.unavailable; delete base.formerName;
+    delete base.unavailable; delete base.formerName; delete base.formerProductId;
     return {
       ...base,
+      productId:product.id,
       name:product.name, price_usd:product.price_usd, url:product.url, retailer:product.retailer,
       img:product.img||null, checkedOn:product.checked||null,
       fit:fitFor(product, need), dims_in:{...product.dims_in},
     };
   }
-  if(!selection.productId) return base; // never had a product: nothing to reconcile
+  if(!id) return base; // never had a product: nothing to reconcile
   return {
     ...base,
-    productId:null, unavailable:true, formerName:selection.formerName||selection.name,
+    productId:null, formerProductId:id, unavailable:true,
+    formerName:selection.formerName||(selection.productId?selection.name:null)||null,
+    name:TYPE_LABEL[need.type]||need.type, retailer:null,
     price_usd:null, url:null, img:null, checkedOn:product?(product.checked||null):null,
     fit:'unknown', dims_in:null,
   };
 }
 
 export function fitBadge(fit, type){
-  // A label set has no size to fit. A rack hangs outside the measured space
-  // (fitFor already says so), so its fit is the plan's own cap, not a depth.
-  if(type==='label-set') return {cls:'', txt:''};
-  const shelf=MOUNTS_OUTSIDE.has(type) ? null : shelfDepthFor(state.dims, state.setup);
+  // A label set has no size to fit, and a safety latch screws to a door or
+  // frame (organizerKinds.js draws neither). A rack hangs outside the measured
+  // space (fitFor already says so), so its fit is the plan's own cap, not a depth.
+  if(type==='label-set' || type==='safety-latch') return {cls:'', txt:''};
+  const shelf=MOUNTS_OUTSIDE.has(type) ? null : shelfDepthFor(state.dims, currentArchetype());
   const depth=shelf ? Math.round(shelf) : null;
   switch(fit){
     case 'fits':   return {cls:'green', txt: depth ? `Fits your ${depth}" shelf depth` : 'Fits the space we detected'};
@@ -207,7 +246,7 @@ export function searchLinks(need){
   let q=TYPE_QUERY[need.type]||need.type;
   // Same rule as fitFor: the search cap is the tighter of the two, so the
   // query can't send someone shopping for a bin deeper than their shelf.
-  const caps=[need.maxDims && need.maxDims.d_in, shelfDepthFor(state.dims, state.setup)].filter(Boolean);
+  const caps=[need.maxDims && need.maxDims.d_in, shelfDepthFor(state.dims, currentArchetype())].filter(Boolean);
   const depth=caps.length?Math.min(...caps):null;
   if(depth) q+=` max ${Math.floor(depth)} inch deep`;
   const enc=encodeURIComponent(q);

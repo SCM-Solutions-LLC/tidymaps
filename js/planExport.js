@@ -110,6 +110,9 @@ export function shoppingListText() {
     return {
       qty,
       label: (sel && sel.name) || need.type,
+      // The product the plan suggested is no longer sold, and reconcileSelection
+      // has already made the label the bare type; say why there is no link.
+      unavailable: !!(sel && sel.unavailable),
       price: sel && sel.price_usd,
       retailer: sel && sel.retailer,
       url: sel && sel.url,
@@ -129,9 +132,11 @@ export function shoppingListText() {
   const metric = isMetric();
   let total = 0;
   rows.forEach((row) => {
-    const price = Number(row.price);
+    // A row with no product has no price, not a price of $0.00.
+    const price = row.price == null ? NaN : Number(row.price);
     if (Number.isFinite(price)) total += price * row.qty;
     lines.push(`${row.qty} x ${row.label}${Number.isFinite(price) ? `  ($${price.toFixed(2)} each)` : ''}`);
+    if (row.unavailable) lines.push('    no product picked yet: the one we suggested is no longer sold');
     if (row.zone) lines.push(`    for: ${row.zone}`);
     if (row.purpose) lines.push(`    ${row.purpose}`);
     if (row.dims && row.dims.w_in) {
