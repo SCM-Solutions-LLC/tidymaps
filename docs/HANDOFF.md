@@ -866,10 +866,15 @@ feature-flagged affiliate tags (`js/affiliates.js`), and since PR #38 a
 browsable product library page (`js/screens/products.js`). Blocked on business,
 not code: deeper SKU curation and real affiliate/associate IDs. Product cards
 draw their category (`js/product-art.js`) because no retailer photo can be
-displayed without an image API (Amazon's needs an approved Associates account)
-or a hotlink that breaks on URL rotation. Opt-in live link checker:
-`npm run check:links` (not in CI — retailer bot-blocking false-fails from
-datacenter IPs).
+displayed without an image API (Amazon's needs an approved Associates account;
+the owner applied 2026-10) or a hotlink that breaks on URL rotation. Since
+2026-10-03 every catalog entry carries `checked`, `available` and `img`; the
+matcher skips unavailable products, a saved plan whose product has gone says
+so, and `scripts/check-product-links.mjs` reads each retailer page for
+"unavailable" wording and runs weekly from
+`.github/workflows/product-availability.yml` (a failed run emails the owner).
+It also runs on deploy in `pages.yml` with `continue-on-error`, because
+datacenter IPs get bot-blocked; the scheduled run is the signal.
 
 ### #6 Share links + photo promise (PR #23) — DEPLOYED
 - Migration `0005_sharing.sql`: unique nullable `spaces.share_id`.
@@ -2897,7 +2902,14 @@ Ordered by whether anyone can act on them today.
 
 7. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in
    `js/affiliates.js`. Every entry is still an empty string, so all 30 catalog
-   products link plain and no disclosure renders.
+   products link plain and no disclosure renders. **Two entries are marked
+   `available:false` and need a hand-picked replacement the owner has checked
+   on the retailer's page** (the sandbox cannot reach amazon.com): the Copco
+   9" turntable (`copco-basics-lazy-susan-9in`, Amazon listed it unavailable
+   2026-10-03) and the Target mDesign 15" bin
+   (`mdesign-open-front-bin-15in-2pk`, 404 on the 2026-10-03 deploy check).
+   Also wanted: a drawer organizer narrower than 12", since the only two are
+   15.5" and 16" wide and no scenario's drawer fits either.
 
 ### Known gap, no owner
 

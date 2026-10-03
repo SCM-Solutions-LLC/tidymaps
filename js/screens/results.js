@@ -5,7 +5,8 @@ import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
 import { areaFor, fmtFt, fmtIn, optionsForHousehold } from '../wizard-data.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
-import { loadCatalog, matchProducts, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
+import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, TYPE_LABEL } from '../catalog.js';
+import { productArt } from '../product-art.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
 import { renderAfter as renderAfterApi, renderAfterErrorMessage, analysisFailureCopy } from '../api.js';
@@ -352,12 +353,12 @@ export function buildResults(){
   // upgrades / shopping — catalog-matched, dimension-aware.
   // The catalog is a separate fetch, so this section is empty until it lands
   // and then N product rows drop in at once. Reserve the space first, and give
-  // the wait an end: loadCatalog swallows its own errors into an empty list, so
-  // without this the section would sit blank under a visible heading forever.
+  // the wait an end: a fetch that fails resolves to an empty catalog with
+  // catalogFailed() set, which is "we could not load it", not "no match".
   setUpgrades(state.upgrades);
   showUpgradesSkeleton();
   loadCatalog()
-    .then(()=>{ initShopping(); renderUpgrades(); })
+    .then(()=>{ if(catalogFailed()){ showUpgradesFailed(); return; } initShopping(); renderUpgrades(); })
     .catch(()=>{ showUpgradesFailed(); });
 
   // photorealistic before/after (only when we have the user's photo)
@@ -543,11 +544,14 @@ export async function generateAfter(){
   }
 }
 
-const TYPE_ICON={
-  'clear-bin':'box','basket':'shoppingBag','turntable':'refreshCw','can-riser':'barChart',
-  'shelf-riser':'trendingUp','door-rack':'layoutGrid','airtight-container':'lock',
-  'drawer-organizer':'columns','hook-rack':'tag','label-set':'tag','safety-latch':'lock',
-};
+/* The catalog's check date, for the card: "2026-07" reads "Jul 2026" and a
+   full date "Oct 3, 2026". */
+function fmtChecked(s){
+  const [y,m,d]=String(s||'').split('-').map(Number);
+  if(!y||!m) return String(s||'');
+  const month=new Date(Date.UTC(y,m-1,d||1)).toLocaleString('en-US',{month:'short',timeZone:'UTC'});
+  return d?`${month} ${d}, ${y}`:`${month} ${y}`;
+}
 
 // Build (or keep a restored) shopping selection: one entry per product need
 function initShopping(){
@@ -555,29 +559,13 @@ function initShopping(){
   const valid=state.shopping && state.shopping.length===needs.length &&
     state.shopping.every(s=>s && typeof s.needIdx==='number');
   if(valid){
-    state.shopping.forEach((selection,i)=>{
-      const need=needs[selection.needIdx]||needs[i];
-      const match=matchProducts(need).find(entry=>entry.product.id===selection.productId);
-      selection.type=need.type;
-      if(match) selection.dims_in={...match.product.dims_in};
-    });
+    /* Re-read each saved product from the catalog. A product that has gone,
+       or been marked unavailable since the plan was saved, used to come back
+       as a live link to a dead listing with its old price in the total. */
+    state.shopping=state.shopping.map((selection,i)=>reconcileSelection(selection, needs[selection.needIdx]||needs[i], catalogProducts()));
     return;
   }
-  state.shopping=needs.map((need,i)=>{
-    const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
-    return {
-      needIdx:i, checked:true, qty:need.qty,
-      type:need.type,
-      productId: top?top.product.id:null,
-      name: top?top.product.name:TYPE_LABEL[need.type],
-      price_usd: top?top.product.price_usd:null,
-      url: top?top.product.url:null,
-      retailer: top?top.product.retailer:null,
-      img: top?(top.product.img||null):null,
-      fit: top?top.fit:'unknown',
-      dims_in:top?{...top.product.dims_in}:null,
-    };
-  });
+  state.shopping=needs.map((need,i)=>selectionFor(need,i));
 }
 
 /* Append a product need the user asked for, keeping state.shopping in step.
@@ -597,20 +585,8 @@ export function addProductNeed(need){
     return false;
   }
   needs.push(need);
-  const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
   state.shopping=state.shopping||[];
-  state.shopping.push({
-    needIdx: needs.length-1, checked:true, qty:need.qty,
-    type:need.type,
-    productId: top?top.product.id:null,
-    name: top?top.product.name:TYPE_LABEL[need.type],
-    price_usd: top?top.product.price_usd:null,
-    url: top?top.product.url:null,
-    retailer: top?top.product.retailer:null,
-    img: top?(top.product.img||null):null,
-    fit: top?top.fit:'unknown',
-    dims_in: top?{...top.product.dims_in}:null,
-  });
+  state.shopping.push(selectionFor(need, needs.length-1));
   if(getSession()) updateSpacePatch({ plan: state.ai, shopping: state.shopping });
   else persistGuestDraft();
   // the cost tile and the list are both downstream of what just changed
@@ -655,25 +631,31 @@ export function renderUpgrades(){
   document.getElementById('res-upgrades').innerHTML=needs.map((need,i)=>{
     const sel=state.shopping[i];
     const options=matchProducts(need).filter(m=>m.fit!=='no-fit').slice(0,4);
-    const badge=fitBadge(sel.fit);
+    const badge=fitBadge(sel.fit, need.type);
     const links=searchLinks(need).map(l=>
-      `<a href="${l.url}" target="_blank" rel="${affiliateRel(l.retailer)}" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
+      `<a href="${escapeHtml(l.url)}" target="_blank" rel="${affiliateRel(l.retailer)}" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
     const img=sel.img
-      ?`<img src="${sel.img}" alt="" loading="lazy" onerror="this.parentElement.classList.add('noimg');this.remove()">`
+      ?`<img src="${escapeHtml(sel.img)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('noimg');this.remove()">`
       :'';
-    const picker=options.length>1?`
-      <label class="field" style="margin:10px 0 0"><span>Swap for a different product</span>
+    /* The picker lives under "Details" while the pick is fine. When the saved
+       product is no longer sold it is the first thing the row needs, so it
+       moves up beside the notice. */
+    const picker=(options.length>1 || (sel.unavailable && options.length))?`
+      <label class="field" style="margin:10px 0 0"><span>${sel.unavailable?'Pick another':'Swap for a different product'}</span>
       <select onchange="pickProduct(${i},this.value)" style="padding:9px 11px;font-size:13px">
-        ${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
+        ${sel.unavailable?'<option value="" selected disabled>Choose one</option>':''}${options.map(o=>`<option value="${o.product.id}" ${o.product.id===sel.productId?'selected':''}>${escapeHtml(o.product.name.length>60?o.product.name.slice(0,57)+'…':o.product.name)} · $${o.product.price_usd}</option>`).join('')}
       </select></label>`:'';
+    const checkedOn=sel.checkedOn?` <span class="pchecked">Checked ${escapeHtml(fmtChecked(sel.checkedOn))}</span>`:'';
     const main=sel.productId?`
-      <a class="pname" href="${withAffiliate(sel.url, sel.retailer)}" target="_blank" rel="${affiliateRel(sel.retailer)}">${escapeHtml(sel.name)}</a>
-      <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}</div>`:
+      <a class="pname" href="${escapeHtml(withAffiliate(sel.url, sel.retailer))}" target="_blank" rel="${affiliateRel(sel.retailer)}">${escapeHtml(sel.name)}</a>
+      <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}${checkedOn}</div>`:
+      sel.unavailable?`
+      <div class="pretail punavailable">${escapeHtml(sel.formerName||'The product we suggested')} is no longer sold.${options.length?'':` Search instead: ${links}`}</div>${picker}`:
       `<div class="pretail">No exact match in our catalog. Search: ${links}</div>`;
     return `
     <div class="prod${sel.checked?'':' excluded'}">
       <label class="pcheck"><input type="checkbox" ${sel.checked?'checked':''} onchange="toggleUpgrade(${i})" aria-label="Include ${escapeHtml(TYPE_LABEL[need.type])} in shopping list"></label>
-      <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${SVG[TYPE_ICON[need.type]]||SVG.box}</span></span>
+      <span class="pic${img?'':' noimg'}">${img}<span class="pic-ico">${productArt(need.type)}</span></span>
       <div>
         <h3>${need.qty>1?need.qty+' × ':''}${escapeHtml(TYPE_LABEL[need.type])}${
           /* Everything else in this list is what the model recommended from the
@@ -690,7 +672,7 @@ export function renderUpgrades(){
             <span>${SVG.mapPin} ${escapeHtml(need.targetZone||'Anywhere')}</span>
             ${need.maxDims?`<span>${SVG.ruler} Max ${fmtIn(need.maxDims.w_in, isMetric())}w × ${fmtIn(need.maxDims.h_in, isMetric())}h × ${fmtIn(need.maxDims.d_in, isMetric())}d</span>`:''}
           </div>
-          ${picker}
+          ${sel.unavailable?'':picker}
           <div class="small muted" style="margin-top:10px">Search instead: ${links}</div>
         </details>
       </div>
@@ -707,8 +689,9 @@ export function pickProduct(i, productId){
   Object.assign(state.shopping[i],{
     type:need.type,
     productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd,
-    url:m.product.url, retailer:m.product.retailer, img:m.product.img||null, fit:m.fit,
-    dims_in:{...m.product.dims_in},
+    url:m.product.url, retailer:m.product.retailer, img:m.product.img||null,
+    checkedOn:m.product.checked||null, fit:m.fit,
+    dims_in:{...m.product.dims_in}, unavailable:false, formerName:null,
   });
   renderUpgrades();
   persistShopping();

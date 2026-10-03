@@ -1,14 +1,15 @@
 /* ============================================================
    Product illustrations — one per catalog category.
 
-   The catalog carries an optional `img` (a real retailer photo). Almost
-   nothing in it does yet: displaying retailer photography means either an
-   affiliate image API (Amazon's requires an approved Associates account —
-   deliberately not applied for yet) or hotlinking, which breaks the moment a
-   retailer rotates a URL. So a card falls back to the drawing for its
-   category, in the same elevation voice as the wizard's space and setup
-   cards. It shows the shape of the thing without pretending to be a photo of
-   this exact SKU, and a real `img` takes over automatically when one exists.
+   The catalog carries an `img` field (a real retailer photo), null on every
+   entry so far: displaying retailer photography means either an affiliate
+   image API (Amazon's requires an approved Associates account, which the owner
+   applied for in October 2026) or hotlinking, which breaks the moment a
+   retailer rotates a URL. So a card, in the plan's shopping list as well as
+   the library, falls back to the drawing for its category, in the same
+   elevation voice as the wizard's space and setup cards. It shows the shape
+   of the thing without pretending to be a photo of this exact SKU, and a real
+   `img` takes over automatically when one exists.
    ============================================================ */
 
 const T = '#f0fae1'; // the tint, via css/components.css

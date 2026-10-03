@@ -1,0 +1,47 @@
+# Are the products the plans link to still for sale?
+#
+# The catalog is a hand-curated file. A product in it can be discontinued
+# without the file changing, and the plan keeps recommending it: that is how
+# the owner came to pick a turntable from a plan on 2026-10-03 and find Amazon
+# listing it as unavailable, while the deploy-time link check had reported the
+# same page "ok 200" that morning (it only looked at the status code).
+#
+# The signal is this workflow failing. GitHub emails the repo owner on a failed
+# scheduled run, the same mechanism the model-path canary relies on. The run
+# fails only when a product the catalog still calls available comes back dead
+# or unavailable; a bot-blocked page is reported as unknown, not as a failure.
+# A person then confirms on the retailer's page and flips `available` (and
+# sets `checked`) in data/catalog.json.
+#
+# Weekly rather than daily: retailer pages do not change by the hour, and
+# every run is a request to five retailers from a datacenter IP.
+name: Product availability
+on:
+  schedule:
+    # 06:41 UTC on Tuesdays. Off the hour so it does not queue behind every
+    # other repository's :00 schedule.
+    - cron: '41 6 * * 2'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # Thirty pages at a 20s timeout each is ten minutes at the very worst.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      # No `npm ci`: the script imports only node builtins and its sibling
+      # module, so there is nothing to install and nothing to break.
+      - name: Check every catalog product page
+        run: node scripts/check-product-links.mjs --report="$RUNNER_TEMP/product-availability.json"
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: product-availability
+          path: ${{ runner.temp }}/product-availability.json
+          retention-days: 90

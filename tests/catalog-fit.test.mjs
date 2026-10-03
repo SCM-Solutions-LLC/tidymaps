@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fitFor } from '../js/catalog.js';
+import { fitFor, fitBadge, shelfDepthFor } from '../js/catalog.js';
 import { state } from '../js/state.js';
 
 /* Fit verdicts must respect the TIGHTER of the two constraints: the need's
@@ -55,4 +55,25 @@ test('everything that sits INSIDE the space is still capped by the measurement',
   assert.equal(fitFor({ dims_in: { w: 10, h: 6, d: 12.9 } },
     { type: 'drawer-organizer', maxDims: { w_in: 12, h_in: 18, d_in: 18 } }), 'no-fit',
     'the original bug: a stale maxDims must not outrank a smaller measured depth');
+});
+
+/* A walk-in or L-shaped space is measured as a room: 72 inches of floor. Its
+   shelving is 14 to 18 inches deep (the 3D builders and the server's
+   usableShelfDepth agree on the formula), so judging a bin against the room
+   called a 20-inch bin a fit and badged every product "Fits your 72" shelf
+   depth", label sets included. */
+test('a room-shaped space is measured as a room, but products sit on its shelves', () => {
+  state.dims = { w_in: 72, h_in: 96, d_in: 72, shelves: null };
+  state.setup = 'walkin';
+  assert.ok(Math.abs(shelfDepthFor(state.dims, 'walkin') - 14.4) < 1e-9, 'a 72-inch walk-in has 14.4-inch shelving');
+  const need = { type: 'clear-bin', maxDims: null };
+  assert.equal(fitFor({ dims_in: { w: 10, h: 8, d: 20 } }, need), 'no-fit', 'a 20-inch bin does not fit 14-inch shelving');
+  assert.equal(fitFor({ dims_in: { w: 10, h: 8, d: 12 } }, need), 'fits');
+  assert.match(fitBadge('fits', 'clear-bin').txt, /14" shelf depth/, 'the badge names the shelf, not the room');
+  assert.equal(fitBadge('fits', 'label-set').txt, '', 'a label set has no depth to fit');
+
+  state.setup = 'cabinet';
+  state.dims = { w_in: 36, h_in: 78, d_in: 18, shelves: null };
+  assert.equal(shelfDepthFor(state.dims, 'cabinet'), 18, 'a cabinet\'s measured depth is its shelf depth');
+  assert.match(fitBadge('fits', 'clear-bin').txt, /18" shelf depth/);
 });

@@ -1,25 +1,71 @@
 import { state } from './state.js';
 import { withAffiliate } from './affiliates.js';
+import { SETUP_ARCHETYPE } from './layout.js';
 
 /* Dimension-aware product matching against the curated catalog
-   (data/catalog.json — real SKUs with cross-referenced dimensions). */
+   (data/catalog.json: real SKUs with cross-referenced dimensions). Every entry
+   also carries `checked` (when a person last looked at the listing),
+   `available` (whether it could still be bought then) and `img` (null until a
+   licensed photo exists). The matcher never offers a product marked
+   unavailable; a weekly workflow reads each retailer page and asks a person to
+   flip the flag when a listing goes (scripts/check-product-links.mjs). */
 
 let catalog=null;
+let loadFailed=false;
 export async function loadCatalog(){
   if(catalog) return catalog;
   try{
     const res=await fetch('data/catalog.json');
+    if(res && res.ok===false) throw new Error(`catalog ${res.status}`);
     catalog=await res.json();
+    loadFailed=false;
   }catch(_){
-    catalog={version:0, priceAsOf:'', products:[]};
+    /* Say so, and leave the cache empty so the next screen tries again. A
+       failed fetch used to be cached as an empty catalog, and every product
+       row then read "No exact match in our catalog" for the rest of the
+       session, which is a different claim from "we could not load it". */
+    loadFailed=true;
+    return {version:0, priceAsOf:'', products:[]};
   }
   return catalog;
 }
-export function priceAsOf(){ return catalog ? catalog.priceAsOf : ''; }
+export function catalogFailed(){ return loadFailed; }
+export function catalogProducts(){ return catalog ? (catalog.products||[]) : []; }
+
+/* The newest `checked` among the products still on offer, as a month. The
+   catalog-wide `priceAsOf` is the fallback for a file that predates per-product
+   checks. */
+export function priceAsOf(){
+  if(!catalog) return '';
+  const newest=catalogProducts().filter(p=>p.available!==false).map(p=>String(p.checked||'')).filter(Boolean).sort().pop();
+  return newest ? newest.slice(0,7) : (catalog.priceAsOf||'');
+}
 
 // Width lost to the carcass sides and the play inside them: two 0.75-inch
 // panels and two inches, matching `usable` in js/three/layouts/*.js.
 export const CARCASS_WIDTH_ALLOWANCE = 3.5;
+
+/* Room-shaped setups (walk-ins, L-shapes) are measured as a room: the depth
+   is floor, not shelf, so judging a bin against it called a 20-inch bin a fit
+   and badged every product "Fits your 72" shelf depth". Their shelving is 14
+   to 18 inches deep; the formula is the one the 3D builders
+   (js/three/layouts/walkin-u.js, l-run.js) and the server's usableShelfDepth
+   (planSchema.js) use, so the three never disagree. Anything else is a unit
+   whose measured depth is its shelf depth. */
+const ROOM_SHELF_FACTOR={'walkin-u':0.2,'l-run':0.22};
+export function shelfDepthFor(dims, setup){
+  const depth=Number(dims && dims.d_in)||0;
+  if(!depth) return null;
+  const factor=ROOM_SHELF_FACTOR[SETUP_ARCHETYPE[setup]];
+  if(!factor) return depth;
+  const width=Number(dims && dims.w_in)||depth;
+  return Math.max(8, Math.min(18, Math.min(width, depth)*factor));
+}
+
+// Door racks and hook racks mount on a door, wall, or pegboard — outside the
+// measured carcass — so the enclosure never bounds them. Measuring a 36″
+// closet must not rule out a 41″ hook rail for the wall beside it.
+const MOUNTS_OUTSIDE = new Set(['door-rack', 'hook-rack']);
 
 // Fit verdicts: 'fits' (≥0.5in clearance on every known axis), 'tight'
 // (positive but <0.5in), 'no-fit', or 'unknown' when nothing is measurable.
@@ -28,13 +74,9 @@ export function fitFor(product, need){
   // maxDims (where the plan wants it to sit) AND the user's measured space.
   // maxDims used to override a smaller measured depth outright, so a 12.9″
   // tray on a 9″ shelf was badged "Fits your 9″ shelf depth".
-  //
-  // Door racks and hook racks mount on a door, wall, or pegboard — outside
-  // the measured carcass — so the enclosure never bounds them. Measuring a
-  // 36″ closet must not rule out a 41″ hook rail for the wall beside it.
-  const MOUNTS_OUTSIDE = new Set(['door-rack', 'hook-rack']);
   const md = need.maxDims || {};
   const measured = MOUNTS_OUTSIDE.has(need.type) ? {} : (state.dims || {});
+  const shelfD = shelfDepthFor(measured, state.setup);
   const tighter = (a, b) => (a && b) ? Math.min(a, b) : (a || b || null);
   const limits={
     // The measured width is the outside of the carcass. Its sides and the
@@ -43,7 +85,7 @@ export function fitFor(product, need){
     // 16-inch tray fits the 14.5 inches its drawers actually have.
     w: tighter(md.w_in, measured.w_in ? measured.w_in-CARCASS_WIDTH_ALLOWANCE : null),
     h: tighter(md.h_in, measured.h_in),
-    d: tighter(md.d_in, measured.d_in ? measured.d_in-0.5 : null),
+    d: tighter(md.d_in, shelfD ? shelfD-0.5 : null),
   };
   let margin=Infinity, known=false;
   for(const axis of ['w','h','d']){
@@ -57,17 +99,71 @@ export function fitFor(product, need){
   return margin>=0.5 ? 'fits' : 'tight';
 }
 
-export function matchProducts(need){
-  if(!catalog) return [];
+/* Products of the need's type that can still be bought, best fit first and
+   cheapest within a fit. Pure, so the test suite can hand it a catalog. */
+export function rankProducts(products, need){
   const order={fits:0, tight:1, unknown:2, 'no-fit':3};
-  return catalog.products
-    .filter(p=>p.type===need.type)
+  return (products||[])
+    .filter(p=>p.type===need.type && p.available!==false)
     .map(p=>({product:p, fit:fitFor(p, need)}))
     .sort((a,b)=>(order[a.fit]-order[b.fit]) || (a.product.price_usd-b.product.price_usd));
 }
+export function matchProducts(need){
+  return catalog ? rankProducts(catalog.products, need) : [];
+}
 
-export function fitBadge(fit){
-  const depth=state.dims && state.dims.d_in;
+/* One shopping-list entry for a need: the best product that is not a misfit,
+   or the bare type when nothing fits. `checked` is the include checkbox and
+   `checkedOn` the catalog's check date; the two are different things. */
+export function selectionFor(need, needIdx){
+  const top=matchProducts(need).filter(m=>m.fit!=='no-fit')[0];
+  return {
+    needIdx, checked:true, qty:need.qty,
+    type:need.type,
+    productId: top?top.product.id:null,
+    name: top?top.product.name:TYPE_LABEL[need.type],
+    price_usd: top?top.product.price_usd:null,
+    url: top?top.product.url:null,
+    retailer: top?top.product.retailer:null,
+    img: top?(top.product.img||null):null,
+    checkedOn: top?(top.product.checked||null):null,
+    fit: top?top.fit:'unknown',
+    dims_in: top?{...top.product.dims_in}:null,
+  };
+}
+
+/* A saved plan stores the product it picked (`spaces.shopping`), so a product
+   that has since left the catalog, or been marked unavailable, used to come
+   back as a live link to a dead listing with its old price in the total.
+   Re-read everything about the product from the catalog, and keep only what is
+   the user's: the quantity, the include checkbox, and which need it answers. */
+export function reconcileSelection(selection, need, products){
+  const product=(products||[]).find(p=>p.id===selection.productId);
+  const base={...selection, type:need.type};
+  if(product && product.available!==false){
+    delete base.unavailable; delete base.formerName;
+    return {
+      ...base,
+      name:product.name, price_usd:product.price_usd, url:product.url, retailer:product.retailer,
+      img:product.img||null, checkedOn:product.checked||null,
+      fit:fitFor(product, need), dims_in:{...product.dims_in},
+    };
+  }
+  if(!selection.productId) return base; // never had a product: nothing to reconcile
+  return {
+    ...base,
+    productId:null, unavailable:true, formerName:selection.formerName||selection.name,
+    price_usd:null, url:null, img:null, checkedOn:product?(product.checked||null):null,
+    fit:'unknown', dims_in:null,
+  };
+}
+
+export function fitBadge(fit, type){
+  // A label set has no size to fit. A rack hangs outside the measured space
+  // (fitFor already says so), so its fit is the plan's own cap, not a depth.
+  if(type==='label-set') return {cls:'', txt:''};
+  const shelf=MOUNTS_OUTSIDE.has(type) ? null : shelfDepthFor(state.dims, state.setup);
+  const depth=shelf ? Math.round(shelf) : null;
   switch(fit){
     case 'fits':   return {cls:'green', txt: depth ? `Fits your ${depth}" shelf depth` : 'Fits the space we detected'};
     // "check this" and "this will not fit" are different answers and no longer
@@ -102,7 +198,7 @@ export function searchLinks(need){
   let q=TYPE_QUERY[need.type]||need.type;
   // Same rule as fitFor: the search cap is the tighter of the two, so the
   // query can't send someone shopping for a bin deeper than their shelf.
-  const caps=[need.maxDims && need.maxDims.d_in, state.dims && state.dims.d_in].filter(Boolean);
+  const caps=[need.maxDims && need.maxDims.d_in, shelfDepthFor(state.dims, state.setup)].filter(Boolean);
   const depth=caps.length?Math.min(...caps):null;
   if(depth) q+=` max ${Math.floor(depth)} inch deep`;
   const enc=encodeURIComponent(q);

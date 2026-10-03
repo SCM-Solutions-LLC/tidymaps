@@ -48,8 +48,30 @@ test('a real product photo takes over when the catalog has one', () => {
   assert.match(js, /onerror=[^>]*has-photo/, 'a broken photo no longer falls back to the drawing');
 });
 
+/* A plan that links to a listing nobody can buy from loses the reader's trust
+   in every other suggestion. Each product says when it was last looked at and
+   whether it was still sold; the matcher skips the ones that were not. */
+test('every product records when it was last checked and whether it is still sold', () => {
+  for (const p of catalog.products) {
+    assert.match(String(p.checked), /^\d{4}-\d{2}(-\d{2})?$/, `${p.id}: no checked date`);
+    assert.equal(typeof p.available, 'boolean', `${p.id}: no available flag`);
+    assert.ok('img' in p, `${p.id}: no img field (null until a licensed photo exists)`);
+    if (p.img != null) assert.match(p.img, /^https:\/\//, `${p.id}: img is not an https URL`);
+  }
+});
+
+test('the plan draws the product category, hides nothing behind a generic glyph, and escapes catalog URLs', () => {
+  const results = readFileSync(new URL('../js/screens/results.js', import.meta.url), 'utf8');
+  assert.match(results, /productArt\(need\.type\)/, 'the shopping card no longer draws the category');
+  assert.ok(!/SVG\[TYPE_ICON/.test(results), 'the generic type glyph is back on the shopping card');
+  assert.match(results, /src="\$\{escapeHtml\(sel\.img\)\}"/, 'the product image URL is interpolated unescaped');
+  assert.match(results, /href="\$\{escapeHtml\(withAffiliate\(sel\.url/, 'the product URL is interpolated unescaped');
+  assert.match(results, /catalogFailed\(\)/, 'a catalog that fails to load no longer reaches the failed state');
+  assert.match(js, /available\s*!==\s*false/, 'the library lists products that are no longer sold');
+});
+
 test('every space that asks for a category has products to show for it', () => {
-  const stocked = new Set(catalog.products.map(p => p.type));
+  const stocked = new Set(catalog.products.filter(p => p.available !== false).map(p => p.type));
   const gaps = [];
   for (const id of AREA_IDS) {
     for (const type of typesFor(id)) if (!stocked.has(type)) gaps.push(`${id}:${type}`);
