@@ -6,6 +6,7 @@ import { backendConfigured } from '../config.js';
 import { analyzeSpace } from '../api.js';
 import { fileToScaledB64, extractVideoFrames, formatTime } from '../media.js';
 import { normalizeAi, buildAnalysisContext } from '../plan.js';
+import { citeGoals } from '../personalize.js';
 import { go, getCurrentScreen } from '../router.js';
 import { autoSaveSpace } from '../db.js';
 import { syncCategoriesToResults } from './results.js';
@@ -230,6 +231,13 @@ export function runLoading(){
         map: plan && plan.map,
       });
       enforceArchetypeHonesty(plan, drawn.type);
+      /* The model names, per step, which of the user's goals it answers. That
+         is a claim about the user, so it is checked against the goals they
+         actually gave before it becomes a "You told us" on the step's face;
+         a goal the model made up stays uncited. Also before normalizing: the
+         check reads the raw `goal` field, and normalizeAi carries `cite`
+         through to the report. */
+      citeGoals(plan, state.goals || []);
       if(!isCurrent()) return;   // superseded mid-flight: this plan is for answers that changed
       run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() } };
     })().catch(e=>{

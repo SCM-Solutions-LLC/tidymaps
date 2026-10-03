@@ -30,7 +30,11 @@
 /* ---------- Level templates, in top-to-bottom (or front-to-back) order ----------
    `surface` uses the plan contract's vocabulary (see SURFACES in layout.js
    and the analyze-space schema): shelf | rod | drawer | floor | door |
-   pegboard | worktop. `icon` is a raw keyword; iconFor() resolves it. */
+   pegboard | worktop. `icon` is a raw keyword; iconFor() resolves it.
+   `wall` (left | back | right | front | floor) is set only on the templates
+   that model more than one run of shelving; projectOntoArchetype copies it
+   onto the row and numbers the rows down each wall as `tier`. Single-unit
+   templates leave it off, and their rows carry neither field. */
 /* `role` is what the level is FOR. When two scenario rows merge into one
    slot their rationales cannot simply be concatenated — the sentences argue
    from the height they used to sit at, so a ceiling rack ended up explaining
@@ -65,21 +69,27 @@ export const ARCHETYPE_LEVELS = {
     { level: 'Lower shelf', icon: 'down', surface: 'shelf', role: 'low' },
     { level: 'Door rack', icon: 'door', surface: 'door', role: 'door' },
   ],
+  // The long run is the back wall and the short run the right; the corner
+  // shelf belongs to the back wall it hangs off.
   'l-run': [
-    { level: 'Long run: upper shelf', icon: 'up', surface: 'shelf', role: 'high' },
-    { level: 'Long run: eye level', icon: 'eye', surface: 'shelf', eye: true, role: 'reach' },
-    { level: 'Long run: lower shelf', icon: 'down', surface: 'shelf', role: 'low' },
-    { level: 'Corner: deep shelf', icon: 'middle', surface: 'shelf', role: 'mid' },
-    { level: 'Short run: upper shelf', icon: 'up', surface: 'shelf', role: 'high' },
-    { level: 'Short run: lower shelf', icon: 'down', surface: 'shelf', role: 'low' },
+    { level: 'Long run: upper shelf', icon: 'up', surface: 'shelf', role: 'high', wall: 'back' },
+    { level: 'Long run: eye level', icon: 'eye', surface: 'shelf', eye: true, role: 'reach', wall: 'back' },
+    { level: 'Long run: lower shelf', icon: 'down', surface: 'shelf', role: 'low', wall: 'back' },
+    { level: 'Corner: deep shelf', icon: 'middle', surface: 'shelf', role: 'mid', wall: 'back' },
+    { level: 'Short run: upper shelf', icon: 'up', surface: 'shelf', role: 'high', wall: 'right' },
+    { level: 'Short run: lower shelf', icon: 'down', surface: 'shelf', role: 'low', wall: 'right' },
   ],
+  /* Two of these rows are called eye level, and they are both eye rows:
+     each wall the user faces has one. The back wall's used to carry a
+     "middle" icon and no flag, so the report drew the same height as a
+     reachable shelf on one wall and a middle shelf on the next. */
   'walkin-u': [
-    { level: 'Left wall: high shelf', icon: 'up', surface: 'shelf', role: 'high' },
-    { level: 'Left wall: eye level', icon: 'eye', surface: 'shelf', eye: true, role: 'reach' },
-    { level: 'Back wall: eye level', icon: 'middle', surface: 'shelf', role: 'mid' },
-    { level: 'Back wall: lower shelves', icon: 'down', surface: 'shelf', role: 'low' },
-    { level: 'Right wall: full run', icon: 'side', surface: 'shelf', role: 'mid' },
-    { level: 'Floor: full run', icon: 'down', surface: 'floor', role: 'floor' },
+    { level: 'Left wall: high shelf', icon: 'up', surface: 'shelf', role: 'high', wall: 'left' },
+    { level: 'Left wall: eye level', icon: 'eye', surface: 'shelf', eye: true, role: 'reach', wall: 'left' },
+    { level: 'Back wall: eye level', icon: 'eye', surface: 'shelf', eye: true, role: 'reach', wall: 'back' },
+    { level: 'Back wall: lower shelves', icon: 'down', surface: 'shelf', role: 'low', wall: 'back' },
+    { level: 'Right wall: full run', icon: 'side', surface: 'shelf', role: 'mid', wall: 'right' },
+    { level: 'Floor: full run', icon: 'down', surface: 'floor', role: 'floor', wall: 'floor' },
   ],
   'closet-rod': [
     { level: 'Top shelf', icon: 'up', surface: 'shelf', role: 'high' },
@@ -154,11 +164,11 @@ export const ARCHETYPE_LEVELS = {
 export const ARCHETYPE_LEVELS_FOR_SOURCE = {
   'l-run': {
     'closet-rod': [
-      { level: 'Long run: top shelf', icon: 'up', surface: 'shelf', role: 'high' },
-      { level: 'Long run: hanging rod', icon: 'rod', surface: 'rod', eye: true, role: 'rod' },
-      { level: 'Corner: deep shelf', icon: 'middle', surface: 'shelf', role: 'mid' },
-      { level: 'Short run: hanging rod', icon: 'rod', surface: 'rod', role: 'rod' },
-      { level: 'Floor / corner', icon: 'down', surface: 'floor', role: 'floor' },
+      { level: 'Long run: top shelf', icon: 'up', surface: 'shelf', role: 'high', wall: 'back' },
+      { level: 'Long run: hanging rod', icon: 'rod', surface: 'rod', eye: true, role: 'rod', wall: 'back' },
+      { level: 'Corner: deep shelf', icon: 'middle', surface: 'shelf', role: 'mid', wall: 'back' },
+      { level: 'Short run: hanging rod', icon: 'rod', surface: 'rod', role: 'rod', wall: 'right' },
+      { level: 'Floor / corner', icon: 'down', surface: 'floor', role: 'floor', wall: 'floor' },
     ],
   },
 };
@@ -614,6 +624,8 @@ function applyContentRules(plan, archetype) {
   // A level with nothing left in it is not a level.
   plan.map = plan.map.filter(m => m.zone && m.zone.trim() && (m.items || []).length);
   plan.map.forEach((m, i) => { m.shelfIndex = i; });
+  // A plan needs at least one eye row. If the rule dropped the level that
+  // carried it, the top surviving level takes it.
   if (!plan.map.some(m => m.eye) && plan.map.length) plan.map[0].eye = true;
   plan.geometry = { ...(plan.geometry || {}), shelfCount: plan.map.length };
   // The category chips render from plan.categories, so leaving the excluded
@@ -672,8 +684,11 @@ function levelsFor(archetype, setupId, sourceArchetype) {
   // "Built-in + drawers" closet keeps its drawer bank, and a shallow wall
   // cabinet stops filing large items on a door rack it may not have.
   const slots = template.slice(0, n).map(l => ({ ...l }));
-  // Exactly one eye-level row is a plan-contract invariant; if truncation
-  // removed the template's, promote the most reachable remaining slot.
+  // The plan contract wants at least one eye-level row per plan and at most
+  // one per wall (a walk-in marks one on each wall it shelves; rows with no
+  // wall count as one). The templates satisfy the per-wall half themselves;
+  // if truncation removed the eye row, promote the most reachable remaining
+  // slot so the per-plan half holds too.
   if (!slots.some(s => s.eye)) slots[Math.min(1, slots.length - 1)].eye = true;
   return slots;
 }
@@ -807,6 +822,12 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
   const rewrite = (t) => rewriteForSurfaces(t, archetype);
   const slots = levelsFor(archetype, setupId, opts.sourceArchetype);
   const buckets = bucketRows(plan.map, slots);
+  // How far down its wall each row sits, 0 being that wall's top shelf.
+  // Counted over the rows that made it into the plan rather than over the
+  // template, so the tiers on a wall stay contiguous when a slot came out
+  // empty and was dropped, the same way shelfIndex is renumbered below.
+  const tiers = new Map();
+  const tierOn = (wall) => { const t = tiers.get(wall) || 0; tiers.set(wall, t + 1); return t; };
 
   plan.map = buckets.map(({ slot, rows }, i) => {
     const base = rows[0];
@@ -849,6 +870,10 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
       // have to guess it back from the name.
       role: slot.role,
       shelfIndex: i,
+      // Which wall, and how far down it. Only the multi-wall templates say;
+      // a single unit's rows carry neither field, and the report keys its
+      // wall chapters on the field being present, so absent is not null.
+      ...(slot.wall ? { wall: slot.wall, tier: tierOn(slot.wall) } : {}),
     };
   });
 

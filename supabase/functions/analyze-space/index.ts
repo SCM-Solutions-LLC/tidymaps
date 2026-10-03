@@ -75,7 +75,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   }],
   "layout": {                                  // optional: classify the overall physical layout
     "type": "shelves"|"cabinet"|"l-run"|"walkin-u"|"closet-rod"|"drawer-bank"|"closet-system"|"under-bed"|"under-sink"|"counter"|"garage-rack"|"overhead-rack"|"workbench"|"fridge",
-    "sections": [{"id": string, "label": string, "place": "left"|"back"|"right"|"upper"|"lower"|"run-a"|"run-b"|"floor"|"bench"|"wall", "rows": [number]}]  // optional: for multi-wall or multi-section spaces, group map rows by physical section. Each shelfIndex appears in at most one section.
+    "sections": [{"id": string, "label": string, "place": "left"|"back"|"right"|"front"|"upper"|"lower"|"run-a"|"run-b"|"floor"|"bench"|"wall", "rows": [number]}]  // optional: for multi-wall or multi-section spaces, group map rows by physical section. Each shelfIndex appears in at most one section.
   } | null,                                    // null if the layout type is unclear from the photos
   "geometry": {                                // estimate from the photos if the user gave no dimensions
     "unit": "in", "width": number, "height": number, "depth": number,

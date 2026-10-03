@@ -17,9 +17,12 @@
 import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
   KID_AGES, MOBILITY_NEEDS, PET_TYPES, EFFORT_OPTS, SHOPPING_OPTS,
-  roomFor, areaFor, goalIdFor, prefsForStyles, optionsForHousehold,
-  fmtFt, measureSummary, art,
+  roomFor, areaFor, goalIdFor, mergePrefs, optionsForHousehold,
+  fmtFt, measureSummary, art, HOME_CONSTRAINTS,
 } from '../wizard-data.js';
+/* The constant moved to wizard-data.js so the pure merge can read it; the
+   screen stays the import path everything else learned. */
+export { HOME_CONSTRAINTS };
 import { state, resetPlanRecord, clearGuestMedia, isMetric, setUnits, UNITS, householdAnswered } from '../state.js';
 import { escapeHtml } from '../ui.js';
 import { updateGate } from '../router.js';
@@ -105,7 +108,16 @@ function syncDims(){
    through the existing preference vocabulary; raw labels also travel in the
    analysis context for the AI path. */
 export function recomputePrefs(){
-  const prefs = prefsForStyles(state.styles);
+  /* The Set itself is built in wizard-data.js mergePrefs, which also carries
+     forward the household step's home-limit chips. This function used to start
+     from an empty Set, so tapping a style or shopping card after the household
+     step silently dropped "Nothing drilled or mounted": the chip still showed
+     selected on the way back and review still listed it, but the plan named a
+     pegboard zone. Only the budget and upgrades side effects stay here. */
+  const prefs = mergePrefs({
+    styles: state.styles, shoppingPref: state.shoppingPref,
+    shoppingTouched: state.shoppingTouched, previous: state.prefs,
+  });
   if(!state.shoppingTouched){
     /* Nobody has answered the shopping step yet, so neither constraint is
        theirs to apply.
@@ -129,11 +141,9 @@ export function recomputePrefs(){
     if(state.budget === '$0') state.budget = null;
     state.upgrades = true;
   }else if(state.shoppingPref === 'Use what I have'){
-    prefs.add('Use only what I already own');
     state.budget = '$0';
     state.upgrades = false;
   }else{
-    prefs.add('Open to buying storage');
     if(state.budget === '$0') state.budget = null;
     state.upgrades = true;
   }
@@ -535,15 +545,10 @@ function renderMobility(){
   renderChipPicker('mobility-chips', MOBILITY_NEEDS, () => h.mobility);
 }
 
-/* Home constraints. Each chip is a preference the plan engine already handles —
-   the behaviour was live and unreachable, because the questions that used to
-   set it were removed and no style can derive it. Writing straight into
-   state.prefs is what makes it reach both paths: the deterministic engine reads
-   prefs, and buildAnalysisContext forwards them to the model. */
-export const HOME_CONSTRAINTS = [
-  ['Nothing drilled or mounted', 'No drilling or permanent installation'],
-];
-
+/* Home constraints (HOME_CONSTRAINTS, in wizard-data.js). Each chip writes
+   straight into state.prefs, which is what makes it reach both paths: the
+   deterministic engine reads prefs, and buildAnalysisContext forwards them to
+   the model. */
 function renderConstraints(){
   const wrap = document.getElementById('constraint-chips');
   if(!wrap) return;

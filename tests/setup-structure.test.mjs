@@ -48,7 +48,9 @@ function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping =
   // Takes the effort from the caller. Hardcoding it here silently defeated
   // the sweep below, which set state.effort and then had it overwritten —
   // "33 setups x 3 efforts" was really one label run three times.
-  state.effort = effort; state.household = household;
+  // Marked as chosen: an untouched effort now grows a plan only to the floor
+  // of its range (applyEffort), and these plans model answers the user gave.
+  state.effort = effort; state.effortTouched = true; state.household = household;
   return normalizeAi(getDemoScenario(scenarioKeyFor(space, id), null, household, buildAnalysisContext(), id));
 }
 
@@ -140,14 +142,36 @@ test('the setups whose scenario already fits are left alone', () => {
   assert.ok(p.map.some(m => m.surface === 'rod'), 'a walk-in closet still hangs clothes');
 });
 
-test('plan invariants hold for every setup: shelfCount, one eye zone, real targetZones', () => {
+/* The wall a row sits on, read the way a reader reads it: the prefix before
+   the colon in the level name ("Left wall: eye level" is the left wall).
+   Rows with no prefix share one wall. Derived from the text rather than
+   m.wall so the rule holds for hand-written scenario rows too, which carry
+   no wall field. */
+function wallOfText(lv) {
+  const i = String(lv || '').indexOf(':');
+  return i < 0 ? '' : String(lv).slice(0, i).trim();
+}
+
+test('plan invariants hold for every setup: shelfCount, eye zones per wall, real targetZones', () => {
   for (const s of ALL_SETUPS) {
     for (const shopping of ['Use what I have', 'Open to a few ideas']) {
       for (const household of [NO_KIDS, KIDS]) {
         const p = planFor(s, { household, shopping });
         const at = `${s.space}/${s.id}|${shopping}`;
         assert.equal(p.geometry.shelfCount, p.map.length, `${at}: shelfCount disagrees with the zone list`);
-        assert.equal(p.map.filter(m => m.eye).length, 1, `${at}: expected exactly one eye-level zone`);
+        /* At least one eye row per plan, at most one per wall. "Exactly one"
+           was the rule while every setup was a single run of shelves; a
+           walk-in has an eye level on each wall it shelves, and the report's
+           per-wall chapters each want to mark one. */
+        assert.ok(p.map.some(m => m.eye), `${at}: no eye-level zone`);
+        const eyesByWall = new Map();
+        for (const m of p.map.filter(m => m.eye)) {
+          const w = wallOfText(m.lv);
+          eyesByWall.set(w, (eyesByWall.get(w) || 0) + 1);
+        }
+        for (const [w, n] of eyesByWall) {
+          assert.equal(n, 1, `${at}: ${n} eye-level zones on ${w ? `"${w}"` : 'the same wall'}`);
+        }
         assert.deepEqual([...new Set(p.map.map(m => m.shelfIndex))].length, p.map.length, `${at}: duplicate shelfIndex`);
         const levels = new Set(p.map.map(m => m.lv));
         for (const need of p.productNeeds) {
@@ -156,6 +180,61 @@ test('plan invariants hold for every setup: shelfCount, one eye zone, real targe
         }
       }
     }
+  }
+});
+
+/* ---------- walls and tiers ----------
+   A walk-in and an L-run are several runs of shelving, not one. The template
+   rows already said so in their names ("Left wall: ...", "Short run: ...")
+   but nothing downstream could read it without parsing the text, so the
+   report drew every wall as one tall stack. Each slot now names its wall,
+   and the projection numbers the rows down each wall. */
+
+const WALLS_IN_CONTRACT = ['left', 'back', 'right', 'front', 'floor'];
+
+test('the walk-in template puts rows on walls, with a tier down each wall and an eye level per wall', () => {
+  for (const [name, slots] of [
+    ['walkin-u', ARCHETYPE_LEVELS['walkin-u']],
+    ['l-run', ARCHETYPE_LEVELS['l-run']],
+    ['l-run/closet-rod', ARCHETYPE_LEVELS_FOR_SOURCE['l-run']['closet-rod']],
+  ]) {
+    for (const slot of slots) {
+      assert.ok(WALLS_IN_CONTRACT.includes(slot.wall), `${name}: slot "${slot.level}" has no wall (${slot.wall})`);
+    }
+  }
+  // Pantry and linen walk-ins project onto the template; the closet walk-in
+  // keeps its hand-written scenario and is covered by the per-wall rule above.
+  for (const s of [{ space: 'pantry', id: 'walkin' }, { space: 'linen', id: 'walkinL' }]) {
+    const p = planFor(s);
+    const at = `${s.space}/${s.id}`;
+    assert.deepEqual(p.map.map(m => `${m.wall}/${m.tier}`), ['left/0', 'left/1', 'back/0', 'back/1', 'right/0', 'floor/0'],
+      `${at}: rows are not placed wall by wall: ${p.map.map(m => `${m.lv} -> ${m.wall}/${m.tier}`).join(', ')}`);
+    // Two rows are called eye level and looked different in the report: the
+    // left wall's had the eye icon and the flag, the back wall's a "middle"
+    // icon and no flag, so one wall's eye level was drawn as a middle shelf.
+    const back = p.map.find(m => m.lv === 'Back wall: eye level');
+    const left = p.map.find(m => m.lv === 'Left wall: eye level');
+    assert.ok(back, `${at}: no "Back wall: eye level" row`);
+    assert.equal(back.eye, true, `${at}: "Back wall: eye level" is not an eye row`);
+    assert.equal(back.ic, left.ic, `${at}: the two eye-level rows carry different icons (${left.ic} vs ${back.ic})`);
+    assert.deepEqual(p.map.filter(m => m.eye).map(m => m.wall), ['left', 'back'],
+      `${at}: expected one eye row on the left wall and one on the back wall`);
+  }
+});
+
+test('the L-run templates put rows on walls too, and single-unit templates carry neither field', () => {
+  const pantry = planFor({ space: 'pantry', id: 'lshape' });
+  assert.deepEqual(pantry.map.map(m => `${m.wall}/${m.tier}`), ['back/0', 'back/1', 'back/2', 'back/3', 'right/0', 'right/1'],
+    pantry.map.map(m => `${m.lv} -> ${m.wall}/${m.tier}`).join(', '));
+  // The closet variant hangs a rod on each run and ends on the floor.
+  const closet = planFor({ space: 'closet', id: 'lshapeC' });
+  assert.deepEqual(closet.map.map(m => `${m.wall}/${m.tier}`), ['back/0', 'back/1', 'back/2', 'right/0', 'floor/0'],
+    closet.map.map(m => `${m.lv} -> ${m.wall}/${m.tier}`).join(', '));
+  // A wall cabinet is one unit. The report keys its wall chapters on the
+  // field being present, so the field must be absent here, not null.
+  const cabinet = planFor({ space: 'garage', id: 'wallcab' });
+  for (const m of cabinet.map) {
+    assert.ok(!('wall' in m) && !('tier' in m), `garage/wallcab: "${m.lv}" carries wall/tier ${m.wall}/${m.tier}`);
   }
 });
 

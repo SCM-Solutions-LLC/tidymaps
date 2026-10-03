@@ -13,7 +13,9 @@ export const ARCHETYPES = [
   'overhead-rack','workbench','fridge',
 ];
 export const SURFACES = ['shelf','rod','drawer','floor','door','pegboard','worktop'];
-export const PLACES = ['left','back','right','upper','lower','run-a','run-b','floor','bench','wall'];
+// 'front' is the wall the door is in: the shelf over a walk-in's doorway,
+// which the model kept filing under 'back' because nothing else fit.
+export const PLACES = ['left','back','right','front','upper','lower','run-a','run-b','floor','bench','wall'];
 
 const ARCHETYPE_SET = new Set(ARCHETYPES);
 const SURFACE_SET = new Set(SURFACES);

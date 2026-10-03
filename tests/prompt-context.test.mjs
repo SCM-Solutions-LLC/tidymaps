@@ -106,6 +106,11 @@ const NOT_IN_PROMPT = {
      sentence describes `shopping`, and it gates the enforced limit in the
      trusted block. Both renderings are asserted directly below instead. */
   shoppingTouched: 'selects the wording for `shopping` rather than adding text; asserted in its own test',
+  /* Same shape as shoppingTouched: each chooses which sentence describes the
+     answer it travels with (the categories list, the effort level), and both
+     renderings are asserted below. */
+  categoriesTouched: 'selects the wording for `categories` and `categoriesOffered`; asserted in its own test',
+  effortTouched: 'selects the wording for `effort`; asserted in its own test',
 };
 
 test('every answer the client sends reaches the prompt, or is listed as not needing to', async () => {
@@ -215,4 +220,39 @@ test('the no-purchase limit is enforced only for a chosen answer', () => {
   // from before the field existed keeps the behaviour it was built against.
   assert.match(fn, /const untouchedDefault = ctx\.shoppingTouched === false;/);
   assert.match(fn, /ctx\.shopping === 'Use what I have' && !untouchedDefault/);
+});
+
+/* The contents step shows a fixed set of chips and the user ticks some. The
+   model used to see only the ticked ones, so it could not tell "the user
+   never had a chip for appliances" from "the user saw Appliances and left it
+   unticked", which is the difference between adding something to the plan and
+   respecting a choice to leave it out. The chips the step offered now travel
+   too, and the unticked ones are named as such. */
+test('the chips the contents step offered and the user left unticked are named', () => {
+  const rendered = buildContext({
+    categories: ['Snacks'], categoriesTouched: true,
+    categoriesOffered: ['Snacks', 'Appliances', 'Baking'],
+  });
+  assert.match(rendered, /What they say is in the space: Snacks\./);
+  assert.match(rendered, /Offered on the contents step and left unticked: Appliances, Baking\./);
+  assert.doesNotMatch(rendered, /unticked: [^.]*Snacks/, 'a ticked chip is not reported as unticked');
+});
+
+test('a contents step the user never touched is described as ours, not theirs', () => {
+  const rendered = buildContext({ categories: [], categoriesTouched: false, categoriesOffered: ['Snacks', 'Appliances'] });
+  assert.doesNotMatch(rendered, /their own edited list/);
+  assert.match(rendered, /did not edit/);
+  assert.match(rendered, /Snacks, Appliances/);
+});
+
+/* The effort card arrives preselected ("Weekend reset"), and the plain
+   "Effort level: Weekend reset." told the model the user had chosen it. */
+test('an untouched effort default is described as ours, not theirs', () => {
+  assert.match(buildContext({ effort: 'Weekend reset', effortTouched: true }), /Effort level: Weekend reset\./);
+  const ours = buildContext({ effort: 'Weekend reset', effortTouched: false });
+  assert.doesNotMatch(ours, /^Effort level: Weekend reset\.$/m);
+  assert.match(ours, /did not choose/);
+  assert.match(ours, /Weekend reset/);
+  // A client from before the flag existed keeps the old meaning.
+  assert.match(buildContext({ effort: 'Weekend reset' }), /Effort level: Weekend reset\./);
 });

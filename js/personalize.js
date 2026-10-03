@@ -3,15 +3,25 @@
 
    applyAnswers() runs on the RAW plan shape (what demo-scenarios build and
    what the AI returns: steps {task,time,why}, map rows {level,zone,items,…},
-   productNeeds) BEFORE normalizeAi. On the AI path the model already honors
-   these answers under the server-side invariants, so this layer is applied
-   only to demo / fallback plans — the path that used to ignore everything
-   except space, goal, and household.
+   productNeeds) BEFORE normalizeAi, and only on demo / fallback plans: the
+   path that used to ignore everything except space, goal, and household.
+
+   It does NOT run on the AI path, and nothing server-side stands in for it.
+   This header used to say the model "already honors these answers under the
+   server-side invariants". It does not: the edge function enforces the plan's
+   shape and its safety rules and checks none of the categories, goals or
+   styles the wizard sends, so an answer the model skipped was skipped with
+   nobody noticing. The next PR teaches the prompt to read them. What the AI
+   path gets from this file is the two passes that run on BOTH paths:
+   citeGoals(), on the raw plan the model returned, and applyCategoryEdits(),
+   on the normalized one.
 
    applyCategoryEdits() runs on the NORMALIZED plan whenever the user edits
-   the category list on the review screen (both paths — those edits happen
+   the category list on the review screen (both paths: those edits happen
    after analysis). User edits are authoritative: an unticked category
-   disappears from every zone; an added one gets a home in exactly one zone.
+   disappears from every zone, every step and every product; an added one
+   gets a home in exactly one zone. includeSpotted() is the way back in for
+   something the edit removed, or the model saw and the user never ticked.
 
    Rules of the layer:
    - Additive steps always cite the user's answer verbatim in `why`.
@@ -946,7 +956,22 @@ const DEPTH_RULES = [
 function applyEffort(plan, answers, archetype) {
   const target = EFFORT_STEPS[answers.effort];
   if (!target) return;
-  const cite = `You chose “${answers.effort}”.`;
+  /* The effort card arrives preselected on "Weekend reset", and the value
+     alone cannot say whether anyone chose it (the same reason the setup and
+     shopping answers carry a touched flag). Growing an untouched plan to the
+     card's full target wrote four extra steps and cited "You chose Weekend
+     reset" on each of them, when nobody had. So an untouched effort grows
+     the plan only to the floor of its range: enough to be a legal plan under
+     the server contract, and nothing claimed past that. Trimming keeps the
+     card's ceiling either way, since a plan over it is too long whoever set
+     the dial. Strictly `=== false`: a saved plan or an older answer set has
+     no flag at all, and those keep today's target. */
+  const untouched = answers.effortTouched === false;
+  const floor = (EFFORT_STEP_RANGES[answers.effort] || [])[0];
+  const aim = (untouched && floor) ? floor : target;
+  const cite = untouched
+    ? `This plan is sized for a ${String(answers.effort).toLowerCase()}, the session length the wizard starts on.`
+    : `You chose “${answers.effort}”.`;
   /* Sizing runs after the surface scrub, so its own candidates have to be
      vetted here — a step added behind the scrub would be exactly the leak the
      ordering was changed to close. Rejecting the candidate rather than scrubbing
@@ -969,20 +994,20 @@ function applyEffort(plan, answers, archetype) {
       toDrop.add(x.i);
     }
     plan.steps = plan.steps.filter((_, i) => !toDrop.has(i));
-  } else if (plan.steps.length < target) {
+  } else if (plan.steps.length < aim) {
     /* Coverage before depth: every zone gets placed once before any zone gets
        a second step, so a plan that hits its target mid-growth is not three
        steps deep on one shelf and silent about the rest. */
     const rows = plan.map || [];
     for (const m of rows) {
-      if (plan.steps.length >= target) break;
+      if (plan.steps.length >= aim) break;
       const step = placementStep(plan, m, cite);
       if (step && usable(step.task)) addStep(plan, step);
     }
     for (const m of rows) {
-      if (plan.steps.length >= target) break;
+      if (plan.steps.length >= aim) break;
       for (const rule of DEPTH_RULES) {
-        if (plan.steps.length >= target) break;
+        if (plan.steps.length >= aim) break;
         if (!rule.applies(m, plan, answers)) continue;
         if (taskCovers(plan, rule.dedupe(m))) continue;
         const built = rule.build(m);
@@ -1003,12 +1028,15 @@ function applyEffort(plan, answers, archetype) {
      for both "Weekend reset" and "Full overhaul", which is honest — there is no
      third deck — but identical plans under two different answers, with nothing
      said, is exactly the complaint. One or two steps short of the aim is inside
-     the noise of how plans vary and is not worth a paragraph. */
-  const floor = (EFFORT_STEP_RANGES[answers.effort] || [])[0];
-  const short = target - plan.steps.length;
+     the noise of how plans vary and is not worth a paragraph.
+     Measured against what sizing actually aimed at. An untouched effort aims
+     at the floor, and a plan that reached it has nothing to explain; measured
+     against the card's full target it would print "comes to 9 steps, not 13"
+     over a plan nobody asked to be 13. */
+  const short = aim - plan.steps.length;
   if ((floor && plan.steps.length < floor) || short >= 3) {
     plan.opportunities = plan.opportunities || [];
-    const note = `A ${String(answers.effort).toLowerCase()} of this space comes to ${plan.steps.length} steps, not ${target}: `
+    const note = `A ${String(answers.effort).toLowerCase()} of this space comes to ${plan.steps.length} steps, not ${aim}: `
       + `there ${rowCount(plan) === 1 ? 'is one level' : `are ${rowCount(plan)} levels`} here and no more to plan. `
       + 'A longer session will not add to it.';
     if (!plan.opportunities.some(o => /comes to \d+ steps/.test(o))) plan.opportunities.push(note);
@@ -1138,54 +1166,217 @@ export function applyAnswers(plan, answers, opts = {}) {
    The user's category list is authoritative. Remove unticked categories from
    every zone; give added ones a home in exactly one zone (best keyword fit,
    else the eye-level zone). */
-export function applyCategoryEdits(normalized, cats) {
+
+/* Category names compare by stem so "Snack" and "Snacks" are one chip. */
+const catStem = (s2) => String(s2 || '').toLowerCase().trim().replace(/s$/, '');
+
+/* A category as a plural-tolerant, word-bounded phrase regex, so multi-word
+   categories ("Paper goods") match zone labels, item names and step text as
+   a phrase, and "Snacks" catches "Snack packets". */
+const catPhraseRe = (c) => new RegExp(
+  '\\b' + String(c || '').toLowerCase().trim().split(/[^a-z0-9’']+/).filter(Boolean)
+    .map(w => w.replace(/s$/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 's?')
+    .join('[^a-z0-9]+') + '\\b', 'i');
+
+/* Where a thing with this name belongs: the first row whose zone, level or
+   item names carry its first word. Shared by the category edit and the
+   "Also in your photo" button so both put "Jars" on the same shelf. */
+function keywordFit(rows, name) {
+  const first = String(name || '').trim().split(/\s+/)[0];
+  if (!first) return null;
+  const re = new RegExp(esc(first), 'i');
+  return rows.find(m => re.test(`${m.zone || ''} ${m.lv || ''} ${itemNames(m).join(' ')}`)) || null;
+}
+
+/* The row's place in the plan: its shelfIndex when normalized, its position
+   when a fixture never had one (normalizeAi makes the same choice). */
+const rowIndex = (rows, m) => (m && Number.isInteger(m.shelfIndex)) ? m.shelfIndex : rows.indexOf(m);
+
+/* The report offers back at most this many things the plan left out. */
+const SPOTTED_MAX = 8;
+
+/* `offered` is the chip list the wizard showed for this space and household
+   (SPACE_CFG[space].categories through optionsForHousehold). Without it the
+   edit could only remove categories the PLAN had listed, and the model does
+   not list everything it writes about: a pantry plan carried "Move all
+   appliances to the floor zone" and a Small appliances item on the floor row,
+   with Appliances in neither its own category list nor the user's, because the
+   user had never ticked the chip. An unticked chip is an answer ("not in
+   here"), so the removed set is every offered chip the user did not tick, plus
+   whatever the plan listed that they did not tick, and the removal reaches the
+   steps, the products and the two summary lists, not only the shelf map.
+
+   "About a removed category" means it names one and names no wanted one. A
+   step that works on the snacks and the appliances is still about the snacks,
+   and "Kids' snacks" ticked with "Snacks" unticked must not lose the kids'
+   snacks to the word they share.
+
+   Nothing removed from a row is thrown away: it goes into `spotted`, the list
+   the report offers back as "Also in your photo", so one tap (includeSpotted)
+   can bring it into the plan after all. */
+/**
+ * @param {any} normalized  the plan in state.ai (normalizeAi's shape)
+ * @param {string[]} cats   the user's ticked chips
+ * @param {{ offered?: string[] }} [opts]
+ */
+export function applyCategoryEdits(normalized, cats, { offered } = {}) {
   if (!normalized || !Array.isArray(normalized.map) || !Array.isArray(cats)) return normalized;
   const want = cats.map(c => c.trim()).filter(Boolean);
-  const stem = (s2) => String(s2 || '').toLowerCase().trim().replace(/s$/, '');
-  const wantStems = new Set(want.map(stem));
-  // Categories the user REMOVED this edit (were in the plan's list, not
-  // wanted now). Each becomes a plural-tolerant, word-bounded phrase regex so
-  // multi-word categories ("Paper goods") match zone labels and item names.
-  const removed = (normalized.cats || []).filter(c => !wantStems.has(stem(c)));
-  const removedRes = removed.map(c => new RegExp(
-    '\\b' + c.toLowerCase().trim().split(/[^a-z0-9’']+/).filter(Boolean)
-      .map(w => w.replace(/s$/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 's?')
-      .join('[^a-z0-9]+') + '\\b', 'i'));
+  const wantStems = new Set(want.map(catStem));
+  const removed = [];
+  const seen = new Set();
+  for (const c of [...(normalized.cats || []), ...(Array.isArray(offered) ? offered : [])]) {
+    const s2 = catStem(c);
+    if (!s2 || wantStems.has(s2) || seen.has(s2)) continue;
+    seen.add(s2);
+    removed.push(c);
+  }
+  const removedRes = removed.map(catPhraseRe);
+  const wantRes = want.map(catPhraseRe);
   const mentionsRemoved = (text) => removedRes.some(re => re.test(String(text || '')));
+  const mentionsWanted = (text) => wantRes.some(re => re.test(String(text || '')));
+  const scopedOut = (...texts) => { const t = texts.join(' '); return mentionsRemoved(t) && !mentionsWanted(t); };
+
+  const spotted = Array.isArray(normalized.spotted) ? normalized.spotted : [];
+  const spotIndex = (name) => spotted.findIndex(sp => sp && catStem(sp.name) === catStem(name));
 
   const allZoneNames = new Set();
   normalized.map.forEach(m => {
     // Drop items that belong to a removed category (stem match catches
-    // "Snack packets" when "Snacks" was removed).
-    m.items = (m.items || []).filter(it => !mentionsRemoved(it.name));
-    m.items.forEach(it => allZoneNames.add(stem(it.name)));
-    // Zone labels are category joins ("Snacks · Cereal") — rewrite them too,
+    // "Snack packets" when "Snacks" was removed), and remember each one.
+    const gone = (m.items || []).filter(it => it && scopedOut(it.name));
+    m.items = (m.items || []).filter(it => !gone.includes(it));
+    m.items.forEach(it => allZoneNames.add(catStem(it.name)));
+    for (const it of gone) {
+      if (!it.name) continue;
+      const at = spotIndex(it.name);
+      /* Already offered back (the user included it, then unticked the chip):
+         it has just left the plan again, so say so and leave the entry alone.
+         Otherwise one new entry, up to the cap; what was there stays. */
+      if (at >= 0) { spotted[at].included = false; continue; }
+      if (spotted.length >= SPOTTED_MAX) continue;
+      spotted.push({ name: it.name, row: rowIndex(normalized.map, m), source: 'scope', included: false });
+    }
+    // Zone labels are category joins ("Snacks · Cereal"): rewrite them too,
     // or the removed word survives on the shelf map.
-    const parts = String(m.zone || '').split(/\s*·\s*/).filter(p => !mentionsRemoved(p));
+    const parts = String(m.zone || '').split(/\s*·\s*/).filter(p => !scopedOut(p));
     m.zone = parts.length ? parts.join(' · ')
       : (m.items.length ? m.items.map(i => i.name).slice(0, 3).join(' · ') : 'Flexible space');
     // Placement rationales reference categories by name too; drop only the
     // sentences that mention a removed category, keep the rest intact.
     if (mentionsRemoved(m.why)) {
-      const kept = String(m.why || '').split(/(?<=\.)\s+/).filter(s2 => !mentionsRemoved(s2));
+      const kept = String(m.why || '').split(/(?<=\.)\s+/).filter(s2 => !scopedOut(s2));
       m.why = kept.join(' ').trim() || 'Placement updated to match your category list.';
     }
   });
+  normalized.spotted = spotted;
+
+  /* Steps about only a removed category go with it. Never below half the
+     checklist, all or nothing, the same guard as enforceArchetypeHonesty: a
+     plan whose steps were mostly about one thing is a plan with the wrong
+     scope, and two steps left of six is not a better answer than six. */
+  if (Array.isArray(normalized.steps) && normalized.steps.length) {
+    const before = normalized.steps.length;
+    const kept = normalized.steps.filter(st => !scopedOut(stepTask(st), stepWhy(st)));
+    if (kept.length >= Math.ceil(before / 2)) normalized.steps = kept;
+  }
+  // A product bought for a category that is not here has nothing to hold.
+  if (Array.isArray(normalized.productNeeds)) {
+    normalized.productNeeds = normalized.productNeeds.filter(p => p && !scopedOut(p.purpose, p.targetZone));
+  }
+  // The summary lists are read before the map is; a removed word there is the
+  // first place the reader would catch the plan not listening.
+  for (const key of ['problems', 'opportunities']) {
+    if (Array.isArray(normalized[key])) normalized[key] = normalized[key].filter(o => !scopedOut(o));
+  }
 
   // Place added categories: best keyword fit against zone/level text, else eye level.
   for (const cat of want) {
-    if (allZoneNames.has(stem(cat))) continue;
-    const catRe = new RegExp(cat.split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    const fit = normalized.map.find(m => catRe.test(m.zone + ' ' + m.lv))
+    if (allZoneNames.has(catStem(cat))) continue;
+    const fit = keywordFit(normalized.map, cat)
       || normalized.map.find(m => m.eye)
       || normalized.map[0];
     if (fit) {
       fit.items = fit.items || [];
       fit.items.push({ name: cat, size: 'm', flags: [] });
-      allZoneNames.add(stem(cat));
+      allZoneNames.add(catStem(cat));
     }
   }
 
   normalized.cats = want;
   return normalized;
+}
+
+/* The Add button on "Also in your photo". spotted[index] is something the
+   model saw that the user's chips left out, or something applyCategoryEdits
+   removed; this brings it into the plan with a visible trace, the rule of
+   the layer: on the shelf map (its own row when one was recorded, else the
+   keyword fit, else the eye row), in the category list when a wizard chip
+   matches it (so a later category edit keeps it rather than removing it
+   again), and as one protected step pointing at that row.
+
+   Pure in the sense that matters for a button: idempotent. A second tap
+   finds the item on its row, the chip in the list and a step naming it, and
+   changes nothing. `offered` is the same chip list applyCategoryEdits takes;
+   without it no chip is invented, and the item still lands on the map. */
+export function includeSpotted(normalized, index, offered = null) {
+  if (!normalized || !Array.isArray(normalized.spotted)) return normalized;
+  const entry = normalized.spotted[index];
+  if (!entry || !entry.name) return normalized;
+  const name = String(entry.name).trim();
+  const rows = Array.isArray(normalized.map) ? normalized.map : [];
+  entry.included = true;
+
+  const holder = rows.find(m => itemNames(m).some(n => catStem(n) === catStem(name)));
+  const recorded = Number.isInteger(entry.row)
+    ? (rows.find(m => m.shelfIndex === entry.row) || rows[entry.row] || null)
+    : null;
+  const fit = holder || recorded || keywordFit(rows, name) || rows.find(m => m.eye) || rows[0] || null;
+  if (fit && !holder) {
+    fit.items = fit.items || [];
+    fit.items.push({ name, size: 'm', flags: [], added: true });
+  }
+
+  const chip = (Array.isArray(offered) ? offered : [])
+    .find(c => catPhraseRe(c).test(name) || catPhraseRe(name).test(String(c || '')));
+  if (chip) {
+    normalized.cats = Array.isArray(normalized.cats) ? normalized.cats : [];
+    if (!normalized.cats.some(c => catStem(c) === catStem(chip))) normalized.cats.push(chip);
+  }
+
+  normalized.steps = Array.isArray(normalized.steps) ? normalized.steps : [];
+  const nameRe = new RegExp('\\b' + esc(name) + '\\b', 'i');
+  if (!normalized.steps.some(st => nameRe.test(stepText(st)))) {
+    const row = fit ? rowIndex(rows, fit) : -1;
+    normalized.steps.push({
+      t: `Find a spot for ${name}`, m: '5 min', w: 'You added it from your photo.',
+      ...(row >= 0 ? { rows: [row] } : {}),
+      _p: true,
+    });
+  }
+  return normalized;
+}
+
+/* ---------- goal citations on the AI path ----------
+   The deterministic engine quotes the user's goal on the step that answers it
+   (applyGoals). The model is now asked to do the same by naming, per step, the
+   goal it is answering. That claim is checked here before it is shown: a step
+   is cited only when its `goal` is one of the goals the user actually gave,
+   compared case-insensitively and trimmed, and the citation uses the user's
+   own spelling. A goal the model invented is left as it is, uncited, because
+   "You told us" over words the user never said is the lie this layer exists
+   to prevent. Runs on the RAW plan, before normalizeAi, which carries `cite`
+   through to the report. */
+export function citeGoals(rawPlan, goals) {
+  if (!rawPlan || !Array.isArray(rawPlan.steps)) return rawPlan;
+  const theirs = new Map((Array.isArray(goals) ? goals : [])
+    .filter(g => typeof g === 'string' && g.trim())
+    .map(g => [g.trim().toLowerCase(), g.trim()]));
+  if (!theirs.size) return rawPlan;
+  for (const st of rawPlan.steps) {
+    if (!st || typeof st.goal !== 'string') continue;
+    const goal = theirs.get(st.goal.trim().toLowerCase());
+    if (goal) st.cite = `You told us: "${goal}"`;
+  }
+  return rawPlan;
 }

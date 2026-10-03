@@ -3,7 +3,8 @@ import { evenShelfFracs } from './three/viewerOptions.js';
 import { iconKey } from './icons.js';
 import { MAP, DEMO_GEOMETRY, DEMO_SAFETY_NOTES, DEMO_PRODUCT_NEEDS } from './data.js';
 import { normalizeLayout, surfaceFromIcon, SURFACES, SETUP_ARCHETYPE } from './layout.js';
-import { kidAgeYears } from './wizard-data.js';
+import { kidAgeYears, optionsForHousehold, SPACE_CFG } from './wizard-data.js';
+import { WALLS } from './placement.js';
 
 /* ============================================================
    Plan contract v2: raw model JSON -> the exact shapes the UI renders.
@@ -44,6 +45,16 @@ const nonNegInt = (v,fallback)=>{
   const n=Number(v);
   return Number.isFinite(n) && n>=0 ? Math.round(n) : fallback;
 };
+/* A third shape for the optional indexes (`tier`, a step's `rows`, a spotted
+   item's `row`): a whole number or nothing. shelfIndex rounds and falls back
+   because every row needs one; these fields are allowed to be absent, and a
+   1.5 or a "two" is a model that did not know, not a model that meant 2. */
+const intOrNone = (v)=>{
+  if(v===null || v===undefined || v==='' || typeof v==='boolean') return undefined;
+  const n=Number(v);
+  return Number.isInteger(n) && n>=0 ? n : undefined;
+};
+const WALL_SET = new Set(WALLS);
 
 function normalizeGeometry(g, mapLen){
   // the user's own shelf count wins over the AI estimate (map rows are clamped
@@ -102,6 +113,26 @@ const pick = (raw, norm) => (raw !== undefined && raw !== null ? raw : norm);
 export function normalizeAi(j){
   const rawMap = Array.isArray(j.map)?j.map:[];
   const geometry = normalizeGeometry(j.geometry, rawMap.length);
+  /* Things the model saw that the user's contents list left out, or that the
+     client dropped because the user unticked their category. The report shows
+     them as "Also in your photo" rather than silently planning around them.
+     `row` is where it was seen, or null when the model could not say; `source`
+     says which of the two it is ('photo' unless the client marked it 'scope');
+     `included` is whether it still has a place in the plan. Capped like the
+     other lists, and absent rather than empty for the reason `rows` gives on
+     the steps below. */
+  const spotted = (Array.isArray(j.spotted)?j.spotted:[])
+    .filter(e=>e && typeof e.name==='string' && e.name.trim())
+    .slice(0,8)
+    .map(e=>{
+      const r = intOrNone(e.row);
+      return {
+        name: e.name.trim(),
+        row: (r!==undefined && r<geometry.shelfCount) ? r : null,
+        source: e.source==='scope' ? 'scope' : 'photo',
+        included: e.included===true,
+      };
+    });
   return {
     spaceType: s(j.spaceType)||'Space',
     summary: s(j.summary),
@@ -111,6 +142,14 @@ export function normalizeAi(j){
     map: rawMap.map((m,i)=>({
       lv:s(pick(m.level, m.lv)), ic:iconKey(pick(m.icon, m.ic)), zone:s(m.zone), why:s(m.why), eye:!!m.eye,
       shelfIndex: Math.max(0, Math.min(geometry.shelfCount-1, nonNegInt(m.shelfIndex, i))),
+      /* Which wall the row is on and how far down that wall it sits (0 is the
+         wall's own top shelf). Optional, and absent stays absent: the report
+         keys its per-wall chapters on the field being there, and a wall:null
+         would read as a sixth wall. placement.js reads these first and falls
+         back to the layout sections and the level text when they are missing,
+         so a plan from before the fields existed still places every row. */
+      ...(WALL_SET.has(m.wall) ? { wall:m.wall } : {}),
+      ...(intOrNone(m.tier)!==undefined ? { tier:intOrNone(m.tier) } : {}),
       safety: {
         flag: (m.safety && SAFETY_FLAGS.has(m.safety.flag)) ? m.safety.flag : null,
         why: s(m.safety && m.safety.why) || null,
@@ -148,10 +187,27 @@ export function normalizeAi(j){
        inside the collapsed "Why?" panel. It has to survive this whitelist or
        the report never sees it — the same way `observed` was dropped here and
        the honesty scoping vanished with it. */
-    steps: (j.steps||[]).map(st=>({
-      t:s(pick(st.task, st.t)), m:s(pick(st.time, st.m))||'–', w:s(pick(st.why, st.w)),
-      ...(st.cite ? { cite:s(st.cite) } : {}),
-    })),
+    steps: (j.steps||[]).map(st=>{
+      /* `rows` names the map rows a step works on, so the report can link a
+         step to its shelves and the 3D view can light them; `goal` is the
+         user's own goal the step answers, copied exactly, so a step can be
+         filed under the thing that bugs them. Both optional, both emitted only
+         with content: an absent `rows` means the whole space, and an empty
+         array would mean the same to a careful reader and something else to a
+         careless one. Rows are deduplicated and kept to the shelf count the
+         rest of the plan was clamped to, or a step could point at a shelf the
+         drawing does not have. */
+      const rows = [...new Set((Array.isArray(st.rows)?st.rows:[]).map(intOrNone)
+        .filter(r=>r!==undefined && r<geometry.shelfCount))];
+      const goal = typeof st.goal==='string' ? st.goal.trim() : '';
+      return {
+        t:s(pick(st.task, st.t)), m:s(pick(st.time, st.m))||'–', w:s(pick(st.why, st.w)),
+        ...(st.cite ? { cite:s(st.cite) } : {}),
+        ...(rows.length ? { rows } : {}),
+        ...(goal ? { goal } : {}),
+      };
+    }),
+    ...(spotted.length ? { spotted } : {}),
     time: s(j.time)||'45–90 min',
     cost: s(j.cost)||'$0 / $45–85'
   };
@@ -277,10 +333,27 @@ export function buildAnalysisContext(){
     shopping: state.shoppingPref || null,
     shoppingTouched: !!state.shoppingTouched,
     detected: (state.detected||[]).slice(),
-    categories: (state.cats||[]).slice(),  // authoritative when the user edited them
+    /* Only the user's own list travels. buildResults copies the plan's
+       categories into state.cats whenever the contents step was left alone,
+       so a re-run sent the model its previous guesses back under "This is
+       their own edited list": quoted to itself as the user, and a category it
+       had got wrong was now one the user had confirmed. The flag goes with the
+       list for the reason setupTouched and shoppingTouched do, so the prompt
+       can say which it was rather than infer it from an empty array. */
+    categories: state.catsTouched ? (state.cats||[]).slice() : [],
+    categoriesTouched: !!state.catsTouched,
+    /* The chips the contents step actually showed, filtered the way the step
+       filters them (no kid chips for a household without kids). It is what
+       lets the server tell "saw it and the user never had a chip for it" from
+       "saw it and the user unticked it", which is the difference between
+       adding something to the plan and respecting a choice to leave it out.
+       Same fallback as the step itself when no space is chosen yet. */
+    categoriesOffered: optionsForHousehold((SPACE_CFG[state.space] || SPACE_CFG.pantry).categories, state.household),
     prefs: [...(state.prefs||[])],
     budget: state.budget || null,
     effort: state.effort || null,
+    // The effort card arrives preselected too; see shoppingTouched above.
+    effortTouched: !!state.effortTouched,
     toggles,
     dims: state.dims,
     /* Display preference, not a measurement — state.dims stays in inches for

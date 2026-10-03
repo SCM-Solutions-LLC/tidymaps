@@ -47,8 +47,21 @@ export function buildContext(ctx = {}) {
   if (Array.isArray(ctx.goals) && ctx.goals.length) {
     parts.push(`Everything they said bugs them, in their own words: ${ctx.goals.map(g => `"${g}"`).join(', ')}.`);
   }
-  if (Array.isArray(ctx.categories) && ctx.categories.length) {
+  /* The ticked chips, and the chips the step offered that stayed unticked.
+     The model used to see only the ticked ones, so "the user never had a chip
+     for appliances" and "the user saw Appliances and left it unticked" looked
+     the same, and a plan that moved appliances to the floor could not be told
+     apart from one that respected a choice. `categoriesTouched === false` is a
+     client from after the flag existed saying the step was left alone; a
+     client from before sends no flag and keeps the old meaning. */
+  const offered = Array.isArray(ctx.categoriesOffered) ? ctx.categoriesOffered.filter(Boolean) : [];
+  if (ctx.categoriesTouched === false) {
+    if (offered.length) parts.push(`The contents step offered ${offered.join(', ')}; they did not edit it, so none of these is confirmed or ruled out.`);
+  } else if (Array.isArray(ctx.categories) && ctx.categories.length) {
     parts.push(`What they say is in the space: ${ctx.categories.join(', ')}. This is their own edited list.`);
+    const picked = new Set(ctx.categories.map(c => String(c).trim().toLowerCase()));
+    const unticked = offered.filter(c => !picked.has(String(c).trim().toLowerCase()));
+    if (unticked.length) parts.push(`Offered on the contents step and left unticked: ${unticked.join(', ')}.`);
   }
   if (Array.isArray(ctx.detected) && ctx.detected.length) {
     parts.push(`Items detected on their photos: ${ctx.detected.join(', ')}.`);
@@ -66,7 +79,13 @@ export function buildContext(ctx = {}) {
   }
   if (Array.isArray(ctx.prefs) && ctx.prefs.length) parts.push(`Preferences: ${ctx.prefs.join(', ')}.`);
   if (ctx.budget) parts.push(`Budget: ${ctx.budget}.`);
-  if (ctx.effort) parts.push(`Effort level: ${ctx.effort}.`);
+  /* The effort card arrives preselected, the same way the shopping card does,
+     and "Effort level: Weekend reset." claimed a choice nobody had made. */
+  if (ctx.effort) {
+    parts.push(ctx.effortTouched === false
+      ? `Effort level: we preselected "${ctx.effort}" and they did not choose, so treat it as no preference about how long this should take.`
+      : `Effort level: ${ctx.effort}.`);
+  }
   if (ctx.toggles && typeof ctx.toggles === 'object') {
     const t = Object.entries(ctx.toggles).map(([k, v]) => `${k}=${v}`).join(', ');
     if (t) parts.push(`Details: ${t}.`);
