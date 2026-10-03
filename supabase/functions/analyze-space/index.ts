@@ -2,7 +2,7 @@ import { preflight, json } from '../_shared/cors.ts';
 import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
-import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, usableShelfDepth, ARCHETYPES,
+import { validatePlan, stepRangeFor, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, usableShelfDepth, ARCHETYPES,
          KID_REACH_IN, YOUNG_KID_MAX_AGE, STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS,
          PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
@@ -59,7 +59,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
 {
   "spaceType": string,                         // e.g. "Pantry", "Closet"
   "summary": string,                           // ONE sentence, max 20 words: the space and its main problem
-  "categories": [string],                      // visible item categories, e.g. "Canned goods","Snacks"
+  "categories": [string],                      // the user's own contents list when "About this request" below says they confirmed one, otherwise the visible item categories, e.g. "Canned goods","Snacks"
   "problems": [string],                        // 2-4 items. Each is a SHORT PHRASE, max 10 words, no explanation
   "opportunities": [string],                   // 2-4 items. Each is a SHORT PHRASE, max 10 words, no explanation
   "map": [{                                    // 1-12 rows, one per storage level. NEVER more than 12.
@@ -67,10 +67,12 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
     "icon": string,                            // up|eye|middle|down|door|hook|rod|drawer
     "zone": string,                            // e.g. "Daily snacks · Breakfast items"
     "why": string,                             // ONE short sentence, max 14 words. No second sentence.
-    "eye": boolean,                            // true for the eye-level row
+    "eye": boolean,                            // true for the row at eye height: exactly one row for a single unit, one row per wall for a multi-wall space
     "shelfIndex": number,                      // 0 = top shelf, counting down; must be < geometry.shelfCount
     "safety": {"flag": "kid-safe"|"keep-high"|"lock-or-latch"|null, "why": string|null},
     "items": [{"name": string, "size": "s"|"m"|"l", "flags": [string]}],  // flags from: heavy|chemical|sharp|fragile|kid-frequent (empty array if none)
+    "wall": ${WALLS.map((w) => `"${w}"`).join('|')}|null,  // multi-wall spaces: the wall this row is on (front is the wall the door is in, floor is the floor itself). null for a single unit.
+    "tier": number|null,                       // multi-wall spaces: 0 for the top row of that wall, counting down. null for a single unit.
     "surface": "shelf"|"rod"|"drawer"|"floor"|"door"|"pegboard"|"worktop"|null  // what kind of surface this row sits on. rod for hanging rods, drawer for drawers, floor for floor zones, door for door-mounted storage, pegboard for pegboard walls, worktop for counter or bench surfaces, shelf for all other shelves. null if unsure.
   }],
   "layout": {                                  // optional: classify the overall physical layout
@@ -95,10 +97,19 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "existingLede": string,
   "existing": [{"icon": string, "title": string, "detail": string}],
   "dontBuy": string,
-  "steps": [{"task": string, "time": string, "why": string}],   // ordered steps, time like "10 min". task: an instruction, max 8 words, starts with a verb. why: max 12 words, one sentence. The exact count allowed for this request is in "Enforced limits" below.
+  "steps": [{"task": string, "time": string, "why": string, "rows": [number], "goal": string|null}],   // ordered steps, time like "10 min". task: an instruction, max 8 words, starts with a verb. why: max 12 words, one sentence. rows: the shelfIndex values the step works on, at most ${STEP_ROWS_MAX}; the report prints the place under the task, so the task itself stays short. goal: one of the user's own goals copied exactly, when the step answers it; otherwise null. The exact count allowed for this request is in "Enforced limits" below.
+  "spotted": [{"name": string, "row": number|null}],  // only when "About this request" says the user confirmed a contents list: things you can see that the list leaves out, with the shelfIndex you see each on. At most ${SPOTTED_MAX}. These are never planned: no step, zone or product for them.
   "time": string,                              // total estimate, e.g. "45-90 min"
   "cost": string                               // e.g. "$0 / $40-80"
 }
+
+Using the user's answers (the <user_context> block at the end describes them; these rules say how they shape the plan):
+- Their contents list, when "About this request" says they confirmed one, is the plan's scope: categories, map items, zones and steps cover those things and nothing else. Anything else you can see goes ONLY in "spotted", never into a step, a zone or productNeeds, with one exception: a chemical or sharp item you can see is always placed on the map and flagged, whatever the list says, so the safety rules can act on it. When "About this request" says there is no confirmed list, the scope is what the photos show and "spotted" stays empty.
+- Each goal they gave gets a step that answers it, with the goal copied exactly into that step's "goal", as far as the step range in "Enforced limits" allows; with more goals than steps, a step may serve several goals and carries the one it answers most. Never set "goal" on a step that answers none of their goals, and never invent a goal.
+- Their styles and preferences shape the plan: "No drilling or permanent installation" rules out hook racks, screw-on door racks and any step that mounts something; a style such as labeled bins shows up in the zones and the steps.
+- Steps name the real items and categories of this space ("Move the stand mixer to the floor zone", "Group cans by type"), never a count of them ("the eight categories") and never a thing that is not in their list or the photos. Put the where in "rows" (the shelfIndex values the step works on), so the task itself stays short.
+- Use as many steps as the work needs, inside the range in "Enforced limits". Never pad to the top of the range with generic steps; a short, specific plan beats a long, general one.
+- In a multi-wall space set "wall" and "tier" on every map row, and mark "eye" on one row per wall, the row at eye height on that wall.
 
 Layout classification rules:
 - Classify layout.type to the closest archetype: shelves (open shelving unit), cabinet (enclosed cabinet with doors), l-run (L-shaped two perpendicular runs), walkin-u (walk-in closet or pantry with 2-3 walls), closet-rod (closet with hanging rod), closet-system (built-in closet with shelves, rods, and lower drawers), drawer-bank (stacked drawers), under-bed (low drawers or rolling bins below a bed), under-sink (under-sink cabinet with plumbing), counter (counter with upper cabinets, butler's pantry), garage-rack (open garage or utility rack), overhead-rack (ceiling-mounted storage), workbench (workbench with pegboard), fridge (refrigerator or freezer).
@@ -206,8 +217,16 @@ Deno.serve(async (req) => {
     setup?: { archetype?: string; touched?: boolean };
     shopping?: string;
     shoppingTouched?: boolean;
+    effortTouched?: boolean;
+    goals?: unknown;
+    categories?: unknown;
+    categoriesTouched?: boolean;
+    styles?: unknown;
+    prefs?: unknown;
   };
-  const [minSteps, maxSteps] = EFFORT_STEP_RANGES[ctx.effort as string] ?? DEFAULT_STEP_RANGE;
+  // The same function checkInvariants reads, so the range told and the range
+  // enforced are one value.
+  const [minSteps, maxSteps] = stepRangeFor(ctx);
   const kidsPresent = ctx.household?.kids?.present === true;
   const petsPresent = ctx.household?.pets?.present === true;
   /* The hard height rule protects 0-9s, and the validator reads an unstated
@@ -271,12 +290,15 @@ Deno.serve(async (req) => {
     ...(!usesWhatTheyHave ? [
       '- productNeeds vs steps: if any step tells the user to use a turntable, riser, airtight container, door rack, hook rack or drawer organizer, that item MUST also appear in productNeeds — checked per item, so listing one product does not cover the others. A plan that instructs a purchase it does not list gives the user a shopping list missing the thing the step needs, and a cost that does not add up. Either list what they need to buy, or write the step to work with what is already in the space.',
     ] : []),
-    /* This line used to say the user had chosen the effort level, which was
-       false for the common case: the card arrives preselected, and the
-       untrusted block says so in as many words. The range is real either way,
-       it is read off ctx.effort whether or not anyone touched the card, so the
-       line names the range and not a choice. */
-    `- steps: return between ${minSteps} and ${maxSteps} steps, the range for this request's effort level.`,
+    /* The line names the range and not a choice: the card arrives
+       preselected, and stepRangeFor widens an untouched effort to the general
+       range, so "the effort this user chose" was false whenever they left it,
+       and the untrusted block says in the same prompt that they did. */
+    `- steps: return between ${minSteps} and ${maxSteps} steps, the range for this request's effort level. Use the count the work needs inside it; never pad with generic steps.`,
+    /* The new fields are the one place the validator is looser than the
+       prompt, and the model is told so, with the caps the repair pass
+       applies, from the same constants. */
+    `- optional fields: "wall", "tier", "rows", "goal" and "spotted" are optional, and a bad value in any of them is dropped rather than rejected. "spotted" keeps at most ${SPOTTED_MAX} entries and "rows" at most ${STEP_ROWS_MAX} per step.`,
     `- step length: every steps[].task must be ${STEP_TASK_MAX_WORDS} words or fewer and every steps[].why ${STEP_WHY_MAX_WORDS} or fewer. Aim well under both, at 8 and 12, because each step renders as one line beside a picture. Checked per step, so one long task rejects the whole plan.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
     `- text length: no string value may be longer than ${PLAN_TEXT_MAX_CHARS} characters, and every icon keyword ${PLAN_ICON_MAX_CHARS} or fewer. The word limits above are far tighter, so a plan that follows them never comes near these.`,
@@ -300,6 +322,44 @@ Deno.serve(async (req) => {
     ...(depthLimit ? [depthLimit] : []),
   ].join('\n');
 
+  /* What the answers ARE, as facts about this request, in the trusted half
+     of the prompt. The untrusted block carries their words, which the model
+     is told to read purely as description; this block carries only booleans
+     and counts derived from them, so nothing a user typed is interpolated
+     here, and it can say how the answers shape the plan without becoming an
+     instruction that lives inside the data. */
+  const count = (v: unknown) => Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()).length : 0;
+  const goalCount = count(ctx.goals);
+  /* A list is confirmed when the user edited the step and ticked something.
+     A client from before the flag existed sends no flag, and for it a list
+     it sends is theirs (the untrusted block already describes it that way),
+     so the two halves of the prompt agree about the same request. */
+  const listConfirmed = ctx.categoriesTouched === true
+    ? count(ctx.categories) > 0
+    : ctx.categoriesTouched === undefined && count(ctx.categories) > 0;
+  const categoryCount = listConfirmed ? count(ctx.categories) : 0;
+  const styleCount = count(ctx.styles) + count(ctx.prefs);
+  const aboutRequest = [
+    '',
+    'About this request (counts only; their own words are in the user_context block at the end):',
+    listConfirmed
+      ? `- Contents: the user confirmed a contents list of ${categoryCount} ${categoryCount === 1 ? 'category' : 'categories'}. That list is the plan's scope; anything else you see goes only in "spotted".`
+      : ctx.categoriesTouched === true
+        ? '- Contents: the user edited the contents step and left every option unticked, so there is no confirmed list. The scope is what the photos show, and "spotted" stays empty.'
+        : '- Contents: no confirmed list; the user left the contents step as we set it. The scope is what the photos show, and "spotted" stays empty.',
+    goalCount
+      ? `- Goals: ${goalCount} given. Each gets a step with "goal" set to it where the step range allows.`
+      : '- Goals: none given, so no step carries a "goal".',
+    ctx.effortTouched === false
+      ? '- Effort: left on our preselection. Use the number of steps the work needs inside the range in "Enforced limits"; do not pad.'
+      : ctx.effortTouched === true
+        ? '- Effort: chosen by the user. Size the plan to it, inside the range in "Enforced limits".'
+        : '- Effort: the step range in "Enforced limits" applies.',
+    styleCount
+      ? `- Styles and preferences: ${styleCount} given. They shape the zones, the steps and any product.`
+      : '- Styles and preferences: none given.',
+  ].join('\n');
+
   const content: unknown[] = images.map((img) => ({
     type: 'image',
     source: { type: 'base64', media_type: img.media_type, data: img.data },
@@ -319,7 +379,7 @@ Deno.serve(async (req) => {
      28% and costs a little below it. */
   content.push({
     type: 'text',
-    text: `${PROMPT_HEAD}\n${enforced}\n\n${untrustedContextBlock(body.context)}`,
+    text: `${PROMPT_HEAD}\n${enforced}\n${aboutRequest}\n\n${untrustedContextBlock(body.context)}`,
     cache_control: { type: 'ephemeral' },
   });
 
@@ -433,6 +493,9 @@ Deno.serve(async (req) => {
 
       const validation = validatePlan(result.plan, body.context ?? {});
       if (validation.ok) {
+        // Counts only: did the answers reach the plan. Read beside
+        // validation_failed after a prompt change.
+        console.log('analyze-space plan quality', requestId, JSON.stringify(planQuality(validation.value, body.context ?? {})));
         return json(req, 200, { plan: validation.value, model: MODEL, requestId });
       }
 

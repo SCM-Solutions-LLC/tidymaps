@@ -291,6 +291,66 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-03 session changed, part 4 (the prompt tells the model to use the answers)
+
+Fourth of the six PRs from the owner's site review, and the server half of
+part 3. Deploys on merge to `main`; no migration (the new fields are JSON
+inside the stored plan). An old client with the new server and a new client
+with an old server both work: `normalizeAi` ignores what it does not know and
+an old server ignores the new context fields.
+
+- **Soft schema** (`supabase/functions/_shared/planSchema.js`): map rows
+  take `wall` (`WALLS`, held equal to the client's) and `tier`; steps take
+  `rows` and `goal`; the plan takes `spotted[{name,row}]` (deduped by name);
+  `sections[].place` is softened (`front` itself came in part 3). Every one of
+  them is `.catch(undefined)`: a bad value is dropped, never a rejected plan
+  (a section with an unknown place used to reject the whole analysis). `repairOptionalFields` runs after
+  `alignShelfCount`: rows outside the map go, lists are deduped and capped
+  (`STEP_ROWS_MAX` 4, `SPOTTED_MAX` 8), and an empty field is removed rather
+  than left empty. No new hard rejection anywhere; goal coverage, scope and
+  padding are measured, not enforced (the CLAUDE.md rule).
+- **`stepRangeFor(ctx)`** is the one place the step range comes from, read
+  by the prompt line and by `checkInvariants`: an effort left on the
+  preselection (`effortTouched === false`) is held to `DEFAULT_STEP_RANGE`
+  (4 to 10) and told to use the count the work needs; a chosen effort keeps
+  its own range; a client from before the flag keeps the old meaning.
+- **Prompt** (`analyze-space/index.ts`): a trusted "Using the user's
+  answers" section (their contents list is the scope and everything else goes
+  only in `spotted`; every goal gets a step with `goal` copied exactly; styles
+  and preferences shape the plan, "No drilling" rules out mounting; steps
+  name real items, never a count, with the where in `rows`; use as many steps
+  as the work needs, never pad; `wall` and `tier` on every row of a multi-wall
+  space, `eye` at most one per wall). The schema comments describe the new
+  fields, with the wall enum and both caps interpolated from the validator's
+  constants. A per-request "About this request" block sits after the
+  enforced limits and before the injection guard, built only from booleans
+  and counts (list confirmed and how many, goals given, effort touched,
+  styles given; a client from before the flags gets the old meaning in both
+  halves), so no user string reaches the trusted half; a test reads the
+  block out of the source and allow-lists every `${…}` in it. The head says
+  a visible chemical or sharp item is always placed and flagged whatever the
+  list says, and that goals get steps as far as the range allows. The enforced-limits block
+  gains one line saying the optional fields are dropped rather than rejected,
+  with the caps.
+- **`usableShelfDepth`** is now the builders' formula in full (14-inch floor,
+  half-room term): a 4-foot walk-in no longer caps the model's `maxDims` at
+  9.6 inches under 14-inch drawn shelving. A test holds it equal to the
+  client's `js/catalog.js shelfDepthFor` (the products PR) by import, square
+  and oblong rooms alike.
+- **Quality log**: one `console.log('analyze-space plan quality', …)` line
+  per accepted plan with `planQuality` counts (rows with a wall, eye rows,
+  steps with rows, goals given and covered, spotted, whether contents and
+  effort were touched). Counts only. After merge, read it beside
+  `validation_failed` for a day and run `scripts/model-path-canary.mjs`;
+  loosen prompt wording if tasks start failing the 12-word cap, never
+  tighten the validator.
+- Tests (`tests/plan-schema.test.mjs`): `stepRangeFor` in both places and
+  the behaviour (a five-step plan with an untouched effort is accepted);
+  garbage in every optional field validates and is dropped, `place:'front'`
+  accepted; the answers section and the facts block are trusted text with no
+  user strings; `WALLS` parity and the prompt's wall enum; `planQuality`
+  counts; the shelf-depth formula term by term.
+
 ## What the 2026-10-03 session changed, part 3 (the answers reach the plan; every row has a wall)
 
 Third of the six PRs from the owner's site review. The owner's walk-in
