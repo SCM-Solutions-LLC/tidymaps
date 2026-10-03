@@ -44,12 +44,18 @@ test('each retailer has its own wording', () => {
   assert.equal(classifyAvailability({ status: 200, url: 'https://www.containerstore.com/s/x', body: '<span>Out of Stock</span>' }).state, 'unavailable');
 });
 
-test('a request that ends on another host is "moved", whatever the page says', () => {
+test('a request that ends on another host is "moved", whatever the page says or answers', () => {
   const v = classifyAvailability({ status: 200, url: amazon, finalUrl: 'https://www.example.com/parked', body: '<html>In Stock</html>' });
   assert.equal(v.state, 'moved');
   assert.match(v.reason, /example\.com/);
-  // The retailer's own redirects (to www, to a canonical path) are not a move.
+  // A parked host answers a bot with 403 as often as 200; the move is the fact.
+  assert.equal(classifyAvailability({ status: 403, url: amazon, finalUrl: 'https://www.example.com/parked', body: '' }).state, 'moved');
+  assert.equal(classifyAvailability({ status: 404, url: amazon, finalUrl: 'https://www.example.com/gone', body: '' }).state, 'moved');
+  // The retailer's own redirects (to www, to a canonical path, from its short
+  // link) are not a move, nor is an unlisted retailer dropping its www.
   assert.equal(classifyAvailability({ status: 200, url: 'https://amazon.com/dp/B0', finalUrl: 'https://www.amazon.com/Copco/dp/B0', body: '<html>In Stock</html>' }).state, 'ok');
+  assert.equal(classifyAvailability({ status: 200, url: 'https://amzn.to/abc', finalUrl: 'https://www.amazon.com/dp/B0', body: '<html>In Stock</html>' }).state, 'ok');
+  assert.equal(classifyAvailability({ status: 200, url: 'https://www.wayfair.com/p/1', finalUrl: 'https://wayfair.com/p/1', body: '<html>Add to cart</html>' }).state, 'ok');
 });
 
 test('a body that is not a page cannot be read for wording', () => {

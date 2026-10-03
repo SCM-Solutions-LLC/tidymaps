@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { rankProducts, reconcileSelection, loadCatalog, catalogFailed, catalogProducts, priceAsOf, fmtChecked } from '../js/catalog.js';
 import { state } from '../js/state.js';
 
@@ -88,10 +89,22 @@ test('a saved selection follows the catalog: refreshed while the product is sold
 test('the check date reads as a date, and the as-of month as a month', () => {
   assert.equal(fmtChecked('2026-07'), 'Jul 2026');
   assert.equal(fmtChecked('2026-10-03'), 'Oct 3, 2026');
-  assert.equal(fmtChecked('2026-12-31'), 'Dec 31, 2026', 'the day must not shift with the time zone');
+  assert.equal(fmtChecked('2026-12-31'), 'Dec 31, 2026');
   assert.equal(fmtChecked(''), '');
   assert.equal(fmtChecked(null), '');
   assert.equal(fmtChecked('soon'), 'soon', 'junk comes back as it was rather than as "Invalid Date"');
+});
+
+/* CI runs in UTC, where a month label built from a local-time Date happens
+   to be right. A reader west of Greenwich is the case: without the explicit
+   UTC in fmtChecked, "2026-07" rendered "Jun 2026" there. The suite cannot
+   change its own time zone, so a child process runs the function in one. */
+test('the check date reads the same in every time zone', () => {
+  const mod = new URL('../js/catalog.js', import.meta.url).href;
+  const out = execFileSync(process.execPath, ['--input-type=module', '-e',
+    `import { fmtChecked } from ${JSON.stringify(mod)}; console.log(fmtChecked('2026-07'), '|', fmtChecked('2026-12-31'));`],
+  { env: { ...process.env, TZ: 'America/Los_Angeles' }, encoding: 'utf8' }).trim();
+  assert.equal(out, 'Jul 2026 | Dec 31, 2026');
 });
 
 test('a catalog that fails to load says so, and is fetched again next time', async () => {

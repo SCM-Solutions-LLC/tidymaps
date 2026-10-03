@@ -77,7 +77,7 @@ const { counts, failing, backInStock } = summarize(results);
 console.log(`\n${results.length} products checked: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')}`);
 for (const r of failing) console.log(`FAIL  ${r.id} is ${r.verdict} but the catalog says available: ${r.url}${r.reason ? ` (${r.reason})` : ''}`);
 for (const r of backInStock) console.log(`NOTE  ${r.id} loads fine now but the catalog says unavailable: worth a look`);
-if (counts.blocked) console.log(`NOTE  ${counts.blocked} page(s) could not be read (bot wall or 4xx/5xx); they are neither confirmed nor cleared`);
+if (counts.blocked) console.log(`NOTE  ${counts.blocked} page(s) could not be read (bot wall, 403, 429 or 503, or an empty or non-HTML body); they are neither confirmed nor cleared`);
 
 if (reportPath) {
   writeFileSync(reportPath, JSON.stringify({ checkedAt: new Date().toISOString(), counts, failing: failing.map(r => r.id), results }, null, 2));

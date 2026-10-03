@@ -50,10 +50,16 @@ const PHRASES = {
   },
 };
 
+/* A retailer's own short links resolve to its full site; a redirect from one
+   to the other is not a move. The catalog itself should carry the full
+   product URL (js/catalog.js says so), so this is a guard, not a feature. */
+const SHORT_HOSTS = { 'amzn.to': 'amazon.com', 'a.co': 'amazon.com' };
+
 export function retailerHost(url) {
   try {
     const host = new URL(url).hostname.toLowerCase();
-    return Object.keys(PHRASES).find(h => host === h || host.endsWith('.' + h)) || host;
+    if (SHORT_HOSTS[host]) return SHORT_HOSTS[host];
+    return Object.keys(PHRASES).find(h => host === h || host.endsWith('.' + h)) || host.replace(/^www\./, '');
   } catch (_) {
     return '';
   }
@@ -61,15 +67,17 @@ export function retailerHost(url) {
 
 export function classifyAvailability({ status = 0, body = '', url = '', finalUrl = '', contentType = '', error = null } = {}) {
   if (error) return { state: 'error', reason: String(error) };
-  if (status === 404 || status === 410) return { state: 'dead', reason: `http ${status}` };
-  if (status === 403 || status === 429 || status === 503 || status === 0) return { state: 'blocked', reason: `http ${status}` };
-  if (status >= 400) return { state: 'error', reason: `http ${status}` };
   // Redirects are followed, so the page in hand may not be the retailer's at
   // all; its wording would then be judged by the wrong phrase table, and a
-  // search page or a parked domain would read "ok".
+  // search page or a parked domain would read "ok". Judged before the status:
+  // a parked host answers a bot with 403 as often as 200, and either way the
+  // plan is sending people somewhere else.
   if (finalUrl && retailerHost(finalUrl) !== retailerHost(url)) {
     return { state: 'moved', reason: `redirected to ${retailerHost(finalUrl) || 'an unknown host'}` };
   }
+  if (status === 404 || status === 410) return { state: 'dead', reason: `http ${status}` };
+  if (status === 403 || status === 429 || status === 503 || status === 0) return { state: 'blocked', reason: `http ${status}` };
+  if (status >= 400) return { state: 'error', reason: `http ${status}` };
   if (contentType && !/html|xml/i.test(contentType)) return { state: 'blocked', reason: `not a page (${contentType.split(';')[0].trim()})` };
   const text = String(body || '').toLowerCase();
   if (!text.trim()) return { state: 'blocked', reason: 'empty body' };

@@ -8,8 +8,9 @@
 #
 # The signal is this workflow failing. GitHub emails the repo owner on a failed
 # scheduled run, the same mechanism the model-path canary relies on. The run
-# fails only when a product the catalog still calls available comes back dead
-# or unavailable; a bot-blocked page is reported as unknown, not as a failure.
+# fails only when a product the catalog still calls available comes back dead,
+# unavailable or moved (the link no longer lands on the retailer); a
+# bot-blocked page is reported as unknown, not as a failure.
 # A person then confirms on the retailer's page and flips `available` (and
 # sets `checked`) in data/catalog.json.
 #

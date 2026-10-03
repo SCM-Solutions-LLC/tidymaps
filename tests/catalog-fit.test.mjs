@@ -74,6 +74,14 @@ test('a room-shaped space is measured as a room, but products sit on its shelves
   assert.equal(fitBadge('fits', 'safety-latch').txt, '', 'a latch screws to a door; a shelf depth means nothing for it');
   assert.ok(Math.abs(shelfDepthFor(state.dims, 'walkin-u') - 14.4) < 1e-9, 'an archetype is accepted in place of a setup id');
 
+  // The whole of the builders' formula, term by term: the 18-inch cap, the
+  // half-room term, the 8-inch floor and the L-run's own factor. A review
+  // found the cap and the half-room term silently dropped by a stray edit.
+  assert.equal(shelfDepthFor({ w_in: 120, h_in: 96, d_in: 120 }, 'walkin'), 18, 'a 10-foot walk-in still has 18-inch shelving, not 24');
+  assert.equal(shelfDepthFor({ w_in: 24, h_in: 96, d_in: 24 }, 'walkin'), 12, 'a 2-foot room keeps half its depth for the aisle');
+  assert.equal(shelfDepthFor({ w_in: 10, h_in: 96, d_in: 10 }, 'walkin'), 8, 'never shallower than 8 inches');
+  assert.ok(Math.abs(shelfDepthFor({ w_in: 80, h_in: 96, d_in: 80 }, 'lshape') - 17.6) < 1e-9, 'an L-run uses its own factor');
+
   // The 3D builders draw a 4-foot walk-in with 14-inch shelves (their floor);
   // the matcher has to agree, or the plan's pick is flagged in its own view.
   assert.equal(shelfDepthFor({ w_in: 48, h_in: 96, d_in: 48 }, 'walkinL'), 14, 'the builders\' 14-inch floor is missing');
@@ -108,8 +116,13 @@ test('the shelf depth follows the layout the 3D view draws, not the preselected 
     assert.match(fitBadge('fits', 'clear-bin').txt, /14" shelf depth/);
     assert.match(searchLinks(need)[0].url, /max%2014%20inch%20deep/);
 
-    // A layout picked in the 3D view outranks everything there, and so here.
+    // A setup the user actually picked outranks the photos, in the viewer and so here.
     state.setup = 'walkin'; state.setupTouched = true;
+    state.ai = { layout: { type: 'shelves', sections: [] }, map: [] };
+    assert.equal(currentArchetype(), 'walkin-u', 'their own choice of a walk-in wins over photos that read as shelving');
+    assert.equal(fitFor({ dims_in: { w: 10, h: 8, d: 20 } }, need), 'no-fit');
+
+    // A layout picked in the 3D view outranks everything there, and so here.
     state.arrangement = { layoutOverride: 'shelves' };
     assert.equal(currentArchetype(), 'shelves');
     assert.equal(fitFor({ dims_in: { w: 10, h: 8, d: 20 } }, need), 'fits', 'open shelving is as deep as it was measured');

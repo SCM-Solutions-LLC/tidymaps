@@ -621,8 +621,11 @@ export function renderUpgrades(){
      catalog load failed, when state.shopping was never reconciled (a saved
      plan) or is still null (a fresh one). Rows built from a saved selection
      the catalog never confirmed are the claim this card exists not to make,
-     so the failed state stays up until a load succeeds. */
-  if(catalogFailed() || !Array.isArray(state.shopping)){ showUpgradesFailed(); renderShopping(); return; }
+     so the failed state stays up until a load succeeds. Clicked while the
+     catalog is still loading, there is nothing to remove yet: the skeleton
+     stays, and the rows arrive when the load lands. */
+  if(catalogFailed()){ showUpgradesFailed(); renderShopping(); return; }
+  if(!Array.isArray(state.shopping)){ renderShopping(); return; }
   const needs=activeProductNeeds();
   document.getElementById('res-upgrades').removeAttribute('aria-busy');
   document.getElementById('res-upgrades').innerHTML=needs.map((need,i)=>{
@@ -741,7 +744,7 @@ export function renderShopping(){
   const picked=(state.shopping||[]).filter(s=>s.checked);
   const list=document.getElementById('res-shopping');
   list.innerHTML=picked.length?picked.map(s=>
-    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}${s.unavailable?' <span class="muted">(pick a product)</span>':''}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
+    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}${s.unavailable?' <span class="muted">(no product yet)</span>':''}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
     '<li><span class="muted">No items selected. You\'re on the $0 plan.</span></li>';
   const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
   const unpriced=picked.some(s=>s.price_usd==null);

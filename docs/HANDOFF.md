@@ -333,7 +333,14 @@ so it reported that very listing "ok 200" the same morning.
   a cabinet for every area and most people leave it, so a walk-in the photos
   revealed was still judged against 72 inches here while the viewer drew
   14-inch shelves. The viewer's add-an-organizer (`shelfMaxDims`) caps depth
-  by the same function, so an added item and a recommended one agree. Both were found by `demo-fit` flagging the plan's
+  by the same function, and the viewer reports its unsaved layout chip
+  through `setLiveLayoutOverride` so a pick made between a chip tap and Save
+  is judged against the layout being drawn. `tests/catalog-fit.test.mjs` pins
+  every term of the formula (the 18-inch cap, the half-room term, the 8-inch
+  floor, the L-run factor): the delta review of this PR found two of them
+  missing from a commit, left behind by a review agent that had neutered the
+  line to prove a test red, and no test had noticed (see the new CLAUDE.md
+  rule). Both were found by `demo-fit` flagging the plan's
   own pick in three setups when the server's formula (no floor) and a
   half-inch clearance were tried first. The server's `usableShelfDepth`
   (`planSchema.js:434`) still lacks the floor: for a 4-foot walk-in it caps
@@ -350,8 +357,9 @@ so it reported that very listing "ok 200" the same morning.
   focus to the new product link. The summary list marks such a row "(pick a
   product)". A failed catalog load reaches `showUpgradesFailed`, and
   `renderUpgrades` keeps that state when "Remove all upgrades" (outside the
-  list) fires afterwards; it used to throw on a fresh plan or rebuild rows
-  from a saved selection the catalog never confirmed. The library hides
+  list) fires afterwards, and leaves the skeleton alone when it fires while
+  the catalog is still loading; it used to throw on a fresh plan or rebuild
+  rows from a saved selection the catalog never confirmed. The library hides
   unavailable products in both the list and the category chips.
 - **Availability check**: `scripts/product-availability.mjs` (pure,
   unit-tested) classifies a retailer page as ok, unavailable, dead, moved
@@ -370,7 +378,8 @@ so it reported that very listing "ok 200" the same morning.
 - Tests: `tests/catalog-availability.test.mjs`, `tests/product-availability.test.mjs`,
   `tests/e2e/product-unavailable.spec.mjs` (the gone-product row at phone
   width, the picker's height, the summary and export agreeing, focus after a
-  pick, and "Remove all upgrades" after a failed catalog load), and additions
+  pick, and "Remove all upgrades" after a failed catalog load, with a saved
+  selection, and during the load), and additions
   to `tests/products.test.mjs`, `tests/catalog-fit.test.mjs`,
   `tests/plan-export.test.mjs` and `tests/ci-permissions.test.mjs`; each was
   run red before its fix (the classifier by emptying the Amazon phrase list,

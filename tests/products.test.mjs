@@ -67,9 +67,13 @@ test('the plan draws the product category, hides nothing behind a generic glyph,
   assert.match(results, /src="\$\{escapeHtml\(sel\.img\)\}"/, 'the product image URL is interpolated unescaped');
   assert.match(results, /href="\$\{escapeHtml\(withAffiliate\(sel\.url/, 'the product URL is interpolated unescaped');
   // The branch itself, not the name: a comment two lines up mentions the call too.
-  assert.match(results, /if\(catalogFailed\(\)\)\{\s*showUpgradesFailed\(\);\s*return;/, 'a catalog that fails to load no longer reaches the failed state');
-  assert.match(results, /if\(catalogFailed\(\)\s*\|\|\s*!Array\.isArray\(state\.shopping\)\)\{\s*showUpgradesFailed\(\);/,
+  assert.match(results, /if\s*\(catalogFailed\(\)\)\s*\{\s*showUpgradesFailed\(\);\s*return;/, 'a catalog that fails to load no longer reaches the failed state');
+  // Two guards in renderUpgrades: a failed load keeps the failed state, and a
+  // load still in flight leaves the skeleton (tests/e2e/product-unavailable.spec.mjs drives both).
+  assert.match(results, /if\s*\(catalogFailed\(\)\)\s*\{\s*showUpgradesFailed\(\);\s*renderShopping\(\);\s*return;/,
     'a re-render after a failed load (say, "Remove all upgrades") builds rows the catalog never confirmed');
+  assert.match(results, /if\s*\(!Array\.isArray\(state\.shopping\)\)\s*\{\s*renderShopping\(\);\s*return;/,
+    'a re-render before the catalog has loaded reads state.shopping[i] off null');
 });
 
 test('the library hides products that are no longer sold, in the list and in the category chips', () => {

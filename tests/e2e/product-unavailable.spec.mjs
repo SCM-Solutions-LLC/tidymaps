@@ -9,28 +9,35 @@ import { test, expect } from 'playwright/test';
 const GONE = 'copco-basics-lazy-susan-9in'; // available:false in data/catalog.json
 const GONE_NAME = 'Copco Basics 9in Lazy Susan';
 
+/* The sample pantry asks for a turntable; the saved selection for that need
+   points at the retired one, the way a plan saved in September does. */
 async function openPlanPointingAtGoneProduct(page) {
   await page.goto('/index.html');
   await page.getByRole('button', { name: 'View a sample plan' }).click();
   await expect(page.locator('#screen-results')).toHaveClass(/active/);
   await expect(page.locator('#res-upgrades .prod').first()).toBeVisible({ timeout: 15_000 });
-  await page.evaluate(async ([id, name]) => {
-    const [{ state }, { buildResults }] = await Promise.all([import('/js/state.js'), import('/js/screens/results.js')]);
+  const index = await page.evaluate(async ([id, name]) => {
+    const [{ state }, { buildResults }, { activeProductNeeds }] = await Promise.all([
+      import('/js/state.js'), import('/js/screens/results.js'), import('/js/plan.js'),
+    ]);
     state.upgrades = true;
-    // What spaces.shopping holds for a plan saved before the product went.
-    state.shopping[0] = {
-      ...state.shopping[0], checked: true, productId: id, name, price_usd: 9.99,
+    const i = activeProductNeeds().findIndex(n => n.type === 'turntable');
+    state.shopping[i] = {
+      ...state.shopping[i], checked: true, productId: id, name, price_usd: 9.99,
       url: 'https://www.amazon.com/dp/B088N867YS', retailer: 'Amazon', fit: 'fits', dims_in: { w: 9, h: 1.4, d: 9 },
     };
     buildResults();
+    return i;
   }, [GONE, GONE_NAME]);
+  expect(index).toBeGreaterThanOrEqual(0);
   await expect(page.locator('#res-upgrades .prod').first()).toBeVisible({ timeout: 15_000 });
-  return page.locator('#res-upgrades .prod').first();
+  return { row: page.locator('#res-upgrades .prod').nth(index), index };
 }
 
 test('a product that is no longer sold is named as gone, not linked, and gets a picker', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  const row = await openPlanPointingAtGoneProduct(page);
+  const { row, index } = await openPlanPointingAtGoneProduct(page);
+  await expect(row.locator('h3')).toContainText('Turntable');
 
   await expect(row.locator('.punavailable')).toHaveText(`No longer sold: ${GONE_NAME}. Pick another below.`);
   await expect(row.locator('.pname')).toHaveCount(0);
@@ -41,8 +48,9 @@ test('a product that is no longer sold is named as gone, not linked, and gets a 
   expect(box.height, 'the picker is under 44px').toBeGreaterThanOrEqual(44);
 
   // The other two places that name the pick agree with the card.
-  await expect(page.locator('#res-shopping li').first()).toContainText('(pick a product)');
-  await expect(page.locator('#res-shopping li').first()).not.toContainText(GONE_NAME);
+  const summary = page.locator('#res-shopping li').nth(index);
+  await expect(summary).toContainText('Turntable (no product yet)');
+  await expect(page.locator('#res-shopping')).not.toContainText(GONE_NAME);
   const exported = await page.evaluate(async () => (await import('/js/planExport.js')).shoppingListText());
   expect(exported).not.toContain(GONE_NAME);
   expect(exported).toContain('no product picked yet');
@@ -53,7 +61,7 @@ test('a product that is no longer sold is named as gone, not linked, and gets a 
   await expect(row.locator('.pname')).toHaveCount(1);
   await expect(row.locator('.pname')).toBeFocused();
   await expect(row.locator('.cost')).not.toHaveText('–');
-  await expect(page.locator('#res-shopping li').first()).not.toContainText('(pick a product)');
+  await expect(page.locator('#res-shopping')).not.toContainText('(no product yet)');
 });
 
 /* "Remove all upgrades" sits outside the product list and stays clickable
@@ -69,9 +77,43 @@ test('when the catalog cannot load, removing all upgrades keeps the failed state
   await expect(page.locator('#screen-results')).toHaveClass(/active/);
   await expect(page.locator('#res-upgrades .load-failed')).toBeVisible();
 
+  // A fresh plan: state.shopping is still null.
   await page.evaluate(() => window.uncheckAllUpgrades());
   await expect(page.locator('#res-upgrades .load-failed')).toBeVisible();
   await expect(page.locator('#res-upgrades .prod')).toHaveCount(0);
   await expect(page.locator('#res-shop-total')).toHaveText('$0');
+
+  // A saved plan: state.shopping is whatever the database held, never
+  // re-read from the catalog, so its link and price are unconfirmed.
+  await page.evaluate(async ([id, name]) => {
+    const { state } = await import('/js/state.js');
+    state.shopping = [{ needIdx: 0, checked: true, qty: 1, type: 'clear-bin', productId: id, name, price_usd: 9.99, url: 'https://www.amazon.com/dp/B088N867YS', retailer: 'Amazon', fit: 'fits', dims_in: { w: 9, h: 1.4, d: 9 } }];
+    window.uncheckAllUpgrades();
+  }, [GONE, GONE_NAME]);
+  await expect(page.locator('#res-upgrades .load-failed')).toBeVisible();
+  await expect(page.locator('#res-upgrades .prod')).toHaveCount(0);
+  await expect(page.locator('#res-upgrades')).not.toContainText(GONE_NAME);
+  expect(errors).toEqual([]);
+});
+
+/* Clicked while the catalog is still on its way, the same button used to
+   read state.shopping[i] off null. There is nothing to remove yet: the
+   skeleton stays and the rows arrive when the load lands. */
+test('removing all upgrades before the catalog has loaded neither throws nor claims a failure', async ({ page }) => {
+  await page.route('**/data/catalog.json', async (route) => {
+    await new Promise((r) => setTimeout(r, 2500));
+    await route.continue();
+  });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/index.html');
+  await page.getByRole('button', { name: 'View a sample plan' }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/);
+  await expect(page.locator('#res-upgrades .sk-list')).toBeVisible();
+
+  await page.evaluate(() => window.uncheckAllUpgrades());
+  await expect(page.locator('#res-upgrades .sk-list')).toBeVisible();
+  await expect(page.locator('#res-upgrades .load-failed')).toHaveCount(0);
+  await expect(page.locator('#res-upgrades .prod').first()).toBeVisible({ timeout: 15_000 });
   expect(errors).toEqual([]);
 });

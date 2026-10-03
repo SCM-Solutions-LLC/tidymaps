@@ -5,7 +5,7 @@ import { go } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
 import { LEVEL_NOUN } from '../setupStructure.js';
 import { PRODUCT_TYPES } from '../plan.js';
-import { TYPE_LABEL, shelfDepthFor } from '../catalog.js';
+import { TYPE_LABEL, shelfDepthFor, setLiveLayoutOverride } from '../catalog.js';
 import { addProductNeed } from './results.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
@@ -120,6 +120,7 @@ function currentLayout(map=activeMapV2()){
 function restoreArrangementOptions(){
   const arrangement=state.arrangement;
   layoutOverride=arrangement&&arrangement.layoutOverride||null;
+  setLiveLayoutOverride(layoutOverride);
   lSideChoice=arrangement&&arrangement.lSide||'auto';
   shelfPlacement=arrangement&&arrangement.shelfPlacement||'center';
   dimsPreview=arrangement&&arrangement.version>=2&&arrangement.geometry
@@ -379,6 +380,7 @@ export function saveArrangement(){
 export function resetArrangement(){
   state.arrangement=null;
   layoutOverride=null;
+  setLiveLayoutOverride(null);
   dimsPreview=null;
   lSideChoice='auto';
   shelfPlacement='center';
@@ -625,6 +627,7 @@ function initLayoutChips(resolved){
     btn.textContent=ARCHETYPE_LABELS[arch]||arch;
     btn.onclick=()=>{
       layoutOverride=arch;
+      setLiveLayoutOverride(arch);
       wrap.querySelectorAll('.v3d-chip').forEach(b=>b.classList.remove('sel'));
       btn.classList.add('sel');
       markDirty();

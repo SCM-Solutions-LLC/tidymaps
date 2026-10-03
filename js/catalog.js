@@ -9,7 +9,9 @@ import { planFromPhotos } from './planProvenance.js';
    `available` (whether it could still be bought then) and `img` (null until a
    licensed photo exists). The matcher never offers a product marked
    unavailable; a weekly workflow reads each retailer page and asks a person to
-   flip the flag when a listing goes (scripts/check-product-links.mjs). */
+   flip the flag when a listing goes (scripts/check-product-links.mjs). Each
+   `url` is the retailer's full product page, never a short link: the checker
+   judges a redirect off the retailer's host as the listing having moved. */
 
 let catalog=null;
 let loadFailed=false;
@@ -72,7 +74,7 @@ export function shelfDepthFor(dims, setupOrArchetype){
   if(!factor) return depth;
   const width=Number(dims && dims.w_in)||depth;
   const smallest=Math.min(width, depth);
-  return Math.max(14, smallest*factor);
+  return Math.max(8, Math.min(18, Math.max(14, smallest*factor), smallest*0.5));
 }
 
 /* The archetype the 3D view draws, resolved the way the viewer resolves it
@@ -83,11 +85,17 @@ export function shelfDepthFor(dims, setupOrArchetype){
    still judged against the room's 72 inches here while the viewer drew
    14-inch shelves, and the card and the 3D view disagreed about the same
    bin. */
+let liveLayoutOverride=null;
+/* The viewer keeps its layout chip in memory until Save writes it to
+   state.arrangement; an organizer added between the tap and the save was
+   capped by the drawn layout and judged by the saved one. The viewer tells
+   this module what it is drawing (null when it restores or resets). */
+export function setLiveLayoutOverride(archetype){ liveLayoutOverride=archetype||null; }
 export function currentArchetype(){
   return resolveLayout({
     ai: state.ai, setup: state.setup, setupTouched: state.setupTouched,
     aiFromPhotos: planFromPhotos(), scenarioKey: state.space,
-    override: state.arrangement && state.arrangement.layoutOverride,
+    override: liveLayoutOverride || (state.arrangement && state.arrangement.layoutOverride),
     map: null,
   }).type;
 }

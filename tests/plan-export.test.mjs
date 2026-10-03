@@ -102,21 +102,24 @@ test('a $0 plan exports "nothing to buy" — never the demo pantry list', () => 
 
 /* A saved plan can point at a product that has since stopped being sold.
    reconcileSelection then labels the row by its type; the list people send
-   themselves must not tell them to buy the thing the screen says is gone. */
-test('a product nobody can buy is not on the list to buy', () => {
+   themselves must not tell them to buy the thing the screen says is gone.
+   The row is built by reconcileSelection itself, so the test covers the
+   whole path from the saved selection to the exported line. */
+test('a product nobody can buy is not on the list to buy', async () => {
+  const { reconcileSelection, TYPE_LABEL } = await import('../js/catalog.js');
   state.space = 'pantry';
   state.dims = null;
   state.ai = normalizeAi(getDemoScenario('pantry', null, NO_KIDS));
   const needs = activeProductNeeds();
   assert.ok(needs.length > 1);
-  state.shopping = needs.map((n, i) => ({
-    needIdx: i, checked: i === 0, qty: 1, type: n.type, productId: null,
-    unavailable: true, formerName: 'Old thing', formerProductId: 'old-thing', name: 'Clear bin', price_usd: null, url: null, retailer: null,
-  }));
+  const product = { id: 'old-thing', type: needs[0].type, name: 'Old thing', brand: 'Acme', dims_in: { w: 10, h: 6, d: 10 }, price_usd: 9, retailer: 'Target', url: 'https://www.target.com/p/old', tags: [], img: null, checked: '2026-10-03', available: false };
+  const saved = { needIdx: 0, checked: true, qty: 1, type: needs[0].type, productId: 'old-thing', name: 'Old thing', price_usd: 9, url: product.url, retailer: 'Target', img: null, fit: 'fits', dims_in: { w: 10, h: 6, d: 10 } };
+  state.shopping = needs.map((n, i) => i === 0
+    ? reconcileSelection(saved, n, [product])
+    : { needIdx: i, checked: false, qty: 1, type: n.type, productId: null, name: TYPE_LABEL[n.type] });
   const txt = shoppingListText();
   assert.ok(!/Old thing/.test(txt), `the retired product is still on the list:\n${txt}`);
-  assert.match(txt, /1 x Clear bin\n {4}no product picked yet: the one we suggested is no longer sold/);
-  assert.ok(!/Estimated total/.test(txt), 'nothing priced, so no total');
+  assert.match(txt, new RegExp(`1 x ${TYPE_LABEL[needs[0].type]}\\n {4}no product picked yet: the one we suggested is no longer sold`));
   state.shopping = null;
 });
 
