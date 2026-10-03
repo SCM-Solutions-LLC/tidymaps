@@ -30,8 +30,8 @@ jobs:
     # A hung request should not hold a runner for six hours.
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
       # No `npm ci`: the scripts import only node builtins and js/config.js,
