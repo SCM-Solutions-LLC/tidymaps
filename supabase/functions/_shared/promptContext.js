@@ -1,3 +1,5 @@
+import { effortUntouched } from './planSchema.js';
+
 // Builds the untrusted-context portion of the analyze-space prompt and hardens
 // it against prompt injection. Everything the user typed (space, goal, prefs,
 // free-text notes, toggle values) and anything the model can read inside the
@@ -98,7 +100,7 @@ export function buildContext(ctx = {}) {
      prompt promises there are none. What the range means for the step count
      is said once, in the trusted enforced-limits block. */
   if (ctx.effort) {
-    parts.push(ctx.effortTouched === false
+    parts.push(effortUntouched(ctx)
       ? `Effort level: "${ctx.effort}" is the wizard's preselection; they did not change it.`
       : `Effort level: ${ctx.effort}.`);
   }

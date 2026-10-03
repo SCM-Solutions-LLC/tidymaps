@@ -11,6 +11,19 @@ export const ITEM_SIZES = ['s', 'm', 'l'];
 export const ARCHETYPES = ['shelves','cabinet','l-run','walkin-u','closet-rod','drawer-bank','closet-system','under-bed','under-sink','counter','garage-rack','overhead-rack','workbench','fridge'];
 export const SURFACES = ['shelf','rod','drawer','floor','door','pegboard','worktop'];
 export const PLACES = ['left','back','right','front','upper','lower','run-a','run-b','floor','bench','wall'];
+/* Which wall a map row is on, for the report's wall tabs and the viewer's
+   per-wall shelving. Mirrors WALLS in js/placement.js (a test holds them
+   equal). "front" is the wall the door is in; "floor" is the floor itself. */
+export const WALLS = ['left','back','right','front','floor'];
+/* The optional fields the model may set and the client reads (js/plan.js
+   normalizeAi): wall and tier on a map row, rows (shelfIndex values) and goal
+   on a step, and a top-level spotted list of things seen in the photos that
+   the user's own contents list leaves out. None of them is ever a reason to
+   reject a plan: a bad value is dropped in validatePlan's repair pass, and
+   these two caps are applied there too. Stated to the model in the
+   enforced-limits block from these same constants. */
+export const SPOTTED_MAX = 8;
+export const STEP_ROWS_MAX = 4;
 
 // From the analyze-space prompt: "steps": 6-9 by default, scaled by effort.
 export const EFFORT_STEP_RANGES = {
@@ -25,6 +38,43 @@ export const EFFORT_STEP_RANGES = {
   'Full reorganization': [9, 14],
 };
 export const DEFAULT_STEP_RANGE = [4, 10];
+
+/* The step range a request is held to, read by the prompt and by
+   checkInvariants from this one place so the two cannot drift. An effort the
+   user never touched (the wizard preselects "Weekend reset") is not an ask
+   for seven steps: the general range applies and the prompt tells the model
+   to use the count the work needs. A client from before the flag existed
+   sends no `effortTouched`, and for it the effort's own range still applies,
+   exactly as before. */
+export function stepRangeFor(context) {
+  if (effortUntouched(context)) return DEFAULT_STEP_RANGE;
+  return knownEffort(context) ? EFFORT_STEP_RANGES[context.effort] : DEFAULT_STEP_RANGE;
+}
+/* The effort the wizard preselects (js/state.js ANSWER_DEFAULTS; a test holds
+   the two equal). An untouched flag is only a preselection when the label is
+   still this one: a row saved before the flag existed restores the flag as
+   false beside whatever effort the person chose then, and the client reads
+   it the same way (js/personalize.js applyEffort). */
+export const PRESELECTED_EFFORT = 'Weekend reset';
+export function effortUntouched(context) {
+  return !!context && context.effortTouched === false && context.effort === PRESELECTED_EFFORT;
+}
+/* Whether the request carries a contents list the user confirmed: they
+   edited the step and ticked something, or they are on a client from before
+   the flag existed, for which a list it sends is theirs. The prompt's two
+   halves and the repair pass all read this one function. */
+export function listConfirmed(context) {
+  if (!context) return false;
+  const n = Array.isArray(context.categories) ? context.categories.filter((x) => typeof x === 'string' && x.trim()).length : 0;
+  if (context.categoriesTouched === true) return n > 0;
+  return context.categoriesTouched === undefined && n > 0;
+}
+/* The effort label is user-supplied; looked up as an own property so a label
+   like "constructor" is an unknown effort, not a prototype function. */
+export function knownEffort(context) {
+  const effort = context && context.effort;
+  return typeof effort === 'string' && Object.hasOwn(EFFORT_STEP_RANGES, effort);
+}
 
 /* The prompt asks for a task of at most 8 words and a why of at most 12; these
    are the lengths at which the answer is REJECTED, and they sit deliberately
@@ -74,6 +124,11 @@ const safetySchema = z.object({
   why: text().nullable(),
 });
 
+/* Soft: `.catch(undefined)` turns a bad value into an absent one instead of a
+   rejected plan. These fields are new, optional, and read by nothing that
+   cannot do without them, so a model that gets one wrong must not cost the
+   user the analysis. (The validator must never be stricter than its prompt;
+   here it is deliberately looser.) */
 const mapRowSchema = z.object({
   level: text(),
   icon: iconKeyword(),
@@ -88,6 +143,8 @@ const mapRowSchema = z.object({
     flags: z.array(text()).optional(),
   })).optional(),
   surface: z.enum(SURFACES).nullable().optional(),
+  wall: z.enum(WALLS).nullable().optional().catch(undefined),
+  tier: z.number().int().min(0).optional().catch(undefined),
 });
 
 const geometrySchema = z.object({
@@ -116,9 +173,28 @@ const productNeedSchema = z.object({
 const layoutSectionSchema = z.object({
   id: text(),
   label: text().optional(),
-  place: z.enum(PLACES).optional(),
+  // A place the enum does not know used to reject the whole plan; now the
+  // section keeps its rows and loses only the place.
+  place: z.enum(PLACES).optional().catch(undefined),
   rows: z.array(z.number().int().min(0)).max(12),
 });
+
+const stepSchema = z.object({
+  task: text(),
+  time: text(),
+  why: text(),
+  // Any list is taken; the repair pass keeps the entries that are real
+  // shelf indexes, so one bad entry does not cost the step its whole list.
+  rows: z.array(z.unknown()).optional().catch(undefined),
+  goal: text().nullable().optional().catch(undefined),
+});
+
+// A broken entry becomes null and is dropped in the repair pass; a broken
+// list becomes no list.
+const spottedSchema = z.array(z.object({
+  name: text(),
+  row: z.number().int().nullable().optional().catch(undefined),
+}).catch(null)).optional().catch(undefined);
 
 const layoutSchema = z.object({
   type: z.enum(ARCHETYPES),
@@ -139,7 +215,8 @@ export const planSchema = z.object({
   existingLede: text().optional(),
   existing: z.array(z.object({ icon: iconKeyword(), title: text(), detail: text() })).optional(),
   dontBuy: text().optional(),
-  steps: z.array(z.object({ task: text(), time: text(), why: text() })).min(1),
+  steps: z.array(stepSchema).min(1),
+  spotted: spottedSchema,
   time: text().optional(),
   cost: text().optional(),
 });
@@ -310,9 +387,14 @@ function checkInvariants(plan, context) {
     }
   }
 
-  const [minSteps, maxSteps] = EFFORT_STEP_RANGES[context && context.effort] || DEFAULT_STEP_RANGE;
+  const [minSteps, maxSteps] = stepRangeFor(context);
   if (plan.steps.length < minSteps || plan.steps.length > maxSteps) {
-    errors.push(`steps: expected ${minSteps}-${maxSteps} steps for effort "${(context && context.effort) || 'unspecified'}", got ${plan.steps.length}`);
+    // The label is printed only when it is one of ours: this message goes
+    // back to the model as a trusted correction turn.
+    const forWhom = effortUntouched(context)
+      ? 'an effort left on the preselection (the general range applies)'
+      : `effort "${knownEffort(context) ? context.effort : 'unspecified'}"`;
+    errors.push(`steps: expected ${minSteps}-${maxSteps} steps for ${forWhom}, got ${plan.steps.length}`);
   }
 
   /* Step COUNT was checked above and step LENGTH was not, so a model that
@@ -437,7 +519,67 @@ export function usableShelfDepth(archetype, dims) {
   const factor = ROOM_SHAPED_ARCHETYPES[archetype];
   if (!factor) return depth;
   const width = Number(dims && dims.w_in) || depth;
-  return Math.max(8, Math.min(18, Math.min(width, depth) * factor));
+  /* The builders' formula in full, 14-inch floor included: a 4-foot walk-in
+     is drawn with 14-inch shelving, and this used to cap the model's
+     maxDims at 9.6 for the same room, so the catalog pick and the viewer
+     disagreed about every bin in it. js/catalog.js shelfDepthFor is the same
+     expression; a test holds the two equal. */
+  const smallest = Math.min(width, depth);
+  return Math.max(8, Math.min(18, Math.max(14, smallest * factor), smallest * 0.5));
+}
+
+/* The optional fields are soft at the schema and repaired here: a row index
+   the map does not have is dropped, lists are deduped and capped, and a field
+   left with nothing in it is removed rather than left empty, which is the
+   shape the client's normalizeAi expects (absent, not empty). */
+function repairOptionalFields(plan, context) {
+  const count = plan.geometry.shelfCount;
+  const validRow = (r) => Number.isInteger(r) && r >= 0 && r < count;
+  for (const step of plan.steps) {
+    const rows = Array.isArray(step.rows) ? [...new Set(step.rows.filter(validRow))].slice(0, STEP_ROWS_MAX) : [];
+    if (rows.length) step.rows = rows; else delete step.rows;
+    if (typeof step.goal === 'string' && step.goal.trim()) step.goal = step.goal.trim(); else delete step.goal;
+  }
+  // With no confirmed list the scope is the photos and the prompt says
+  // spotted stays empty; a list sent anyway is dropped, not a rejection.
+  const seenSpotted = new Set();
+  const spotted = (listConfirmed(context) && Array.isArray(plan.spotted) ? plan.spotted : [])
+    .filter((s) => s && typeof s.name === 'string' && s.name.trim())
+    .map((s) => ({ name: s.name.trim(), row: validRow(s.row) ? s.row : null }))
+    .filter((s) => { const k = s.name.toLowerCase(); if (seenSpotted.has(k)) return false; seenSpotted.add(k); return true; })
+    .slice(0, SPOTTED_MAX);
+  if (spotted.length) plan.spotted = spotted; else delete plan.spotted;
+  for (const row of plan.map) {
+    if (row.wall == null) delete row.wall;
+    if (!Number.isInteger(row.tier) || row.tier < 0) delete row.tier;
+  }
+  if (plan.layout && Array.isArray(plan.layout.sections)) {
+    for (const sec of plan.layout.sections) if (sec.place === undefined) delete sec.place;
+  }
+}
+
+/* One line of counts per accepted plan, for the function log: whether the
+   answers reached the plan. Counts only, never a name, a goal or an item.
+   Watched after deploy the way validation_failed is. */
+export function planQuality(plan, context = {}) {
+  const goals = new Set((Array.isArray(context.goals) ? context.goals : [])
+    .filter((g) => typeof g === 'string' && g.trim()).map((g) => g.trim().toLowerCase()));
+  const covered = new Set(plan.steps
+    .map((s) => (typeof s.goal === 'string' ? s.goal.trim().toLowerCase() : ''))
+    .filter((g) => g && goals.has(g)));
+  return {
+    mapRows: plan.map.length,
+    rowsWithWall: plan.map.filter((r) => WALLS.includes(r.wall)).length,
+    eyeRows: plan.map.filter((r) => r.eye === true).length,
+    steps: plan.steps.length,
+    stepsWithRows: plan.steps.filter((s) => Array.isArray(s.rows) && s.rows.length).length,
+    goalsGiven: goals.size,
+    goalsCovered: covered.size,
+    spotted: Array.isArray(plan.spotted) ? plan.spotted.length : 0,
+    categoriesEdited: context.categoriesTouched === true,
+    listConfirmed: listConfirmed(context),
+    effortTouched: !effortUntouched(context),
+  };
 }
 
 /* Mirrors evenShelfFracs in js/three/viewerOptions.js. Duplicated rather than
@@ -500,9 +642,11 @@ export function validatePlan(raw, context = {}) {
   if (!structural.success) {
     return { ok: false, value: null, errors: issuesToStrings(structural.error) };
   }
-  // Order matters: the fracs are regenerated to match the corrected count.
+  // Order matters: the fracs are regenerated to match the corrected count,
+  // and the optional row references are checked against that count.
   alignShelfCount(structural.data);
   normalizeShelfYFracs(structural.data.geometry);
+  repairOptionalFields(structural.data, context);
   const errors = checkInvariants(structural.data, context);
   if (errors.length) {
     return { ok: false, value: null, errors };
