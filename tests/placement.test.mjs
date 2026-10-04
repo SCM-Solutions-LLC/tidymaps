@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   WALLS, WALL_LABEL, wallFromPlace, wallFromLevel, placementFor, placementFromSections,
+  levelLabel, whereFor, wallGroups, wallsPlaced,
 } from '../js/placement.js';
 import { ARCHETYPE_LEVELS, ARCHETYPE_LEVELS_FOR_SOURCE } from '../js/setupStructure.js';
 
@@ -391,4 +392,132 @@ test('placementFor never mutates its input', () => {
   rows.forEach(r => Object.freeze(r)); Object.freeze(rows);
   placementFor(rows, { layout, archetype: 'walkin-u' });
   assert.equal(JSON.stringify({ rows, layout }), before);
+});
+
+// levelLabel
+
+test('levelLabel drops a wall head and keeps everything that is not one', () => {
+  assert.equal(levelLabel('Back wall: eye level'), 'Eye level');
+  assert.equal(levelLabel('Left wall: hanging rod'), 'Hanging rod');
+  assert.equal(levelLabel('Floor: full run'), 'Full run');
+  // No colon, nothing to strip, even when the head names a wall.
+  assert.equal(levelLabel('Floor'), 'Floor');
+  assert.equal(levelLabel('Door rack'), 'Door rack');
+  // A head that is not a wall stays, colon and all.
+  assert.equal(levelLabel('Hanging rod: left'), 'Hanging rod: left');
+  assert.equal(levelLabel('Unit 2: middle shelf'), 'Unit 2: middle shelf');
+  assert.equal(levelLabel('Back wall:'), 'Back wall:');
+  assert.equal(levelLabel(null), '');
+});
+
+// whereFor
+
+const WALKIN_NORMALIZED = WALKIN_ROWS.map((r, i) => {
+  const { level, icon, ...rest } = r;
+  return { lv: level, ic: icon, shelfIndex: i, ...rest };
+});
+const WALKIN_PLACEMENT = placementFor(WALKIN_NORMALIZED, { archetype: 'walkin-u' });
+const CABINET_NORMALIZED = CABINET_ROWS.map((r, i) => {
+  const { level, icon, ...rest } = r;
+  return { lv: level, ic: icon, shelfIndex: i, ...rest };
+});
+const CABINET_PLACEMENT = placementFor(CABINET_NORMALIZED, { archetype: 'cabinet' });
+
+test('whereFor names the wall and the level in a room', () => {
+  assert.equal(whereFor([2], WALKIN_NORMALIZED, WALKIN_PLACEMENT), 'Back wall · Eye level');
+  assert.equal(whereFor([0, 3], WALKIN_NORMALIZED, WALKIN_PLACEMENT), 'Left wall · High shelf, Back wall · Lower shelves');
+  assert.equal(whereFor([5], WALKIN_NORMALIZED, WALKIN_PLACEMENT), 'Floor · Full run');
+});
+
+test('whereFor gives a unit its full level text', () => {
+  assert.equal(CABINET_PLACEMENT.kind, 'unit');
+  assert.equal(whereFor([1], CABINET_NORMALIZED, CABINET_PLACEMENT), 'Eye level');
+  assert.equal(whereFor([4, 0], CABINET_NORMALIZED, CABINET_PLACEMENT), 'Door rack, Top shelf');
+  // A unit keeps a colon head that is not a wall, and one that is.
+  const unit = [{ lv: 'Unit 2: middle shelf', shelfIndex: 0 }, { lv: 'Back wall: a', shelfIndex: 1 }];
+  assert.equal(whereFor([0, 1], unit, placementFor(unit)), 'Unit 2: middle shelf, Back wall: a');
+});
+
+test('whereFor leaves a room\'s Other row with its level alone', () => {
+  const rows = [...WALKIN_NORMALIZED, { lv: 'Top shelf', ic: 'up', shelfIndex: 6, zone: 'z' }];
+  const p = placementFor(rows, { archetype: 'walkin-u' });
+  assert.ok(p.walls.some(w => w.id === 'other' && w.rows.includes(6)));
+  assert.equal(whereFor([6], rows, p), 'Top shelf');
+  assert.equal(whereFor([6, 2], rows, p), 'Top shelf, Back wall · Eye level');
+});
+
+test('whereFor spells out three places and counts the rest', () => {
+  assert.equal(whereFor([0, 1, 2, 3], WALKIN_NORMALIZED, WALKIN_PLACEMENT),
+    'Left wall · High shelf, Left wall · Eye level, Back wall · Eye level and 1 more');
+  assert.equal(whereFor([0, 1, 2, 3, 4, 5], WALKIN_NORMALIZED, WALKIN_PLACEMENT),
+    'Left wall · High shelf, Left wall · Eye level, Back wall · Eye level and 3 more');
+  // Exactly three is spelled out in full.
+  assert.equal(whereFor([0, 1, 2], WALKIN_NORMALIZED, WALKIN_PLACEMENT),
+    'Left wall · High shelf, Left wall · Eye level, Back wall · Eye level');
+});
+
+test('whereFor deduplicates identical places and keeps the step\'s order', () => {
+  assert.equal(whereFor([3, 2, 3], WALKIN_NORMALIZED, WALKIN_PLACEMENT), 'Back wall · Lower shelves, Back wall · Eye level');
+  // Two rows that read the same are one place, so they do not push a third into "more".
+  const twins = [{ lv: 'Back wall: shelf', shelfIndex: 0 }, { lv: 'Back wall: shelf', shelfIndex: 1 }, { lv: 'Left wall: shelf', shelfIndex: 2 }, { lv: 'Right wall: shelf', shelfIndex: 3 }];
+  assert.equal(whereFor([0, 1, 2, 3], twins, placementFor(twins)), 'Back wall · Shelf, Left wall · Shelf, Right wall · Shelf');
+});
+
+test('whereFor ignores indexes the map does not have and reads shelfIndex, not position', () => {
+  assert.equal(whereFor([9, 2, -1, 1.5, 'x'], WALKIN_NORMALIZED, WALKIN_PLACEMENT), 'Back wall · Eye level');
+  const shuffled = [{ lv: 'Back wall: b', shelfIndex: 7 }, { lv: 'Back wall: a', shelfIndex: 3 }, { lv: 'Left wall: c', shelfIndex: 0 }];
+  const p = placementFor(shuffled);
+  assert.equal(whereFor([7], shuffled, p), 'Back wall · B');
+  assert.equal(whereFor([0], shuffled, p), 'Left wall · C');
+  assert.equal(whereFor([1], shuffled, p), '');
+});
+
+test('whereFor is empty when nothing resolves', () => {
+  assert.equal(whereFor([], WALKIN_NORMALIZED, WALKIN_PLACEMENT), '');
+  assert.equal(whereFor([9], WALKIN_NORMALIZED, WALKIN_PLACEMENT), '');
+  assert.equal(whereFor(undefined, WALKIN_NORMALIZED, WALKIN_PLACEMENT), '');
+  assert.equal(whereFor([0], null, WALKIN_PLACEMENT), '');
+  assert.equal(whereFor([0], [], placementFor([])), '');
+  // A row with no level text has no place to name.
+  const blank = [{ shelfIndex: 0, zone: 'z' }];
+  assert.equal(whereFor([0], blank, placementFor(blank)), '');
+  // No placement at all reads as a unit rather than throwing.
+  assert.equal(whereFor([1], CABINET_NORMALIZED, null), 'Eye level');
+});
+
+/* ---------- wallGroups: what a list may be headed by ----------
+   The export and the after-drawing head a room's rows with its walls. A
+   walk-in whose rows all came back "Top shelf" is still a room, but one
+   "Other" heading over every row says nothing, so they get no groups. */
+test('wallGroups gives a room its walls only when one of them is real', () => {
+  const walkIn = placementFor([
+    { lv: 'Left wall: high shelf', shelfIndex: 0 }, { lv: 'Back wall: eye level', shelfIndex: 1 }, { lv: 'Top shelf', shelfIndex: 2 },
+  ], { archetype: 'walkin-u' });
+  assert.equal(walkIn.kind, 'room');
+  assert.deepEqual(wallGroups(walkIn).map((w) => w.id), ['left', 'back', 'other']);
+
+  const nameless = placementFor([{ lv: 'Top shelf' }, { lv: 'Eye level' }, { lv: 'Lower shelf' }], { archetype: 'walkin-u' });
+  assert.equal(nameless.kind, 'room', 'a walk-in is a room whatever its rows say');
+  assert.equal(wallGroups(nameless), null, 'an "Other"-only room must not be headed "Other"');
+
+  const unit = placementFor([{ lv: 'Top shelf' }, { lv: 'Eye level' }], { archetype: 'cabinet' });
+  assert.equal(wallGroups(unit), null);
+  assert.equal(wallGroups(null), null);
+});
+
+/* ---------- wallsPlaced: the count plan_created reports ----------
+   The privacy page says the event carries "how many of its zones name a
+   wall". Counted per row, keyed the way placementFor keys rows (shelfIndex
+   first, position as the fallback), so a wrong keying would read as
+   "walk-ins never resolve walls" in the dashboard. */
+test('wallsPlaced counts the rows that resolved to a wall', () => {
+  assert.equal(wallsPlaced({ map: [
+    { lv: 'Left wall: high shelf', shelfIndex: 0 }, { lv: 'Left wall: hanging rod', shelfIndex: 1 },
+    { lv: 'Back wall: eye level', shelfIndex: 2 }, { lv: 'Back wall: lower shelves', shelfIndex: 3 },
+    { lv: 'Right wall: double rods', shelfIndex: 4 }, { lv: 'Floor: full run', shelfIndex: 5 },
+  ] }), 6);
+  assert.equal(wallsPlaced({ map: [{ lv: 'Top shelf' }, { lv: 'Eye level' }, { lv: 'Lower shelf' }] }), 0);
+  assert.equal(wallsPlaced({ map: [{ lv: 'Top shelf' }, { lv: 'Door: hooks', shelfIndex: 7 }] }), 1, 'a row keyed by its own shelfIndex still counts');
+  assert.equal(wallsPlaced({ map: [{ lv: 'Back wall: eye level', wall: 'back' }, null, 'not a row'] }), 1, 'junk rows neither count nor throw');
+  assert.equal(wallsPlaced(null), 0);
 });

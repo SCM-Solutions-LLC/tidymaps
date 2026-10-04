@@ -181,20 +181,57 @@ textarea{resize:vertical;min-height:84px}
 .problems li::before{content:"";position:absolute;left:6px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--ink)}
 .opps li::before{background:var(--spot)}
 
-/* organization map — shelves */
-.shelf{display:grid;grid-template-columns:64px 1fr;gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;background:var(--surface)}
-.shelf .label{background:var(--tint);padding:18px 10px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border-right:1px solid var(--line)}
-.shelf .label .lv{font-size:9px;font-weight:600;color:var(--ink-3)}
-.shelf .label .ic{margin-top:3px;color:var(--ink-3);display:flex;align-items:center;justify-content:center}
-.shelf .label .ic svg{width:20px;height:20px}
-.shelf .body{padding:16px 15px}
-.shelf .zone{font-weight:600;font-size:15px;margin-bottom:7px}
+/* organization map: one card per row. The card's head is the tap target,
+   icon, level and zone on one line with the reasons folded beneath, because
+   six rows of "why" prose read as a wall of text. The eye row carries the
+   word "Eye level" in a pill and nothing else marks it: its label used to be
+   the one peach field on the page, and a colour with no word beside it told
+   nobody what it meant. The head's background is the same on every row. */
+.shelf{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;background:var(--surface)}
+.shelf.eye{border-color:var(--primary-line)}
+.shelf-head{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:12px 14px;text-align:left;background:transparent;border:none;border-radius:0;color:inherit;font-family:inherit;cursor:pointer}
+.shelf-head:focus-visible{outline:2px solid var(--spot);outline-offset:-3px}
+.shelf-head .ic{flex:none;display:flex;align-items:center;justify-content:center;width:24px;color:var(--ink-3)}
+.shelf-head .ic svg{width:20px;height:20px}
+.shelf-titles{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.shelf .lv{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;line-height:1.3;color:var(--ink-2)}
+.shelf .zone{font-weight:600;font-size:15px;line-height:1.35;color:var(--ink)}
+.eye-mark{flex:none;display:inline-flex;align-items:center;gap:4px;font-family:var(--sans);font-size:12px;font-weight:600;line-height:1.3;color:var(--primary-2);border:1px solid var(--primary-line);border-radius:var(--radius-pill);padding:2px 8px;white-space:nowrap}
+.eye-mark svg{width:14px;height:14px}
+.shelf-titles .eye-mark{align-self:flex-start;color:var(--primary-2)}
+/* The chevron is the fold's only hint, so it turns when the fold is open. */
+.shelf-chev{flex:none;width:7px;height:7px;margin:0 4px 3px 2px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:rotate(45deg);transition:transform .18s}
+.shelf-head[aria-expanded="true"] .shelf-chev{transform:rotate(-135deg);margin:3px 4px 0 2px}
+.shelf-why{padding:0 14px 14px}
 .shelf .why{font-size:13px;color:var(--ink-3);margin-top:9px;line-height:1.45;display:flex;gap:7px;align-items:flex-start}
 .shelf .why svg{width:14px;height:14px;flex:none;margin-top:2px;color:var(--ink-3)}
-.shelf.eye{border-color:var(--primary-line)}
-.shelf.eye .label{background:var(--tint-2)}
-.shelf.eye .label .lv{color:var(--primary)}
-.shelf.eye .label .ic{color:var(--primary)}
+.shelf-why .why:first-child{margin-top:0}
+
+/* The wall tabs over a room's map. The outline beside them is the room seen
+   from above, floor inside, one stroke per wall the plan has, the front
+   broken at the door; the stroke for the wall on show takes the accent, and
+   the floor rect lights when the floor is. */
+.wall-nav{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.wall-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.wall-tabs [role=tab]{min-height:44px;padding:10px 16px;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-pill);font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .16s,background-color .16s,color .16s}
+.wall-tabs [role=tab]:hover{background:var(--tint)}
+.wall-tabs [role=tab][aria-selected="true"]{background:var(--sel-bg);border-color:var(--primary-line);color:var(--primary-2)}
+.wall-tabs [role=tab]:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.wall-outline{width:64px;height:48px;flex:none}
+.wo-wall{stroke:var(--line-2);stroke-width:4;stroke-linecap:round;fill:none}
+.wo-floor{fill:var(--tint);stroke:none}
+.wo-wall.on{stroke:var(--primary)}
+.wo-floor.on{fill:var(--sel-bg)}
+
+/* "Also in your photo": what the photo showed and the list left out, each a
+   chip that puts it into the plan. They are the wizard's own chips, so a
+   reader who ticked some a minute ago knows what a tap does. */
+.spotted{margin-top:18px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.spotted-h{font-size:16px;margin:0}
+.spotted-sub{font-size:14px;color:var(--ink-3);margin:4px 0 12px;line-height:1.5}
+.spotted-chips{display:flex;flex-wrap:wrap;gap:9px}
+.spot-chip{min-height:44px}
+.spot-rebuild{margin-top:12px}
 
 .feat-grid{display:grid;gap:10px;grid-template-columns:1fr}
 @media(min-width:520px){.feat-grid{grid-template-columns:1fr 1fr}}
@@ -226,6 +263,8 @@ textarea{resize:vertical;min-height:84px}
    the "Why?" panel, which starts closed — so the plan honoured the answer
    somewhere the reader had to go looking for. */
 .step-cite{margin-top:4px;font-size:13px;font-weight:600;color:var(--primary-ink)}
+/* Where the step happens: the wall and level in a room, the level in a unit. */
+.step-where{margin-top:3px;font-size:13px;color:var(--ink-3)}
 .task.skipped{opacity:.62;border-style:dashed}
 .task.skipped .tname{text-decoration:line-through;text-decoration-thickness:1px}
 .task .check{width:44px;height:44px;border:2px solid var(--field-line);border-radius:50%;background:var(--stock);display:grid;place-items:center;flex:none;transition:.18s}
@@ -272,10 +311,8 @@ textarea{resize:vertical;min-height:84px}
 .cab-tag.kidt{color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent)}
 .cab-row{display:flex;flex-wrap:wrap;gap:5px}
 .cab-item{font-size:10.5px;font-weight:500;line-height:1.15;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:5px 7px;display:flex;align-items:center;gap:5px;max-width:100%}
-.cab-item .sw{width:7px;height:7px;border-radius:50%;flex:none}
 .cab-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
 .cab-item.bin{background:var(--primary-bg);border-color:var(--primary-line);color:var(--primary-2)}
-.cab-item.bin .sw{border-radius:50%}
 .cab-item svg{width:11px;height:11px;flex:none;opacity:.7}
 .cab-item .lbl{font-size:7.5px;font-weight:600;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:var(--radius-pill);padding:0 3px;margin-left:2px}
 /* One pane. The second held a generic "before" sketch that described no
@@ -430,8 +467,13 @@ body[data-flow="1"] .site-footer{display:none}
 .cab-item .lbl{white-space:nowrap}
 /* the after pane always matches the before pane's height; rows share it equally */
 .ba .after .cab .cab-shelf{min-height:0;overflow:hidden}
-/* fixed-height illustration rows: mode switches swap contents, never size */
-.ba .after .cab{flex:none;grid-auto-rows:56px}
+/* fixed-height illustration rows: mode switches swap contents, never size.
+   The height sits on the shelf rather than the track, so a wall heading
+   between two groups of shelves can be its own short row. */
+.ba .after .cab{flex:none;grid-auto-rows:auto}
+.ba .after .cab .cab-shelf{height:56px}
+.cab-wall{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:var(--tracking-label);margin:10px 0 6px}
+.cab-wall:first-child{margin-top:2px}
 .ba .ba-h{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* stack the panes on phones (the base .ba rule used to override this) */
 @media(max-width:560px){
@@ -567,14 +609,6 @@ body[data-flow="1"] .site-footer{display:none}
 .sn-head > svg{width:17px;height:17px;color:var(--primary-2);flex:none;margin-top:2px}
 .sn-head strong{display:block;font-size:14.5px}
 .sn-head span{display:block;font-size:12.5px;color:var(--ink-3);margin-top:2px;line-height:1.5;max-width:64ch}
-
-/* map labels: wall chip + readable level name */
-.shelf{grid-template-columns:104px 1fr}
-.shelf .label{padding:14px 10px}
-.shelf .label .lv-wall{font-size:8.5px;font-weight:600;color:var(--ink-3);background:var(--stock);border:1px solid var(--line);border-radius:var(--radius-pill);padding:2px 6px;margin-bottom:6px}
-.shelf.eye .label .lv-wall{border-color:var(--primary-line);color:var(--primary-2)}
-.shelf .label .lv{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;line-height:1.3;color:var(--ink-2)}
-.shelf.eye .label .lv{color:var(--primary-2)}
 
 /* steps: view toggle + one-at-a-time focus mode */
 .steps-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 14px}

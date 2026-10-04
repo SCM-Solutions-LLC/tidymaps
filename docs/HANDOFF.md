@@ -291,6 +291,102 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-03 session changed, part 5 (the report reads wall by wall)
+
+Fifth of the six PRs from the owner's site review: the report around the
+wall model part 3 added. Client only; nothing deploys server-side and no
+stored plan needs a backfill, because every wall is derived on read by
+`placementFor` (a row's `wall`, else the layout section, else the prefix
+before the colon in its level name, else its surface).
+
+- **"Where things go" is tabs per wall** (`js/screens/results.js renderMap`)
+  when the placement is a room with two or more walls: a `role=tablist` of
+  44px pills (Left wall, Back wall, Right wall, Floor, and Front wall or
+  Door when rows sit there), one `role=tabpanel` per wall, arrow keys and
+  Home/End between tabs, and a small top-down outline beside them whose
+  current wall is drawn in terracotta. Every panel stays in the DOM, hidden,
+  so `resultsFingerprint` still reads every row and print shows them all under
+  their wall name (`css/report.css @media print`). A unit, or a room where
+  only one wall is known, keeps the flat list; the row's level keeps its
+  wall prefix there, because without tabs the prefix is the only place the
+  wall is named at all.
+- **Compact rows.** A row is a 44px header button (level name minus its wall
+  prefix via `levelLabel`, the zone, the row's icon, and on the eye row an
+  eye icon with the word "Eye level") with the item chips beneath and the
+  why and safety why folded under `aria-expanded`. The word appears once:
+  every template already calls that row's level "eye level", so there the
+  level itself is the mark; a model row called something else gets the mark
+  beside its titles. The peach fill that used to mark the eye row is gone:
+  colour carried a meaning nobody could read, and `tests/design.test.mjs`
+  now asserts (with comments stripped first) that the eye row is a word, not
+  a fill (no `.shelf.eye .label` rule, an `eye-mark` in the markup), while a
+  browser spec checks the eye and non-eye rows share a computed background.
+- **Where-lines under steps.** `whereFor(rows, map, placement)`
+  (`js/placement.js`) turns a step's `rows` into "Back wall · Eye level"
+  (deduped, three places then "and N more"); `renderSteps` prints it as
+  `.step-where` under the task. The demo engine sets no `rows`, so on a
+  sample plan only the spotted step has one; the server plan from part 4 is
+  what fills the rest.
+- **"Also in your photo"** (`#res-spotted`, `renderSpotted`): chips with
+  `aria-pressed` for every `plan.spotted` entry, hidden in a share view and
+  when the list is empty; the heading reads "Not in your list" when the plan
+  did not come from photos (a scope edit on a demo plan). A tap calls
+  `includeSpotted` (part 3), rebuilds the report and persists through
+  `updateSpacePatch` or the guest draft, so a reload keeps the item and its
+  "Find a spot for …" step; the wall the reader had open and the chip they
+  pressed are put back after the redraw. "Rebuild my plan with these"
+  appears once an included item has grown the contents list (its name
+  matched an offered chip, so the next analysis has a wider scope; an item
+  that matches no chip would only repeat the plan) on a photo plan whose
+  photos are still in memory, and re-runs the analysis. After a reload or a reopened space the photos are gone, and a rebuild
+  then would have replaced the plan with the built-in fallback and saved it,
+  so the button stays hidden until photos are added again.
+- **Hero and after-drawing per wall.** `planElevationSvg(map, placement)` draws
+  a room as one case per wall side by side (the back wall widest) over a
+  floor strip, rows by tier and no longer the first six rows of three walls
+  stacked as one cupboard; a unit is drawn exactly as before. The room's zone
+  text is 16px in the 760-wide plate (the unit's is 18px), wrapped lines
+  never start or end on a separator, and a zone cut at two lines ends in an
+  ellipsis rather than losing words in silence. `renderAfter` groups rows
+  under a wall heading, each row's level without its wall prefix, and the
+  chips lost their coloured dot (a palette that stood for nothing; the
+  `AFTER_PALETTE` export went with it).
+  `wallGroups(placement)` in `js/placement.js` is the one rule for when a
+  list may be headed by walls (a room with at least one real wall): a
+  walk-in whose rows all came back "Top shelf" is still a room, but the
+  after-drawing and the export print it flat rather than under one "Other"
+  heading.
+- **Export and telemetry.** `js/planExport.js` prints a `Left wall:` heading
+  line over that wall's `- level: zone` lines for a room (units unchanged),
+  resolving the archetype the same way the report does. `plan_created`
+  gains `walls` (rows with a known wall, counted by `wallsPlaced` in
+  `js/placement.js` so a unit test can pin it) and `spotted` (entries) as counts;
+  `privacy.html` says so in one sentence and `telemetryEvents.js` records
+  the props (no `track-events` redeploy: the server gates names, not props).
+- Tests: `tests/placement.test.mjs` for `levelLabel`, `whereFor`,
+  `wallGroups` and `wallsPlaced` (each branch neutered in turn);
+  `tests/plan-export.test.mjs` headings for a room, from the level text and
+  from the layout's sections and the setup's archetype alike, none for a
+  unit and none for a room whose rows name no wall; `tests/telemetry.test.mjs` the props and the comment;
+  `tests/e2e/report-walls.spec.mjs` (tabs, outline, keyboard, equal
+  backgrounds, the fold, hero lines and after-drawing headings, coverage,
+  44px at 390, a unit has no tabs and its after-drawing keeps whole levels);
+  `tests/e2e/spotted.spec.mjs` (a mocked analysis with Appliances unticked:
+  no appliance step, the chip appears, a tap places the item with its
+  where-line and keeps the ticked step, the open wall and the focus, the
+  rebuild appears only once the list has grown, and it all survives a
+  reload, after which the rebuild button is gone with the photos; a share
+  view shows none);
+  `tests/e2e/tap-targets.spec.mjs` for the row headers. The fingerprint in
+  `tests/e2e/helpers.mjs` gained `wallTabs`, `spotted` and `stepWhere`, and
+  `driveWizardToReview` takes `cats` to tick contents chips.
+- Two things the contract asked for that the code does differently, on
+  purpose: the spotted spec names "Small appliances", not "Nespresso
+  machine", because `applyCategoryEdits` scopes by item name, so a branded
+  item under a removed zone is kept rather than offered back (a personalize
+  change if the owner wants otherwise); and the wall prefix is stripped only
+  where tabs name the wall (see above).
+
 ## What the 2026-10-03 session changed, part 4 (the prompt tells the model to use the answers)
 
 Fourth of the six PRs from the owner's site review, and the server half of

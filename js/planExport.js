@@ -2,6 +2,9 @@ import { state, isMetric } from './state.js';
 import { activeMapV2, activeSafetyNotes, activeProductNeeds } from './plan.js';
 import { areaFor, fmtIn } from './wizard-data.js';
 import { toast } from './ui.js';
+import { placementFor, wallGroups } from './placement.js';
+import { resolveLayout } from './layout.js';
+import { planFromPhotos } from './planProvenance.js';
 
 /* Plain-text renderings of the plan.
 
@@ -38,6 +41,26 @@ const stepWhy = (s) => s && (s.w ?? s.why);
 function planSteps() {
   const steps = (state.ai && state.ai.steps) || [];
   return steps.map((s, i) => ({ step: s, i })).filter((x) => stepTask(x.step));
+}
+
+/* Which wall each zone is on, resolved exactly as the report resolves it, so
+   the printed checklist and the screen never disagree about whether this is
+   a room with walls or one unit. The archetype matters for a walk-in whose
+   rows all came back as "Top shelf": the setup card says it is a room even
+   when no row names a wall. */
+function planPlacement(map) {
+  const ai = state.ai;
+  const arrangement = /** @type {any} */ (state.arrangement);
+  const archetype = resolveLayout({
+    ai,
+    setup: state.setup,
+    setupTouched: state.setupTouched,
+    aiFromPhotos: planFromPhotos(),
+    scenarioKey: state.space,
+    override: arrangement && arrangement.layoutOverride,
+    map,
+  }).type;
+  return placementFor(map, { layout: ai && ai.layout, archetype });
 }
 
 export function checklistText() {
@@ -77,11 +100,33 @@ export function checklistText() {
   const map = activeMapV2();
   if (map.length) {
     lines.push('ZONES', '');
-    map.forEach((row) => {
+    const zoneLines = (row) => {
       lines.push(`- ${row.lv ?? row.level}: ${row.zone}`);
       if (row.why) lines.push(`    ${row.why}`);
       if (row.safety && row.safety.why) lines.push(`    safety: ${row.safety.why}`);
-    });
+    };
+    const groups = wallGroups(planPlacement(map));
+    if (groups) {
+      /* A walk-in's rows printed as one flat list read as a single tall unit,
+         the same confusion the report had, and a printed copy cannot be
+         tapped to find out. Each wall gets a heading over its rows; the row
+         line keeps its full level text ("Left wall: high shelf") so a line
+         read on its own still says where it is. Rows nothing could place go
+         last under "Other". The rows are gathered by the shelf index the
+         placement keys on, so two rows sharing a shelf stay together. */
+      const byIndex = new Map();
+      map.forEach((row, i) => {
+        const idx = Number.isInteger(row.shelfIndex) ? row.shelfIndex : i;
+        if (!byIndex.has(idx)) byIndex.set(idx, []);
+        byIndex.get(idx).push(row);
+      });
+      groups.forEach((wall) => {
+        lines.push(`${wall.label}:`);
+        wall.rows.forEach((idx) => (byIndex.get(idx) || []).forEach(zoneLines));
+      });
+    } else {
+      map.forEach(zoneLines);
+    }
     lines.push('');
   }
 

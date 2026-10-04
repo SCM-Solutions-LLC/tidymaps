@@ -27,13 +27,34 @@ test('props are flattened to primitives; nested data cannot ride along', () => {
     props: {
       space: 'pantry',
       steps: 9,
+      walls: 6,                                  // zones that resolved to a wall
+      spotted: 1,                                // items set aside for the user
       ok: true,
       household: { kids: { present: 'yes' } },   // object: dropped
       photos: ['base64...'],                     // array: dropped
       note: null,                                // null: dropped
     },
   });
-  assert.deepEqual(ev, { name: 'plan_created', props: { space: 'pantry', steps: 9, ok: true } });
+  assert.deepEqual(ev, { name: 'plan_created', props: { space: 'pantry', steps: 9, walls: 6, spotted: 1, ok: true } });
+});
+
+/* The privacy page discloses plan_created as carrying the step count, how
+   many zones name a wall and how many items were set aside. That is only
+   true while the client sends those props, and nothing on the server would
+   notice if it stopped: the boundary gates event names, not props. So the
+   call site is read directly, and the contract comment beside the allowlist
+   has to name the same props, because that comment is what the next person
+   reads instead of loading.js. */
+test('plan_created sends the props the privacy page and the contract name', async () => {
+  const { readFileSync } = await import('node:fs');
+  const loading = readFileSync(new URL('../js/screens/loading.js', import.meta.url), 'utf8');
+  const call = loading.slice(loading.indexOf("track('plan_created'"), loading.indexOf('});', loading.indexOf("track('plan_created'")));
+  assert.ok(call.length > 0, 'loading.js no longer tracks plan_created');
+  for (const prop of ['space', 'source', 'steps', 'walls', 'spotted']) {
+    assert.match(call, new RegExp(`\\b${prop}:`), `plan_created no longer sends ${prop}`);
+  }
+  const contract = readFileSync(new URL('../supabase/functions/_shared/telemetryEvents.js', import.meta.url), 'utf8');
+  assert.match(contract, /'plan_created',\s*\/\/ \{ space, source, steps, walls, spotted \}/, 'the allowlist comment does not name the props plan_created sends');
 });
 
 test('long strings are truncated and oversized events dropped', () => {

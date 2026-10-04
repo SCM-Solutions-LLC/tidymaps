@@ -626,6 +626,15 @@
       <section class="chapter" id="ch-map">
         <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-map-h"><div class="ch-titles"><h2 id="ch-map-h">Where things go</h2></div></div>
         <div id="res-map"></div>
+        <!-- Things the photo showed and the contents list left out. Hidden
+             until a plan carries some; the rebuild button has no id on
+             purpose, since the fingerprint reads #res-spotted-h. -->
+        <div id="res-spotted" class="spotted hide">
+          <h3 class="spotted-h" id="res-spotted-h"></h3>
+          <p class="spotted-sub"></p>
+          <div class="spotted-chips"></div>
+          <button type="button" class="btn btn-ghost btn-sm spot-rebuild hide">Rebuild my plan with these</button>
+        </div>
       </section>
 
       <!-- 03. Use existing first -->

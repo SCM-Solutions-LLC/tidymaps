@@ -227,8 +227,9 @@
 #ch-shop.collapsed > #res-upgrades-wrap{display:block}
 #ch-shop.collapsed > #res-upgrades-wrap > *:not(.ch-head){display:none}
 /* The items the plan identified on a level. Quiet by design: this is evidence
-   the plan is about the user's own space, not another list to read. */
-.map-items{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+   the plan is about the user's own space, not another list to read. They sit
+   in the card under its head, in view while the reasons stay folded. */
+.map-items{display:flex;flex-wrap:wrap;gap:5px;margin-top:0;padding:0 14px 12px}
 .map-items .mi{font-family:var(--sans);font-size:13px;line-height:1.5;
   background:var(--stock);color:var(--ink);border:var(--rule);border-radius:var(--radius-pill);padding:2px 10px}
 .map-items .mi-flag{background:var(--tint)}
@@ -259,4 +260,10 @@
   #res-actions, #res-rate, .v3d-cta, .ch-head[role="button"] { break-inside: avoid }
   .chapter { break-inside: auto; page-break-inside: auto }
   .step, .shelf, .feat { break-inside: avoid; page-break-inside: avoid }
+  /* A room's walls are tabs on screen and nothing on paper: every panel
+     unfolds under its own wall name, and so does each row's reasoning. */
+  .wall-nav { display: none }
+  .wall-panel[hidden] { display: block }
+  .wall-panel::before { content: attr(data-label); display: block; font-family: var(--sans); font-size: 13px; font-weight: 700; margin: 14px 0 8px }
+  .shelf-why[hidden] { display: block }
 }

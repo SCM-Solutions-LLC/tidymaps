@@ -154,37 +154,29 @@ test('terracotta buttons, soft corners, supporting colours, no ambient gradients
   }
 });
 
-/* The eye-level zone is the one field the accent may tint (DESIGN.md, the
-   Accent-Is-Small Rule); every other zone in a figure is warm grey. The report's
-   shelf map had it backwards: the plain shelves read the legacy `--surface-3`,
-   which lands on the accent tint, and the eye-level shelf read `--primary-bg`,
-   which lands on the grey. Two aliases that sound like a hierarchy and are not
-   one. Resolved through tokens.css rather than matched by name, so a future
-   re-aliasing has to keep the colours right and not merely the words. */
-test('the shelf map tints the eye-level zone, and only that zone, with the accent', () => {
-  const componentsCss = readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
-  const tokenMap = new Map([...tokens.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
-  const resolve = (value, depth = 0) => {
-    const ref = /^var\(--([\w-]+)\)$/.exec(value.trim());
-    if (!ref) return value.trim();
-    assert.ok(depth < 12, `token chain loops at --${ref[1]}`);
-    assert.ok(tokenMap.has(ref[1]), `--${ref[1]} is not defined in tokens.css`);
-    return resolve(tokenMap.get(ref[1]), depth + 1);
-  };
-  const grey = resolve('var(--tint)');
-  const accentTint = resolve('var(--tint-2)');
-  assert.notEqual(grey, accentTint, 'the accent tint collapsed into the grey; nothing can mark eye level');
-
-  const background = (selector) => {
-    const rule = new RegExp(`${selector.replace(/[.\s]/g, (c) => (c === '.' ? '\\.' : '\\s+'))}\\{([^}]*)\\}`).exec(componentsCss);
-    assert.ok(rule, `no rule for ${selector}`);
-    const decl = /(?:^|;)\s*background:\s*([^;]+)/.exec(rule[1]);
-    assert.ok(decl, `${selector} sets no background`);
-    return resolve(decl[1]);
-  };
-  assert.equal(background('.shelf.eye .label'), accentTint, 'the eye-level shelf label is not the accent tint');
-  assert.equal(background('.shelf .label'), grey, 'an ordinary shelf label is not warm grey');
-  // The landing figure draws the same rule; the two must not drift apart.
+/* The report's shelf map used to say "eye level" with a colour: the eye row's
+   label column was the accent tint and every other row's was warm grey, and
+   that fill was the only thing telling the two apart. The design rules say
+   colour carries no meaning on its own (a word or an icon carries it), and a
+   walk-in made the point for them, with three walls of peach-or-grey rows and
+   no legend in sight. The label column is gone. The eye row says "Eye level"
+   in a pill beside its zone, and no rule in components.css paints a shelf
+   label any colour at all. The landing figure keeps its tinted eye zone,
+   because it keeps the legend that explains it. */
+test('eye level is a word, not a fill', () => {
+  // A comment may still name the old rule to say where it went; only live
+  // selectors count.
+  const componentsCss = readFileSync(new URL('../css/components.css', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  const results = readFileSync(new URL('../js/screens/results.js', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  for (const selector of ['.shelf .label', '.shelf.eye .label']) {
+    assert.ok(!componentsCss.includes(selector),
+      `components.css still styles ${selector}: the label column is back, and with it a fill standing in for a word`);
+  }
+  assert.match(results, /class="(?:lv )?eye-mark"/, 'the eye row has no eye-mark pill');
+  assert.ok(results.includes('Eye level</span>'), 'the eye row never says "Eye level" in its markup');
+  // The landing figure draws its own rule, with a legend; it must not drift.
   assert.match(landingCss, /\.f-zone\{fill:var\(--tint\)/, 'Figure 1 ordinary zones are not warm grey');
   assert.match(landingCss, /\.f-zone-eye\{fill:var\(--tint-2\)\}/, 'Figure 1 eye-level zone is not the accent tint');
 });

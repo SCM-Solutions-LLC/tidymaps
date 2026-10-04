@@ -109,6 +109,17 @@ test.describe('phone', () => {
     }
   });
 
+  test('the map rows are 44px targets', async ({ page }) => {
+    /* Each row of "Where things go" is a button now: its head opens the
+       reasons folded under it. A control that was a label yesterday still
+       takes the 44px rule today. */
+    await openSample(page);
+    const heads = await boxes(page, '#res-map .shelf-head');
+    expect(heads.length).toBeGreaterThan(0);
+    // min-height:44px lays out at 43.9999 in Chromium's 1/64px units.
+    for (const b of heads) expect(b.h, `row "${b.name}"`).toBeGreaterThan(43.9);
+  });
+
   test("Review's Edit buttons are 44px targets", async ({ page }) => {
     await page.goto('/index.html');
     await page.locator('#screen-landing .btn-primary').first().click();

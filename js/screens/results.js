@@ -1,4 +1,4 @@
-import { MAP, EXISTING, STEPS, AFTER_MODES, AFTER_PALETTE, DEMO_CATS } from '../data.js';
+import { MAP, EXISTING, STEPS, AFTER_MODES, DEMO_CATS } from '../data.js';
 import { SVG, ICON, iconFor } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
@@ -15,7 +15,9 @@ import { getSession } from '../auth.js';
 import { updateSpacePatch, persistAnswers } from '../db.js';
 import { classifyAction, motifForSpace, glyphForStep, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { track } from '../telemetry.js';
-import { applyCategoryEdits } from '../personalize.js';
+import { applyCategoryEdits, includeSpotted } from '../personalize.js';
+import { placementFor, levelLabel, whereFor, wallGroups } from '../placement.js';
+import { resolveLayout } from '../layout.js';
 import { go } from '../router.js';
 import { runLoading } from './loading.js';
 import { buildRate } from './feedback.js';
@@ -56,12 +58,16 @@ export function buildResults(){
   if(mastSpace) mastSpace.textContent = spaceLabel;
   const resTitle=document.getElementById('res-title');
   if(resTitle) resTitle.textContent = `The ${spaceLabel.toLowerCase()}, with a place for everything`;
+  /* Which wall each row is on, worked out once here and read by the hero,
+     the map, the steps and the after drawing below, so the four agree. */
+  const mapData=(A&&A.map.length)?A.map:MAP;
+  const placement=currentPlacement(mapData);
   const hero=document.getElementById('plan-hero-img');
   if(hero){
     /* The drawing goes in as an <img>, where the stylesheet's re-inking of
        the card art (css/components.css .card-art-svg) cannot reach it, so the
        same plate is applied to the markup before it is encoded. */
-    const svg=planElevationSvg((A&&A.map.length)?A.map:MAP);
+    const svg=planElevationSvg(mapData, placement);
     hero.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
     hero.alt=`Illustrated ${resultArea.label.toLowerCase()} organization plan`;
     hero.dataset.space=resultArea.id;
@@ -278,26 +284,10 @@ export function buildResults(){
       :'';
   }
 
-  // map — v2 rows carry per-shelf safety flags
-  const SAFETY_LABEL={'kid-safe':'kid safe','keep-high':'keep high','lock-or-latch':'lock or latch'};
-  const mapData = (A&&A.map.length)?A.map:MAP;
-  document.getElementById('res-map').innerHTML=mapData.map(m=>{
-    const flag=m.safety&&m.safety.flag;
-    const badge=flag?`<span class="tag ${flag==='kid-safe'?'green':'warn'}" style="margin-left:8px;vertical-align:2px">${SAFETY_LABEL[flag]}</span>`:'';
-    const safetyWhy=(m.safety&&m.safety.why)?`<div class="why">${SVG.shield}<span>${escapeHtml(m.safety.why)}</span></div>`:'';
-    // "Left wall: eye level shelf" reads as a wall chip + a level name
-    const parts=String(m.lv||'').split(/:\s*/);
-    const wall=parts.length>1?parts[0]:null;
-    const lvl=parts.length>1?parts.slice(1).join(': '):m.lv;
-    return `
-    <div class="shelf ${m.eye?'eye':''}">
-      <div class="label">
-        ${wall?`<span class="lv-wall">${escapeHtml(wall)}</span>`:''}
-        <span class="lv">${escapeHtml(lvl)}</span><span class="ic">${iconFor(m.ic)}</span></div>
-      <div class="body"><div class="zone">${escapeHtml(m.zone)}${badge}</div>
-        <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div>${safetyWhy}${itemsRow(m)}</div>
-    </div>`;
-  }).join('');
+  // map: v2 rows carry per-shelf safety flags; a room's rows sit under wall tabs
+  renderMap(mapData, placement);
+  // what the photo showed and the list left out, each one tap from the plan
+  renderSpotted(A);
 
   /* Say whose space these problems belong to. Without a photo nothing looked at
      the user's room, so "Main organization problems" claims findings the app
@@ -826,6 +816,221 @@ function itemsRow(m){
   return `<div class="map-items" role="list" aria-label="Items in this zone">${chips}</div>`;
 }
 
+/* ---------- Where things go ---------- */
+
+/* Which wall each row is on, resolved the way the 3D view and the printed
+   checklist resolve it, so the three never disagree about whether this plan
+   is a room with walls or one unit. The setup card decides when the rows say
+   nothing: a walk-in whose rows all came back "Top shelf" is still a walk-in,
+   and the report still offers its walls. */
+function currentPlacement(map){
+  const A=state.ai;
+  const archetype=resolveLayout({
+    ai:A, setup:state.setup, setupTouched:state.setupTouched, aiFromPhotos:planFromPhotos(),
+    scenarioKey:state.space, override:state.arrangement&&state.arrangement.layoutOverride, map,
+  }).type;
+  return placementFor(map, { layout:A&&A.layout, archetype });
+}
+
+/* The rows keyed the way placementFor keys them: a row's own shelfIndex when
+   it has one, its position otherwise. The placement lists an index once even
+   when two rows share it; both rows are drawn under that one entry, so a plan
+   that doubled a shelf index does not lose a row off the report. */
+function rowsByIndex(map){
+  const by=new Map();
+  map.forEach((m,i)=>{
+    const idx=Number.isInteger(m.shelfIndex)?m.shelfIndex:i;
+    if(!by.has(idx)) by.set(idx,[]);
+    by.get(idx).push({ m, i, idx });
+  });
+  return by;
+}
+
+const SAFETY_LABEL={'kid-safe':'kid safe','keep-high':'keep high','lock-or-latch':'lock or latch'};
+
+/* One row of the map. The head is the tap target: icon, level, zone and the
+   safety badge, with the reasons folded beneath it, because six rows of
+   "why" prose made the chapter a wall of text. The eye row says "Eye level"
+   in a pill: it used to be the one peach label field on the page, and a
+   colour with no word beside it told nobody what it marked. `i` is the row's
+   position, which keeps the fold ids unique across wall panels; `idx` is its
+   shelf index, the number a step's `rows` points at. */
+function shelfRow(m, i, idx, stripWall){
+  const flag=m.safety&&m.safety.flag;
+  const badge=flag?`<span class="tag ${flag==='kid-safe'?'green':'warn'}" style="margin-left:8px;vertical-align:2px">${SAFETY_LABEL[flag]}</span>`:'';
+  const safetyWhy=(m.safety&&m.safety.why)?`<div class="why">${SVG.shield}<span>${escapeHtml(m.safety.why)}</span></div>`:'';
+  // Under a wall tab the wall is said already, so "Back wall: eye level" reads "Eye level".
+  const lv=stripWall?levelLabel(m.lv):String(m.lv||'');
+  /* The eye row says "Eye level" once. Every template names that row's level
+     "eye level" already, so there the level itself becomes the mark (icon and
+     word); a model row called something else gets the mark beside its titles. */
+  const eyeLevel=!!m.eye&&/^eye level$/i.test(lv);
+  return `
+    <div class="shelf${m.eye?' eye':''}" data-row="${idx}">
+      <button type="button" class="shelf-head" aria-expanded="false" aria-controls="shelf-why-${i}">
+        <span class="ic">${iconFor(m.ic)}</span>
+        <span class="shelf-titles">
+          <span class="lv${eyeLevel?' eye-mark':''}">${eyeLevel?SVG.eye:''}${escapeHtml(lv)}</span>
+          <span class="zone">${escapeHtml(m.zone)}${badge}</span>
+        </span>
+        ${m.eye&&!eyeLevel?`<span class="eye-mark">${SVG.eye}Eye level</span>`:''}
+        <span class="shelf-chev" aria-hidden="true"></span>
+      </button>
+      ${itemsRow(m)}
+      <div class="shelf-why" id="shelf-why-${i}" hidden>
+        <div class="why">${ICON.why}<span>${escapeHtml(m.why)}</span></div>${safetyWhy}
+      </div>
+    </div>`;
+}
+
+/* The outline beside the tabs is the room seen from above: the floor is the
+   inner rect, each wall a stroke along its edge, the front wall broken where
+   the door is. Only the walls the plan has are drawn, so an L-shaped run
+   shows two strokes and a U three. The selected wall's stroke takes the
+   accent; "Other" is not a wall and lights nothing. */
+const OUTLINE_PATH={ left:'M12 40 V10', back:'M12 10 H52', right:'M52 10 V40', front:'M12 40 H24 M40 40 H52' };
+function wallOutline(walls){
+  const has=new Set(walls.map(w=>w.id));
+  return `<svg class="wall-outline" viewBox="0 0 64 48" aria-hidden="true" focusable="false">`
+    +`<rect class="wo-floor" data-wall="floor" x="12" y="10" width="40" height="30" rx="3"/>`
+    +Object.keys(OUTLINE_PATH).filter(id=>has.has(id)).map(id=>`<path class="wo-wall" data-wall="${id}" d="${OUTLINE_PATH[id]}"/>`).join('')
+    +'</svg>';
+}
+
+function selectWall(wrap, id, { focus=false }={}){
+  wrap.querySelectorAll('.wall-tabs [role=tab]').forEach(t=>{
+    const on=t.getAttribute('data-wall')===id;
+    t.setAttribute('aria-selected', on?'true':'false');
+    t.setAttribute('tabindex', on?'0':'-1');
+    if(on&&focus) t.focus();
+  });
+  wrap.querySelectorAll('.wall-panel').forEach(p=>{ p.hidden=(p.id!=='map-wall-'+id); });
+  wrap.querySelectorAll('.wall-outline [data-wall]').forEach(el=>el.classList.toggle('on', el.getAttribute('data-wall')===id));
+}
+
+/* The map. A unit's rows stack in map order. A room's rows sit under one tab
+   per wall, every panel kept in the DOM with all but the selected one hidden,
+   so the printed plan can unfold them all. The listeners are properties on
+   the container: buildResults runs on every change to the plan, and a
+   handler added each time would fire once per render. */
+function renderMap(map, placement){
+  const wrap=document.getElementById('res-map'); if(!wrap) return;
+  const walls=placement.walls;
+  const tabbed=placement.kind==='room'&&walls.length>=2;
+  if(!tabbed){
+    wrap.innerHTML=map.map((m,i)=>shelfRow(m, i, Number.isInteger(m.shelfIndex)?m.shelfIndex:i, false)).join('');
+  }else{
+    const by=rowsByIndex(map);
+    const tabs=walls.map((w,k)=>`<button type="button" role="tab" id="wall-tab-${w.id}" data-wall="${w.id}" aria-selected="${k?'false':'true'}" aria-controls="map-wall-${w.id}" tabindex="${k?'-1':'0'}">${escapeHtml(w.label)}</button>`).join('');
+    const panels=walls.map((w,k)=>`<div id="map-wall-${w.id}" class="wall-panel" role="tabpanel" aria-labelledby="wall-tab-${w.id}" data-label="${escapeHtml(w.label)}"${k?' hidden':''}>${
+      w.rows.flatMap(idx=>(by.get(idx)||[]).map(r=>shelfRow(r.m, r.i, idx, true))).join('')}</div>`).join('');
+    wrap.innerHTML=`<div class="wall-nav"><div id="res-wall-tabs" class="wall-tabs" role="tablist" aria-label="Walls">${tabs}</div>${wallOutline(walls)}</div>${panels}`;
+    selectWall(wrap, walls[0].id);
+  }
+  wrap.onclick=(e)=>{
+    const head=e.target.closest('.shelf-head');
+    if(head){
+      const open=head.getAttribute('aria-expanded')!=='true';
+      head.setAttribute('aria-expanded', open?'true':'false');
+      const why=document.getElementById(head.getAttribute('aria-controls'));
+      if(why) why.hidden=!open;
+      return;
+    }
+    const tab=e.target.closest('.wall-tabs [role=tab]');
+    if(tab) selectWall(wrap, tab.getAttribute('data-wall'));
+  };
+  // Arrow keys walk the tabs and wrap; Home and End jump. Focus follows the selection.
+  wrap.onkeydown=(e)=>{
+    const tab=e.target.closest('.wall-tabs [role=tab]');
+    if(!tab) return;
+    const tabs=[...wrap.querySelectorAll('.wall-tabs [role=tab]')];
+    const i=tabs.indexOf(tab);
+    let n=-1;
+    if(e.key==='ArrowRight') n=(i+1)%tabs.length;
+    else if(e.key==='ArrowLeft') n=(i-1+tabs.length)%tabs.length;
+    else if(e.key==='Home') n=0;
+    else if(e.key==='End') n=tabs.length-1;
+    if(n<0) return;
+    e.preventDefault();
+    selectWall(wrap, tabs[n].getAttribute('data-wall'), { focus:true });
+  };
+}
+
+/* "Also in your photo". The analysis saw a stand mixer, the contents list
+   never said appliances, and the plan went out without it and said nothing.
+   Each entry here is a chip, one tap from a place on the map, and once some
+   are in, the plan can be rebuilt around them. The block is the owner's to
+   act on, so a share view never shows it. */
+function renderSpotted(A){
+  const wrap=document.getElementById('res-spotted'); if(!wrap) return;
+  const chips=wrap.querySelector('.spotted-chips');
+  const rebuild=wrap.querySelector('.spot-rebuild');
+  const list=(!state.shareView&&A&&Array.isArray(A.spotted))?A.spotted:[];
+  if(!list.length){
+    wrap.classList.add('hide');
+    if(chips) chips.innerHTML='';
+    if(rebuild) rebuild.classList.add('hide');
+    return;
+  }
+  const photos=planFromPhotos();
+  const h=wrap.querySelector('.spotted-h');
+  if(h) h.textContent=photos?'Also in your photo':'Not in your list';
+  const sub=wrap.querySelector('.spotted-sub');
+  if(sub) sub.textContent=photos
+    ? 'We saw these, but your list left them out. Tap one to give it a place in the plan.'
+    : 'Your answers left these out. Tap one to put it back in the plan.';
+  if(chips) chips.innerHTML=list.map((e,i)=>
+    `<button type="button" class="chip spot-chip${e.included?' sel':''}" aria-pressed="${e.included?'true':'false'}" data-spot="${i}">${e.included?'✓ ':'+ '}${escapeHtml(e.name)}</button>`).join('');
+  // Rebuilding re-runs the analysis, which a demo plan never had.
+  /* Rebuilding re-runs the analysis with the photos, and the photos live
+     only in memory: after a reload or a reopened space there are none, and
+     a rebuild would quietly replace this plan with the built-in fallback and
+     save it. So the button needs a photo plan, an included item, and media. */
+  const media=(state.uploadedFiles||[]).length>0||!!state.uploadedVideo;
+  if(rebuild) rebuild.classList.toggle('hide', !(photos&&media&&listGrewFromSpotted&&list.some(e=>e.included)));
+  wrap.classList.remove('hide');
+  wrap.onclick=(e)=>{
+    const chip=e.target.closest('.spot-chip');
+    if(chip){
+      // Including is one way; a pressed chip has nothing left to do.
+      if(chip.getAttribute('aria-pressed')!=='true') includeSpottedItem(Number(chip.getAttribute('data-spot')));
+      return;
+    }
+    if(e.target.closest('.spot-rebuild')) retryAnalysis();
+  };
+}
+
+/* Put spotted[i] into the plan and redraw. includeSpotted (personalize.js)
+   makes the plan edit; this adds the matching chip to the wizard's own list,
+   which is the list the contents step and applyCategoryEdits read, keeps the
+   checklist's ticks across the re-render, and saves the plan. */
+/* Whether an included item has grown the contents list this session. The
+   rebuild re-runs the analysis with that list as its scope, so until a chip
+   has been added it would only repeat the plan it is offered on. */
+let listGrewFromSpotted=false;
+export function includeSpottedItem(i){
+  if(!state.ai) return;
+  const cfg=SPACE_CFG[state.space]||SPACE_CFG.pantry;
+  const offered=optionsForHousehold(cfg.categories, state.household);
+  const done=Array.isArray(state.stepDone)?state.stepDone.slice():null;
+  includeSpotted(state.ai, i, offered);
+  for(const c of state.ai.cats||[]) if(!state.cats.includes(c)){ state.cats.push(c); listGrewFromSpotted=true; }
+  state.catsTouched=true;
+  /* The rebuild redraws the map and the chips, so the wall the reader had
+     open and the chip they pressed are put back afterwards; without that,
+     focus fell to the top of the page and the map jumped to the first wall
+     while the item landed on a hidden one. */
+  const mapWrap=document.getElementById('res-map');
+  const openTab=mapWrap&&mapWrap.querySelector('.wall-tabs [role=tab][aria-selected="true"]');
+  const wallId=openTab?openTab.getAttribute('data-wall'):null;
+  buildResults();
+  if(done) applySavedProgress(done);
+  if(wallId&&mapWrap.querySelector(`.wall-tabs [role=tab][data-wall="${wallId}"]`)) selectWall(mapWrap, wallId);
+  const chip=document.querySelector(`#res-spotted .spot-chip[data-spot="${i}"]`);
+  if(chip) chip.focus();
+  if(getSession()) updateSpacePatch({ plan: state.ai }); else persistGuestDraft();
+}
+
 /* The plan's own cupboard, drawn the way the landing page draws Figure 1: an
    inked elevation, one shelf per level of the map, the zone printed on the
    shelf and a few glyphs standing in for what lives there. It ships as an
@@ -850,13 +1055,58 @@ const EL_GLYPHS={
 };
 const EL_SIZE={jar:[32,46],can:[28,36],box:[46,72],bottle:[24,64],bag:[44,52],bin:[116,54]};
 const EL_ROWS=[['bag','box','bottle','bag'],['jar','jar','can','can','bag','bottle'],['bin','jar','jar','bottle'],['bin','bin','bag'],['box','box','bag','can'],['bin','jar','bag']];
-function planElevationSvg(map){
-  const { ink:EL_INK, spot:EL_SPOT, tint2:EL_TINT2, fields:EL_FIELDS }=plate();
+
+/* Words wrapped to a width in characters, at most two lines: a long zone
+   gets a second line rather than an ellipsis. Angle brackets and ampersands
+   go, because the text is written straight into SVG markup. */
+function zoneLines(text, max){
+  const words=String(text||'').replace(/[<>&]/g,'').split(/\s+/);
+  const lines=[]; let cur='';
+  /* A line that wraps on a separator would start with "· Spare" or end
+     with "bedding,"; the separators belong between words, not at the ends. */
+  const tidy=l=>l.trim().replace(/^[·,;:\s]+|[·,;:\s]+$/g,'');
+  words.forEach(w=>{ if((cur+' '+w).trim().length>max){ lines.push(tidy(cur)); cur=w; } else cur=(cur+' '+w); });
+  if(tidy(cur)) lines.push(tidy(cur));
+  const kept=lines.filter(Boolean);
+  // Two lines is the room; what does not fit is marked cut rather than dropped in silence.
+  if(kept.length>2) kept[1]=kept[1]+'…';
+  return kept.slice(0,2);
+}
+
+/* The glyphs standing on one shelf, left to right until the shelf is full. */
+function shelfGlyphs(rowI, x0, x1, base, scale){
+  let out='', x=x0;
+  EL_ROWS[rowI%EL_ROWS.length].forEach(k=>{
+    const [w,h]=EL_SIZE[k]; const gw=w*scale, gh=h*scale;
+    if(x+gw>x1) return;
+    out+=`<g class="g" transform="translate(${x} ${base-gh-4}) scale(${scale})">${EL_GLYPHS[k]}</g>`;
+    x+=gw+10;
+  });
+  return out;
+}
+
+function elevationStyle({ ink, spot }){
+  return `<style>.c{fill:none;stroke:${ink};stroke-width:2.5;stroke-linejoin:round}.o{stroke-width:3}.g{fill:#fff;stroke:${ink};stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.g .l{stroke:${spot};stroke-width:2.6}`
+    +`.z{font:700 18px Archivo,Helvetica,Arial,sans-serif;letter-spacing:0;fill:${ink}}.zs{font-size:16px}.cap{font:600 13px Archivo,Helvetica,Arial,sans-serif;fill:${ink}}.e{fill:${spot}}</style>`;
+}
+
+/* The hero. A unit is one case, one shelf per zone. A room is one case per
+   wall, side by side, because a walk-in drawn as a single tall cupboard
+   said nothing about which wall a zone was on. */
+function planElevationSvg(map, placement){
+  const P=plate();
+  const rows=map||[];
+  const cases=(placement&&placement.kind==='room')
+    ? placement.walls.filter(w=>w.id!=='floor'&&w.id!=='other') : [];
+  return cases.length ? roomElevation(rows, placement, cases, P) : unitElevation(rows, P);
+}
+
+function unitElevation(map, P){
+  const { tint2:EL_TINT2, fields:EL_FIELDS }=P;
   const rows=(map||[]).slice(0,6); const n=Math.max(rows.length,2);
   const W=760, top=24, left=30, caseW=700, shelfH=Math.round(440/n), H=top+shelfH*n+26;
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one shelf per zone">`
-    +`<style>.c{fill:none;stroke:${EL_INK};stroke-width:2.5;stroke-linejoin:round}.o{stroke-width:3}.g{fill:#fff;stroke:${EL_INK};stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.g .l{stroke:${EL_SPOT};stroke-width:2.6}`
-    +`.z{font:700 18px Archivo,Helvetica,Arial,sans-serif;letter-spacing:0;fill:${EL_INK}}.e{fill:${EL_SPOT}}</style>`;
+    +elevationStyle(P);
   // Each shelf is a soft colour field clipped to the rounded case; the
   // eye-level shelf keeps the accent's peach, the others cycle the supporting
   // colours so the zones read as separate places before any label is read.
@@ -870,22 +1120,74 @@ function planElevationSvg(map){
     if(i<n-1) out+=`<line class="c" x1="${left}" y1="${base}" x2="${left+caseW}" y2="${base}"/>`;
     // The zone is printed along the top of its shelf, full width, so nothing
     // is cut off; a long name gets a second line rather than an ellipsis.
-    const words=String(m.zone||m.lv||'').replace(/[<>&]/g,'').split(/\s+/);
-    const lines=[]; let cur='';
-    words.forEach(w=>{ if((cur+' '+w).trim().length>52){ lines.push(cur.trim()); cur=w; } else cur=(cur+' '+w); });
-    if(cur.trim()) lines.push(cur.trim());
+    const lines=zoneLines(m.zone||m.lv, 52);
     const scale=Math.min(1.2,(shelfH-34-(lines.length>1?16:0))/72);
-    let x=left+22;
-    EL_ROWS[i%EL_ROWS.length].forEach(k=>{
-      const [w,h]=EL_SIZE[k]; const gw=w*scale, gh=h*scale;
-      if(x+gw>left+caseW-24) return;
-      out+=`<g class="g" transform="translate(${x} ${base-gh-4}) scale(${scale})">${EL_GLYPHS[k]}</g>`;
-      x+=gw+10;
-    });
-    lines.slice(0,2).forEach((ln,li)=>{
+    out+=shelfGlyphs(i, left+22, left+caseW-24, base, scale);
+    lines.forEach((ln,li)=>{
       out+=`<text class="z${m.eye?' e':''}" x="${left+14}" y="${top+shelfH*i+24+li*18}">${ln}</text>`;
     });
   });
+  return out+'</svg>';
+}
+
+/* A room: one case per wall in wall order, the back wall widest because it
+   is the one you face walking in. Every case is the same height so the
+   walls read as one room, and each case's rows share that height between
+   them, stacked by tier. A floor zone runs under the cases as a strip. Rows
+   the placement could not put on a wall are drawn in the back case after its
+   own, since a row with no wall still has to be somewhere. */
+function roomElevation(rows, placement, cases, P){
+  const { tint:EL_TINT, tint2:EL_TINT2, fields:EL_FIELDS }=P;
+  const by=rowsByIndex(rows);
+  const rowFor=idx=>(by.get(idx)||[]).map(r=>r.m)[0];
+  const host=cases.find(w=>w.id==='back')||cases[0];
+  const other=placement.walls.find(w=>w.id==='other');
+  const perCase=cases.map(w=>{
+    const idxs=(w===host&&other)?w.rows.concat(other.rows):w.rows;
+    return idxs.map(rowFor).filter(Boolean).slice(0,6);
+  });
+  const maxRows=Math.max(1, ...perCase.map(r=>r.length));
+  const shelfH=Math.round(400/maxRows), caseH=shelfH*maxRows;
+  const W=760, top=24, left=30, bandW=700, gap=15;
+  const n=cases.length;
+  const backAt=cases.findIndex(w=>w.id==='back');
+  const wideAt=backAt>=0?backAt:Math.min(1,n-1);
+  const widths=n===1?[bandW]
+    :n===2?cases.map((w,k)=>k===wideAt?385:300)
+    :n===3?cases.map((w,k)=>k===wideAt?330:170)
+    :cases.map(()=>Math.floor((bandW-gap*(n-1))/n));
+  const floor=placement.walls.find(w=>w.id==='floor');
+  const floorRow=floor?rowFor(floor.rows[0]):null;
+  const captionY=top+caseH+20;
+  const floorY=captionY+12;
+  const H=(floorRow?floorY+34:captionY)+22;
+  let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one case per wall">`
+    +elevationStyle(P);
+  let fi=0, cx=left;
+  cases.forEach((w,k)=>{
+    const cw=widths[k], rs=perCase[k], rowH=caseH/rs.length;
+    out+=`<defs><clipPath id="cx${k}"><rect x="${cx+1}" y="${top+1}" width="${cw-2}" height="${caseH-2}" rx="19"/></clipPath></defs><g clip-path="url(#cx${k})">`;
+    rs.forEach((m,i)=>{ out+=`<rect x="${cx}" y="${top+rowH*i}" width="${cw}" height="${rowH}" fill="${m.eye?EL_TINT2:EL_FIELDS[fi++%EL_FIELDS.length]}"/>`; });
+    out+='</g>';
+    out+=`<rect class="c o" x="${cx}" y="${top}" width="${cw}" height="${caseH}" rx="20"/>`;
+    rs.forEach((m,i)=>{
+      const y0=top+rowH*i, base=y0+rowH;
+      if(i<rs.length-1) out+=`<line class="c" x1="${cx}" y1="${base}" x2="${cx+cw}" y2="${base}"/>`;
+      // 16px type at about 8.8px a character: a line fills its case and no more.
+      const max=Math.min(cw>200?44:26, Math.floor((cw-28)/8.8));
+      const lines=zoneLines(m.zone||m.lv, max);
+      const scale=Math.min(1.2,(rowH-30-(lines.length>1?14:0))/72);
+      out+=shelfGlyphs(i, cx+16, cx+cw-16, base, scale);
+      lines.forEach((ln,li)=>{ out+=`<text class="z zs${m.eye?' e':''}" x="${cx+12}" y="${y0+20+li*17}">${ln}</text>`; });
+    });
+    out+=`<text class="cap" x="${cx+cw/2}" y="${captionY}" text-anchor="middle">${String(w.label).replace(/[<>&]/g,'')}</text>`;
+    cx+=cw+gap;
+  });
+  if(floorRow){
+    out+=`<rect x="${left}" y="${floorY}" width="${bandW}" height="34" rx="10" fill="${EL_TINT}"/>`
+      +`<rect class="c" x="${left}" y="${floorY}" width="${bandW}" height="34" rx="10"/>`
+      +`<text class="z zs" x="${left+14}" y="${floorY+22}">${zoneLines('Floor · '+(floorRow.zone||floorRow.lv||''), 80)[0]||''}</text>`;
+  }
   return out+'</svg>';
 }
 
@@ -996,17 +1298,24 @@ export function renderSteps(rawList){
      row written before the Adjust-screen shape fix can still carry raw
      {task,time,why} steps — which rendered as "undefined". Accept both. */
   const list=(rawList||[]).map(s=>(s && s.t!==undefined) ? s
-    : {t:(s&&s.task)||'', m:((s&&s.time)||'–'), w:(s&&s.why)||''}).filter(s=>s.t);
+    : {t:(s&&s.task)||'', m:((s&&s.time)||'–'), w:(s&&s.why)||'', ...(s&&Array.isArray(s.rows)?{rows:s.rows}:{})}).filter(s=>s.t);
+  /* Where each step happens, under its task. A step the plan tied to rows
+     names the wall and the level in a room, the level in a unit; a step
+     about the whole space says nothing, which is better than a blank line. */
+  const map=activeMap();
+  const placement=currentPlacement(map);
   state.stepDone=new Array(list.length).fill(false);
   state.stepSkipped=new Array(list.length).fill(false);
   list.forEach((s,i)=>{
     const t=document.createElement('div'); t.className='task'; t.id='task-'+i;
     const art=stepScene(s, state.space);
+    const where=whereFor(s.rows, map, placement);
     t.innerHTML=`
       <button type="button" class="check" data-n="${i+1}" onclick="toggleStep(${i})" aria-label="Mark step ${i+1} complete" aria-pressed="false">${ICON.check}</button>
       <div>
         <div class="num">Step ${i+1}</div>
         <div class="tname">${escapeHtml(s.t)}</div>
+        ${where?`<div class="step-where">${escapeHtml(where)}</div>`:''}
         ${(s.cite && !state.shareView) ? `<div class="step-cite">${escapeHtml(s.cite)}</div>` : ''}
         <span class="step-art" data-step-media="${mediaKeyFor(s, state.space)}">${art}</span>
         <div class="meta"><span class="time">${SVG.clock} ${escapeHtml(s.m)}</span></div>
@@ -1153,15 +1462,18 @@ export function renderAfter(mode){
   document.getElementById('after-h').textContent=mode;
   const cab=document.getElementById('after-cabinet');
   const map=activeMap();
-  let colorI=0;
   // Cap chips per shelf and keep rows single-line so switching modes never
   // changes the drawing's size — only its contents.
   const MAXC=4;
-  cab.innerHTML=map.map((m,ri)=>{
+  const shelf=(m,ri,underWall)=>{
     let items=parseZone(m.zone);
     const isLast=ri===map.length-1;
+    /* Under a wall heading the row drops its own wall prefix, or every
+       line under "Back wall" would start with "Back wall:" again. */
+    const lv=underWall?levelLabel(m.lv):String(m.lv||'');
     let shelfCls='', tag='';
-    if(m.eye){ shelfCls=' eye'; tag='<span class="cab-tag eyet">eye level</span>'; }
+    // The eye tag marks a row whose level does not already say "eye level".
+    if(m.eye){ shelfCls=' eye'; if(!/^eye level$/i.test(lv)) tag='<span class="cab-tag eyet">eye level</span>'; }
     if(mode==='Minimal look') items=items.slice(0,2);
     if(mode==='Kid-friendly setup' && isLast){ shelfCls=' kid'; tag='<span class="cab-tag kidt">kid reach</span>'; }
     let row;
@@ -1171,16 +1483,28 @@ export function renderAfter(mode){
     }else{
       const extra=Math.max(0, items.length-MAXC);
       row=items.slice(0,MAXC).map(it=>{
-        const c=AFTER_PALETTE[(colorI++)%AFTER_PALETTE.length];
         const bin=(mode==='More bins');
         const label=(mode==='More labels')?`<span class="lbl">${escapeHtml(it).slice(0,10)}</span>`:'';
-        const lead=bin?SVG.archive:`<span class="sw" style="background:${c}"></span>`;
+        /* No swatch on a plain chip. They used to cycle a palette, and a
+           colour per chip that stood for nothing read as a legend nobody
+           could find; one shared colour was a bullet that said nothing. */
+        const lead=bin?SVG.archive:'';
         return `<span class="cab-item${bin?' bin':''}">${lead}<span class="nm">${escapeHtml(it)}</span>${label}</span>`;
       }).join('')+(extra?`<span class="cab-item more"><span class="nm">+${extra} more</span></span>`:'');
     }
     if(!row) row='<span class="cab-item"><span class="nm" style="color:var(--ink-3)">open</span></span>';
-    return `<div class="cab-shelf${shelfCls}"><div class="cab-lv"><span>${escapeHtml(m.lv)}</span>${tag}</div><div class="cab-row">${row}</div></div>`;
-  }).join('');
+    return `<div class="cab-shelf${shelfCls}"><div class="cab-lv"><span>${escapeHtml(lv)}</span>${tag}</div><div class="cab-row">${row}</div></div>`;
+  };
+  /* A room's rows sit under their wall, in the order the map's tabs use, so
+     this drawing and that one tell the same story about where things go. */
+  const groups=wallGroups(currentPlacement(map));
+  if(groups){
+    const by=rowsByIndex(map);
+    cab.innerHTML=groups.map(w=>`<div class="cab-wall">${escapeHtml(w.label)}</div>`
+      +w.rows.flatMap(idx=>(by.get(idx)||[]).map(r=>shelf(r.m, r.i, true))).join('')).join('');
+  }else{
+    cab.innerHTML=map.map((m,i)=>shelf(m, i, false)).join('');
+  }
 }
 export function setUpgrades(on){
   /* Persist only on an actual change. buildResults calls this on every render
