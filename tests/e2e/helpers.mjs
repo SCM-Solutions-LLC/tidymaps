@@ -2,6 +2,7 @@
 
    Not a spec file: Playwright's default testMatch only picks up *.spec.* and
    *.test.*, so this is imported, never run. */
+import { expect } from 'playwright/test';
 
 /* The report opens with Summary and Step-by-step expanded and the four
    reference chapters folded, so the screen is readable on a phone instead of
@@ -89,7 +90,16 @@ const FP = () => {
     opportunities: all('#res-opps li'),
     safetyNotes: all('#res-safety-notes .safety-note'),
     mapZones: all('#res-map .shelf'),
+    /* A walk-in's rows sit under wall tabs; the tabs are part of what the
+       screen says about the plan, since they name walls the rows never did. */
+    wallTabs: all('#res-wall-tabs [role=tab]'),
+    /* "Also in your photo": the heading says where the things came from, and
+       each chip carries its name and, as "+" or "✓", whether it is in the plan
+       yet. Tapping one is a plan change that lives nowhere else on the page. */
+    spottedHeading: t('#res-spotted-h'),
+    spotted: all('#res-spotted .spot-chip'),
     steps: all('#res-steps .tname'),
+    stepWhere: all('#res-steps .step-where'),
     upgradesSub: t('#res-upgrades-sub'),
     products: all('#res-upgrades .pname'),
     shoppingLines: all('#res-shopping li'),
@@ -141,8 +151,14 @@ export async function assertResultsCoverage(page) {
    Eleven steps stand between the landing page and a plan, and any spec about
    what happens AFTER the build has to walk all of them first. Shared so the
    walk is written once: a miscounted Continue click fails in a way that looks
-   like the behaviour under test. */
-export async function driveWizardToReview(page, { photo = null } = {}) {
+   like the behaviour under test.
+
+   `cats` ticks those chips on the contents step, by their exact names. Left
+   out, the step is passed with nothing ticked, which is what every caller
+   before it did and what "the plan's own categories stand" is tested
+   against; a ticked chip makes the list the user's (state.catsTouched) and
+   scopes the plan to it, so a caller asks for that on purpose. */
+export async function driveWizardToReview(page, { photo = null, cats = null } = {}) {
   await page.goto('/index.html');
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.goto('/index.html');
@@ -162,6 +178,14 @@ export async function driveWizardToReview(page, { photo = null } = {}) {
   }
   await page.locator('#flow-next').click();          // photos → household
   await page.locator('#flow-next').click();          // household
+  for (const name of cats || []) {
+    // Exact, not a substring: "Snacks" must not tick "Kids' snacks" as well.
+    const chip = page.locator('#contents-chips').getByRole('button', { name, exact: true });
+    await chip.click();
+    // The chip's own state is the proof the tap registered, since a miss here
+    // shows up later as a plan that ignored the category list.
+    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+  }
   await page.locator('#flow-next').click();          // contents
   await page.locator('#goal-list .wz-goal').first().click();
   await page.locator('#flow-next').click();          // goals

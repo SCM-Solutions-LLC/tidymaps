@@ -10,7 +10,13 @@
 
 export const EVENT_NAMES = [
   'screen_viewed',        // { screen } — wizard funnel / drop-off
-  'plan_created',         // { space, source, steps } — a plan was generated
+  'plan_created',         // { space, source, steps, walls, spotted }: a plan
+                          //   was generated. walls is how many map rows
+                          //   resolved to a wall, spotted how many items the
+                          //   plan set aside for the user to add; both are
+                          //   numbers. Adding a prop needs no redeploy of
+                          //   track-events: the server copy gates event
+                          //   names, not props.
   'step_checked',         // { index, total, checkedCount } — the >=3 signal
   'product_clicked',      // { retailer, productType } — shopping intent
   'plan_rated',           // { useful, checkedCount, total, source } — the

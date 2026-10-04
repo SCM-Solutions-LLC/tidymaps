@@ -188,4 +188,3 @@ export const LOAD_LABELS_NO_MEDIA = [
   'Reading the measurements you gave us','Matching your setup to a layout',
 ];
 
-export const AFTER_PALETTE=['oklch(0.70 0.09 90)','oklch(0.74 0.11 70)','oklch(0.64 0.08 150)','oklch(0.62 0.09 235)','oklch(0.66 0.10 300)','oklch(0.68 0.11 110)'];

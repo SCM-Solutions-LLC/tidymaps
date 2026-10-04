@@ -225,3 +225,93 @@ export function placementFor(map, { layout, archetype } = {}) {
 
   return { kind, walls, byRow };
 }
+
+/* The level text without its wall. "Back wall: eye level" says two things,
+   and once the report groups rows under a wall tab the first of them is
+   said already; the row then reads "Eye level". Only a head that IS a wall
+   comes off, and only when a colon separates it from the rest: "Hanging
+   rod: left" keeps its rod, and a bare "Floor" keeps its name. A unit never
+   calls this (its "Unit 2: middle shelf" is not a wall and stays whole), so
+   the rule is the same one whereFor reads below.
+   @param {unknown} text @returns {string} */
+export function levelLabel(text) {
+  if (typeof text !== 'string') return '';
+  const i = text.indexOf(':');
+  if (i < 0 || !wallFromLevel(text)) return text.trim();
+  const rest = text.slice(i + 1).trim();
+  if (!rest) return text.trim();
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
+/* The row a shelfIndex names, read the way placementFor keys its rows: a
+   row's own shelfIndex when it has one, its position otherwise. A step's
+   `rows` list is in shelfIndex terms, so a map whose rows carry shelfIndex
+   out of order still finds the right row.
+   @param {any[]} rows @param {number} idx @returns {any|null} */
+function rowAt(rows, idx) {
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || typeof r !== 'object') continue;
+    const key = Number.isInteger(r.shelfIndex) ? r.shelfIndex : i;
+    if (key === idx) return r;
+  }
+  return null;
+}
+
+/* Where a step happens, for the line under its task. Rooms name the wall;
+   units the level. "Back wall · Eye level" for a walk-in, "Drawer 3 of 4"
+   for a chest, and nothing at all when the step's rows name no row the map
+   has, because a where-line that says "" is worse than no line. A row in
+   the "Other" group of a room has no wall to name and gives its level
+   alone. Three places at most are spelled out; past that the line counts
+   the rest, since a step touching every shelf is a step about the whole
+   space. Repeats collapse: two rows on one wall at one level are one place.
+   @param {unknown} rows  shelfIndex list from the step
+   @param {any[]|null|undefined} map
+   @param {Placement|null|undefined} placement
+   @returns {string} */
+export function whereFor(rows, map, placement) {
+  if (!Array.isArray(rows) || !Array.isArray(map)) return '';
+  const room = !!(placement && placement.kind === 'room');
+  const walls = (placement && Array.isArray(placement.walls)) ? placement.walls : [];
+  /** @type {string[]} */
+  const labels = [];
+  for (const idx of rows) {
+    if (!Number.isInteger(idx)) continue;
+    const row = rowAt(map, idx);
+    if (!row) continue;
+    const text = typeof row.lv === 'string' ? row.lv : (typeof row.level === 'string' ? row.level : '');
+    const lvl = room ? levelLabel(text) : text.trim();
+    const wall = room ? walls.find(w => w && w.id !== 'other' && Array.isArray(w.rows) && w.rows.includes(idx)) : null;
+    const label = [wall ? wall.label : '', lvl].filter(Boolean).join(' · ');
+    if (label && !labels.includes(label)) labels.push(label);
+  }
+  if (!labels.length) return '';
+  if (labels.length <= 3) return labels.join(', ');
+  return `${labels.slice(0, 3).join(', ')} and ${labels.length - 3} more`;
+}
+
+/* The walls worth heading a list with: a room's walls when at least one row
+   resolved to a real wall. A walk-in whose rows all came back "Top shelf" is
+   still a room, but one "Other" heading over every row says nothing, so the
+   export and the after-drawing print the flat list instead. */
+export function wallGroups(placement){
+  if(!placement||placement.kind!=='room'||!Array.isArray(placement.walls)) return null;
+  return placement.walls.some(w=>w.id!=='other')?placement.walls:null;
+}
+
+/* How many of a plan's zones name a wall. The report can only offer wall
+   tabs when the rows resolve to walls, so this is the count that says whether
+   a walk-in came back as a room or as one tall unit. Counted per map row, the
+   way the privacy page describes it, from the same placement the report reads:
+   the level text and the layout's sections are enough, because the archetype
+   only decides room against unit, not which rows have a wall. */
+export function wallsPlaced(plan){
+  const rows=(plan&&Array.isArray(plan.map))?plan.map.filter(r=>r&&typeof r==='object'):[];
+  const placement=placementFor(rows, { layout: plan&&plan.layout });
+  return rows.reduce((n,row,i)=>{
+    const idx=Number.isInteger(row.shelfIndex)?row.shelfIndex:i;
+    const at=placement.byRow.get(idx);
+    return n+(at&&at.wall?1:0);
+  }, 0);
+}

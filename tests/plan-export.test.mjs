@@ -127,3 +127,106 @@ test('with no plan at all, the demo needs still back the sample report', () => {
   state.ai = null;
   assert.ok(activeProductNeeds().length > 0);
 });
+
+/* ---------- a room's zones are grouped by wall ----------
+   A walk-in pantry's six rows printed as one flat list read as a single tall
+   unit: nothing on the page said rows one and two were the left wall and
+   three and four the back. The checklist gets a heading per wall, in the
+   placement's order, and every row line keeps its full level text so a line
+   read on its own still says where it is. */
+
+test('a walk-in plan prints a heading per wall over that wall\'s rows', () => {
+  state.space = 'pantry';
+  state.setup = 'walkin';
+  state.setupTouched = true;
+  state.dims = null;
+  state.arrangement = null;
+  state.ai = normalizeAi(getDemoScenario('walkin', null, NO_KIDS, null, 'walkin'));
+  state.stepDone = null;
+  const txt = checklistText();
+  const lines = txt.split('\n');
+  for (const heading of ['Left wall:', 'Back wall:', 'Right wall:', 'Floor:']) {
+    assert.equal(lines.filter((l) => l === heading).length, 1, `expected exactly one "${heading}" line:\n${txt}`);
+  }
+  // Headings come in wall order, and each one sits directly over its own rows.
+  const at = (heading) => lines.indexOf(heading);
+  assert.ok(at('Left wall:') < at('Back wall:') && at('Back wall:') < at('Right wall:') && at('Right wall:') < at('Floor:'),
+    `walls out of order:\n${txt}`);
+  assert.match(lines[at('Left wall:') + 1], /^- Left wall: /, 'the left wall heading should be followed by a left wall row');
+  assert.match(lines[at('Back wall:') + 1], /^- Back wall: /, 'the back wall heading should be followed by a back wall row');
+  assert.match(lines[at('Floor:') + 1], /^- Floor: /, 'the floor heading should be followed by the floor row');
+  // Grouping must not lose a row, and the level text stays whole.
+  for (const m of state.ai.map) assert.ok(txt.includes(`- ${m.lv}: ${m.zone}`), `zone missing or unnamed: ${m.lv}`);
+  assert.ok(!txt.includes('undefined'), `exported text contains "undefined":\n${txt}`);
+});
+
+/* A walk-in whose rows name no wall (a server plan that came back "Top shelf",
+   "Eye level", "Lower shelf") is still a room, but the only group it has is
+   "Other", and a checklist headed "Other:" over every zone reads as a bug. */
+test('a walk-in whose rows name no wall prints its zones as one list', () => {
+  state.space = 'pantry';
+  state.setup = 'walkin';
+  state.setupTouched = true;
+  state.ai = normalizeAi({ ...getDemoScenario('pantry', null, NO_KIDS), layout: null });
+  // Every row a plain shelf: no wall, and no door or floor surface to read one from.
+  state.ai.map = state.ai.map.map((row, i) => ({ ...row, lv: ['Top shelf', 'Eye level', 'Lower shelf'][i % 3], wall: null, surface: 'shelf' }));
+  const txt = checklistText();
+  const headings = txt.split('\n').filter((l) => /^(Left wall|Back wall|Right wall|Front wall|Door|Floor|Other):$/.test(l));
+  assert.deepEqual(headings, [], `a nameless room was headed anyway:\n${txt}`);
+  for (const row of state.ai.map) assert.ok(txt.includes(`- ${row.lv}: ${row.zone}`), `row "${row.lv}" is missing from the list`);
+  state.setup = null;
+  state.setupTouched = false;
+});
+
+/* The walls can come from the layout's sections rather than the level text
+   (a server plan says "High shelf" and puts the row in a left-wall section),
+   and whether a one-wall plan is a room at all comes from the setup's
+   archetype. The export resolves both the way the report does, so these pin
+   the layout and archetype plumbing that level-prefixed fixtures never touch. */
+test('wall headings come from the layout sections and the setup archetype too', () => {
+  state.space = 'pantry';
+  state.setup = 'walkin';
+  state.setupTouched = true;
+  const base = normalizeAi({ ...getDemoScenario('pantry', null, NO_KIDS), layout: null });
+  const rows = base.map.slice(0, 3).map((row, i) => ({ ...row, lv: ['High shelf', 'Eye level', 'Lower shelf'][i], wall: null, surface: 'shelf', shelfIndex: i }));
+  state.ai = { ...base, map: rows, layout: { type: 'walkin-u', sections: [
+    { id: 'left-wall', label: 'Left wall', place: 'left', rows: [0] },
+    { id: 'back-wall', label: 'Back wall', place: 'back', rows: [1, 2] },
+  ] } };
+  let txt = checklistText();
+  let headings = txt.split('\n').filter((l) => /^(Left wall|Back wall|Right wall|Front wall|Door|Floor|Other):$/.test(l));
+  assert.deepEqual(headings, ['Left wall:', 'Back wall:'], `sections did not place the rows:\n${txt}`);
+  assert.ok(txt.indexOf('- High shelf:') < txt.indexOf('Back wall:'), 'the left-wall row is not under its heading');
+
+  // One section only: a walk-in is still a room, headed by that wall; a cabinet with the same rows is not.
+  state.ai = { ...state.ai, layout: { type: 'walkin-u', sections: [{ id: 'back-wall', label: 'Back wall', place: 'back', rows: [0, 1, 2] }] } };
+  txt = checklistText();
+  headings = txt.split('\n').filter((l) => /^(Left wall|Back wall|Right wall|Front wall|Door|Floor|Other):$/.test(l));
+  assert.deepEqual(headings, ['Back wall:'], `a one-wall walk-in lost its heading:\n${txt}`);
+  state.setup = 'cabinet';
+  txt = checklistText();
+  headings = txt.split('\n').filter((l) => /^(Left wall|Back wall|Right wall|Front wall|Door|Floor|Other):$/.test(l));
+  assert.deepEqual(headings, [], `a cabinet was headed by a wall:\n${txt}`);
+  state.setup = null;
+  state.setupTouched = false;
+});
+
+test('a cabinet plan prints its zones as one list, with no wall headings', () => {
+  state.space = 'kitchen';
+  state.setup = 'cabinet';
+  state.setupTouched = true;
+  state.dims = null;
+  state.arrangement = null;
+  state.ai = normalizeAi(getDemoScenario('cabinet', null, NO_KIDS, null, 'cabinet'));
+  state.stepDone = null;
+  const txt = checklistText();
+  const lines = txt.split('\n');
+  const headings = lines.filter((l) => /^(Left wall|Back wall|Right wall|Front wall|Door|Floor|Other):$/.test(l));
+  assert.deepEqual(headings, [], `a unit should carry no wall headings:\n${txt}`);
+  // Rows follow in map order, directly under ZONES (the section ends at the blank line).
+  const start = lines.indexOf('ZONES') + 2;
+  const zones = lines.slice(start, lines.indexOf('', start));
+  assert.deepEqual(zones.filter((l) => l.startsWith('- ')), state.ai.map.map((m) => `- ${m.lv}: ${m.zone}`));
+  state.setup = null;
+  state.setupTouched = false;
+});

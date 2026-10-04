@@ -11,6 +11,7 @@ import { go, getCurrentScreen } from '../router.js';
 import { autoSaveSpace } from '../db.js';
 import { syncCategoriesToResults } from './results.js';
 import { track } from '../telemetry.js';
+import { wallsPlaced } from '../placement.js';
 /* The deterministic engine is 150KB of plan copy and is loaded when a build
    asks for it: the demo path always, the AI path only as its fallback. */
 const demoScenarios=()=>import('../demo-scenarios.js');
@@ -327,6 +328,8 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
       space: state.space || 'unknown',
       source: payload.meta.source,
       steps: (payload.ai && payload.ai.steps) ? payload.ai.steps.length : 0,
+      walls: wallsPlaced(payload.ai),
+      spotted: (payload.ai && Array.isArray(payload.ai.spotted)) ? payload.ai.spotted.length : 0,
     });
     syncCategoriesToResults();
     autoSaveSpace();
