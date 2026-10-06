@@ -291,6 +291,54 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-06 session changed, part 2 (the funnel is off in the owner's browser, and no one else uses the app)
+
+No code change. Open item 6 is diagnosed by measurement, and what it waits on
+is now named plainly: a user who is not the owner.
+
+**The owner's browser never tried to send.** The owner's 10-06 session (01:38
+to 02:27 UTC) made three `analyze-space` calls and one `render-after`, and
+saved two `spaces` rows. Every wizard screen fires `screen_viewed` and every
+save fires `space_saved`, yet `usage_events` has no `track-events` row, and the
+edge logs for that window show the `OPTIONS` and `POST` of every
+`analyze-space` and `render-after` call but no request of either kind to
+`track-events`. No preflight means the request never left the browser: either
+`optedOut()` returned true and `track()` never queued it, or something inside
+the browser dropped it.
+
+**The client does send from a clean browser.** Current `main`, served locally
+in Chromium launched with `--disable-blink-features=AutomationControlled`
+(without it `navigator.webdriver` is true and `telemetryStatus()` reads
+`off: automation`), with `page.route('**/functions/v1/track-events', r =>
+r.abort())` so nothing reached production: opening the wizard posted
+`screen_viewed` within the 4s flush, and `telemetryStatus()` read `on`. With
+GPC set, the same run read `off: Global Privacy Control` and posted nothing.
+The landing page posts nothing either way; the first event is the wizard's
+first screen. Not checked: the deployed copy, which the sandbox cannot reach,
+though `scripts/build-site.sh` ships the same files.
+
+**No one but the owner has used the app in 30 days.** `usage_events` keeps 30
+days (oldest row 09-06 11:06). Its 35 anonymous `analyze-space` rows are the 33
+"Model path canary" runs in that window plus two re-run attempts (09-21,
+09-29), each matching a run to the minute, the two manual dispatches included.
+Its 5 signed-in rows are one account, the owner's. It has no `track-events` row
+at all. A visit that leaves from the landing page records nothing anywhere, so
+"nobody visited" cannot be measured. "Nobody but the owner ran an analysis,
+and nobody opened the wizard with telemetry on" can.
+
+**Decision (owner, 10-06): leave that browser opted out.** Its sessions are
+testing, and a funnel fed by them would read as demand. The last time this was
+traced (07-23, the comment on `telemetryStatus()` in `js/telemetry.js`) the
+cause was GPC. One console line settles the remaining alternative: run
+`telemetryStatus()` in that browser. Any `off:` answer closes it. `on` means
+something in the browser, a content blocker matching the URL for example,
+dropped the request, which would hide real visitors too and reopens the
+question.
+
+Production health #8's CORS argument was wrong and is corrected in place; its
+conclusion holds on this session's evidence. Open item 6 now reads as what it
+waits on.
+
 ## What the 2026-10-06 session changed (analysis moves to Sonnet 5.5)
 
 `analyze-space` now calls `claude-sonnet-5-5` instead of `claude-sonnet-4-6`.
@@ -2236,11 +2284,23 @@ and the list is finished.
    named DNT/GPC and the CORS origin list as co-equal candidates; the second is
    now excluded. Check `telemetryStatus()` in that browser first.
 
+   **Corrected 2026-10-06: the CORS half of that argument does not hold.** The
+   telemetry POST carries `apikey`, `authorization` and a JSON content type, so
+   the browser preflights it, and a failed preflight stops the POST before
+   `track-events` runs: no usage row either way. The conclusion stands on
+   better evidence. The 10-06 edge logs show no `OPTIONS` to `track-events` at
+   all, while `analyze-space`, behind the same `_shared/cors.ts`, passed CORS
+   from the same page. See the 10-06 part 2 section.
+
 9. **Nobody has opened the app since 2026-08-21.** Every backend call in the six
    days to 08-27 is the daily canary — one `analyze-space` per day, no
    `render-after`, no `track-events`, no new `spaces` row. This is not a funnel
    conversion problem and no amount of waiting fixes it. Open items 1 and 6 both
    need a human to run the app once, and item 1 is about twenty minutes of that.
+
+   **2026-10-06: still true of everyone but the owner,** over the 30 days
+   `usage_events` keeps: every anonymous call is a canary run and every
+   signed-in call is the owner's. See the 10-06 part 2 section.
 
 10. **The canary's firing time swings by up to eleven hours, and that is the
     real finding.** An earlier version of this entry said the canary *missed*
@@ -2559,10 +2619,10 @@ Ordered by whether anyone can act on them today.
    since 08-21 (Production health #9), so nothing on the "waiting on
    traffic" list can move until somebody runs it — and running it once is
    exactly what this item asks for. Twenty minutes of one person's browser
-   closes item 1, produces the `telemetryStatus()` reading item 6 needs
+   closes item 1 and produces the `telemetryStatus()` reading item 6 needs
    (there is a fifth possible answer now, `off: opted out on this device`,
-   courtesy of #174's in-app opt-out), and generates the first funnel rows
-   in three weeks.
+   courtesy of #174's in-app opt-out). It does not produce funnel rows: the
+   owner's browser opts out by decision since 10-06 (open item 6).
 2. ~~**Nothing alerts on a broken model path.**~~ **Built.**
    `.github/workflows/model-path-canary.yml` calls `analyze-space` for real
    every day at 06:20 UTC and fails the workflow if it does not get a plan
@@ -3415,17 +3475,15 @@ Ordered by whether anyone can act on them today.
 
 ### Waiting on traffic
 
-6. **The funnel is switched off, not quiet — and this is now actionable, not a
-   waiting item.** `plan_rated` and `feedback_submitted` have never had a row,
-   `plan_created` last fired 2026-07-30, and `telemetry_events` has had nothing
-   at all since 2026-08-04 despite real sessions on 08-18, 08-19 and 08-20.
-   Production health #8 rules out the CORS origin by measurement — no
-   `track-events` usage rows on those days means no request left the browser —
-   so `optedOut()` is the remaining candidate. **Do this first:** open the site
-   in the browser those sessions used and read `telemetryStatus()` on `window`;
-   it names DNT or GPC in one line. Brave, DuckDuckGo and Firefox send GPC by
-   default. Then read `plan_rated` before `feedback_submitted`: the first is one
-   tap on the report, the second needs three more screens.
+6. **The funnel waits on someone other than the owner.** Diagnosed 2026-10-06
+   (that day's part 2 section): the client sends from a clean browser, the
+   owner's browser opts out and stays that way by decision, and no one else
+   has used the app in the 30 days `usage_events` keeps. `plan_rated` and
+   `feedback_submitted` have never had a row, and nothing in the code is why.
+   Getting first users is the open decision. When they come, read `plan_rated`
+   before `feedback_submitted`: the first is one tap on the report, the second
+   needs three more screens. One loose end, owner-only: `telemetryStatus()` in
+   that browser should read `off:`; `on` reopens this as a bug.
 
 ### Waiting on business input
 
