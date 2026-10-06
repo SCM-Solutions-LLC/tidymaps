@@ -719,6 +719,7 @@ test('a $0 household is judged by the other rule, not this one', () => {
    the same character loses the difference. */
 test('a model id reads the way a person would write it', () => {
   assert.equal(modelLabel('claude-sonnet-4-6'), 'Sonnet 4.6');
+  assert.equal(modelLabel('claude-sonnet-5-5'), 'Sonnet 5.5');
   assert.equal(modelLabel('claude-opus-5'), 'Opus 5');
   // a dated build is not something a reader needs in a byline
   assert.equal(modelLabel('claude-haiku-4-5-20251001'), 'Haiku 4.5');

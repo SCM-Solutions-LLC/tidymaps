@@ -291,6 +291,45 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-06 session changed (analysis moves to Sonnet 5.5)
+
+`analyze-space` now calls `claude-sonnet-5-5` instead of `claude-sonnet-4-6`.
+Per-token price drops from $3/$15 to $2/$10 per MTok, but the new tokenizer
+counts the same text as about 30% more tokens, so the saving on the text half
+of a request is nearer 13% than a third. Re-baseline from `usage` rather than
+assuming either figure. The request body changed in three places, each pinned
+by a test in `tests/analysis-budget.test.mjs`:
+
+- **`thinking: { type: 'between_tools' }` replaces `disabled`.** Sonnet 5.5
+  answers `disabled` with a 400. That 400 would have tripped the
+  `tuningRejected` fallback, which drops effort, thinking and caching for the
+  rest of the worker's life. The analysis would still have worked, but at
+  default `high` effort with adaptive thinking: the slow path the 100s budget
+  was built to avoid. `between_tools` is accepted only at `high` effort or
+  below, and only on this model, so a future model switch must revisit it.
+- **`MAX_TOKENS` 8192 -> 12000**, for the tokenizer. It is a ceiling, not a
+  spend.
+- **`stop_reason: 'refusal'` returns `refused` at once.** It used to fall into
+  "no JSON in response", which is retryable and re-sent every photo for the
+  same answer. The client has no copy for `refused`, so the user gets the
+  generic fallback, same as before.
+
+Not done, on purpose: the server-side `fallbacks` beta. On Sonnet 5.5 it only
+retries `cyber` and `frontier_llm` declines, neither of which a pantry photo
+triggers, and an unrecognised parameter would 400 in a way the tuning fallback
+does not catch.
+
+**Unverified until it is live:** nothing in CI can call the model. After the
+deploy, read the `analyze-space` logs for "rejected effort/thinking/cache
+tuning". If it appears, the API refused `between_tools` and every analysis is
+on the slow path. Effort stays `medium`, but Sonnet 5.5 recalibrated what each
+level means; compare latency and `validation_failed` against the 4.6 baseline
+for a day before trying `low`.
+
+The report byline needs no change: it renders whatever `model` the function
+returns, so new plans read "Analyzed by Claude · Sonnet 5.5" and saved plans
+keep "Sonnet 4.6", which is what analysed them.
+
 ## What the 2026-10-05 session changed, part 6 (the 3D viewer draws rooms wall by wall)
 
 Sixth and last of the PRs from the owner's 2026-10-03 site review. Client

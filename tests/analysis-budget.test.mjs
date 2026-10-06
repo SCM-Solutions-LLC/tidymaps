@@ -48,18 +48,38 @@ test('running out of time answers, rather than letting the worker be killed', ()
 });
 
 test('effort and thinking are set explicitly, not left to the model default', () => {
-  // Sonnet 4.6 defaults to `high` effort; that default was doing the analysis
-  // no favours and cost most of the wall clock.
+  // Sonnet defaults to `high` effort; that default was doing the analysis
+  // no favours and cost most of the wall clock. Sonnet 5.5 400s on
+  // `disabled`, so thinking-off is spelled `between_tools`.
   assert.match(fn, /const EFFORT = '(low|medium|high)'/);
   assert.match(fn, /output_config: \{ effort: EFFORT \}/);
-  assert.match(fn, /thinking: \{ type: 'disabled' \}/);
+  assert.match(fn, /thinking: \{ type: 'between_tools' \}/);
+  assert.doesNotMatch(fn, /type: 'disabled'/);
+});
+
+test('the output ceiling grew with the tokenizer', () => {
+  // Sonnet 5.x counts the same text as about 30% more tokens than 4.6, so the
+  // 8192 a 4.6 plan fitted in would truncate an equivalent one.
+  assert.ok(constant('MAX_TOKENS') >= 8192 * 1.3, 'MAX_TOKENS must leave the new tokenizer room');
+});
+
+test('a safety decline answers at once instead of spending the retry', () => {
+  // A refusal is a 200 with no JSON. Read as "no JSON in response" it was
+  // retryable, which re-sent every photo for the same answer.
+  const decline = fn.slice(fn.indexOf("data.stop_reason === 'refusal'"));
+  assert.ok(fn.includes("data.stop_reason === 'refusal'"), 'refusal must be checked');
+  assert.match(decline.slice(0, 400), /retryable: false[^}]*error: 'refused'/);
+  assert.ok(
+    fn.indexOf("data.stop_reason === 'refusal'") < fn.indexOf("error: 'no_json_in_response'"),
+    'the refusal check must run before the JSON search',
+  );
 });
 
 test('a model that rejects the tuning degrades to slow, not to broken', () => {
   // Nothing in CI can send a real request, so the tuning ships unverified.
   assert.match(fn, /let tuningRejected = false;/);
   assert.match(fn, /res\.status === 400 && \/output_config\|effort\|thinking\|cache_control\//);
-  assert.match(fn, /tuningRejected\s*\n?\s*\? \{ model: MODEL, max_tokens: 8192, messages: untuned\(messages\) \}/);
+  assert.match(fn, /tuningRejected\s*\n?\s*\? \{ model: MODEL, max_tokens: MAX_TOKENS, messages: untuned\(messages\) \}/);
 });
 
 test('the retry reads the photos from cache instead of re-processing them', () => {
