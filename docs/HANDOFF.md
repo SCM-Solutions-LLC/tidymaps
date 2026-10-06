@@ -319,12 +319,37 @@ retries `cyber` and `frontier_llm` declines, neither of which a pantry photo
 triggers, and an unrecognised parameter would 400 in a way the tuning fallback
 does not catch.
 
-**Unverified until it is live:** nothing in CI can call the model. After the
-deploy, read the `analyze-space` logs for "rejected effort/thinking/cache
-tuning". If it appears, the API refused `between_tools` and every analysis is
-on the slow path. Effort stays `medium`, but Sonnet 5.5 recalibrated what each
-level means; compare latency and `validation_failed` against the 4.6 baseline
-for a day before trying `low`.
+**Verified live, one run (2026-10-06 02:27 UTC).** Merged as #187;
+`analyze-space` v47 deployed at about 02:22. The owner's walk-in pantry run
+returned 200 in 30.6s on the first attempt. No "rejected effort/thinking/cache
+tuning" line and no `validation failed` line, so `between_tools` was accepted
+and the tuned path is the one running. Against the same walk-in on 4.6 earlier
+that night (v46, both first-attempt passes, no retry):
+
+| | 4.6, 01:39 | 4.6, 01:44 | 5.5, 02:27 |
+|---|---|---|---|
+| Time | 75.8s | 76.4s | 30.6s |
+| Rows / with a wall | 12 / 12 | 12 / 12 | 11 / 11 |
+| Steps / with rows | 13 / 13 | 14 / 14 | 14 / 14 |
+| Goals covered | 6 of 6 | 6 of 6 | 6 of 6 |
+| Spotted | 6 | 8 | 4 |
+
+All three read the edited categories, the confirmed list and the effort answer
+(5.5 `planQuality` request `8b29b9d9-246e-4083-b5c5-78b5a83d2e72`). The lower
+spotted count is the one number that moved the wrong way; `SPOTTED_MAX` caps
+it, nothing sets a floor, so read it as a question for the report (did 5.5 miss
+items in the photo, or did 4.6 pad the list?) rather than a regression.
+
+What this does not settle:
+
+- **One run is not a latency baseline.** 4.6 did a simpler room in 33.6s on
+  10-05, so the 2.5x is this room on this night. Read the next several
+  `analyze-space` POST times before quoting a speedup.
+- **`planQuality` counts, it does not judge.** Whether the steps name real
+  items with a wall and shelf, and act on no unticked category, is still the
+  owner's read of the report (the walk-in open item above).
+- **Effort stays `medium`.** Sonnet 5.5 recalibrated the levels, so try `low`
+  only after a day of latency and `validation_failed` at `medium`.
 
 The report byline needs no change: it renders whatever `model` the function
 returns, so new plans read "Analyzed by Claude · Sonnet 5.5" and saved plans
