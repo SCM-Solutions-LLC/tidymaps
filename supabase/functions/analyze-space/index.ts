@@ -7,19 +7,25 @@ import { validatePlan, stepRangeFor, effortUntouched, listConfirmed as hasConfir
          PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../_shared/planSchema.js';
 import { untrustedContextBlock } from '../_shared/promptContext.js';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5-5';
 const MAX_ATTEMPTS = 2;
 const MAX_IMAGES = 6;
 const MAX_B64_CHARS = 2_100_000; // ~1.5 MB binary per image
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-/* Sonnet 4.6 runs at `high` effort when nothing says otherwise, which is more
+/* Sonnet runs at `high` effort when nothing says otherwise, which is more
    deliberation than reading a photo of a shelf needs and the main reason a
    single analysis could outlive the whole function. Medium is the balance
    point; going lower risks failing the plan invariants, and a failed
    validation costs a second call, which is the expensive thing here.
-   Thinking is pinned off so the default cannot drift back on later. */
+
+   Thinking is pinned to its lowest setting so the default cannot drift back
+   on later. Sonnet 5.5 refuses `disabled` with a 400; `between_tools` is its
+   replacement, accepted only at `high` effort or below and with no other field
+   beside it. Sonnet 5.5 also counts the same text as roughly 30% more tokens
+   than 4.6 did, which is why MAX_TOKENS moved up from 8192 with it. */
 const EFFORT = 'medium';
+const MAX_TOKENS = 12_000;
 
 /* Supabase kills a function at its wall-clock limit (150s on this project's
    plan) with a bare 546 and no response body, so the caller learns nothing and
@@ -401,11 +407,11 @@ Deno.serve(async (req) => {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify(tuningRejected
-          ? { model: MODEL, max_tokens: 8192, messages: untuned(messages) }
+          ? { model: MODEL, max_tokens: MAX_TOKENS, messages: untuned(messages) }
           : {
             model: MODEL,
-            max_tokens: 8192,
-            thinking: { type: 'disabled' },
+            max_tokens: MAX_TOKENS,
+            thinking: { type: 'between_tools' },
             output_config: { effort: EFFORT },
             messages,
           }),
@@ -434,6 +440,12 @@ Deno.serve(async (req) => {
     const txt = (data.content ?? [])
       .filter((b) => b.type === 'text')
       .map((b) => b.text ?? '').join('').trim();
+    /* A safety decline is an HTTP 200 with no plan in it. Asking again with
+       the same photos gets the same answer, so it is not worth the retry's
+       share of the budget. */
+    if (data.stop_reason === 'refusal') {
+      return { ok: false, retryable: false, status: 502, error: 'refused', detail: 'model declined the request' };
+    }
     if (data.stop_reason === 'max_tokens') {
       return { ok: false, retryable: true, status: 502, error: 'truncated', detail: 'model output hit the token limit' };
     }
