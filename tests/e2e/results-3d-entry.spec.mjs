@@ -1,5 +1,6 @@
 import { test, expect } from 'playwright/test';
 import { fileURLToPath } from 'node:url';
+import { WALKIN_PLAN as PLAN, WALKIN_ROWS as ROWS, mockAnalyzeSpace } from './helpers.mjs';
 
 /* The 3D view is the payoff of the whole flow, and its most prominent entry
    point — the "Walk through it in 3D" button on the plan hero — was
@@ -11,48 +12,13 @@ import { fileURLToPath } from 'node:url';
 
 const PHOTO = fileURLToPath(new URL('../../assets/photos/ex-cab-before.webp', import.meta.url));
 
-// A walk-in at the schema's 12-row ceiling, split across three walls — the
-// largest thing the viewer is ever asked to build.
-const ROWS = 12;
-const PLAN = {
-  spaceType: 'Pantry',
-  summary: 'A walk-in pantry with shelving on two walls.',
-  categories: ['Canned goods', 'Baking', 'Snacks'],
-  map: Array.from({ length: ROWS }, (_, i) => ({
-    level: `Shelf ${i + 1}`, icon: 'up', zone: `Zone ${i + 1}`, why: 'Reachable from the doorway.',
-    eye: i === 4, shelfIndex: i, safety: { flag: null, why: null },
-    items: [{ name: 'Canned goods', size: 'm', flags: [] }], surface: 'shelf',
-  })),
-  geometry: {
-    unit: 'in', width: 72, height: 96, depth: 72, shelfCount: ROWS,
-    shelfYFracs: Array.from({ length: ROWS }, (_, i) => 0.08 + (0.82 * i) / (ROWS - 1)),
-    estimated: false,
-  },
-  layout: {
-    type: 'walkin-u',
-    sections: [
-      { id: 'left', label: 'Left wall', place: 'left', rows: [0, 1, 2, 3, 4] },
-      { id: 'back', label: 'Back wall', place: 'back', rows: [5, 6, 7, 8, 9] },
-      { id: 'corner', label: 'Corner and floor', place: 'right', rows: [10, 11] },
-    ],
-  },
-  safetyNotes: [],
-  productNeeds: [],
-  steps: Array.from({ length: 10 }, (_, i) => ({
-    task: `Step ${i + 1}`, time: '10 min', why: 'It keeps the plan honest.',
-  })),
-  time: '3-4 hrs',
-  cost: '$0',
-};
-
 test('a walk-in AI plan reaches the 3D view through the button on the plan hero', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
 
-  await page.route('**/functions/v1/analyze-space', route => route.fulfill({
-    status: 200, contentType: 'application/json',
-    body: JSON.stringify({ plan: PLAN, model: 'test-model', requestId: 'test' }),
-  }));
+  // The plan is the 12-row walk-in in helpers.mjs, the largest thing the
+  // viewer is ever asked to build.
+  await mockAnalyzeSpace(page, PLAN);
 
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
@@ -90,6 +56,8 @@ test('a walk-in AI plan reaches the 3D view through the button on the plan hero'
   await expect(canvas).toHaveAttribute('data-layout', 'walkin-u', { timeout: 20_000 });
   await expect(canvas).not.toHaveJSProperty('width', 0);
   await expect(page.locator('#v3d-status')).not.toContainText('could not load');
-  await expect(page.locator('#v3d-zones-h')).toContainText(`${ROWS} zones`);
+  // The sidebar groups a room's zones by wall and counts the walls that carry
+  // rows; this plan names three.
+  await expect(page.locator('#v3d-zones-h')).toContainText(new RegExp(`${ROWS} zones on 3 walls`));
   expect(errors, 'the 3D view threw').toEqual([]);
 });

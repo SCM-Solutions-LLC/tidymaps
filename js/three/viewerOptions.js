@@ -17,6 +17,27 @@ export function evenShelfFracs(count){
   return Array.from({length:n},(_,i)=>0.92*(i+1)/n);
 }
 
+/* Where a room's boards go. A unit's lowest level is its base, so the even
+   spread ends on the floor. A room's floor is already drawn, as the slab a
+   floor row sits on, and its lowest board is a shelf above it: a walk-in's
+   "lower shelf" row sat on the slab under the even spread, beside the floor
+   row, and an L's corner shelf ran through it. So n boards share the wall
+   with n+1 equal compartments, the lowest one above the floor snap (0.86;
+   twelve boards end at 0.849). Used wherever a geometry says
+   `levelsAre: 'boards'`. */
+export function roomShelfFracs(count){
+  const n=clamp(Math.round(Number(count)||1),1,12);
+  return Array.from({length:n},(_,i)=>0.92*(i+1)/(n+1));
+}
+
+function defaultShelfFracs(count,boards){
+  return boards?roomShelfFracs(count):evenShelfFracs(count);
+}
+
+function meansBoards(geometry){
+  return !!(geometry&&geometry.levelsAre==='boards');
+}
+
 export function normalizeViewerGeometry(geometry,layoutType){
   const source=geometry||{};
   const shelfCount=clamp(Math.round(Number(source.shelfCount)||5),1,12);
@@ -30,7 +51,7 @@ export function normalizeViewerGeometry(geometry,layoutType){
     height:layoutType==='under-sink'?clamp(rawHeight,28,42):rawHeight,
     depth:Math.max(4,Number(source.depth)||14),
     shelfCount,
-    shelfYFracs:valid?source.shelfYFracs.map(Number):evenShelfFracs(shelfCount),
+    shelfYFracs:valid?source.shelfYFracs.map(Number):defaultShelfFracs(shelfCount,meansBoards(source)),
   };
 }
 
@@ -38,19 +59,19 @@ export function normalizeViewerGeometry(geometry,layoutType){
    shape the user gave them. Linear interpolation over the index preserves the
    endpoints and the relative spacing, and turns a strictly increasing input
    into a strictly increasing output for any count. */
-function isEvenlySpaced(fracs){
-  const even=evenShelfFracs(fracs.length);
-  return fracs.every((value,index)=>Math.abs(value-even[index])<1e-9);
+function isDefaultSpread(fracs,boards){
+  const spread=defaultShelfFracs(fracs.length,boards);
+  return fracs.every((value,index)=>Math.abs(value-spread[index])<1e-9);
 }
 
-function resampleShelfFracs(fracs,count){
+function resampleShelfFracs(fracs,count,boards){
   const src=Array.isArray(fracs)?fracs.map(Number).filter(Number.isFinite):[];
-  if(!src.length||count<1) return evenShelfFracs(count);
+  if(!src.length||count<1) return defaultShelfFracs(count,boards);
   if(count===src.length) return src.slice();
-  if(src.length===1||count===1) return evenShelfFracs(count);
+  if(src.length===1||count===1) return defaultShelfFracs(count,boards);
   // Nothing to preserve if the user never moved a shelf — and going through
-  // the interpolation would only introduce float drift against evenShelfFracs.
-  if(isEvenlySpaced(src)) return evenShelfFracs(count);
+  // the interpolation would only introduce float drift against the default spread.
+  if(isDefaultSpread(src,boards)) return defaultShelfFracs(count,boards);
   return Array.from({length:count},(_,i)=>{
     const t=i*(src.length-1)/(count-1);
     const lo=Math.floor(t), hi=Math.min(src.length-1,lo+1);
@@ -64,9 +85,10 @@ function resampleShelfFracs(fracs,count){
    "Space evenly" is the button that deliberately resets it. */
 export function geometryWithShelfCount(geometry,count,{ preserveSpacing=true }={}){
   const shelfCount=clamp(Math.round(Number(count)||1),1,12);
+  const boards=meansBoards(geometry);
   const shelfYFracs=preserveSpacing
-    ?resampleShelfFracs(normalizeViewerGeometry(geometry).shelfYFracs,shelfCount)
-    :evenShelfFracs(shelfCount);
+    ?resampleShelfFracs(normalizeViewerGeometry(geometry).shelfYFracs,shelfCount,boards)
+    :defaultShelfFracs(shelfCount,boards);
   return {...geometry,shelfCount,shelfYFracs,estimated:false};
 }
 
@@ -126,6 +148,21 @@ export function mapForShelfCount(map,count){
       items:bucket.flatMap(row=>row.items||[]),
     };
   });
+}
+
+/* A room's geometry, read as boards per wall. A walk-in's plan arrives with
+   shelfCount equal to its row count, which for a unit is the number of
+   boards and for a room is the number of rows spread over three walls. The
+   drawing needs the boards, so the screen asks roomBoards for N and stamps
+   the geometry with it here: N boards at a room's spacing (roomShelfFracs,
+   none of them on the floor), and `levelsAre: 'boards'` so a later open (or
+   a saved arrangement) knows the count has been converted and does not
+   convert it twice. `estimated` is kept as it was: the count changing says
+   nothing about whether the sizes were measured. */
+export function roomGeometryFor(geometry,N){
+  const source=geometry||{};
+  const shelfCount=clamp(Math.round(Number(N))||1,1,12);
+  return {...source,shelfCount,shelfYFracs:roomShelfFracs(shelfCount),levelsAre:'boards',estimated:source.estimated};
 }
 
 export function inferLSide(layout){

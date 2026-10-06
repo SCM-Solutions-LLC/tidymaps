@@ -157,18 +157,25 @@ export async function assertResultsCoverage(page) {
    out, the step is passed with nothing ticked, which is what every caller
    before it did and what "the plan's own categories stand" is tested
    against; a ticked chip makes the list the user's (state.catsTouched) and
-   scopes the plan to it, so a caller asks for that on purpose. */
-export async function driveWizardToReview(page, { photo = null, cats = null } = {}) {
+   scopes the plan to it, so a caller asks for that on purpose.
+
+   `setup` picks a setup card by its label ("Walk-in"); left out, the step
+   keeps whatever it offers first. `dims` is the width, height and depth typed
+   on the measure step, in feet, as the strings a reader types; the default is
+   the small pantry every earlier caller measured. */
+export async function driveWizardToReview(page, { photo = null, cats = null, setup = null, dims = null } = {}) {
   await page.goto('/index.html');
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (_) {} });
   await page.goto('/index.html');
   await page.locator('#screen-landing .btn-primary').first().click();
   await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
   await page.locator('#flow-next').click();
+  if (setup) await page.locator('#setup-cards .wz-setup', { hasText: setup }).first().click();
   await page.locator('#flow-next').click();          // setup
-  await page.fill('#m-num-w', '3');
-  await page.fill('#m-num-h', '6');
-  await page.fill('#m-num-d', '1.33');
+  const [w, h, d] = dims || ['3', '6', '1.33'];
+  await page.fill('#m-num-w', w);
+  await page.fill('#m-num-h', h);
+  await page.fill('#m-num-d', d);
   await page.locator('#flow-next').click();          // measure → photos
   if (photo) {
     await page.setInputFiles('#photo-input', photo);
@@ -193,4 +200,83 @@ export async function driveWizardToReview(page, { photo = null, cats = null } = 
   await page.locator('#flow-next').click();          // effort
   await page.locator('#flow-next').click();          // shopping → review
   await page.locator('#screen-review.active').waitFor();
+}
+
+/* ---------- the 3D viewer ----------
+   The viewer's sidebar is two panels under one pair of tabs: View, what the
+   drawing shows, and Adjust, what changes it. The layout chips, the count
+   slider and the exact sizes all live under Adjust and start hidden, so the
+   old readiness signal, a visible layout chip, is never true on arrival. The
+   canvas's data-layout attribute is the signal now: it is set on the line
+   after buildScene returns, so it is the proof the scene was built. Shared so
+   a spec that drives the controls opens the panel the way a reader does, and
+   no spec carries its own idea of which panel holds what.
+
+   `sample` opens the landing page's sample plan first; a spec that seeds its
+   own state passes false, with the page already loaded. `adjust` lands on
+   the Adjust panel. */
+export async function openViewer(page, { adjust = false, sample = true } = {}) {
+  if (sample) {
+    await page.goto('/index.html');
+    await page.getByRole('button', { name: 'View a sample plan' }).click();
+    await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  }
+  await page.evaluate(() => window.openViewer3d());
+  await page.locator('#v3d-canvas[data-layout]').waitFor({ state: 'attached', timeout: 20_000 });
+  if (adjust) await openAdjust(page);
+}
+
+/* Switch the sidebar to Adjust by its tab, the way a reader does, and wait
+   for the panel. For a spec that opened the viewer itself. */
+export async function openAdjust(page) {
+  await page.locator('#v3d-tab-adjust').click();
+  await expect(page.locator('#v3d-panel-adjust')).toBeVisible();
+}
+
+/* ---------- a walk-in plan from the backend ----------
+   A walk-in at the schema's 12-row ceiling, split across three walls: the
+   largest thing the viewer is ever asked to build, and the one plan in the
+   suite whose sections name their walls, so it is what every per-wall
+   assertion reads. results-3d-entry walks it in through the hero button;
+   viewer3d-per-wall reads the drawing it makes. One copy, so the two cannot
+   be testing different plans. */
+export const WALKIN_ROWS = 12;
+export const WALKIN_PLAN = {
+  spaceType: 'Pantry',
+  summary: 'A walk-in pantry with shelving on two walls.',
+  categories: ['Canned goods', 'Baking', 'Snacks'],
+  map: Array.from({ length: WALKIN_ROWS }, (_, i) => ({
+    level: `Shelf ${i + 1}`, icon: 'up', zone: `Zone ${i + 1}`, why: 'Reachable from the doorway.',
+    eye: i === 4, shelfIndex: i, safety: { flag: null, why: null },
+    items: [{ name: 'Canned goods', size: 'm', flags: [] }], surface: 'shelf',
+  })),
+  geometry: {
+    unit: 'in', width: 72, height: 96, depth: 72, shelfCount: WALKIN_ROWS,
+    shelfYFracs: Array.from({ length: WALKIN_ROWS }, (_, i) => 0.08 + (0.82 * i) / (WALKIN_ROWS - 1)),
+    estimated: false,
+  },
+  layout: {
+    type: 'walkin-u',
+    sections: [
+      { id: 'left', label: 'Left wall', place: 'left', rows: [0, 1, 2, 3, 4] },
+      { id: 'back', label: 'Back wall', place: 'back', rows: [5, 6, 7, 8, 9] },
+      { id: 'corner', label: 'Corner and floor', place: 'right', rows: [10, 11] },
+    ],
+  },
+  safetyNotes: [],
+  productNeeds: [],
+  steps: Array.from({ length: 10 }, (_, i) => ({
+    task: `Step ${i + 1}`, time: '10 min', why: 'It keeps the plan honest.',
+  })),
+  time: '3-4 hrs',
+  cost: '$0',
+};
+
+/* Answer the analyze-space call with `plan`, so a wizard run with a photo
+   lands on that plan with no backend in the loop. */
+export async function mockAnalyzeSpace(page, plan) {
+  await page.route('**/functions/v1/analyze-space', (route) => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ plan, model: 'test-model', requestId: 'test' }),
+  }));
 }

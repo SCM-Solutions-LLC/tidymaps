@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test';
-import { expandChapters } from './helpers.mjs';
+import { expandChapters, openViewer, openAdjust } from './helpers.mjs';
 
 /* The 2026-09-14 review measured the site's tap targets at 390 and found
    seven kinds under 44px: the report's product checkboxes (19px), the retailer
@@ -118,6 +118,23 @@ test.describe('phone', () => {
     expect(heads.length).toBeGreaterThan(0);
     // min-height:44px lays out at 43.9999 in Chromium's 1/64px units.
     for (const b of heads) expect(b.h, `row "${b.name}"`).toBeGreaterThan(43.9);
+  });
+
+  test("the 3D view's tabs, keyboard button and layout chips are 44px targets", async ({ page }) => {
+    /* The viewer's controls moved into a sidebar with two tabs, the keyboard
+       help went behind a button, and the layout chips had been 38px since the
+       day they were drawn. Every one of them is tapped on a phone. */
+    await openViewer(page);
+    for (const sel of ['#v3d-tab-view', '#v3d-tab-adjust', '#v3d-keys-btn']) {
+      const [b] = await boxes(page, sel);
+      expect(b, `${sel} is not on screen`).toBeTruthy();
+      // min-height:44px lays out at 43.9999 in Chromium's 1/64px units.
+      expect(b.h, `${sel} height`).toBeGreaterThan(43.9);
+    }
+    await openAdjust(page);
+    const chips = await boxes(page, '#v3d-layouts .v3d-chip');
+    expect(chips.length, 'no layout chips under Adjust').toBeGreaterThan(1);
+    for (const b of chips) expect(b.h, `layout chip "${b.name}"`).toBeGreaterThan(43.9);
   });
 
   test("Review's Edit buttons are 44px targets", async ({ page }) => {

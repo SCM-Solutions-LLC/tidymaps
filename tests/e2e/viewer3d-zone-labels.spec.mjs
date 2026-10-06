@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { openViewer } from './helpers.mjs';
 
 /* A zone and a shelf are one row of the plan. The viewer used to present them
    as two unrelated things: the controls said "Number of shelves", the sidebar
@@ -19,13 +20,13 @@ import { test, expect } from 'playwright/test';
    pixels. It is asserted against the sprite objects the scene builds, which is
    where the visibility decision is actually made. */
 
-async function openViewer(page) {
-  await page.goto('/index.html');
-  await page.getByRole('button', { name: 'View a sample plan' }).click();
-  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
-  await page.evaluate(() => window.openViewer3d());
-  await expect(page.locator('#v3d-layouts .v3d-chip').first()).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('#v3d-canvas')).toHaveAttribute('data-layout', /.+/, { timeout: 20_000 });
+/* The labels are sprites the scene builds; a beat after the build is when
+   the renderer has left them in the state these tests read. Everything here
+   reads View (the list, the toggle, the heading), so Adjust stays shut; the
+   count change in the third test goes through the slider's events, which
+   fire whether or not its panel is showing. */
+async function openSettled(page) {
+  await openViewer(page);
   await page.waitForTimeout(1200);
 }
 
@@ -50,7 +51,7 @@ async function labels(page) {
 }
 
 test('the scene carries one zone label per plan row, drawn by default', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
 
   const rows = await page.locator('#v3d-zone-list .v3d-zone-item').count();
   expect(rows).toBeGreaterThan(1);
@@ -67,7 +68,7 @@ test('the scene carries one zone label per plan row, drawn by default', async ({
 });
 
 test('a zone label names the shelf and the job, not just the shelf', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
 
   /* The sidebar is the reference: whatever it calls zone 1, the drawing has to
      agree. Reading the sprite's text means reading what was drawn into its
@@ -91,7 +92,7 @@ test('a zone label names the shelf and the job, not just the shelf', async ({ pa
 });
 
 test('the toggle turns every label off and back on, and survives a rebuild', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
   const box = page.locator('#v3d-show-labels');
   await expect(box).toBeChecked();
 
@@ -118,7 +119,7 @@ test('the toggle turns every label off and back on, and survives a rebuild', asy
 });
 
 test('hovering a zone row no longer decides whether its label exists', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
 
   const before = await labels(page);
   /* Without this the test is vacuous against the old behaviour: when every
@@ -140,7 +141,7 @@ test('hovering a zone row no longer decides whether its label exists', async ({ 
 });
 
 test('the sidebar says the zones are the shelves', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
   const rows = await page.locator('#v3d-zone-list .v3d-zone-item').count();
 
   /* The count still reads the way the older test expects, but the heading now

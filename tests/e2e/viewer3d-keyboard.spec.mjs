@@ -29,8 +29,22 @@ test('the drawing is a named, focusable widget with its keys explained', async (
   await expect(canvas).toHaveAttribute('tabindex', '0');
   await expect(canvas).toHaveAttribute('aria-label', 'Three-dimensional drawing of the sample pantry');
   await expect(canvas).toHaveAttribute('aria-describedby', 'v3d-keys');
-  await expect(page.locator('#v3d-keys')).toBeVisible();
   await expect(canvas).toBeFocused();
+
+  /* The key list is a long sentence most readers never need, and it sat under
+     every drawing. It is behind a button now and starts hidden; it stays the
+     drawing's description while hidden, because aria-describedby reads an
+     element the page does not display, so a screen reader still hears the
+     keys on focus and a sighted reader opens them when they want them. */
+  const keys = page.locator('#v3d-keys');
+  const button = page.locator('#v3d-keys-btn');
+  await expect(keys).toBeHidden();
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(canvas).toHaveAccessibleDescription(/Keyboard/);
+  await button.click();
+  await expect(keys).toBeVisible();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  await expect(canvas).toHaveAccessibleDescription(/Keyboard/);
 });
 
 test('the arrow keys choose an item, show its label and say where it sits', async ({ page }) => {

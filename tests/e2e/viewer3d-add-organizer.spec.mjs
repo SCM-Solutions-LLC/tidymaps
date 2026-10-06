@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test';
-import { expandChapters } from './helpers.mjs';
+import { expandChapters, openViewer } from './helpers.mjs';
 
 /* Adding an organizer in the 3D view is a PURCHASE, not a sketch: it goes on
    the shopping list and into the cost.
@@ -15,9 +15,10 @@ async function openPlan(page) {
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
 }
 
-async function openViewer(page) {
-  await page.evaluate(() => window.openViewer3d());
-  await expect(page.locator('#v3d-layouts .v3d-chip').first()).toBeVisible({ timeout: 20_000 });
+/* The add control is a change to the plan, so it lives under the Adjust tab
+   with the other changes; the sample is already open, so the viewer alone. */
+async function openAdd(page) {
+  await openViewer(page, { sample: false, adjust: true });
 }
 
 const costText = (page) => page.locator('#kpi-cost').textContent();
@@ -27,7 +28,7 @@ test('adding an organizer puts it on the list and in the cost', async ({ page })
   const before = await costText(page);
   const beforeCount = await page.locator('#res-upgrades .prod').count();
 
-  await openViewer(page);
+  await openAdd(page);
   const add = page.locator('#v3d-add-organizer');
   await expect(add).toBeVisible();
   await page.selectOption('#v3d-add-type', 'turntable');
@@ -47,7 +48,7 @@ test('adding an organizer puts it on the list and in the cost', async ({ page })
 
 test('an item the user added is not labelled as recommended', async ({ page }) => {
   await openPlan(page);
-  await openViewer(page);
+  await openAdd(page);
   await page.selectOption('#v3d-add-type', 'basket');
   await page.locator('#v3d-add-btn').click();
   await page.waitForTimeout(600);
@@ -64,7 +65,7 @@ test('the added need survives a re-normalize of the plan', async ({ page }) => {
      function is a whitelist — a field it does not name is dropped. `observed`
      and `cite` were both lost that way before. */
   await openPlan(page);
-  await openViewer(page);
+  await openAdd(page);
   await page.selectOption('#v3d-add-type', 'clear-bin');
   await page.locator('#v3d-add-btn').click();
   await page.waitForTimeout(600);
@@ -83,6 +84,6 @@ test('a "use what I have" plan offers no way to add a purchase', async ({ page }
      what they own should not be handed a shortcut to a shopping list. */
   await openPlan(page);
   await page.evaluate(() => { window.setUpgrades(false); });
-  await openViewer(page);
+  await openAdd(page);
   await expect(page.locator('#v3d-add-organizer')).toBeHidden();
 });

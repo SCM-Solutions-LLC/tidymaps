@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { openViewer } from './helpers.mjs';
 
 /* A real plan told a user with buying intent that "5 selected organizers do not
    fit the available matching shelves. Increase width, reduce quantity, or
@@ -17,12 +18,10 @@ import { test, expect } from 'playwright/test';
 const VISUAL_TYPES = ['clear-bin', 'airtight-container', 'basket', 'drawer-organizer',
   'turntable', 'can-riser', 'shelf-riser', 'door-rack', 'hook-rack'];
 
-async function openViewer(page) {
-  await page.goto('/index.html');
-  await page.getByRole('button', { name: 'View a sample plan' }).click();
-  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
-  await page.evaluate(() => window.openViewer3d());
-  await expect(page.locator('#v3d-layouts .v3d-chip').first()).toBeVisible({ timeout: 20_000 });
+/* Everything read here, the chips and the fit note, is in View; the beat
+   after the build is for the organizer pass, which writes both together. */
+async function openSettled(page, options) {
+  await openViewer(page, options);
   await page.waitForTimeout(1500);
 }
 
@@ -52,7 +51,7 @@ async function readScene(page) {
 test('needs that share a target zone are not shadowed by the first one', async ({ page }) => {
   /* The sample plan targets three different products at "Middle shelf". Under
      winner-take-all only one of them could ever appear, whatever the geometry. */
-  await openViewer(page);
+  await openSettled(page);
   const chips = await page.$$eval('#v3d-organizer-list .v3d-organizer-chip',
     els => els.map(e => e.getAttribute('data-type')));
   const distinct = new Set(chips);
@@ -84,20 +83,18 @@ test('a product with no shelf presence never raises a fit warning', async ({ pag
   expect(nonVisual, 'sample plan has no non-visual product, so this proves nothing')
     .toBeGreaterThanOrEqual(0);
 
-  await page.evaluate(() => window.openViewer3d());
-  await expect(page.locator('#v3d-layouts .v3d-chip').first()).toBeVisible({ timeout: 20_000 });
-  await page.waitForTimeout(1500);
+  await openSettled(page, { sample: false });
   await expect(page.locator('#v3d-fit-note')).toBeHidden();
 });
 
 test('the warning never claims more than the list contains', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
   const s = await readScene(page);
   expect(s.warned).toBeLessThanOrEqual(s.visualOnList);
 });
 
 test('the warning does not blame size for a placement problem', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
   const note = page.locator('#v3d-fit-note');
   if (await note.isVisible()) {
     const text = await note.textContent();
