@@ -8,6 +8,7 @@ import { semanticItemHeight, semanticItemKind } from './itemKinds.js';
 import { organizerSpecFor, needKeyFor, isVisualNeed, targetScore, visualTypeFor,
   surfaceAcceptsOrganizer, isMountedOrganizer } from './organizerKinds.js';
 import { evenShelfFracs } from './viewerOptions.js';
+import { roomPlanFor, boardYsFromFracs } from './roomBoards.js';
 import { measuredCapacityProfile, naturalItemWidth, naturalOrganizerWidth, visualUnitCount } from './capacity.js';
 import { ITEM_NORMAL_OFFSET, depthRankStep, displayJitter, hashString, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
@@ -460,11 +461,10 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   ground.receiveShadow=true;
   scene.add(ground);
 
-  const shelfYs=shelfFracs.map(frac=>{
-    let y=Math.max(T, Math.min(H*(1-frac), H-T-3.2));
-    if(frac>=0.86) y=T;
-    return y;
-  });
+  /* The board heights, by the one clamp roomBoards shares with the screen's
+     size arithmetic: never in the floor slab, never within 3.2 inches of the
+     ceiling, and a fraction past 0.86 means the floor. */
+  const shelfYs=boardYsFromFracs(shelfFracs, H);
   const gapAbove=shelfYs.map(y=>{
     const above=shelfYs.filter(o=>o>y+0.5);
     const ceil=above.length?Math.min(...above):H-T;
@@ -474,6 +474,11 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   const rowsByShelf=new Map();
   map.forEach(row=>{ rowsByShelf.set(row.shelfIndex, row); });
 
+  /* For a walk-in or an L-run: which wall each row is on and which of the
+     NSH boards per wall it sits on. Null for every unit, whose rows and
+     boards are one list and whose builder never reads it. */
+  const room=roomPlanFor({ map, layout, N:NSH, boardYs:shelfYs, rowsByShelf });
+
   const mats=createMaterials();
   const layoutType=(layout&&layout.type)||'shelves';
   const builder=LAYOUT_BUILDERS[layoutType]||LAYOUT_BUILDERS.shelves;
@@ -482,11 +487,20 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
     geo:{ W, H, D, T, NSH, shelfYs, gapAbove, fracs:shelfFracs },
     map, rowsByShelf, mats,
     layout: layout||{ type:'shelves' },
+    room,
   });
 
   const items=[];
   const organizers=[];
   const claimedPlanOrganizers=new Set();
+  /* Rows that already carry an organizer nobody bought. A style of "woven
+     baskets" or a drawer's implied divider used to give EVERY item on the
+     row its own, so a 32-item walk-in drew 32 baskets and the summary read
+     "32 × Baskets" as though they were on the list. One per row says what
+     the style says, a basket in that zone, and no more. Purchases are not
+     capped here: their quantity is the plan's and is counted against the row
+     by the claim above. */
+  const claimedRowOrganizers=new Set();
   /* Every plan organizer starts owing its full quantity, whether or not any row
      ever asks for it.
 
@@ -577,11 +591,19 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
           planOrganizerRemaining.set(key,remaining-assigned);
           if(assigned<1) organizerSpec=null;
         }
+      }else if(organizerSpec){
+        if(claimedRowOrganizers.has(row.shelfIndex)) organizerSpec=null;
+        else claimedRowOrganizers.add(row.shelfIndex);
       }
       if(organizerSpec){
         const organizer=createOrganizer(organizerSpec.type);
         organizer.userData.spec=organizerSpec;
         organizer.userData.displayCopies=[];
+        /* Read by the viewer's summary (groupOrganizers): where it came
+           from, which row it sits on, and whether the user asked for it. */
+        organizer.userData.source=organizerSpec.source;
+        organizer.userData.shelfIndex=row.shelfIndex;
+        organizer.userData.addedByUser=!!organizerSpec.addedByUser;
         mesh.userData.organizer=organizer;
         scene.add(organizer);
         organizers.push(organizer);
@@ -657,10 +679,14 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         productId:need.productId||null,productName:need.productName||null,
         productDims:need.productDims||null,fit:need.fit||'unknown',
         targetZone:need.targetZone||'',needKey:key,spilled:true,
+        addedByUser:!!need.addedByUser,
       };
       const organizer=createOrganizer(type);
       organizer.userData.spec=spec;
       organizer.userData.displayCopies=[];
+      organizer.userData.source='plan';
+      organizer.userData.shelfIndex=row.shelfIndex;
+      organizer.userData.addedByUser=!!need.addedByUser;
       const displaced=free.userData.organizer;
       if(displaced){
         scene.remove(displaced);
@@ -834,6 +860,10 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
         if(organizer){
           organizer.userData.requestedQty=requestedQty;
           organizer.userData.visibleQty=visibleQty;
+          organizer.userData.unplaced=Math.max(0,requestedQty-visibleQty);
+          /* An organizer travels with its item, so after a drag it sits on
+             the item's new row; the summary counts zones from this. */
+          organizer.userData.shelfIndex=sh.index;
           /* organizerD is already clamped to the shelf, so testing it against
              the shelf was true by construction and the depth axis could never
              report a misfit. The question is whether the product AS SOLD fits,

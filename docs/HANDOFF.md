@@ -291,6 +291,127 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-05 session changed, part 6 (the 3D viewer draws rooms wall by wall)
+
+Sixth and last of the PRs from the owner's 2026-10-03 site review. Client
+only. A walk-in or L-shaped room used to be drawn with one shelf tier per
+map row: a 12-row pantry became 12 boards stacked on every wall, rows were
+dealt round-robin onto walls, and the side column held 23 controls in one
+stack. Units (cabinet, shelves, drawers and every other non-room layout) are
+drawn exactly as before.
+
+- **Boards per wall** (`js/three/roomBoards.js`, pure): for a room,
+  `shelfCount` and `shelfYFracs` mean shelf boards per wall. `boardCountFor`
+  takes N as the most rows any one wall carries, clamped to 3..12 and bounded
+  by height (`MIN_BOARD_PITCH` 9 inches). `roomPlanFor({map, layout, N,
+  boardYs})` assigns rows to walls through `placementFor` (the model the
+  report's wall tabs use since part 5) and each row to a board: a wall with k
+  rows maps tier t to board `round(t*(N-1)/(k-1))`, a one-row wall takes the
+  board nearest 60 inches, rows the plan put under "front" or "other" go to
+  the emptiest drawn wall, floor rows keep the floor surface. The boards are
+  spaced by `viewerOptions.roomShelfFracs`, n boards in n+1 equal
+  compartments with none on the floor: the unit spread's last fraction
+  (0.92) snaps to the slab, which is right for a cabinet's base and put
+  every wall's bottom row on the floor beside the floor rows, with an L's
+  corner shelf running through it. A geometry with `levelsAre: 'boards'`
+  gets that spread from every helper (`normalizeViewerGeometry`,
+  `geometryWithShelfCount`, "Space evenly"). `runLength` and
+  `roomShelfDepth` are the one copy of the builders' arithmetic (a test reads
+  the builders as text to assert they import them). The two builders
+  (`walkin-u.js`, `l-run.js`) draw N boards on every wall at the same
+  heights, a rod only where a rod row sits, one surface per row on its own
+  wall and board with a real `gap`; `addRod` moved into `layouts/helpers.js`.
+  Left-wall items now face into the room (the old uDir had them facing the
+  wall). `scene.js` builds the room plan once and hands it to the builder;
+  direct callers without a map (the surfaces spec) get the same plan from
+  `placementFromSections`.
+- **Saved arrangements are version 3** (`ARRANGEMENT_VERSION`). A geometry
+  that means boards carries `levelsAre: 'boards'`; a v2 room arrangement
+  keeps width, height and depth and drops its count and fractions, which
+  meant tiers (`arrangementGeometryFor`). Saved item placements still key on
+  the row's `shelfIndex`, so they survive. A unit's arrangement passes through
+  at any version.
+- **View and Adjust.** The sidebar is a two-tab `role=tablist` (44px pills,
+  arrow keys, Home and End, roving tabindex; View on every open, kept across
+  rebuilds). View: "12 zones on 3 walls" (units keep "N zones, one per
+  shelf"), zones grouped under wall headings with the level stripped of its
+  wall prefix via `levelLabel`, the labels toggle, the organizers, the mounted
+  note and a size line ("Drawn at 6′ wide, 8′ high, 6′ deep.", metric when the
+  reader is). Adjust: layout chips, L extension, "Shelves per wall" for rooms
+  (the per-board height sliders read "Shelf N"), wall position, "Set exact
+  sizes" and "Add one to your list". The keyboard help `#v3d-keys` starts
+  hidden behind a 44px "?" button (`aria-expanded`); the canvas keeps
+  `aria-describedby="v3d-keys"`, which a hidden element still satisfies.
+  The intro ends "Use Adjust to change the layout or sizes." An L lists one
+  side heading named for the side it is drawn on (`roomZoneGroups`: the
+  report's left and right groups merged, before the back wall on the left
+  and after it on the right), since the drawing has one side run. The
+  heading counts the walls the drawing shelves (`roomPlanFor().wallCount`),
+  and when the list has an "Other" or "Door" group the sub-line says those
+  zones were spread, so the heading's number and the headings below it do
+  not disagree in silence (an earlier draft counted the listed walls, which
+  read "5 zones on 1 wall" over a three-wall drawing of the sample). A
+  layout chip that crosses from a room to a different layout keeps the
+  preview's sizes only: into another room the board count is derived again
+  (an L's one side run holds a walk-in's left and right rows together, so
+  it may need more boards than the walk-in did, and the carried count put
+  two rows on one board); back to a unit the unit's own count and heights
+  return (`unitLevels`, kept aside when the room took over), else the
+  plan's. Before, the derived five boards rode the preview into the cabinet
+  and drew the plan's twelve rows on five shelves, and a count set on the
+  cabinet was lost on the way through the walk-in. The sidebar's
+  tabs are pinned above an absolutely positioned scroller: a flex column left
+  the sub-line's orphan last word unpainted in Chromium 1194, which
+  `.v3d-zones p{text-wrap:pretty}` also guards (the CSS comment records it);
+  the tabs sit `--ring` (4px) in from the clipped column's edges and the
+  scroller pads the same, so focus rings are not cut off.
+- **Organizers by source** (`groupOrganizers` in `organizerKinds.js`): "On
+  your shopping list" counted by quantity with "(you added)" where the user
+  added it, "Using what you already have" and "Shown to match your style"
+  counted by zones with a note that they are not purchases; the static "These
+  match your plan" line is gone. The scene draws at most one non-purchase
+  organizer per row, so 32 baskets become one per zone; purchases keep their
+  per-row quantity. Share views use third-person headings.
+- **`shelfMaxDims`** for a room reads the row's wall and board: width is that
+  wall's run, height the board's pitch, depth the shelf depth.
+- Tests: `tests/three-room-boards.test.mjs` (clamps and the 28/29-inch
+  boundary, the 12-row walk-in, one-row walls, emptiest wall and ten
+  unwalled rows needing four boards, floor, the L with three side rows
+  against one back row on either side, the direct-caller path, `runLength`
+  against the formula, depth parity with `catalog.js shelfDepthFor`,
+  builders import the shared arithmetic, a room's lowest board off the
+  floor, migration); `groupOrganizers` and `addedByUser`; `roomGeometryFor`
+  and `levelsAre` surviving the slider helpers, and `roomShelfFracs` at
+  every count through every helper. Browser: a shared `openViewer(page,
+  {adjust})` in `helpers.mjs` (with the 12-row walk-in fixture and its
+  analyze-space mock), `viewer3d-per-wall.spec.mjs` (rows on their walls,
+  five distinct board heights, the left wall descending by tier, the right
+  wall's two rows on the top and bottom boards, no wall row on the slab,
+  "12 zones on 3 walls", the sub-line over an "Other" or "Door" group, the
+  L's one side heading on either side, the walk-in's board count not
+  leaking into the cabinet, the sample's unwalled map spread over three
+  walls), `viewer3d-organizer-groups.spec.mjs` (grouping, and never two
+  non-purchase organizers on one row), the simple-panel spec rewritten for
+  the split plus the focus-ring room, the keyboard spec for the "?" button,
+  three-editor on version 3, site-nav and tap targets on the tabs; every
+  readiness wait on the layout chips became `openViewer`. All red-proofed by
+  neutering in a copy (twenty-two unit neuterings, twenty-six browser
+  ones).
+- Known limits: the slider's floor is the fullest wall's row count, since
+  fewer boards than rows puts two rows on one board (they used to vanish).
+  The report's hero and the 3D drawing agree on walls through
+  `placementFor`, but the report appends "Other" rows to the back case
+  while the drawing spreads them to the emptiest wall, and the drawing's
+  heading counts that wall while the list keeps "Other" (the sub-line
+  explains). `boardCountFor`'s height cap, `floor((h-2)/9)`, is a density
+  guard, not a pitch guarantee: under the room spread the compartments are
+  `0.92h/(N+1)`, which in an 8-foot room falls under `MIN_BOARD_PITCH` from
+  nine boards (8.8 inches) to the cap of ten (8.0); one row per board was
+  kept over the last inch, since two rows on one board draw their items on
+  top of each other, and `shelfMaxDims` reports the real pitch. A plan that
+  names both left and right rows in an L lists them under the one side
+  heading, left rows first.
+
 ## What the 2026-10-03 session changed, part 5 (the report reads wall by wall)
 
 Fifth of the six PRs from the owner's site review: the report around the

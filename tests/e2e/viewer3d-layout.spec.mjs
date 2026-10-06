@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { openViewer } from './helpers.mjs';
 
 /* The 3D screen is two columns of very different lengths: a fixed-height
    canvas on the left, and a sidebar as long as the plan happens to be — five
@@ -11,12 +12,10 @@ import { test, expect } from 'playwright/test';
    makes — below a fold nobody knew was there, and sliced the organizer chips
    flat at the panel edge so the list read as broken rather than continuing. */
 
-async function openViewer(page) {
-  await page.goto('/index.html');
-  await page.getByRole('button', { name: 'View a sample plan' }).click();
-  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
-  await page.evaluate(() => window.openViewer3d());
-  await expect(page.locator('#v3d-layouts .v3d-chip').first()).toBeVisible({ timeout: 20_000 });
+/* These measure layout, and the first frame after the scene builds is not
+   the one the reader sees: fonts land and the sidebar settles a beat later. */
+async function openSettled(page, options) {
+  await openViewer(page, options);
   await page.waitForTimeout(1800);
 }
 
@@ -24,7 +23,7 @@ test('neither column trails a screenful of empty page', async ({ browser }) => {
   for (const width of [1280, 1440]) {
     const ctx = await browser.newContext({ viewport: { width, height: 900 } });
     const page = await ctx.newPage();
-    await openViewer(page);
+    await openSettled(page);
     /* Measured as "how much of the row does the canvas column leave empty",
        not "do the two boxes end level" — the grid stretches both boxes to the
        row height, so comparing the boxes is true whatever the layout does and
@@ -42,7 +41,7 @@ test('neither column trails a screenful of empty page', async ({ browser }) => {
 });
 
 test('the fit warning is on screen without hunting for it', async ({ page }) => {
-  await openViewer(page);
+  await openSettled(page);
   const note = page.locator('#v3d-fit-note');
   if (!(await note.isVisible())) test.skip(true, 'this plan places every organizer');
   /* Two things, neither of which is "is it on screen right now" — the canvas
@@ -65,7 +64,7 @@ test('the fit warning is on screen without hunting for it', async ({ page }) => 
 test('a scrolling sidebar says that it scrolls', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await ctx.newPage();
-  await openViewer(page);
+  await openSettled(page);
   const state = await page.evaluate(() => {
     const inner = document.querySelector('.v3d-zones-inner');
     const fade = getComputedStyle(document.querySelector('.v3d-zones'), '::after');
@@ -89,7 +88,9 @@ test('the add-organizer form fits on a phone', async ({ browser }) => {
      the side of the screen. */
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
-  await openViewer(page);
+  // The add control lives under Adjust now; with View up it has no box to
+  // measure and the test below would skip itself.
+  await openSettled(page, { adjust: true });
   const over = await page.evaluate(() => {
     const row = document.getElementById('v3d-add-organizer');
     if (!row || !row.offsetParent) return null;

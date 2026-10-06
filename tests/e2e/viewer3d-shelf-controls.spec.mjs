@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { openViewer } from './helpers.mjs';
 
 /* The shelf controls were gated on layout.type === 'shelves'.
 
@@ -14,23 +15,16 @@ import { test, expect } from 'playwright/test';
    It also read wrong: "Shelves" sat in the layout-type row as a peer of
    "Walk-in", when a shelf is something a walk-in HAS. */
 
-async function openViewer(page) {
-  await page.goto('/index.html');
-  await page.getByRole('button', { name: 'View a sample plan' }).click();
-  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
-  await page.evaluate(() => window.openViewer3d());
-  await expect(page.locator('#v3d-layouts .v3d-chip').first()).toBeVisible({ timeout: 20_000 });
-}
-
-/* The exact sizes now sit behind a disclosure — ten sliders on arrival read as
-   a CAD panel rather than a preview. Everything below still asserts they work;
-   it just has to open the drawer first, the way a user does. */
+/* The exact sizes now sit behind a disclosure, and every control sits under
+   the Adjust tab: ten sliders on arrival read as a CAD panel rather than a
+   preview. Everything below still asserts they work; it just has to open the
+   panel (openViewer with adjust) and then the drawer, the way a user does. */
 async function openAdvanced(page) {
   await page.evaluate(() => { document.getElementById('v3d-advanced').open = true; });
 }
 
 test('every layout type offers its level count and heights', async ({ page }) => {
-  await openViewer(page);
+  await openViewer(page, { adjust: true });
   await openAdvanced(page);
   const layouts = await page.$$eval('#v3d-layouts .v3d-chip', els => els.map(e => e.dataset.layout));
   expect(layouts.length, 'no layout chips rendered').toBeGreaterThan(1);
@@ -55,14 +49,14 @@ test('every layout type offers its level count and heights', async ({ page }) =>
 test('the controls are named for the levels of the chosen layout', async ({ page }) => {
   /* "Number of shelves" on a drawer bank is the wrong noun, and the generic
      word is what made the layout row confusing in the first place. */
-  await openViewer(page);
+  await openViewer(page, { adjust: true });
   const seen = {};
   for (const layout of await page.$$eval('#v3d-layouts .v3d-chip', els => els.map(e => e.dataset.layout))) {
     await page.locator(`#v3d-layouts [data-layout="${layout}"]`).click();
     await page.waitForTimeout(500);
     seen[layout] = (await page.locator('#v3d-shelf-count-label').textContent()).trim();
   }
-  // a shelved layout says shelves; a walk-in's levels are zones
+  // a shelved layout says shelves; a room counts its boards per wall
   expect(seen.shelves || '').toMatch(/shelves/i);
 
   /* And the singular has to be a word. Stripping the trailing s off "Shelves"
@@ -73,14 +67,21 @@ test('the controls are named for the levels of the chosen layout', async ({ page
     ...(await page.locator('#v3d-shelf-heights .v3d-shelf-height span').allTextContents()),
   ].join(' ');
   expect(headingAndRows).not.toMatch(/shelve\b/i);
-  if (seen['walkin-u']) expect(seen['walkin-u']).toMatch(/zones/i);
+  /* A room's levels are not its rows. Every wall carries the same boards at
+     the same heights, so what the slider counts is shelves per wall, whatever
+     the plan calls the zones on them; "Number of zones" over a 12-row pantry
+     promised twelve shelves on every wall. */
+  expect(seen['walkin-u'], 'the sample offers no walk-in chip, so the room label goes untested').toBeTruthy();
+  for (const room of ['walkin-u', 'l-run']) {
+    if (seen[room]) expect(seen[room], room).toMatch(/per wall/i);
+  }
   if (seen['drawer-bank']) expect(seen['drawer-bank']).toMatch(/drawers/i);
 });
 
 test('"Space evenly" actually changes the shelf positions', async ({ page }) => {
   /* The button existed on the one layout that bound it, so "does it exist" is
      not the question — whether pressing it moves anything is. */
-  await openViewer(page);
+  await openViewer(page, { adjust: true });
   await page.locator('#v3d-layouts [data-layout="shelves"]').click();
   await page.waitForTimeout(600);
   await openAdvanced(page);

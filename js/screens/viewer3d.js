@@ -10,18 +10,27 @@ import { addProductNeed } from './results.js';
 import { getSession } from '../auth.js';
 import { updateSpacePatch } from '../db.js';
 import { resolveLayout, chipArchetypesFor, ARCHETYPE_LABELS } from '../layout.js';
-import { selectedProductNeeds } from '../three/organizerKinds.js';
+import { selectedProductNeeds, groupOrganizers } from '../three/organizerKinds.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
+import { placementFor, wallGroups, levelLabel } from '../placement.js';
 import {
   normalizeViewerGeometry,geometryWithShelfCount,geometryWithShelfHeight,
-  shelfHeightInches,mapForShelfCount,inferLSide,
+  shelfHeightInches,mapForShelfCount,inferLSide,roomGeometryFor,
 } from '../three/viewerOptions.js';
+import {
+  isRoomLayout,roomPlanFor,runLength,boardCountForMap,boardYsFor,
+  arrangementGeometryFor,ARRANGEMENT_VERSION,
+} from '../three/roomBoards.js';
 
 /* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
 
 let view=null, detach=null, resizeHandler=null, contextLostHandler=null;
 let layoutOverride=null;
 let dimsPreview=null;
+/* A unit's own levels (the count or heights the reader set, or a saved unit
+   arrangement), kept aside while a room is shown so a chip back to a unit
+   restores them. See currentSceneInput and initLayoutChips. */
+let unitLevels=null;
 let lSideChoice='auto';
 let shelfPlacement='center';
 let rebuildTimer=null;
@@ -123,17 +132,48 @@ function restoreArrangementOptions(){
   setLiveLayoutOverride(layoutOverride);
   lSideChoice=arrangement&&arrangement.lSide||'auto';
   shelfPlacement=arrangement&&arrangement.shelfPlacement||'center';
-  dimsPreview=arrangement&&arrangement.version>=2&&arrangement.geometry
-    ? {...arrangement.geometry}:null;
+  /* What the saved geometry means depends on the layout it was saved for,
+     and the layout depends on the override set a few lines up, so it is
+     resolved here and not before. A room's arrangement from before version 3
+     keeps its sizes and loses its count: that count was tiers, one per plan
+     row, and read as boards per wall it would stack twelve shelves on every
+     wall (js/three/roomBoards.js arrangementGeometryFor). */
+  unitLevels=null;
+  dimsPreview=arrangementGeometryFor(arrangement, isRoomLayout(currentLayout().type));
 }
 
 function currentSceneInput(){
   let resolved=currentLayout();
   const sourceGeometry=dimsPreview||activeGeometry();
-  const geometry=normalizeViewerGeometry(sourceGeometry,resolved.type);
+  let geometry=normalizeViewerGeometry(sourceGeometry,resolved.type);
   const map=resolved.type==='shelves'
     ?mapForShelfCount(activeMapV2(),geometry.shelfCount):activeMapV2();
   resolved=currentLayout(map);
+  /* A room's shelfCount is boards per wall, not plan rows: the fullest wall
+     sets it (js/three/roomBoards.js). A geometry that does not yet say so,
+     the plan's own or a saved pre-version-3 one, is re-read here; one that
+     does, a version 3 arrangement or the count the reader set on the slider,
+     is kept as it is.
+
+     The derived geometry is written back over an existing preview (a v2
+     arrangement's sizes, or a width dragged on a cabinet before switching
+     here), because the slider handlers build on the preview when there is
+     one, and a preview without `levelsAre` would be re-derived on the next
+     rebuild and swallow the count they set on top of it. The unit's own
+     levels, if the preview carried any, are kept aside in unitLevels so a
+     chip back to a unit restores them (initLayoutChips) rather than the
+     plan's. With no preview the handlers build on the geometry they were
+     handed, which is this one, and leaving the preview empty keeps a look at
+     the walk-in from fixing the cabinet's shelf count when the reader
+     switches back to compare. */
+  if(isRoomLayout(resolved.type)&&geometry.levelsAre!=='boards'){
+    const boards=boardCountForMap(map,resolved,geometry.height);
+    geometry=normalizeViewerGeometry(roomGeometryFor(geometry,boards),resolved.type);
+    if(dimsPreview){
+      if(Number.isInteger(dimsPreview.shelfCount)) unitLevels={ shelfCount:dimsPreview.shelfCount, shelfYFracs:dimsPreview.shelfYFracs };
+      dimsPreview=geometry;
+    }
+  }
   return {geometry,map,resolved,sourceGeometry};
 }
 
@@ -171,7 +211,7 @@ function rebuildScene(){
   });
   view.setSize();
   exposeView();
-  populateZones(map);
+  populateZones(map, resolved, geometry);
   initZoneLabelToggle();
   applyZoneLabelPref();
   populateOrganizers();
@@ -192,6 +232,11 @@ export async function openViewer3d(){
   const status=document.getElementById('v3d-status');
   if(view) return;
   restoreArrangementOptions();
+  // Every fresh open lands on View, whatever panel was up when the screen
+  // was last left; a rebuild (rebuildScene) never touches the tabs.
+  initPanelTabs();
+  initKeysButton();
+  selectPanel('view');
   const canvas=document.getElementById('v3d-canvas');
   status.textContent='Loading 3D view…';
   try{
@@ -237,11 +282,11 @@ export async function openViewer3d(){
     updateHeading();
 
     exposeView();
-    populateZones(map);
+    populateZones(map, resolved, geometry);
     initZoneLabelToggle();
     applyZoneLabelPref();
     populateOrganizers();
-  populateAddOrganizer();
+    populateAddOrganizer();
     initLayoutChips(resolved);
     initDimSliders(geometry, resolved);
     initStructureControls(geometry,resolved);
@@ -297,7 +342,7 @@ function updateHeading(){
     photos: 'The model follows your photos and your answers.',
     sample: `This is our sample ${name}, not your space. Plan your own to see it drawn at your layout and size.`,
     answers: 'The model follows your answers. No photos were added, so nothing here comes from a look at your space.',
-  }[kind] + ' Switch types below to compare.';
+  }[kind] + ' Use Adjust to change the layout or sizes.';
 }
 
 function updateStatus(geometry, resolved, sourceGeometry=geometry){
@@ -366,7 +411,7 @@ export function saveArrangement(){
   if(state.shareView){ toast('This is a shared plan. Start your own to save changes.'); return; }
   const {geometry}=currentSceneInput();
   state.arrangement={
-    version:2,geometry,placements:view.placements(),
+    version:ARRANGEMENT_VERSION,geometry,placements:view.placements(),
     layoutOverride,lSide:lSideChoice,shelfPlacement,
   };
   if(getSession()) updateSpacePatch({ arrangement: state.arrangement });
@@ -382,6 +427,7 @@ export function resetArrangement(){
   layoutOverride=null;
   setLiveLayoutOverride(null);
   dimsPreview=null;
+  unitLevels=null;
   lSideChoice='auto';
   shelfPlacement='center';
   disposeViewer3d();
@@ -423,12 +469,34 @@ const ORGANIZER_LABELS={
    recommended one. Depth is the shelf's, by the same rule fitFor applies
    (js/catalog.js shelfDepthFor): for a walk-in, geometry.depth is the room,
    and an item added here used to be capped at 72 inches under a badge that
-   said the shelves were 14. */
-function shelfMaxDims(geometry, levelIndex, archetype){
+   said the shelves were 14.
+
+   In a room the level is a row on one wall's board, not a tier of the whole
+   room: its width is that wall's run, and its headroom is the pitch from its
+   board to the one above (the ceiling, for the top board), read from the
+   same room plan the builders draw from. A floor row, or a row the plan
+   cannot place, falls through to the unit rule below. */
+function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   const rows=Math.max(1,geometry.shelfCount||1);
   const usableDepth=Math.max(4,shelfDepthFor({w_in:geometry.width, d_in:geometry.depth}, archetype)||(geometry.depth||14));
   const usableWidth=Math.max(4,(geometry.width||30)-1);
   const fracs=Array.isArray(geometry.shelfYFracs)?geometry.shelfYFracs:[];
+  if(isRoomLayout(archetype)){
+    const map=activeMapV2();
+    const row=map[levelIndex];
+    const idx=row&&Number.isInteger(row.shelfIndex)?row.shelfIndex:levelIndex;
+    const plan=roomPlanFor({ map, layout:layout||currentLayout(map), N:rows, boardYs:boardYsFor(geometry) });
+    const wall=plan&&plan.wallOf.get(idx);
+    const board=plan&&plan.boardOf.get(idx);
+    if(wall&&Number.isInteger(board)&&fracs.length>board){
+      const pitch=(fracs[board]-(board?fracs[board-1]:0))*(geometry.height||60);
+      return {
+        w_in:Math.round(Math.max(4,runLength(plan.type,wall,geometry)-1)),
+        h_in:Math.max(3,Math.round(pitch-1)),
+        d_in:Math.round(usableDepth),
+      };
+    }
+  }
   // the gap to the level above is the headroom an organizer has to fit under
   let gap=(geometry.height||60)/rows;
   if(fracs.length>levelIndex+1) gap=Math.abs(fracs[levelIndex+1]-fracs[levelIndex])*(geometry.height||60);
@@ -460,7 +528,7 @@ function populateAddOrganizer(){
       type, qty:1,
       purpose:`You added this from the 3D view for the ${(level.lv||'shelf').toLowerCase()}.`,
       targetZone:level.lv||`Level ${idx+1}`,
-      maxDims:shelfMaxDims(geometry,idx,resolved.type),
+      maxDims:shelfMaxDims(geometry,idx,resolved.type,resolved),
       priority:'nice',
       addedByUser:true,
     };
@@ -488,11 +556,14 @@ function populateOrganizers(){
     if(fitNote) fitNote.classList.add('hide');
     return;
   }
-  const groups=new Map();
-  (view.organizers||[]).forEach(organizer=>{
+  const organizers=view.organizers||[];
+  /* The products named and the fit of each type are read off the scene
+     objects as before; which group a type lands in is groupOrganizers
+     (js/three/organizerKinds.js), shared with its unit test. */
+  const byType=new Map();
+  organizers.forEach(organizer=>{
     const type=organizer.userData.type;
-    const current=groups.get(type)||{type,qty:0,products:new Set(),issues:0};
-    current.qty+=Math.max(1,Number(organizer.userData.requestedQty)||1);
+    const current=byType.get(type)||{products:new Set(),issues:0};
     const spec=organizer.userData.spec||{};
     if(spec.productName) current.products.add(spec.productName);
     /* Only a PURCHASE can fail to fit in a way worth warning about. Style- and
@@ -501,16 +572,41 @@ function populateOrganizers(){
        say "selected organizer groups do not fully fit" about objects nobody
        selected — including on a plan whose only purchase was a label set. */
     if(organizer.userData.fits===false&&spec.source==='plan') current.issues++;
-    groups.set(type,current);
+    byType.set(type,current);
   });
-  const entries=[...groups.values()];
-  section.classList.toggle('hide',!entries.length);
-  wrap.innerHTML=entries.map(entry=>{
-    const title=[...entry.products].join(' · ');
-    const qty=entry.qty>1?`${entry.qty} × `:'';
-    return `<span class="v3d-organizer-chip" data-type="${entry.type}"${title?` title="${escapeHtml(title)}"`:''}><i></i>${qty}${ORGANIZER_LABELS[entry.type]||entry.type}</span>`;
-  }).join('');
-  const issueCount=entries.reduce((sum,entry)=>sum+entry.issues,0);
+  /* Three groups, because "These match your plan" was true of one of them.
+     What is on the shopping list is counted by quantity, since each is a
+     thing to buy. What the plan says is already owned, and what is drawn
+     only to match the style picked, is counted by the zones it appears in:
+     those are drawn once per zone, and "32 × Woven baskets" over a look
+     nobody is buying read as a bill. */
+  const groups=groupOrganizers(organizers);
+  const any=groups.list.length+groups.reuse.length+groups.style.length>0;
+  section.classList.toggle('hide',!any);
+  const label=type=>escapeHtml(ORGANIZER_LABELS[type]||type);
+  const chip=(entry,text)=>{
+    const seen=byType.get(entry.type);
+    const title=seen?[...seen.products].join(' · '):'';
+    return `<span class="v3d-organizer-chip" data-type="${entry.type}"${title?` title="${escapeHtml(title)}"`:''}><i></i>${text}</span>`;
+  };
+  const zones=n=>`in ${n} zone${n===1?'':'s'}`;
+  const group=(heading,chips,note)=>chips.length
+    ?`<h3 class="v3d-org-h">${heading}</h3><div class="v3d-org-chips">${chips.join('')}</div>${note?`<p class="small muted v3d-org-note">${note}</p>`:''}`
+    :'';
+  // A share-link visitor is reading somebody else's plan: not their list,
+  // not their additions, not their style.
+  const shared=!!state.shareView;
+  const added=shared?' (added by hand)':' (you added)';
+  wrap.innerHTML=
+    group(shared?'On the shopping list':'On your shopping list',
+      groups.list.map(entry=>chip(entry,`${entry.qty} × ${label(entry.type)}${entry.addedByUser?added:''}`)),'')
+    +group(shared?'Using what is already there':'Using what you already have',
+      groups.reuse.map(entry=>chip(entry,`${label(entry.type)} ${zones(entry.zones)}`)),
+      shared?'Drawn from what the plan says is already owned; nothing to buy.':'Drawn from what your plan says you own; nothing to buy.')
+    +group(shared?'Shown to match the style':'Shown to match your style',
+      groups.style.map(entry=>chip(entry,`${label(entry.type)} ${zones(entry.zones)}`)),
+      shared?'A look, not a purchase: these are drawn to match the style the plan picked.':'A look, not a purchase: these are drawn to match the style you picked.');
+  const issueCount=[...byType.values()].reduce((sum,entry)=>sum+entry.issues,0);
   const unplaced=Math.max(0,Number(view.unplacedOrganizerQty)||0);
   /* A door rack or a hook rack hangs on a door or a wall, and most layouts
      draw neither. Those used to be counted with the leftovers, under a note
@@ -535,7 +631,7 @@ function populateOrganizers(){
        them at a problem they do not have. Say what happened, and offer the two
        moves that actually change it. */
     fitNote.textContent=unplaced
-      ?`${unplaced} organizer${unplaced===1?'' : 's'} from your list ${unplaced===1?'has':'have'} no spot in this view yet. The levels they were meant for are full. Add a level above, adjust the heights under “Set exact sizes”, or untick ${unplaced===1?'it':'them'} on the plan.`
+      ?`${unplaced} organizer${unplaced===1?'' : 's'} from your list ${unplaced===1?'has':'have'} no spot in this view yet. The levels they were meant for are full. Add a level above, change the heights under Adjust, or untick ${unplaced===1?'it':'them'} on the plan.`
       :issueCount?`${issueCount} selected organizer group${issueCount===1?' does':'s do'} not fully fit. Check shelf depth and height.`:'';
   }
 }
@@ -585,33 +681,189 @@ function initZoneLabelToggle(){
   box.addEventListener('change', applyZoneLabelPref);
 }
 
-function populateZones(map){
+/* One zone row. The dot is decoration: its colour is by position and matches
+   nothing drawn. In a room the level comes off the wall it names ("Back
+   wall: eye level" reads "Eye level" under a "Back wall" heading) and goes
+   above the zone name; a zone with no name of its own takes the level as its
+   name, as before, and then says it once. */
+function zoneItem(row, i, { room=false }={}){
+  const lv=room?levelLabel(row.lv):(row.lv||'');
+  const zone=row.zone||lv||'Zone '+(i+1);
+  const level=room&&row.zone&&lv&&lv!==row.zone?`<span class="v3d-zone-lv">${escapeHtml(lv)}</span>`:'';
+  const desc=row.why||'';
+  const color=ZONE_COLORS[i%ZONE_COLORS.length];
+  const el=document.createElement('div');
+  el.className='v3d-zone-item';
+  el.innerHTML=`<span class="vz-dot" style="background:${color}"></span><div>${level}<h3>${escapeHtml(zone)}</h3>${desc?'<p>'+escapeHtml(desc.slice(0,80))+'</p>':''}</div>`;
+  el.onmouseenter=()=>spotlightShelf(row.shelfIndex, true);
+  el.onmouseleave=()=>spotlightShelf(row.shelfIndex, false);
+  return el;
+}
+
+/* The zones list. A unit's rows stack in map order, one per level. A room's
+   rows sit under one heading per wall, in the order the report's wall tabs
+   use (js/placement.js placementFor): the same wall for the same row there,
+   here and in the drawing. Rows the plan put on no wall go under "Other",
+   because the drawing has to put them somewhere (the emptiest wall) and the
+   list should not claim the plan said where. A room whose rows name no wall
+   at all gets the flat list: one "Other" heading over everything says
+   nothing. */
+/* The wall groups the list shows for a room. The report's groups, except
+   that an L has one side run, drawn on whichever side the layout says: a
+   plan's left and right rows are both on it (roomBoards drawnWallFor), so
+   they list under one heading named for that side, before the back wall
+   when the run is on the left and after it when on the right, the way the
+   drawing reads from the doorway. A plan with no wall on any row has no
+   groups, and the list stays flat. */
+function roomZoneGroups(groups, drawn, lSide){
+  if(!groups||drawn!=='l-run') return groups;
+  const sideGroups=groups.filter(g=>g.id==='left'||g.id==='right');
+  if(!sideGroups.length) return groups;
+  const side=lSide==='left'?'left':'right';
+  const merged={ id:'side', label:side==='left'?'Left wall':'Right wall', rows:sideGroups.flatMap(g=>g.rows) };
+  const rest=groups.filter(g=>g.id!=='left'&&g.id!=='right');
+  const back=rest.findIndex(g=>g.id==='back');
+  rest.splice(back<0?0:side==='left'?back:back+1,0,merged);
+  return rest;
+}
+
+/* The sub-line under a grouped list. Two of the report's groups have no
+   wall of their own in the drawing: "Other" is the rows that named none,
+   drawn on the emptiest wall, and the front (the door) is the wall a room
+   drawing leaves open, so its rows sit on a drawn wall too. Said here, so
+   the heading's wall count and the headings below it are not left to
+   disagree in silence. */
+function roomSubLine(groups){
+  const notes=[];
+  if(groups.some(g=>g.id==='other')) notes.push('The plan did not say which wall the zones under Other are on, so the drawing spreads them.');
+  const front=groups.find(g=>g.id==='front');
+  if(front) notes.push(`The ${front.label.toLowerCase()} is not drawn, so its zones sit where there is room.`);
+  return ['Grouped by wall.',...notes,'Hover a zone to spotlight it.'].join(' ');
+}
+
+function populateZones(map, resolved=currentLayout(), geometry=null){
   const list=document.getElementById('v3d-zone-list');
   if(!list || !map) return;
   list.innerHTML='';
   const rows=(map.rows||map||[]);
   const heading=document.getElementById('v3d-zones-h');
-  /* Named against the layout's own level noun, so the sidebar and the controls
-     above it describe one thing: "6 zones — one per shelf", not "Zones" beside
-     "Number of shelves" with nothing connecting them. */
+  const sub=document.getElementById('v3d-zones-sub');
+  const canvas=document.getElementById('v3d-canvas');
+  const drawn=(canvas&&canvas.dataset.layout)||resolved.type||'';
+  const room=isRoomLayout(drawn);
+  const placement=room?placementFor(rows, { layout:resolved, archetype:drawn }):null;
+  const groups=room?roomZoneGroups(wallGroups(placement), drawn, resolved.lSide):null;
   if(heading){
-    const canvas=document.getElementById('v3d-canvas');
-    const drawn=(canvas&&canvas.dataset.layout)||'';
-    const noun=singularLevel(LEVEL_NOUN[drawn]||'shelves');
-    heading.textContent=rows.length===1
-      ? `1 zone: the ${noun.toLowerCase()}`
-      : `${rows.length} zones, one per ${noun.toLowerCase()}`;
+    if(room){
+      /* Counted from the room plan: the walls that carry zones in the
+         drawing. An L draws its left and right as one side run, and rows
+         the plan left unplaced (listed under "Other" below) land on a wall
+         all the same; the sub-line says so, so the heading can describe the
+         drawing and the list can say what the plan knew. */
+      const N=geometry?geometry.shelfCount:rows.length;
+      const plan=roomPlanFor({ map:rows, layout:resolved, N, boardYs:geometry?boardYsFor(geometry):[] });
+      const wallCount=plan?plan.wallCount:0;
+      heading.textContent=`${rows.length} zone${rows.length===1?'':'s'} on ${wallCount} wall${wallCount===1?'':'s'}`;
+    }else{
+      /* Named against the layout's own level noun, so the sidebar and the
+         controls describe one thing: "6 zones, one per shelf", not "Zones"
+         beside "Number of shelves" with nothing connecting them. */
+      const noun=singularLevel(LEVEL_NOUN[drawn]||'shelves');
+      heading.textContent=rows.length===1
+        ? `1 zone: the ${noun.toLowerCase()}`
+        : `${rows.length} zones, one per ${noun.toLowerCase()}`;
+    }
   }
+  if(sub){
+    sub.textContent=groups
+      ?roomSubLine(groups)
+      :room
+        ?'The plan does not say which wall each zone is on, so the drawing spreads them. Hover a zone to spotlight it.'
+        :'One per shelf: what that shelf is for. Hover a zone to spotlight it.';
+  }
+  if(!groups){
+    rows.forEach((row,i)=>list.appendChild(zoneItem(row,i,{ room })));
+    return;
+  }
+  // Every row with a given shelfIndex, so two rows on one shelf both list.
+  const byIndex=new Map();
   rows.forEach((row,i)=>{
-    const zone=row.zone||row.lv||'Zone '+(i+1);
-    const desc=row.why||'';
-    const color=ZONE_COLORS[i%ZONE_COLORS.length];
-    const el=document.createElement('div');
-    el.className='v3d-zone-item';
-    el.innerHTML=`<span class="vz-dot" style="background:${color}"></span><div><h3>${escapeHtml(zone)}</h3>${desc?'<p>'+escapeHtml(desc.slice(0,80))+'</p>':''}</div>`;
-    el.onmouseenter=()=>spotlightShelf(row.shelfIndex, true);
-    el.onmouseleave=()=>spotlightShelf(row.shelfIndex, false);
-    list.appendChild(el);
+    const idx=Number.isInteger(row.shelfIndex)?row.shelfIndex:i;
+    if(!byIndex.has(idx)) byIndex.set(idx,[]);
+    byIndex.get(idx).push({ row, i });
+  });
+  for(const wall of groups){
+    const h=document.createElement('h3');
+    h.className='v3d-wall-h';
+    h.textContent=wall.label;
+    list.appendChild(h);
+    for(const idx of wall.rows){
+      for(const entry of (byIndex.get(idx)||[])) list.appendChild(zoneItem(entry.row,entry.i,{ room:true }));
+    }
+  }
+}
+
+/* The sidebar's two panels. View is what the drawing shows; Adjust is what
+   changes it. One tablist, the roving-tabindex pattern the report's wall tabs
+   use (results.js selectWall): the selected tab is the only one in the tab
+   order, the arrows move between them and wrap, Home and End jump, and the
+   panel not selected is hidden rather than removed so its controls keep
+   their state and their ids. Exported so a test can land on a panel without
+   finding the tab. */
+const PANELS=['view','adjust'];
+
+export function selectPanel(id, { focus=false }={}){
+  const key=String(id||'').replace(/^v3d-(panel|tab)-/,'');
+  if(!PANELS.includes(key)) return;
+  for(const name of PANELS){
+    const tab=document.getElementById('v3d-tab-'+name);
+    const panel=document.getElementById('v3d-panel-'+name);
+    const on=name===key;
+    if(tab){
+      tab.setAttribute('aria-selected', on?'true':'false');
+      tab.setAttribute('tabindex', on?'0':'-1');
+      if(on&&focus) tab.focus();
+    }
+    if(panel) panel.hidden=!on;
+  }
+}
+
+function initPanelTabs(){
+  const list=document.querySelector('#v3d-zone-sidebar .v3d-tabs');
+  if(!list||list.dataset.wired) return;
+  list.dataset.wired='1';
+  list.addEventListener('click', e=>{
+    const tab=e.target.closest('[role=tab]');
+    if(tab) selectPanel(tab.id);
+  });
+  list.addEventListener('keydown', e=>{
+    const tab=e.target.closest('[role=tab]');
+    if(!tab) return;
+    const i=PANELS.indexOf(tab.id.replace(/^v3d-tab-/,''));
+    let n=-1;
+    if(e.key==='ArrowRight') n=(i+1)%PANELS.length;
+    else if(e.key==='ArrowLeft') n=(i-1+PANELS.length)%PANELS.length;
+    else if(e.key==='Home') n=0;
+    else if(e.key==='End') n=PANELS.length-1;
+    if(n<0) return;
+    e.preventDefault();
+    selectPanel(PANELS[n], { focus:true });
+  });
+}
+
+/* The keyboard help is folded behind a button beside the drawing. The
+   paragraph stays the canvas's description while hidden (aria-describedby
+   reads hidden elements), so a screen reader hears the keys on focus and a
+   sighted reader opens them when they want them. */
+function initKeysButton(){
+  const btn=document.getElementById('v3d-keys-btn');
+  const keys=document.getElementById('v3d-keys');
+  if(!btn||!keys||btn.dataset.wired) return;
+  btn.dataset.wired='1';
+  btn.addEventListener('click', ()=>{
+    const open=keys.hidden;
+    keys.hidden=!open;
+    btn.setAttribute('aria-expanded', open?'true':'false');
   });
 }
 
@@ -626,8 +878,28 @@ function initLayoutChips(resolved){
     btn.dataset.layout=arch;
     btn.textContent=ARCHETYPE_LABELS[arch]||arch;
     btn.onclick=()=>{
+      const from=currentLayout().type;
       layoutOverride=arch;
       setLiveLayoutOverride(arch);
+      /* A preview carries the sizes the reader dragged, and for a room the
+         board count currentSceneInput derived (so the slider could build on
+         it). That count belongs to the room it was derived for. Carried into
+         a cabinet, a walk-in's five boards drew a five-shelf cabinet over the
+         plan's twelve rows; carried into an L, whose one side run holds the
+         walk-in's left and right rows together, five boards put two rows on
+         one board. So a stamped preview crossing to a different layout keeps
+         its sizes only: into a room, the count is derived again for that
+         room; back to a unit, the unit's own levels return (kept aside in
+         unitLevels when the room took over), else the plan's. */
+      if(dimsPreview&&dimsPreview.levelsAre==='boards'&&arch!==from){
+        const { width, depth, height, estimated }=dimsPreview;
+        if(isRoomLayout(arch)){
+          dimsPreview={ width, depth, height, estimated };
+        }else{
+          dimsPreview={ ...normalizeViewerGeometry({ ...activeGeometry(), ...unitLevels }, arch), width, depth, height, estimated };
+          unitLevels=null;
+        }
+      }
       wrap.querySelectorAll('.v3d-chip').forEach(b=>b.classList.remove('sel'));
       btn.classList.add('sel');
       markDirty();
@@ -661,9 +933,12 @@ function fmtDim(inches){
    answer they hold: someone who opens the viewer to check the scale can read
    it here without opening anything. */
 function updateAdvancedSummary(geometry){
+  if(!geometry) return;
   const el=document.getElementById('v3d-adv-size');
-  if(!el||!geometry) return;
-  el.textContent=`${fmtDim(geometry.width)} w × ${fmtDim(geometry.depth)} d × ${fmtDim(geometry.height)} h`;
+  if(el) el.textContent=`${fmtDim(geometry.width)} w × ${fmtDim(geometry.depth)} d × ${fmtDim(geometry.height)} h`;
+  // The same answer in View, in a sentence, for a reader who never opens Adjust.
+  const line=document.getElementById('v3d-size-line');
+  if(line) line.textContent=`Drawn at ${fmtDim(geometry.width)} wide, ${fmtDim(geometry.height)} high, ${fmtDim(geometry.depth)} deep.`;
 }
 
 function initDimSliders(geometry, resolved){
@@ -719,15 +994,21 @@ function initStructureControls(geometry,resolved){
      "Space evenly" button with no handler attached, because the listener
      bindings sat below an early return. Four of the five layouts a pantry can
      take were in that state. */
+  /* A room's levels are zones in the plan's vocabulary, but what the slider
+     counts there is boards: the same shelves on every wall, at the same
+     heights, so the count is per wall and the heights are shelf heights. */
+  const room=isRoomLayout(resolved.type);
   const levelNoun=LEVEL_NOUN[resolved.type]||'shelves';
-  const Noun=levelNoun.charAt(0).toUpperCase()+levelNoun.slice(1);
+  const Noun=room?'Shelves':levelNoun.charAt(0).toUpperCase()+levelNoun.slice(1);
   structure.classList.toggle('hide',false);
   lControl.classList.toggle('hide',!isL);
   shelfControls.classList.toggle('hide',false);
   const structureLabel=document.getElementById('v3d-structure-label');
   if(structureLabel) structureLabel.textContent=Noun;
   const countLabel=document.getElementById('v3d-shelf-count-label');
-  if(countLabel) countLabel.innerHTML=`Number of ${escapeHtml(levelNoun)} <strong id="v3d-shelf-count-val">${geometry.shelfCount}</strong>`;
+  if(countLabel) countLabel.innerHTML=room
+    ?`Shelves per wall <strong id="v3d-shelf-count-val">${geometry.shelfCount}</strong>`
+    :`Number of ${escapeHtml(levelNoun)} <strong id="v3d-shelf-count-val">${geometry.shelfCount}</strong>`;
   const heightsLabel=document.getElementById('v3d-heights-label');
   if(heightsLabel) heightsLabel.textContent=`${singularLevel(Noun)} heights`;
 
@@ -745,6 +1026,13 @@ function initStructureControls(geometry,resolved){
 
   const count=document.getElementById('v3d-shelf-count');
   const countValue=document.getElementById('v3d-shelf-count-val');
+  /* A room's slider floors at the fullest wall's row count: below it two rows
+     would share one board and their items would sit on top of each other.
+     The floor never exceeds the current count, so a room too short for its
+     rows (the height cap) still reads its own value. */
+  const plan=room?roomPlanFor({ map: activeMapV2(), layout: resolved, N: geometry.shelfCount, boardYs: boardYsFor(geometry) }):null;
+  const fullest=plan?Math.max(1, ...plan.walls.map(w=>w.rows.length)):1;
+  count.min=String(room?Math.min(geometry.shelfCount, fullest):1);
   count.value=geometry.shelfCount;
   countValue.textContent=geometry.shelfCount;
   count.oninput=()=>{

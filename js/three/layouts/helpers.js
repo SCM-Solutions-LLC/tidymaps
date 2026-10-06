@@ -31,6 +31,20 @@ export function addBox(scene, w, h, d, x, y, z, mat){
   return m;
 }
 
+/* A hanging rod along one run. `axis` is the run's direction: 'x' for a
+   back run, anything else for a side run along z. The walk-in and the L-run
+   each carried their own copy of this; one copy here so a change to how a
+   rod is drawn reaches both rooms. */
+export function addRod(scene, length, x, y, z, axis, mat){
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,length,14), mat);
+  if(axis==='x') rod.rotation.z=Math.PI/2;
+  else rod.rotation.x=Math.PI/2;
+  rod.position.set(x,y,z);
+  rod.castShadow=true;
+  scene.add(rod);
+  return rod;
+}
+
 export function accentFor(row){
   if(!row) return null;
   if(row.safety && row.safety.flag==='kid-safe') return COLORS.kidSafe;

@@ -27,19 +27,25 @@ test.describe('phone', () => {
   });
 
   test('the 3D view opens on the drawing, not on its controls', async ({ page }) => {
-    /* Ten controls stacked above the canvas put it 570px down an 844px screen. */
+    /* Ten controls stacked above the canvas put it 570px down an 844px screen.
+       The controls live in the sidebar now, under its Adjust tab, so the
+       sidebar is the only thing that could come before the drawing. */
     await openSample(page);
     await page.click('#res-actions .btn-primary');
     await expect(page.locator('#screen-viewer3d')).toHaveClass(/active/);
     const tops = await page.evaluate(() => ({
       canvas: document.getElementById('v3d-canvas').getBoundingClientRect().top,
-      controls: document.querySelector('.v3d-controls').getBoundingClientRect().top,
       zones: document.getElementById('v3d-zone-sidebar').getBoundingClientRect().top,
       viewport: innerHeight,
     }));
     expect(tops.canvas, 'the canvas starts below the first screen').toBeLessThan(tops.viewport * 0.6);
-    expect(tops.canvas).toBeLessThan(tops.controls);
-    expect(tops.controls).toBeLessThan(tops.zones);
+    expect(tops.canvas).toBeLessThan(tops.zones);
+    // The two tabs are what a thumb reaches for on a phone, so they take the
+    // 44px rule. min-height:44px lays out at 43.9999 in Chromium's 1/64px units.
+    for (const id of ['v3d-tab-view', 'v3d-tab-adjust']) {
+      const height = await page.locator('#' + id).evaluate((el) => el.getBoundingClientRect().height);
+      expect(height, `#${id} height`).toBeGreaterThan(43.9);
+    }
   });
 
   test('the chapter nav says when it holds more than it shows', async ({ page }) => {

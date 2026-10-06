@@ -1,43 +1,23 @@
 import * as THREE from 'three';
-import { addBox, addShelfLabel, accentFor, makeHitbox } from './helpers.js';
-
-function splitRows(layout, rowsByShelf, count){
-  const sections=(layout&&layout.sections)||[];
-  const explicit=sections.some(sec=>['run-a','run-b','left','right'].includes(sec.id)||['run-a','run-b','left','right'].includes(sec.place));
-  const all=sections.length?[...new Set(sections.flatMap(sec=>sec.rows||[]))]:Array.from({length:count},(_,i)=>i);
-  if(!explicit){
-    const movable=all.filter(i=>(rowsByShelf.get(i)||{}).surface!=='floor');
-    const floor=all.filter(i=>(rowsByShelf.get(i)||{}).surface==='floor');
-    const split=Math.ceil(movable.length/2);
-    return {a:movable.slice(0,split).concat(floor),b:movable.slice(split)};
-  }
-  const a=[],b=[];
-  sections.forEach(sec=>{
-    const side=sec.id==='run-b'||sec.place==='run-b'||sec.id==='right'||sec.place==='right';
-    (sec.rows||[]).forEach(i=>(side?b:a).push(i));
-  });
-  return {a,b};
-}
-
-function addRod(scene,length,x,y,z,axis,mat){
-  const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,length,14),mat);
-  if(axis==='x') rod.rotation.z=Math.PI/2;
-  else rod.rotation.x=Math.PI/2;
-  rod.position.set(x,y,z);
-  rod.castShadow=true;
-  scene.add(rod);
-}
+import { addBox, addShelfLabel, accentFor, makeHitbox, addRod } from './helpers.js';
+import { roomPlanFor, roomShelfDepth, runLength } from '../roomBoards.js';
 
 /* Open, integrated L-shaped room. Width and depth define room footprint;
-   shelves keep realistic 10–18 inch depth instead of becoming full-room
-   slabs or an appendage outside the measured bounds. */
+   shelves keep realistic 10 to 18 inch depth instead of becoming full-room
+   slabs or an appendage outside the measured bounds.
+
+   Both runs carry the same N boards at the same heights, and each plan row
+   sits on one board of one run, as the room plan (roomBoards.js) says. The
+   plan's walls are back and side: the side run is drawn on whichever side
+   the layout says (lSide), so rows the plan put on the left and rows it put
+   on the right both land there. */
 export function build(ctx){
   const {scene,geo,rowsByShelf,mats,layout}=ctx;
   const {W,H,D,T,NSH,shelfYs,gapAbove}=geo;
+  const geometry={width:W,height:H,depth:D};
   // Same floor and the same half-room cap as the walk-in, for the same
-  // reasons: see walkin-u.js. A 12-inch-deep L-run gets 8-inch shelves.
-  const smallest=Math.min(W,D);
-  const shelfDepth=Math.max(8,Math.min(18,Math.max(14,smallest*0.22),smallest*0.5));
+  // reasons, with the L's own factor: see roomShelfDepth in roomBoards.js.
+  const shelfDepth=roomShelfDepth('l-run',geometry);
   const sideSign=layout&&layout.lSide==='left'?-1:1;
   const rodMat=new THREE.MeshStandardMaterial({color:0x8d9490,metalness:0.7,roughness:0.24});
 
@@ -45,70 +25,95 @@ export function build(ctx){
   addBox(scene,W,H,T,0,H/2,-D/2+T/2,mats.carcass);
   addBox(scene,T,H,D,sideSign*(W/2-T/2),H/2,0,mats.carcass);
 
-  const rows=splitRows(layout,rowsByShelf,NSH);
+  // See walkin-u.js: the type is pinned for a caller whose layout has none.
+  const room=ctx.room||roomPlanFor({ map:ctx.map, layout:{...(layout||{}),type:'l-run'}, N:NSH, boardYs:shelfYs, rowsByShelf });
   const surfaces=[];
-  const usableA=Math.max(8,W-shelfDepth-2*T-2);
-  const usableB=Math.max(8,D-shelfDepth-2*T-2);
+  const usableA=runLength('l-run','back',geometry);
+  const usableB=runLength('l-run','side',geometry);
   const backX=-sideSign*shelfDepth/2;
   const backZ=-D/2+T+shelfDepth/2;
   const sideX=sideSign*(W/2-T-shelfDepth/2);
   const sideZ=shelfDepth/2;
+  const rowFor=idx=>rowsByShelf.get(idx)||null;
+  const kindOf=row=>(row&&row.surface)||'shelf';
+  const rodY=board=>Math.min(H-7,shelfYs[board]+gapAbove[board]*0.78);
 
-  // The fixture itself wraps the corner at every tier. Plan rows still own
-  // one draggable surface each, but the empty half no longer looks bolted on.
-  for(let idx=0;idx<NSH;idx++){
-    const baseY=shelfYs[idx];
-    if(baseY===undefined) continue;
-    const row=rowsByShelf.get(idx)||null;
-    const kind=(row&&row.surface)||'shelf';
-    if(kind==='floor') continue;
-    const y=kind==='rod'?Math.min(H-7,baseY+gapAbove[idx]*0.78):baseY;
-    if(kind==='rod'){
-      addRod(scene,usableA,backX,y,backZ,'x',rodMat);
-      addRod(scene,usableB,sideX,y,sideZ,'z',rodMat);
-    }else if(baseY>1.6*T&&baseY<H-2*T){
-      addBox(scene,usableA,T,shelfDepth,backX,baseY-T/2,backZ,mats.shelf);
-      addBox(scene,shelfDepth,T,usableB,sideX,baseY-T/2,sideZ,mats.shelf);
+  const rodAt=new Set();
+  for(const [idx,wall] of room.wallOf){
+    if(kindOf(rowFor(idx))==='rod') rodAt.add(`${wall}:${room.boardOf.get(idx)}`);
+  }
+
+  // The fixture itself wraps the corner at every board; a rod replaces the
+  // board only on the run where a rod row sits.
+  for(const wall of ['back','side']){
+    const back=wall==='back';
+    const length=back?usableA:usableB;
+    const x=back?backX:sideX;
+    const z=back?backZ:sideZ;
+    for(let board=0;board<NSH;board++){
+      const baseY=shelfYs[board];
+      if(baseY===undefined) continue;
+      if(rodAt.has(`${wall}:${board}`)){
+        addRod(scene,length,x,rodY(board),z,back?'x':'z',rodMat);
+      }else if(baseY>1.6*T&&baseY<H-2*T){
+        addBox(scene,back?length:shelfDepth,T,back?shelfDepth:length,x,baseY-T/2,z,mats.shelf);
+      }
     }
   }
 
   function buildSurface(idx,side){
-    const baseY=shelfYs[idx];
+    const board=room.boardOf.get(idx);
+    const baseY=shelfYs[board];
     if(baseY===undefined) return;
-    const row=rowsByShelf.get(idx)||null;
-    const kind=(row&&row.surface)||'shelf';
+    const row=rowFor(idx);
+    const kind=kindOf(row);
     const floor=kind==='floor';
     const rod=kind==='rod';
-    const length=side==='back'?usableA:usableB;
-    const centerX=side==='back'?backX:sideX;
-    const centerZ=side==='back'?backZ:sideZ;
-    const y=rod?Math.min(H-7,baseY+gapAbove[idx]*0.78):floor?T:baseY;
+    const back=side==='back';
+    const length=back?usableA:usableB;
+    const centerX=back?backX:sideX;
+    const centerZ=back?backZ:sideZ;
+    const gap=gapAbove[board];
+    const y=rod?rodY(board):floor?T:baseY;
 
     const accent=accentFor(row);
     if(accent){
-      addBox(scene,side==='back'?length:0.4,0.35,side==='back'?0.4:length,
-        side==='back'?centerX:sideSign*(W/2-shelfDepth-0.2), y+0.2,
-        side==='back'?-D/2+shelfDepth+T:sideZ,
+      addBox(scene,back?length:0.4,0.35,back?0.4:length,
+        back?centerX:sideSign*(W/2-shelfDepth-0.2), y+0.2,
+        back?-D/2+shelfDepth+T:sideZ,
         new THREE.MeshBasicMaterial({color:accent}));
     }
-    if(row) addShelfLabel(scene,row,side==='back'?-W/2:sideSign*(W/2-shelfDepth),y+3.2,side==='back'?backZ+shelfDepth/2+0.7:-D/2+T,
-      { normal: side==='back'?new THREE.Vector3(0,0,1):new THREE.Vector3(-sideSign,0,0) });
+    if(row) addShelfLabel(scene,row,back?-W/2:sideSign*(W/2-shelfDepth),y+3.2,back?backZ+shelfDepth/2+0.7:-D/2+T,
+      { normal: back?new THREE.Vector3(0,0,1):new THREE.Vector3(-sideSign,0,0) });
 
-    const hit=makeHitbox(scene,side==='back'?length:shelfDepth,
-      Math.max(6,H/NSH*0.8),side==='back'?shelfDepth: length,
-      centerX,rod?y-gapAbove[idx]*0.25:floor?T+3:y+Math.max(3,H/NSH*0.4),centerZ,
+    const hit=makeHitbox(scene,back?length:shelfDepth,
+      Math.max(6,H/NSH*0.8),back?shelfDepth: length,
+      centerX,rod?y-gap*0.25:floor?T+3:y+Math.max(3,H/NSH*0.4),centerZ,
       {shelfIndex:idx,shelfY:y,row});
+    /* The side run's uDir follows its side so items face the room and
+       slots read left to right from the aisle whichever side it is on; see
+       the note on the walk-in's left wall in walkin-u.js. */
     surfaces.push({
       index:idx,kind,row,y,hitbox:hit,
-      uDir:side==='back'?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,1),
-      normal:side==='back'?new THREE.Vector3(0,0,1):new THREE.Vector3(-sideSign,0,0),
-      length,gap:rod?Math.max(10,gapAbove[idx]*0.75):gapAbove[idx],
+      uDir:back?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,sideSign),
+      normal:back?new THREE.Vector3(0,0,1):new THREE.Vector3(-sideSign,0,0),
+      length,gap:rod?Math.max(10,gap*0.75):gap,
       depth:shelfDepth,itemDepth:rod?1.5:Math.min(shelfDepth*0.58,8),
     });
   }
 
-  rows.a.forEach(i=>buildSurface(i,'back'));
-  rows.b.forEach(i=>buildSurface(i,'side'));
+  for(const wall of room.walls) wall.rows.forEach(idx=>buildSurface(idx,wall.id));
+  /* Floor rows run along the back, as they did before the room plan. */
+  room.floorRows.forEach(idx=>{
+    const row=rowFor(idx);
+    const hit=makeHitbox(scene,usableA,Math.max(6,H/NSH*0.8),shelfDepth,backX,T+3,backZ,{shelfIndex:idx,shelfY:T,row});
+    if(row) addShelfLabel(scene,row,-W/2,T+3.2,backZ+shelfDepth/2+0.7,{ normal:new THREE.Vector3(0,0,1) });
+    surfaces.push({
+      index:idx,kind:'floor',row,y:T,hitbox:hit,
+      uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),
+      length:usableA,gap:gapAbove[NSH-1]||10,depth:shelfDepth,itemDepth:Math.min(shelfDepth*0.58,8),
+    });
+  });
   scene.userData.layoutFootprint={type:'l-run',width:W,depth:D,shelfDepth,lSide:sideSign<0?'left':'right'};
   return {surfaces};
 }

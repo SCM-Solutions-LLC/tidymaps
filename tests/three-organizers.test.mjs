@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {organizerSpecFor,ORGANIZER_TYPES,selectedProductNeeds,targetScore,surfaceAcceptsOrganizer,isMountedOrganizer} from '../js/three/organizerKinds.js';
+import {organizerSpecFor,ORGANIZER_TYPES,selectedProductNeeds,targetScore,surfaceAcceptsOrganizer,isMountedOrganizer,groupOrganizers} from '../js/three/organizerKinds.js';
 
 const base={surface:'shelf',row:{lv:'Eye level',zone:'Snacks'},itemKind:'food',space:'pantry',styles:[],prefs:[],existingText:''};
 
@@ -64,6 +64,51 @@ test('the row a target names outscores a row that merely overlaps it',()=>{
   const partial=targetScore('Below the bench',{lv:'Bench drawers',zone:'Screws & fasteners'});
   assert.ok(exact>partial&&partial>0,`exact ${exact} should beat partial ${partial}`);
   assert.equal(targetScore('Every drawer',{lv:'Third drawer',zone:'Towels'}),1);
+});
+
+/* The viewer's summary once read "32 × Baskets" for a plan whose style said
+   "woven baskets": every item on every shelf had been given one, and the
+   count looked like a purchase. The summary now groups by where an organizer
+   came from: purchases by quantity, everything else by the zones it is drawn
+   in. The entries here are shaped like the scene's organizer objects
+   (userData), which is what the screen hands over. */
+test('groupOrganizers counts purchases by quantity and the rest by zones, keeping sources apart',()=>{
+  const organizer=(type,source,shelfIndex,extra={})=>({userData:{type,source,shelfIndex,spec:{type,source},...extra}});
+  const groups=groupOrganizers([
+    organizer('basket','plan',0,{requestedQty:2}),
+    organizer('basket','plan',1,{requestedQty:3}),
+    organizer('basket','style',0),
+    organizer('basket','style',0),
+    organizer('basket','style',2),
+    organizer('basket','reuse',1),
+    organizer('clear-bin','space',4),
+    organizer('divider','surface',4),
+  ]);
+  assert.deepEqual(groups.list,[{type:'basket',qty:5,addedByUser:false}],'two plan baskets, qty 2 and 3, read 5');
+  assert.deepEqual(groups.style,[{type:'basket',zones:2},{type:'clear-bin',zones:1},{type:'divider',zones:1}],'three style baskets on two rows are two zones');
+  assert.deepEqual(groups.reuse,[{type:'basket',zones:1}]);
+
+  // addedByUser propagates to its group, and only to its group.
+  const added=groupOrganizers([
+    organizer('turntable','plan',0,{requestedQty:1,addedByUser:true}),
+    organizer('turntable','plan',1,{requestedQty:1}),
+    organizer('riser','plan',2,{requestedQty:2}),
+  ]);
+  assert.deepEqual(added.list,[{type:'turntable',qty:2,addedByUser:true},{type:'riser',qty:2,addedByUser:false}]);
+
+  // Plain records read too, and empty groups are empty arrays.
+  assert.deepEqual(groupOrganizers([{type:'basket',source:'reuse',shelfIndex:3}]),{list:[],reuse:[{type:'basket',zones:1}],style:[]});
+  assert.deepEqual(groupOrganizers([]),{list:[],reuse:[],style:[]});
+  assert.deepEqual(groupOrganizers(undefined),{list:[],reuse:[],style:[]});
+});
+
+test('a plan organizer says whether the user added it to the list',()=>{
+  const added=organizerSpecFor({...base,productNeeds:[{type:'clear-bin',targetZone:'Eye level',addedByUser:true}]});
+  assert.equal(added.source,'plan');
+  assert.equal(added.addedByUser,true);
+  const recommended=organizerSpecFor({...base,productNeeds:[{type:'clear-bin',targetZone:'Eye level'}]});
+  assert.equal(recommended.addedByUser,false);
+  assert.equal('addedByUser' in organizerSpecFor({...base,styles:['Woven baskets'],productNeeds:[]}),false,'a style basket was never on the list');
 });
 
 test('racks hang on doors and pegboards; nothing else goes there, and rods take nothing',()=>{

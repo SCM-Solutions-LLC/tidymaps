@@ -125,6 +125,10 @@ export function organizerSpecFor({surface,row,itemKind,space,styles,prefs,produc
       productDims:need.productDims||null,fit:need.fit||'unknown',
       targetZone:need.targetZone||'',
       needKey:needKeyFor(need),
+      /* Carried so the viewer's summary can say "you added" against the
+         organizers the user put on the list themselves, the way the report
+         does. */
+      addedByUser:!!need.addedByUser,
     };
   }
 
@@ -147,3 +151,48 @@ export function organizerSpecFor({surface,row,itemKind,space,styles,prefs,produc
 }
 
 export const ORGANIZER_TYPES=['clear-bin','basket','divider','turntable','riser','door-rack','hook-rack'];
+
+/* The organizers in a scene, grouped the way the viewer's summary lists
+   them. The old summary grouped by type alone and summed quantities, so a
+   plan whose style said "woven baskets" read "32 × Baskets": every item on
+   every shelf had been given one, and the number looked like a purchase.
+   Where an organizer came from decides how it is counted and what the
+   reader is told about it.
+
+     list   source 'plan': the shopping list. Counted by quantity, because
+            a quantity is what was bought; marked when the user added it.
+     reuse  source 'reuse': containers the plan says the reader already owns.
+     style  sources 'style', 'surface' and 'space': drawn to match a look or
+            a kind of room, nothing to buy.
+
+   reuse and style are counted by zones, the number of distinct rows an
+   organizer of that type is drawn on, because one basket per zone is what
+   the scene draws and "in 4 zones" is the sentence that describes it. The
+   entries are the scene's own organizer objects (their userData carries
+   type, spec, requestedQty, shelfIndex and addedByUser) or plain records
+   with the same fields; either reads. Groups keep the order of first
+   appearance, so the summary lists types in the order the scene met them. */
+export function groupOrganizers(organizers){
+  const list=new Map(), reuse=new Map(), style=new Map();
+  for(const entry of organizers||[]){
+    const data=(entry&&entry.userData)||entry||{};
+    const spec=data.spec||{};
+    const type=data.type||spec.type;
+    if(!type) continue;
+    const source=data.source||spec.source;
+    if(source==='plan'){
+      const group=list.get(type)||{type,qty:0,addedByUser:false};
+      group.qty+=Math.max(1,Number(data.requestedQty)||Number(spec.qty)||1);
+      group.addedByUser=group.addedByUser||!!(data.addedByUser??spec.addedByUser);
+      list.set(type,group);
+      continue;
+    }
+    const target=source==='reuse'?reuse:(source==='style'||source==='surface'||source==='space')?style:null;
+    if(!target) continue;
+    const group=target.get(type)||{type,zones:new Set()};
+    group.zones.add(data.shelfIndex);
+    target.set(type,group);
+  }
+  const byZones=groups=>[...groups.values()].map(group=>({type:group.type,zones:group.zones.size}));
+  return { list:[...list.values()], reuse:byZones(reuse), style:byZones(style) };
+}

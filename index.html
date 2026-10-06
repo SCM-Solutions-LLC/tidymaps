@@ -865,72 +865,7 @@
   <!-- The middle sentence is written by the viewer when it opens: whose space
        this is depends on whether the plan came from photos, from the wizard,
        from the landing page's sample, or from somebody else's share link. -->
-  <p class="muted small" id="v3d-intro" style="margin-top:8px;max-width:60ch">Drag to spin it around, scroll to zoom. Switch types below to compare.</p>
-
-  <!-- Two tiers, deliberately. Someone opening the 3D view met ten range
-       sliders at once — width, depth, height, shelf count and one per shelf —
-       which is a CAD panel, not a preview. The two answers that change what
-       the picture IS (which layout, how many levels) stay in front; everything
-       that fine-tunes a number it already has sits behind one disclosure. -->
-  <div class="v3d-controls">
-    <div class="v3d-layout-section">
-      <span class="v3d-label">Layout type</span>
-      <div class="v3d-layout-chips" id="v3d-layouts"></div>
-    </div>
-    <div class="v3d-structure hide" id="v3d-structure">
-      <!-- Named for the levels of the CHOSEN layout ("Shelves", "Drawers",
-           "Zones"). "Shelves" used to appear only in the layout-type row above,
-           which read as though a shelf were a peer of a walk-in rather than
-           something a walk-in has. -->
-      <span class="v3d-label" id="v3d-structure-label">Shelves</span>
-      <!-- These two rows stay in the top tier even though they are also
-           adjustments: each appears for exactly one layout, they are single
-           rows of chips rather than sliders, and they change the SHAPE of the
-           drawing. Burying a choice that only shows up for L-runs is how a
-           control gets missed entirely. -->
-      <div class="v3d-option-row hide" id="v3d-l-side-control">
-        <span class="v3d-option-name">L extension</span>
-        <div class="v3d-layout-chips" id="v3d-l-side">
-          <button class="v3d-chip" type="button" data-side="auto">Auto</button>
-          <button class="v3d-chip" type="button" data-side="left">Left</button>
-          <button class="v3d-chip" type="button" data-side="right">Right</button>
-        </div>
-      </div>
-      <div class="v3d-shelf-controls hide" id="v3d-shelf-controls">
-        <label class="v3d-dim"><span id="v3d-shelf-count-label">Number of shelves <strong id="v3d-shelf-count-val">4</strong></span><input type="range" id="v3d-shelf-count" min="1" max="12" value="4"></label>
-        <div class="v3d-option-row hide" id="v3d-shelf-placement-control">
-          <span class="v3d-option-name">Wall position</span>
-          <div class="v3d-layout-chips" id="v3d-shelf-placement">
-            <button class="v3d-chip" type="button" data-placement="left">Left</button>
-            <button class="v3d-chip" type="button" data-placement="center">Center</button>
-            <button class="v3d-chip" type="button" data-placement="right">Right</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <details class="v3d-advanced" id="v3d-advanced">
-      <!-- The size is on the closed summary, so the panel still answers "what
-           is this drawn at?" without being opened. -->
-      <summary id="v3d-advanced-summary">
-        <span class="v3d-adv-title">Set exact sizes</span>
-        <span class="v3d-adv-size" id="v3d-adv-size"></span>
-      </summary>
-      <div class="v3d-adv-body">
-        <div class="v3d-dims-section">
-          <span class="v3d-label">Overall size</span>
-          <div class="v3d-dims">
-            <label class="v3d-dim"><span>Width <strong id="v3d-w-val">3&rsquo;</strong></span><input type="range" id="v3d-w" min="18" max="120" value="36"></label>
-            <label class="v3d-dim"><span>Depth <strong id="v3d-d-val">1&rsquo;6&Prime;</strong></span><input type="range" id="v3d-d" min="10" max="36" value="18"></label>
-            <label class="v3d-dim"><span>Height <strong id="v3d-h-val">6&rsquo;6&Prime;</strong></span><input type="range" id="v3d-h" min="36" max="96" value="78"></label>
-          </div>
-        </div>
-        <div class="v3d-heights-section" id="v3d-heights-section">
-          <div class="v3d-shelf-height-head"><span class="v3d-option-name" id="v3d-heights-label">Shelf heights</span><button class="btn btn-ghost btn-sm" type="button" id="v3d-even-shelves">Space evenly</button></div>
-          <div class="v3d-shelf-heights" id="v3d-shelf-heights"></div>
-        </div>
-      </div>
-    </details>
-  </div>
+  <p class="muted small" id="v3d-intro" style="margin-top:8px;max-width:60ch">Drag to spin it around, scroll to zoom. Use Adjust to change the layout or sizes.</p>
 
   <div class="v3d-body">
     <div class="v3d-main">
@@ -941,59 +876,142 @@
              region below. The label names whose space it is (updateHeading). -->
         <canvas id="v3d-canvas" role="application" tabindex="0" aria-label="Three-dimensional drawing of the space" aria-describedby="v3d-keys"></canvas>
       </div>
-      <p class="small muted" id="v3d-keys" style="margin:8px 0 0">Keyboard: Tab to the drawing, then Left and Right choose an item, Space picks it up, the arrows carry it to another shelf or along one, Space puts it down, Escape puts it back.</p>
+      <!-- The key list is a long sentence most readers never need, and it sat
+           under every drawing. It is behind this button now and starts hidden.
+           It stays the drawing's description while hidden: aria-describedby
+           reads an element the page does not display. -->
+      <button type="button" id="v3d-keys-btn" class="v3d-keys-btn" aria-expanded="false" aria-controls="v3d-keys" aria-label="Keyboard help">?</button>
+      <p class="small muted" id="v3d-keys" style="margin:8px 0 0" hidden>Keyboard: Tab to the drawing, then Left and Right choose an item, Space picks it up, the arrows carry it to another shelf or along one, Space puts it down, Escape puts it back.</p>
       <p class="sr-only" id="v3d-live" role="status" aria-live="polite" aria-atomic="true"></p>
       <p class="note" id="v3d-status" style="margin-top:10px"></p>
       <!-- The fit warning sits under the VIEW, not in the sidebar list, for
            two reasons: it is a statement about this view ("no spot in this
-           view yet"), and the sidebar scrolls on a desktop — a warning a
+           view yet"), and the sidebar scrolls on a desktop: a warning a
            reader has to go looking for is one the app may as well not make. -->
       <p class="small v3d-fit-note hide" id="v3d-fit-note"></p>
     </div>
-    <!-- The sidebar runs far longer than the canvas beside it — five zones,
-         the organizer list, the fit note and the add control — so on a wide
-         screen the left column ended about 500px short of the right one and
-         the difference was empty page. The inner div is positioned out of the
-         height calculation so the row is sized by the canvas column, and the
-         sidebar scrolls inside whatever that comes to. -->
+    <!-- The sidebar is two panels under one pair of tabs. View is what the
+         drawing shows: the zones wall by wall, the organizers, the size it
+         is drawn at. Adjust is what changes it: the layout type, how many
+         shelves, the exact sizes, an organizer to add. The controls used to
+         sit in a full-width row above the drawing, where a phone opened
+         onto chips and a slider and no model, and a desktop met ten range
+         sliders before the picture. The tabs keep the drawing first and the
+         answers that change it one tap away.
+
+         The sidebar runs far longer than the canvas beside it, so on a wide
+         screen the inner div scrolls inside the canvas column's height, with
+         the tabs held above the scroll (css/screens.css). -->
     <aside class="v3d-zones" id="v3d-zone-sidebar">
-     <div class="v3d-zones-inner">
-      <h2 class="v3d-zones-h" id="v3d-zones-h">Zones</h2>
-      <!-- A zone and a shelf are the same row of the plan: the controls above
-           set how many shelves there are, and each one gets a zone here. The
-           panel used to say neither, so the two words read as two things. -->
-      <p class="small muted" id="v3d-zones-sub" style="margin:4px 0 10px">One per shelf: what that shelf is for. Hover a zone to spotlight it.</p>
-      <label class="v3d-labels-toggle" for="v3d-show-labels">
-        <input type="checkbox" id="v3d-show-labels" checked>
-        <span>Show zone names in the drawing</span>
-      </label>
-      <div class="v3d-zone-list" id="v3d-zone-list"></div>
-      <section class="v3d-organizers hide" id="v3d-organizers">
-        <h2 class="v3d-zones-h">Organizers shown</h2>
-        <p class="small muted" style="margin:4px 0 10px">These match your plan. Quantity and spacing adjust to the measured space.</p>
-        <div class="v3d-organizer-list" id="v3d-organizer-list"></div>
-        <p class="small muted hide" id="v3d-mounted-note" style="margin:8px 0 0"></p>
-        <!-- Adding here is a PURCHASE, not a sketch: it goes on the shopping
-             list and into the cost, so the control says so rather than letting
-             someone discover it on the bill. -->
-        <div class="v3d-add-organizer hide" id="v3d-add-organizer">
-          <span class="v3d-option-name">Add one to your list</span>
-          <!-- These labels were written class="sr-only", and no such class
-               exists in this stylesheet — so they rendered as ordinary text
-               and shoved the row off the side of a phone. They are worth
-               seeing anyway: "Clear bin" and "Top shelf" on their own do not
-               say what they are choosing. Visible, and laid out as a form. -->
-          <div class="v3d-add-row">
-            <label for="v3d-add-type">Organizer type</label>
-            <select id="v3d-add-type"></select>
-            <label for="v3d-add-level">Which level</label>
-            <select id="v3d-add-level"></select>
-            <button class="btn btn-ghost btn-sm" type="button" id="v3d-add-btn">Add</button>
-          </div>
-          <p class="small muted" id="v3d-add-note" style="margin:6px 0 0">Adds it to your shopping list and cost. Nothing is bought here.</p>
+      <div class="v3d-tabs" role="tablist" aria-label="Viewer panels">
+        <button type="button" role="tab" id="v3d-tab-view" aria-selected="true" aria-controls="v3d-panel-view" tabindex="0">View</button>
+        <button type="button" role="tab" id="v3d-tab-adjust" aria-selected="false" aria-controls="v3d-panel-adjust" tabindex="-1">Adjust</button>
+      </div>
+      <div class="v3d-zones-inner">
+        <div id="v3d-panel-view" role="tabpanel" aria-labelledby="v3d-tab-view">
+          <h2 class="v3d-zones-h" id="v3d-zones-h">Zones</h2>
+          <!-- A zone is a row of the plan. For a unit each row is a shelf and
+               the line says so; for a room the viewer rewrites it, because
+               there the rows are grouped under the wall they are on. -->
+          <p class="small muted" id="v3d-zones-sub" style="margin:4px 0 10px">One per shelf: what that shelf is for. Hover a zone to spotlight it.</p>
+          <label class="v3d-labels-toggle" for="v3d-show-labels">
+            <input type="checkbox" id="v3d-show-labels" checked>
+            <span>Show zone names in the drawing</span>
+          </label>
+          <div class="v3d-zone-list" id="v3d-zone-list"></div>
+          <section class="v3d-organizers hide" id="v3d-organizers">
+            <h2 class="v3d-zones-h">Organizers shown</h2>
+            <!-- Filled by the viewer in three groups: what is on the shopping
+                 list, what the plan says is already owned, and what is drawn
+                 only to match the style picked. The old single line said they
+                 all matched the plan, which was true of the first group. -->
+            <div class="v3d-organizer-list" id="v3d-organizer-list"></div>
+            <p class="small muted hide" id="v3d-mounted-note" style="margin:8px 0 0"></p>
+          </section>
+          <!-- The size the drawing is at, in the reader's units, where it can
+               be read without opening anything. -->
+          <p id="v3d-size-line" class="small muted"></p>
         </div>
-      </section>
-     </div>
+        <div id="v3d-panel-adjust" role="tabpanel" aria-labelledby="v3d-tab-adjust" hidden>
+          <div class="v3d-layout-section">
+            <span class="v3d-label">Layout type</span>
+            <div class="v3d-layout-chips" id="v3d-layouts"></div>
+          </div>
+          <div class="v3d-structure hide" id="v3d-structure">
+            <!-- Named for the levels of the CHOSEN layout ("Shelves", "Drawers",
+                 "Zones"). "Shelves" used to appear only in the layout-type row
+                 above, which read as though a shelf were a peer of a walk-in
+                 rather than something a walk-in has. -->
+            <span class="v3d-label" id="v3d-structure-label">Shelves</span>
+            <!-- Each of these two rows appears for exactly one layout and
+                 changes the SHAPE of the drawing, so they sit with the count
+                 rather than behind the exact-sizes disclosure. Burying a
+                 choice that only shows up for L-runs is how a control gets
+                 missed entirely. -->
+            <div class="v3d-option-row hide" id="v3d-l-side-control">
+              <span class="v3d-option-name">L extension</span>
+              <div class="v3d-layout-chips" id="v3d-l-side">
+                <button class="v3d-chip" type="button" data-side="auto">Auto</button>
+                <button class="v3d-chip" type="button" data-side="left">Left</button>
+                <button class="v3d-chip" type="button" data-side="right">Right</button>
+              </div>
+            </div>
+            <div class="v3d-shelf-controls hide" id="v3d-shelf-controls">
+              <label class="v3d-dim"><span id="v3d-shelf-count-label">Number of shelves <strong id="v3d-shelf-count-val">4</strong></span><input type="range" id="v3d-shelf-count" min="1" max="12" value="4"></label>
+              <div class="v3d-option-row hide" id="v3d-shelf-placement-control">
+                <span class="v3d-option-name">Wall position</span>
+                <div class="v3d-layout-chips" id="v3d-shelf-placement">
+                  <button class="v3d-chip" type="button" data-placement="left">Left</button>
+                  <button class="v3d-chip" type="button" data-placement="center">Center</button>
+                  <button class="v3d-chip" type="button" data-placement="right">Right</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <details class="v3d-advanced" id="v3d-advanced">
+            <!-- The size is on the closed summary, so the panel still answers
+                 "what is this drawn at?" without being opened. -->
+            <summary id="v3d-advanced-summary">
+              <span class="v3d-adv-title">Set exact sizes</span>
+              <span class="v3d-adv-size" id="v3d-adv-size"></span>
+            </summary>
+            <div class="v3d-adv-body">
+              <div class="v3d-dims-section">
+                <span class="v3d-label">Overall size</span>
+                <div class="v3d-dims">
+                  <label class="v3d-dim"><span>Width <strong id="v3d-w-val">3&rsquo;</strong></span><input type="range" id="v3d-w" min="18" max="120" value="36"></label>
+                  <label class="v3d-dim"><span>Depth <strong id="v3d-d-val">1&rsquo;6&Prime;</strong></span><input type="range" id="v3d-d" min="10" max="36" value="18"></label>
+                  <label class="v3d-dim"><span>Height <strong id="v3d-h-val">6&rsquo;6&Prime;</strong></span><input type="range" id="v3d-h" min="36" max="96" value="78"></label>
+                </div>
+              </div>
+              <div class="v3d-heights-section" id="v3d-heights-section">
+                <div class="v3d-shelf-height-head"><span class="v3d-option-name" id="v3d-heights-label">Shelf heights</span><button class="btn btn-ghost btn-sm" type="button" id="v3d-even-shelves">Space evenly</button></div>
+                <div class="v3d-shelf-heights" id="v3d-shelf-heights"></div>
+              </div>
+            </div>
+          </details>
+          <!-- Adding here is a PURCHASE, not a sketch: it goes on the shopping
+               list and into the cost, so the control says so rather than letting
+               someone discover it on the bill. It lives with the other changes,
+               not under the list of what is drawn. -->
+          <div class="v3d-add-organizer hide" id="v3d-add-organizer">
+            <span class="v3d-option-name">Add one to your list</span>
+            <!-- These labels were written class="sr-only", and no such class
+                 exists in this stylesheet, so they rendered as ordinary text
+                 and shoved the row off the side of a phone. They are worth
+                 seeing anyway: "Clear bin" and "Top shelf" on their own do not
+                 say what they are choosing. Visible, and laid out as a form. -->
+            <div class="v3d-add-row">
+              <label for="v3d-add-type">Organizer type</label>
+              <select id="v3d-add-type"></select>
+              <label for="v3d-add-level">Which level</label>
+              <select id="v3d-add-level"></select>
+              <button class="btn btn-ghost btn-sm" type="button" id="v3d-add-btn">Add</button>
+            </div>
+            <p class="small muted" id="v3d-add-note" style="margin:6px 0 0">Adds it to your shopping list and cost. Nothing is bought here.</p>
+          </div>
+        </div>
+      </div>
     </aside>
   </div>
 

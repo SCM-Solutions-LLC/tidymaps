@@ -55,12 +55,11 @@
 
 /* ---------- 3D viewer ---------- */
 
-.v3d-controls{margin-top:22px;display:grid;gap:20px}
 .v3d-label{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);margin-bottom:10px}
 
 .v3d-layout-chips{display:flex;flex-wrap:wrap;gap:8px}
 .v3d-chip{
-  display:inline-flex;align-items:center;gap:7px;
+  display:inline-flex;align-items:center;gap:7px;min-height:44px;
   font-size:14px;font-weight:600;color:var(--ink);
   background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);
   padding:9px 16px;cursor:pointer;transition:.15s;
@@ -70,8 +69,9 @@
 .v3d-chip.sel svg{color:var(--stock)}
 .v3d-chip svg{color:var(--ink)}
 
+/* One column. The three size sliders used to sit across a full-width row;
+   in the 280px Adjust panel three abreast would be 80px each. */
 .v3d-dims{display:grid;gap:14px;grid-template-columns:1fr}
-@media(min-width:640px){.v3d-dims{grid-template-columns:1fr 1fr 1fr}}
 .v3d-dim{display:block}
 .v3d-dim span{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2);margin-bottom:6px}
 .v3d-dim strong{color:var(--ink);font-weight:700}
@@ -118,9 +118,7 @@
 .v3d-heights-section{display:grid;gap:11px}
 .v3d-option-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .v3d-option-name{font-size:14px;font-weight:700;color:var(--ink-2)}
-/* Capped so the count and its number stay in the same glance — full-width, the
-   "5" sat a thousand pixels from the words it belonged to. */
-.v3d-shelf-controls{display:grid;gap:18px;max-width:420px}
+.v3d-shelf-controls{display:grid;gap:18px}
 .v3d-shelf-height-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .v3d-shelf-heights{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}
 .v3d-shelf-height{padding:10px 12px;border:var(--rule);border-radius:var(--radius-sm);background:var(--stock)}
@@ -130,30 +128,40 @@
 .v3d-fit-note.danger{background:var(--danger-bg);color:var(--danger-ink);border-color:var(--danger-line)}
 
 .v3d-body{display:grid;gap:24px;margin-top:20px}
-/* On a phone the controls stacked above the drawing pushed the canvas below
-   the fold: "View in 3D" opened onto chips and a slider and no model. There
-   the drawing comes first and the controls, then the zones, follow it.
-   display:contents lifts the two columns out of their grid so each can be
-   ordered on its own; above the breakpoint the grid puts them side by side
-   and none of this applies. */
+/* On a phone the drawing comes first and the sidebar, tabs and all, follows
+   it: "View in 3D" should open onto the model, not onto a panel. The sidebar
+   is in flow here at its full height. display:contents lifts the two columns
+   out of their grid so each can be ordered on its own; above the breakpoint
+   the grid puts them side by side and none of this applies. */
 @media(max-width:879px){
   #screen-viewer3d.active{display:flex;flex-direction:column}
   #screen-viewer3d.active .v3d-badge{align-self:flex-start}
   .v3d-body{display:contents}
   .v3d-main{order:1;margin-top:20px}
-  .v3d-controls{order:2;margin-top:24px}
   .v3d-zones{order:3;margin-top:24px}
   .v3d-actions{order:4}
 }
 @media(min-width:880px){.v3d-body{grid-template-columns:1fr 280px}}
 
-.v3d-main{min-width:0}
+.v3d-main{min-width:0;position:relative}
 .v3d-wrap{border:var(--rule);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;background:var(--tint);position:relative}
 .v3d-wrap canvas{display:block;width:100%;height:min(68vh,560px);touch-action:none;cursor:grab}
 .v3d-wrap canvas:active{cursor:grabbing}
 /* The drawing takes keyboard focus (it is a widget, not a picture); the ring
    sits inside the frame so the frame's own rule stays a rule. */
 .v3d-wrap canvas:focus-visible{outline:2px solid var(--spot);outline-offset:-3px}
+/* The keyboard help toggle: a 44px round button, the modal's close button
+   (components.css .modal-x) with a face of its own, since it sits in the top
+   right corner over the drawing where the only other cue is a grab cursor.
+   Open, it takes the selection tint the way a selected tab does. */
+.v3d-keys-btn{
+  position:absolute;top:10px;right:10px;z-index:1;width:44px;height:44px;
+  border:var(--rule);border-radius:50%;background:var(--stock);color:var(--ink);
+  font-family:var(--sans);font-size:18px;font-weight:700;display:grid;place-items:center;
+  box-shadow:var(--shadow-sm);cursor:pointer;transition:.15s;
+}
+.v3d-keys-btn:hover{background:var(--tint)}
+.v3d-keys-btn[aria-expanded="true"]{background:var(--sel-bg);border-color:var(--primary-line);color:var(--primary-2)}
 
 .v3d-zones{align-self:start}
 
@@ -163,17 +171,33 @@
    column's ~640, and the 475px difference was blank page under the model.
 
    The sidebar's content is taken out of the grid row's height calculation
-   (absolute, so it contributes nothing) and the row is therefore sized by the
-   canvas column alone; the sidebar then fills exactly that and scrolls inside
-   it. No overscroll-behavior on purpose: reaching the end of the list should
-   carry on scrolling the page, the way an unnested column does.
+   (both children absolute, so the aside asks for no height of its own) and
+   the row is therefore sized by the canvas column alone; the sidebar is
+   stretched to exactly that, the tabs are pinned to its top and the inner
+   div fills the rest and scrolls. The tabs are a fixed 44px row (--tabs-h), so
+   the scroller starts a known distance down. The inner div used to be
+   inset:0 on its own, which put the tabs inside the scroller.
+
+   Not a flex column, deliberately. A column whose height comes only from the
+   grid (height:0 with min-height:100%, or contain:size) sizes the row
+   correctly, but when the sidebar's text re-wraps after first paint (the
+   webfont arriving) Chromium never repaints the new last line: "spotlight
+   it." lost its "it.". Absolutely positioned children invalidate from their
+   own boxes and paint whole. No overscroll-behavior on purpose: reaching the
+   end of the list should carry on scrolling the page, the way an unnested
+   column does.
 
    Only above the two-column breakpoint. On a phone the sections are stacked
    and each one wants its own full height. */
 @media(min-width:880px){
   .v3d-wrap canvas{height:min(72vh,640px)}
-  .v3d-zones{align-self:stretch;position:relative;min-height:0;overflow:hidden}
-  .v3d-zones-inner{position:absolute;inset:0;overflow-y:auto;scrollbar-gutter:stable;padding-right:4px}
+  /* --ring is the room a focus ring needs (2px outline, 2px offset): the
+     column clips, so the tabs sit that far in from its edges and the
+     scroller pads its content the same, or the ring on a tab, a zone or a
+     chip at the edge was cut off on the side nearest it. */
+  .v3d-zones{--tabs-h:44px;--tabs-gap:10px;--ring:4px;align-self:stretch;position:relative;min-height:0;overflow:hidden}
+  .v3d-tabs{position:absolute;top:var(--ring);left:var(--ring);right:var(--ring);margin:0}
+  .v3d-zones-inner{position:absolute;top:calc(var(--ring) + var(--tabs-h) + var(--tabs-gap));left:0;right:0;bottom:0;overflow-y:auto;scrollbar-gutter:stable;padding:var(--ring) var(--ring) 0}
   /* Content clipped flat at the panel's edge reads as broken rather than as
      "there is more" — the chips were being sliced through the middle. The
      fade says the list continues; it is drawn over the scroller and must not
@@ -183,7 +207,34 @@
     background:linear-gradient(to bottom,transparent,var(--bg,var(--surface-2)));
   }
 }
+/* The two panels' tabs: the report's wall tabs (components.css .wall-tabs),
+   a 44px pill with the selected one in the selection tint, two of them
+   sharing the column. */
+.v3d-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.v3d-tabs [role=tab]{min-height:44px;height:44px;padding:0 12px;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-pill);font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .16s,background-color .16s,color .16s}
+.v3d-tabs [role=tab]:hover{background:var(--tint)}
+.v3d-tabs [role=tab][aria-selected="true"]{background:var(--sel-bg);border-color:var(--primary-line);color:var(--primary-2)}
+.v3d-tabs [role=tab]:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+/* The Adjust panel stacks its blocks on a grid, but only while it is the
+   panel on show: an unconditional display on an id would beat the browser's
+   own [hidden]{display:none}, and both panels would be on screen at once. */
+#v3d-panel-adjust:not([hidden]){display:grid;gap:20px}
 .v3d-zones-h{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em}
+/* No one-word last lines in the sidebar's paragraphs: the column is narrow
+   and a lone "it." under a sentence reads as a mistake. It is also a paint
+   fix. Chromium (the Playwright build, 1194) left exactly that two-letter
+   last line of the zones sub-line unpainted inside this scroller, whatever
+   the scroller's shape; rewrapped so the last line carries two words, it
+   paints. Browsers without text-wrap:pretty wrap as before. */
+.v3d-zones p{text-wrap:pretty}
+/* The wall a run of zones is on, and the source a run of organizers has: the
+   report's .cab-wall look, a small label over the rows it heads. */
+.v3d-wall-h,.v3d-org-h{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:var(--tracking-label);margin:12px 0 6px}
+.v3d-zone-list .v3d-wall-h:first-child,.v3d-organizer-list .v3d-org-h:first-child{margin-top:2px}
+/* A room's level without its wall, over the zone name: "Eye level", since the
+   wall heading above has already said "Back wall". */
+.v3d-zone-lv{display:block;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-3);margin-bottom:2px}
+#v3d-size-line{margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line)}
 .v3d-zone-list{display:grid;gap:0}
 /* The zone-label switch. A real 44px row rather than a bare checkbox: it sits
    in a sidebar people use on a phone, where the drawing is the whole screen
@@ -205,7 +256,9 @@
 .v3d-zone-item h3{font-size:15px;font-weight:700;margin:0}
 .v3d-zone-item p{font-size:13px;color:var(--ink-3);margin:3px 0 0;line-height:1.45}
 .v3d-organizers{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
-.v3d-organizer-list{display:flex;flex-wrap:wrap;gap:7px}
+.v3d-organizer-list{display:grid;gap:0}
+.v3d-org-chips{display:flex;flex-wrap:wrap;gap:7px}
+.v3d-org-note{margin:8px 0 0}
 .v3d-organizer-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:var(--rule-2);border-radius:var(--radius-pill);background:var(--stock);font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink)}
 .v3d-organizer-chip i{width:10px;height:10px;border-radius:3px;background:var(--tint);border:1px solid oklch(0.27 0.02 40 / .35)}
 .v3d-organizer-chip[data-type="basket"] i{background:var(--spot)}

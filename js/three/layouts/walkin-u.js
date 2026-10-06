@@ -1,48 +1,26 @@
 import * as THREE from 'three';
-import {addBox,addShelfLabel,accentFor,makeHitbox} from './helpers.js';
-
-function distributeRows(layout,rowsByShelf,count){
-  const sections=(layout&&layout.sections)||[];
-  const explicit=sections.some(sec=>['left','back','right','floor'].includes(sec.id)||['left','back','right','floor'].includes(sec.place));
-  const out={left:[],back:[],right:[],floor:[]};
-  if(explicit){
-    sections.forEach(sec=>{
-      const key=['left','back','right','floor'].find(k=>sec.id===k||sec.place===k)||'back';
-      (sec.rows||[]).forEach(i=>out[key].push(i));
-    });
-    return out;
-  }
-  const all=sections.length?[...new Set(sections.flatMap(sec=>sec.rows||[]))]:Array.from({length:count},(_,i)=>i);
-  const movable=[];
-  all.forEach(i=>((rowsByShelf.get(i)||{}).surface==='floor'?out.floor:movable).push(i));
-  movable.forEach((i,index)=>out[['left','back','right'][index%3]].push(i));
-  return out;
-}
-
-function addRod(scene,length,x,y,z,axis,material){
-  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,length,14),material);
-  if(axis==='x') mesh.rotation.z=Math.PI/2;
-  else mesh.rotation.x=Math.PI/2;
-  mesh.position.set(x,y,z);
-  mesh.castShadow=true;
-  scene.add(mesh);
-}
+import {addBox,addShelfLabel,accentFor,makeHitbox,addRod} from './helpers.js';
+import { roomPlanFor, roomShelfDepth, runLength } from '../roomBoards.js';
 
 /* Walk-in room using full measured footprint. Three storage walls wrap one
-   open aisle. Shelves and rods stay realistic depth instead of filling room. */
+   open aisle. Shelves and rods stay realistic depth instead of filling room.
+
+   The room is one fitted system: every wall carries the same N boards at
+   the same heights (geo.NSH, geo.shelfYs), and each plan row sits on one
+   board of one wall. Which wall and which board come from the room plan
+   (roomBoards.js), the same reading of the plan the report's wall tabs use.
+   The builder used to draw one board per plan ROW on every wall and deal
+   rows onto walls round-robin, so a 12-row pantry became 12 boards on each
+   of three walls and the wall the plan named was ignored. */
 export function build(ctx){
   const {scene,geo,rowsByShelf,mats,layout}=ctx;
   const {W,H,D,T,NSH,shelfYs,gapAbove}=geo;
-  /* A fifth of the smaller room dimension, held between 14 and 18 inches
-     wherever the room can hold a 14-inch shelf. The floor used to be 8,
-     which gave a 4-foot linen closet 9.6-inch shelving that no basket in
-     the catalog fits; 14 is the shallowest closet shelf sold, and leaves a
-     20-inch aisle in that closet. A room shallower than 28 inches is not a
-     walk-in whatever the card said, and a shelf deeper than half of it
-     would stand outside the measured footprint, so there the old
-     proportion holds with its floor of 8. */
-  const smallest=Math.min(W,D);
-  const shelfDepth=Math.max(8,Math.min(18,Math.max(14,smallest*0.2),smallest*0.5));
+  const geometry={width:W,height:H,depth:D};
+  /* The depth formula lives in roomBoards.js (roomShelfDepth) with the
+     reasons for its 14-inch floor and half-room cap; it is also the server's
+     usableShelfDepth and catalog.js shelfDepthFor, and tests hold them equal
+     (catalog-fit.test.mjs, plan-schema.test.mjs). */
+  const shelfDepth=roomShelfDepth('walkin-u',geometry);
   const rodMat=new THREE.MeshStandardMaterial({color:0x8d9490,metalness:0.7,roughness:0.24});
 
   addBox(scene,W,T,D,0,T/2,0,mats.carcass);
@@ -50,54 +28,68 @@ export function build(ctx){
   addBox(scene,T,H,D,-W/2+T/2,H/2,0,mats.carcass);
   addBox(scene,T,H,D,W/2-T/2,H/2,0,mats.carcass);
 
-  const rows=distributeRows(layout,rowsByShelf,NSH);
+  /* buildScene passes the room plan it computed; a builder called on its
+     own (the layout spec does, with sections and no map) computes it here.
+     The layout a direct caller hands over may carry no type, and this
+     builder is the walk-in whatever it says, so the type is pinned. */
+  const room=ctx.room||roomPlanFor({ map:ctx.map, layout:{...(layout||{}),type:'walkin-u'}, N:NSH, boardYs:shelfYs, rowsByShelf });
   const surfaces=[];
-  const backLength=Math.max(8,W-2*shelfDepth-2*T-2);
-  const sideLength=Math.max(8,D-shelfDepth-2*T-6);
+  const backLength=runLength('walkin-u','back',geometry);
+  const sideLength=runLength('walkin-u','left',geometry);
+  const backZ=-D/2+T+shelfDepth/2;
+  const sideZ=-D/2+T+shelfDepth+sideLength/2;
+  const wallX={left:-W/2+T+shelfDepth/2,back:0,right:W/2-T-shelfDepth/2};
+  const rowFor=idx=>rowsByShelf.get(idx)||null;
+  const kindOf=row=>(row&&row.surface)||'shelf';
+  const rodY=board=>Math.min(H-7,shelfYs[board]+gapAbove[board]*0.78);
 
-  // A walk-in is one continuous fitted system, not three unrelated ledges.
-  // Repeat each physical tier around the room while assigning its items to
-  // just one wall below.
-  for(let idx=0;idx<NSH;idx++){
-    const baseY=shelfYs[idx];
-    if(baseY===undefined) continue;
-    const row=rowsByShelf.get(idx)||null;
-    const kind=(row&&row.surface)||'shelf';
-    if(kind==='floor') continue;
-    const y=kind==='rod'?Math.min(H-7,baseY+gapAbove[idx]*0.78):baseY;
-    const backZ=-D/2+T+shelfDepth/2;
-    const sideZ=-D/2+T+shelfDepth+sideLength/2;
-    if(kind==='rod'){
-      addRod(scene,backLength,0,y,backZ,'x',rodMat);
-      addRod(scene,sideLength,-W/2+T+shelfDepth/2,y,sideZ,'z',rodMat);
-      addRod(scene,sideLength,W/2-T-shelfDepth/2,y,sideZ,'z',rodMat);
-    }else if(baseY>1.6*T&&baseY<H-2*T){
-      addBox(scene,backLength,T,shelfDepth,0,baseY-T/2,backZ,mats.shelf);
-      addBox(scene,shelfDepth,T,sideLength,-W/2+T+shelfDepth/2,baseY-T/2,sideZ,mats.shelf);
-      addBox(scene,shelfDepth,T,sideLength,W/2-T-shelfDepth/2,baseY-T/2,sideZ,mats.shelf);
+  /* Which board of which wall carries a rod row, so that board is drawn as
+     a rod on that wall and as a shelf everywhere else. */
+  const rodAt=new Set();
+  for(const [idx,wall] of room.wallOf){
+    if(kindOf(rowFor(idx))==='rod') rodAt.add(`${wall}:${room.boardOf.get(idx)}`);
+  }
+
+  for(const wall of ['left','back','right']){
+    const back=wall==='back';
+    const length=back?backLength:sideLength;
+    const x=wallX[wall];
+    const z=back?backZ:sideZ;
+    for(let board=0;board<NSH;board++){
+      const baseY=shelfYs[board];
+      if(baseY===undefined) continue;
+      if(rodAt.has(`${wall}:${board}`)){
+        addRod(scene,length,x,rodY(board),z,back?'x':'z',rodMat);
+      }else if(baseY>1.6*T&&baseY<H-2*T){
+        addBox(scene,back?length:shelfDepth,T,back?shelfDepth:length,x,baseY-T/2,z,mats.shelf);
+      }
     }
   }
 
-  function buildSurface(idx,wall){
-    const baseY=shelfYs[idx];
-    if(baseY===undefined) return;
-    const row=rowsByShelf.get(idx)||null;
-    const kind=(row&&row.surface)||'shelf';
-    const floor=kind==='floor'||wall==='floor';
-    const rod=kind==='rod';
-    if(floor){
-      const hit=makeHitbox(scene,W-2*T,6,D-2*T,0,T+3,0,{shelfIndex:idx,shelfY:T,row});
-      if(row) addShelfLabel(scene,row,-W/2,T+3.5,D/2+0.7);
-      surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:W-2*T-2,gap:10,depth:D,itemDepth:Math.min(D*0.3,9)});
-      return;
-    }
+  function buildFloor(idx){
+    const row=rowFor(idx);
+    const hit=makeHitbox(scene,W-2*T,6,D-2*T,0,T+3,0,{shelfIndex:idx,shelfY:T,row});
+    if(row) addShelfLabel(scene,row,-W/2,T+3.5,D/2+0.7);
+    surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:W-2*T-2,gap:10,depth:D,itemDepth:Math.min(D*0.3,9)});
+  }
 
+  function buildSurface(idx,wall){
+    const board=room.boardOf.get(idx);
+    const baseY=shelfYs[board];
+    if(baseY===undefined) return;
+    const row=rowFor(idx);
+    const kind=kindOf(row);
+    if(kind==='floor'){ buildFloor(idx); return; }
+    const rod=kind==='rod';
     const back=wall==='back';
     const left=wall==='left';
     const length=back?backLength:sideLength;
-    const x=back?0:left?-W/2+T+shelfDepth/2:W/2-T-shelfDepth/2;
-    const z=back?-D/2+T+shelfDepth/2:-D/2+T+shelfDepth+sideLength/2;
-    const y=rod?Math.min(H-7,baseY+gapAbove[idx]*0.78):baseY;
+    const x=wallX[wall];
+    const z=back?backZ:sideZ;
+    const y=rod?rodY(board):baseY;
+    /* The pitch to the board above on this wall, or to the ceiling for the
+       top board. Every wall shares the boards, so it is the board's own. */
+    const gap=gapAbove[board];
 
     const accent=accentFor(row);
     if(accent) addBox(scene,back?length:0.4,0.35,back?0.4:length,
@@ -107,19 +99,24 @@ export function build(ctx){
       { normal: back?new THREE.Vector3(0,0,1):new THREE.Vector3(left?1:-1,0,0) });
 
     const hit=makeHitbox(scene,back?length:shelfDepth,Math.max(6,H/NSH*0.8),back?shelfDepth:length,
-      x,rod?y-gapAbove[idx]*0.25:y+Math.max(3,H/NSH*0.4),z,{shelfIndex:idx,shelfY:y,row});
+      x,rod?y-gap*0.25:y+Math.max(3,H/NSH*0.4),z,{shelfIndex:idx,shelfY:y,row});
+    /* uDir is the direction slots run in and, through surfaceRotationY,
+       which way items face: an item is authored facing +z and turned by
+       atan2(-u.z, u.x). The right wall's (0,0,1) turns items to face -x,
+       into the aisle, and its slots read left to right from the aisle. The
+       left wall used the same vector, so its items faced -x as well: into
+       their own wall, backs to the room, and its slots ran right to left as
+       seen from the aisle. (0,0,-1) puts both right at once. */
     surfaces.push({
       index:idx,kind,row,y,hitbox:hit,
-      uDir:back?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,1),
+      uDir:back?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,left?-1:1),
       normal:back?new THREE.Vector3(0,0,1):new THREE.Vector3(left?1:-1,0,0),
-      length,gap:rod?Math.max(10,gapAbove[idx]*0.75):gapAbove[idx],depth:shelfDepth,itemDepth:rod?1.5:Math.min(shelfDepth*0.58,8),
+      length,gap:rod?Math.max(10,gap*0.75):gap,depth:shelfDepth,itemDepth:rod?1.5:Math.min(shelfDepth*0.58,8),
     });
   }
 
-  rows.left.forEach(i=>buildSurface(i,'left'));
-  rows.back.forEach(i=>buildSurface(i,'back'));
-  rows.right.forEach(i=>buildSurface(i,'right'));
-  rows.floor.forEach(i=>buildSurface(i,'floor'));
+  for(const wall of room.walls) wall.rows.forEach(idx=>buildSurface(idx,wall.id));
+  room.floorRows.forEach(idx=>buildFloor(idx));
   scene.userData.layoutFootprint={type:'walkin-u',width:W,depth:D,shelfDepth};
   return {surfaces};
 }

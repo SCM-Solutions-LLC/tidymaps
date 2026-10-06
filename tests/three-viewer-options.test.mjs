@@ -2,8 +2,63 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   evenShelfFracs,normalizeViewerGeometry,geometryWithShelfCount,
-  geometryWithShelfHeight,mapForShelfCount,inferLSide,
+  geometryWithShelfHeight,mapForShelfCount,inferLSide,roomGeometryFor,roomShelfFracs,
 } from '../js/three/viewerOptions.js';
+
+/* A room's plan arrives with shelfCount equal to its row count, and the
+   viewer now reads a room's count as boards per wall. The screen converts
+   once and stamps the geometry so nothing converts it twice; the edits a
+   user makes afterwards have to keep the stamp, or the next rebuild would
+   re-derive the count over their slider. */
+test('a room geometry carries its board count, the room spread and the boards stamp',()=>{
+  const source={ width:72, height:96, depth:72, shelfCount:12, shelfYFracs:Array.from({length:12},(_,i)=>0.08+0.82*i/11), estimated:true, unit:'in' };
+  const room=roomGeometryFor(source,5);
+  assert.equal(room.shelfCount,5);
+  assert.deepEqual(room.shelfYFracs,roomShelfFracs(5));
+  assert.equal(room.levelsAre,'boards');
+  assert.equal(room.estimated,true,'the count changing says nothing about the measurements');
+  assert.equal(room.width,72);
+  assert.equal(room.unit,'in','other fields pass through');
+  assert.equal(source.shelfCount,12,'the input is not mutated');
+  assert.equal(roomGeometryFor(source,14).shelfCount,12,'clamped to the twelve the viewer can draw');
+  assert.equal(roomGeometryFor(source,0).shelfCount,1);
+
+  assert.equal(geometryWithShelfCount(room,4).levelsAre,'boards','changing the count keeps the stamp');
+  assert.equal(geometryWithShelfHeight(room,1,50).levelsAre,'boards','moving a board keeps the stamp');
+  assert.equal(normalizeViewerGeometry(room,'walkin-u').levelsAre,'boards','normalizing keeps the stamp');
+  assert.equal('levelsAre' in geometryWithShelfCount({ width:36, height:78, depth:18 },4),false,'a unit never grows one');
+});
+
+/* A room's lowest board is a shelf above the floor, not the floor. The even
+   spread ends at 0.92, past the floor snap (0.86 in scene.js and in
+   roomBoards.boardYsFromFracs), which is right for a unit, whose base is its
+   bottom level, and wrong for a room, whose floor is drawn already: every
+   wall's bottom row sat on the slab beside the floor rows, and an L's corner
+   shelf ran through it. */
+test('a room\'s boards all stay above the floor snap, through every helper that spaces them',()=>{
+  for(let n=1;n<=12;n++){
+    const fracs=roomShelfFracs(n);
+    assert.equal(fracs.length,n);
+    assert.ok(fracs[n-1]<0.86,`${n} boards: the lowest, ${fracs[n-1]}, would snap to the floor`);
+    assert.ok(fracs.every((value,index)=>index===0||value>fracs[index-1]),'top to bottom');
+    // n+1 equal compartments: the one under the lowest board is as tall as the others.
+    const gaps=[fracs[0],...fracs.slice(1).map((value,index)=>value-fracs[index]),0.92-fracs[n-1]];
+    assert.ok(gaps.every(gap=>Math.abs(gap-gaps[0])<1e-9),`${n} boards: uneven compartments ${gaps}`);
+    assert.notDeepEqual(fracs,evenShelfFracs(n),`${n} boards: a room is not spaced like a unit`);
+  }
+  const room=roomGeometryFor({ width:72, height:96, depth:72 },5);
+  assert.deepEqual(room.shelfYFracs,roomShelfFracs(5));
+  assert.deepEqual(geometryWithShelfCount(room,4).shelfYFracs,roomShelfFracs(4),'the count slider on an untouched room keeps the room spread');
+  assert.deepEqual(geometryWithShelfCount(room,4,{ preserveSpacing:false }).shelfYFracs,roomShelfFracs(4),'"Space evenly" on a room is the room spread');
+  assert.deepEqual(normalizeViewerGeometry({ ...room, shelfYFracs:undefined },'walkin-u').shelfYFracs,roomShelfFracs(5),'a room geometry with no fractions gets the room spread');
+  assert.deepEqual(normalizeViewerGeometry({ width:36, height:78, depth:18, shelfCount:5 },'cabinet').shelfYFracs,evenShelfFracs(5),'a unit keeps the even spread, floor included');
+  // A board the reader moved survives a count change with its shape, as on a unit, and the lowest stays off the floor.
+  const moved=geometryWithShelfHeight(room,2,40);
+  const resized=geometryWithShelfCount(moved,6);
+  assert.equal(resized.shelfYFracs.length,6);
+  assert.notDeepEqual(resized.shelfYFracs,roomShelfFracs(6),'the moved board is kept, not reset');
+  assert.ok(resized.shelfYFracs[5]<0.86,'resampling a moved room keeps its lowest board off the floor');
+});
 
 test('under-sink viewer uses normal vanity height',()=>{
   assert.equal(normalizeViewerGeometry({width:30,height:96,depth:20,shelfCount:3},'under-sink').height,42);

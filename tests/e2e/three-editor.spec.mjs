@@ -1,4 +1,5 @@
 import {test,expect} from 'playwright/test';
+import {openAdjust} from './helpers.mjs';
 
 test('L side selector mirrors scene and saves choice',async({page})=>{
   await page.goto('/index.html');
@@ -11,6 +12,8 @@ test('L side selector mirrors scene and saves choice',async({page})=>{
     state.ai=normalizeAi(getDemoScenario('closet',null,state.household,null));
     await window.openViewer3d();
   });
+  // The L side is a control, and the controls live under the Adjust tab.
+  await openAdjust(page);
   await expect(page.locator('#v3d-l-side-control')).toBeVisible();
   await page.locator('[data-side="left"]').click();
   await page.locator('#v3d-save').click();
@@ -24,7 +27,10 @@ test('L side selector mirrors scene and saves choice',async({page})=>{
     const {state}=await import('/js/state.js');
     return state.arrangement;
   });
-  expect(saved.version).toBe(2);
+  /* Version 3: a room's shelfCount is boards per wall now, where version 2
+     stored one tier per plan row, and the viewer reads the number by the
+     version it was saved under (js/three/roomBoards.js arrangementGeometryFor). */
+  expect(saved.version).toBe(3);
   expect(saved.lSide).toBe('left');
 });
 
@@ -39,6 +45,7 @@ test('wall shelf editor saves count, placement, and uneven heights',async({page}
     state.ai=normalizeAi(getDemoScenario('bathroom',null,state.household,null));
     await window.openViewer3d();
   });
+  await openAdjust(page);
   await expect(page.locator('#v3d-shelf-controls')).toBeVisible();
   await expect(page.locator('#v3d-shelf-placement-control')).toBeVisible();
   await page.locator('[data-placement="right"]').click();
