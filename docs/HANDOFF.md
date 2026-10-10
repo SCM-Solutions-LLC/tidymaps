@@ -291,6 +291,46 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-10 session changed (a rod closet's shelf depth, portrait previews)
+
+Two fixes from the first owner test runs on Sonnet 5.5 (10-10, 04:42 to 05:05
+UTC, driven through Claude in Chrome). The runs themselves get their own entry
+once the second batch is in.
+
+**A rod closet is judged by its shelf, not its depth.** `shelfDepthFor` in
+`js/catalog.js` returned the measured depth for every layout that is not
+room-shaped, so a 30-inch reach-in badged its picks "Fits your 30" shelf depth"
+and would have passed a 20-inch bin. A `closet-rod` layout (reach-in and
+wardrobe) is now capped at `CLOSET_SHELF_IN`, 14 inches, the builders' floor
+the walk-in formula already uses, or its own depth if shallower. The badge,
+the product search cap and the 3D view's fit note all read this one function.
+`builtin` (closet-system) and the linen reach-in (shelves) keep their measured
+depth.
+
+**Client-only on purpose.** The server's `usableShelfDepth` still treats a rod
+closet's measurement as its shelf, and the prompt tells the model the same, so
+the validator allows `maxDims.d_in` up to the closet depth less 0.5in. That
+leaves the validator looser than the client, never stricter, which is the
+direction that cannot fail an analysis; the client searches at the tighter of
+the two. The 3D view still draws a rod closet's shelves the full depth of the
+closet. **Open:** bring the prompt, `usableShelfDepth` and the closet-rod
+builder in line together, once a reach-in closet analysis can be checked live.
+The equality loop in `plan-schema.test.mjs` covers walkin-u, l-run, cabinet and
+shelves, not closet-rod, and the new case in `catalog-fit.test.mjs` pins the
+difference.
+
+**A portrait photo shows top to bottom in the preview.** `.ba-slider img` was
+`object-fit: cover` under a 480px cap, so at a computer's width a phone photo
+showed only its middle band. It is `contain` now, with the frame's tint either
+side; at phone width nothing changes. A new case in
+`before-after-slider.spec.mjs` needs a green top stripe and a blue bottom
+stripe both in view, and goes red under `cover`.
+
+**Open from the same runs:** "Also in your photo" came back empty
+(`spotted: 0` in the plan-quality log) on the walk-in pantry with Canned goods
+unticked and cans in plain view, which the prompt says belong there. One run,
+so a repeat is queued before the prompt is touched.
+
 ## What the 2026-10-06 session changed, part 2 (the funnel is off in the owner's browser, and no one else uses the app)
 
 No code change. Open item 6 is diagnosed by measurement, and what it waits on
