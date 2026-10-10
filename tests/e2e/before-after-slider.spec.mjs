@@ -14,7 +14,7 @@ const solid = (hex) => 'data:image/svg+xml;base64,' + Buffer.from(
 const BEFORE = solid('#ff0000');   // red
 const AFTER = solid('#0000ff');    // blue
 
-async function showSlider(page, pos) {
+async function showSlider(page, pos, before = BEFORE, after = AFTER) {
   await page.goto('/index.html');
   await page.evaluate(([before, after, at]) => {
     document.getElementById('screen-landing').classList.remove('active');
@@ -26,7 +26,7 @@ async function showSlider(page, pos) {
     slider.querySelector('input[type=range]').value = String(at);
     document.getElementById('ba-before-img').src = before;
     document.getElementById('ba-after-img').src = after;
-  }, [BEFORE, AFTER, pos]);
+  }, [before, after, pos]);
   // The before/after chapter starts folded, which would hide the slider this
   // test screenshots.
   await expandChapters(page);
@@ -70,6 +70,43 @@ test('the half labelled "Before" shows the photo, the half labelled "After" show
   const { left, right } = await sampleHalves(page);
   expect(left, 'the "Before" side must be the original photo').toBe('red');
   expect(right, 'the "After · AI" side must be the render').toBe('blue');
+});
+
+/* A phone photo is portrait. The frame is capped at 480px tall and used to
+   cover its full width, so at a computer's width a tall photo showed only its
+   middle band (a 2026-10-10 test run: "only the middle band shows"). Green
+   top and blue bottom stripes must both be in view. */
+const PORTRAIT = 'data:image/svg+xml;base64,' + Buffer.from(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400">'
+  + '<rect width="300" height="400" fill="#ff0000"/>'
+  + '<rect width="300" height="60" fill="#00ff00"/>'
+  + '<rect y="340" width="300" height="60" fill="#0000ff"/></svg>',
+).toString('base64');
+
+test('a portrait photo is shown top to bottom, not cropped to its middle band', async ({ page }) => {
+  await showSlider(page, 100, PORTRAIT, PORTRAIT);
+  const box = await page.locator('#ba-slider').boundingBox();
+  expect(box.width, 'the frame must be wider than the photo is tall, or nothing gets cropped').toBeGreaterThan(400);
+  const shot = await page.locator('#ba-slider').screenshot();
+  const { top, bottom } = await page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,' + b64;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const name = (y) => {
+      const [r, g, b] = ctx.getImageData(Math.round(img.width / 2), Math.round(img.height * y), 1, 1).data;
+      if (g > 200 && r < 60 && b < 60) return 'green';
+      if (b > 200 && r < 60 && g < 60) return 'blue';
+      if (r > 200 && g < 60 && b < 60) return 'red';
+      return 'other';
+    };
+    return { top: name(0.03), bottom: name(0.97) };
+  }, shot.toString('base64'));
+  expect(top, 'the top of the photo must be in view').toBe('green');
+  expect(bottom, 'the bottom of the photo must be in view').toBe('blue');
 });
 
 test('dragging the divider wipes between the two, never showing one image twice', async ({ page }) => {
