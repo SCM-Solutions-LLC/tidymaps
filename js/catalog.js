@@ -65,12 +65,24 @@ export const CARCASS_WIDTH_ALLOWANCE = 3.5;
    the fit note in the 3D view is what a pick is judged by in the end; the
    server's usableShelfDepth (planSchema.js) is the same expression, and a
    test holds the two equal. Anything else is a unit whose measured depth is
-   its shelf depth. The second argument is a setup id or an archetype. */
+   its shelf depth. The second argument is a setup id or an archetype.
+
+   Except a closet with a hanging rod (a reach-in or a wardrobe): it is
+   measured door to back wall, mostly hanging space, and the shelf over the
+   rod is 12 to 16 inches deep however deep the closet is. A 2026-10-10 test
+   run badged bins "Fits your 30" shelf depth" for a 30-inch reach-in. It is
+   capped at the builders' 14-inch floor the walk-in formula already uses.
+   Client-side only, deliberately: the server's usableShelfDepth still
+   treats this measurement as the shelf, which leaves its validator looser
+   than this check, never stricter. */
 const ROOM_SHELF_FACTOR={'walkin-u':0.2,'l-run':0.22};
+const CLOSET_SHELF_IN=14;
 export function shelfDepthFor(dims, setupOrArchetype){
   const depth=Number(dims && dims.d_in)||0;
   if(!depth) return null;
-  const factor=ROOM_SHELF_FACTOR[SETUP_ARCHETYPE[setupOrArchetype]||setupOrArchetype];
+  const archetype=SETUP_ARCHETYPE[setupOrArchetype]||setupOrArchetype;
+  if(archetype==='closet-rod') return Math.min(depth, CLOSET_SHELF_IN);
+  const factor=ROOM_SHELF_FACTOR[archetype];
   if(!factor) return depth;
   const width=Number(dims && dims.w_in)||depth;
   const smallest=Math.min(width, depth);

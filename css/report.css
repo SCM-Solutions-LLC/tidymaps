@@ -179,7 +179,9 @@
    its own label — "Before" left, "After" right. Dragged via a full-bleed
    invisible range input. */
 .ba-slider{position:relative;overflow:hidden;border:var(--rule);border-radius:var(--radius-lg);background:var(--tint)}
-.ba-slider img{width:100%;display:block;max-height:480px;object-fit:cover}
+/* contain, not cover: a phone photo is portrait, and at a computer's width the
+   480px cap left only its middle band in view. The tint fills the sides. */
+.ba-slider img{width:100%;display:block;max-height:480px;object-fit:contain}
 .ba-slider .after-img{position:absolute;inset:0;height:100%;clip-path:inset(0 0 0 var(--pos,50%))}
 .ba-slider .ba-divider{
   position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;

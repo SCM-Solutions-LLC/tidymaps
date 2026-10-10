@@ -132,3 +132,31 @@ test('the shelf depth follows the layout the 3D view draws, not the preselected 
     state.setup = 'cabinet'; state.setupTouched = false;
   }
 });
+
+/* A reach-in closet is measured door to back wall, and most of that is
+   hanging space: the shelf over the rod is 12 to 16 inches deep. A 2026-10-10
+   test run on a 30-inch reach-in badged its picks "Fits your 30" shelf depth"
+   and would have let a 20-inch bin through. */
+test('a closet with a hanging rod is judged by the shelf over the rod, not the closet', () => {
+  state.space = 'closet';
+  state.setup = 'reachinC'; state.setupTouched = true;
+  state.dims = { w_in: 60, h_in: 96, d_in: 30, shelves: null };
+  try {
+    assert.equal(currentArchetype(), 'closet-rod');
+    assert.equal(shelfDepthFor(state.dims, 'reachinC'), 14, 'a 30-inch reach-in has a 14-inch shelf');
+    assert.equal(shelfDepthFor(state.dims, 'closet-rod'), 14, 'an archetype is accepted in place of a setup id');
+    assert.equal(shelfDepthFor(state.dims, 'wardrobe'), 14, 'a wardrobe is the same closet-rod layout');
+    assert.equal(shelfDepthFor({ w_in: 36, h_in: 84, d_in: 12 }, 'reachinC'), 12, 'a closet shallower than the shelf keeps its own depth');
+    const need = { type: 'clear-bin', maxDims: null };
+    assert.equal(fitFor({ dims_in: { w: 12, h: 8, d: 20 } }, need), 'no-fit', 'a 20-inch bin does not fit the shelf over the rod');
+    assert.equal(fitFor({ dims_in: { w: 12, h: 8, d: 12 } }, need), 'fits');
+    assert.match(fitBadge('fits', 'clear-bin').txt, /14" shelf depth/, 'the badge names the shelf, not the closet');
+
+    // Only the rod closet changes: a built-in system and a linen reach-in keep their measured depth.
+    assert.equal(shelfDepthFor(state.dims, 'builtin'), 30);
+    assert.equal(shelfDepthFor(state.dims, 'reachinL'), 30);
+  } finally {
+    state.space = 'pantry';
+    state.setup = 'cabinet'; state.setupTouched = false;
+  }
+});
