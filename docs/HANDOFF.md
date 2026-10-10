@@ -335,6 +335,14 @@ something in the browser, a content blocker matching the URL for example,
 dropped the request, which would hide real visitors too and reopens the
 question.
 
+**Settled 2026-10-10: `off: Do Not Track`.** That is what `telemetryStatus()`
+reads in the owner's Chrome profile, so in this profile the cause is DNT, not
+GPC. It was read through Claude in Chrome, but `telemetryStatus()` checks
+`navigator.webdriver` before DNT and that check did not fire, so the answer is
+the profile's own setting. The 10-06 requests carry a desktop Chrome on Mac
+user agent in the edge logs, which fits. The logs keep no `DNT` header, so
+they cannot tell one Chrome profile from another.
+
 Production health #8's CORS argument was wrong and is corrected in place; its
 conclusion holds on this session's evidence. Open item 6 now reads as what it
 waits on.
@@ -3482,8 +3490,9 @@ Ordered by whether anyone can act on them today.
    `feedback_submitted` have never had a row, and nothing in the code is why.
    Getting first users is the open decision. When they come, read `plan_rated`
    before `feedback_submitted`: the first is one tap on the report, the second
-   needs three more screens. One loose end, owner-only: `telemetryStatus()` in
-   that browser should read `off:`; `on` reopens this as a bug.
+   needs three more screens. The owner's Chrome profile reads
+   `off: Do Not Track` (checked 10-10), so nothing on the measurement side is
+   left open.
 
 ### Waiting on business input
 
