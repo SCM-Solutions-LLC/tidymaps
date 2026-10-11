@@ -487,7 +487,11 @@ function checkInvariants(plan, context) {
       + 'and write every step to work with containers already in the space.');
   }
 
-  const shelfDepth = usableShelfDepth(plan.layout && plan.layout.type, context && context.dims);
+  /* The deepest surface the layout has. For every archetype but one that is
+     its shelf. A rod closet's floor is the whole closet, so a bin for the
+     floor may be as deep as the closet; what sits on its 14-inch shelf was
+     already trimmed to it in trimClosetShelfNeeds, not rejected here. */
+  const shelfDepth = usableShelfDepth(plan.layout && plan.layout.type, context && context.dims, 'floor');
   if (shelfDepth) {
     (plan.productNeeds || []).forEach((need, i) => {
       if (need.maxDims && need.maxDims.d_in > shelfDepth - 0.5 + 1e-6) {
@@ -513,9 +517,19 @@ function checkInvariants(plan, context) {
    reach the browser bundle. */
 const ROOM_SHAPED_ARCHETYPES = { 'walkin-u': 0.2, 'l-run': 0.22 };
 
-export function usableShelfDepth(archetype, dims) {
+/* A closet with a hanging rod is measured door to back wall, mostly hanging
+   space; the shelf over the rod is 14 inches deep, or the closet's own depth
+   when that is less, and the floor under the clothes is the whole closet.
+   Mirrors rodClosetDepth in js/three/roomBoards.js, which the 3D builder
+   draws from and js/catalog.js judges by; a test holds them equal. The third
+   argument is the surface: 'floor', or anything else for a shelf. Only this
+   archetype reads it. */
+export const CLOSET_SHELF_IN = 14;
+
+export function usableShelfDepth(archetype, dims, surface) {
   const depth = Number(dims && dims.d_in) || 0;
   if (!depth) return 0;
+  if (archetype === 'closet-rod') return surface === 'floor' ? depth : Math.min(depth, CLOSET_SHELF_IN);
   const factor = ROOM_SHAPED_ARCHETYPES[archetype];
   if (!factor) return depth;
   const width = Number(dims && dims.w_in) || depth;
@@ -526,6 +540,64 @@ export function usableShelfDepth(archetype, dims) {
      expression; a test holds the two equal. */
   const smallest = Math.min(width, depth);
   return Math.max(8, Math.min(18, Math.max(14, smallest * factor), smallest * 0.5));
+}
+
+/* A "spotted" chip is something the user taps to give a place in the plan,
+   so it has to say what the thing is. A live plan returned "Red item bottom
+   right": a color, a word that means nothing, and a place. With those taken
+   away there is no name left, and a chip nobody can act on is dropped, the
+   same way a bad row index is. Deliberately narrow, so a real thing is never
+   lost to it: "Orange" is a fruit and "Light" a lamp, so neither word is on
+   the color list, and anything with one other word in it survives ("Black
+   bag", "Floor mat", "Shoes on the floor"). */
+const SPOTTED_FILLER = new Set([
+  // words that stand in for a name
+  'item', 'items', 'thing', 'things', 'object', 'objects', 'stuff', 'something',
+  'unknown', 'unidentified', 'misc', 'miscellaneous', 'other', 'assorted', 'various',
+  // colors
+  'red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'brown',
+  'grey', 'gray', 'dark', 'colored', 'coloured',
+  // places
+  'top', 'bottom', 'left', 'right', 'upper', 'lower', 'middle', 'center', 'centre',
+  'corner', 'front', 'back', 'side', 'shelf', 'floor', 'wall', 'door',
+  'near', 'behind', 'above', 'below', 'under', 'beside', 'next',
+  // joining words
+  'on', 'in', 'at', 'the', 'a', 'an', 'of', 'to', 'by', 'and', 'or', 'with',
+]);
+export function namesAThing(name) {
+  return String(name == null ? '' : name).toLowerCase().split(/[^a-z0-9]+/)
+    .some((word) => word && !SPOTTED_FILLER.has(word));
+}
+
+/* A rod closet's shelf is shallower than the closet (usableShelfDepth), and
+   the prompt says so. A need the plan puts on a shelf row and sizes deeper
+   than that shelf is trimmed to it here, not rejected: the right number is
+   known, the client already searches at the tighter of the two
+   (js/catalog.js fitFor), and a rejection would spend the user's analysis to
+   ask the model for a number this function can write itself. Only a need
+   whose targetZone names a row the plan marked "shelf" is touched. One for
+   the floor, or one that names no row, keeps what the model gave it and is
+   held to the closet's own depth in checkInvariants. */
+const zoneText = (v) => String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function rowNamedBy(plan, target) {
+  const t = zoneText(target);
+  if (!t) return null;
+  return plan.map.find((row) => {
+    const text = zoneText(`${row.level} ${row.zone}`);
+    return text && (text.includes(t) || t.includes(text));
+  }) || null;
+}
+function trimClosetShelfNeeds(plan, context) {
+  if (!plan.layout || plan.layout.type !== 'closet-rod') return;
+  const dims = context && context.dims;
+  const shelf = usableShelfDepth('closet-rod', dims, 'shelf');
+  if (!shelf || shelf >= usableShelfDepth('closet-rod', dims, 'floor')) return;
+  const cap = shelf - 0.5;
+  for (const need of plan.productNeeds || []) {
+    if (!need.maxDims || !(need.maxDims.d_in > cap)) continue;
+    const row = rowNamedBy(plan, need.targetZone);
+    if (row && row.surface === 'shelf') need.maxDims.d_in = cap;
+  }
 }
 
 /* The optional fields are soft at the schema and repaired here: a row index
@@ -545,6 +617,7 @@ function repairOptionalFields(plan, context) {
   const seenSpotted = new Set();
   const spotted = (listConfirmed(context) && Array.isArray(plan.spotted) ? plan.spotted : [])
     .filter((s) => s && typeof s.name === 'string' && s.name.trim())
+    .filter((s) => namesAThing(s.name))
     .map((s) => ({ name: s.name.trim(), row: validRow(s.row) ? s.row : null }))
     .filter((s) => { const k = s.name.toLowerCase(); if (seenSpotted.has(k)) return false; seenSpotted.add(k); return true; })
     .slice(0, SPOTTED_MAX);
@@ -584,10 +657,17 @@ export function planQuality(plan, context = {}) {
 
 /* Mirrors evenShelfFracs in js/three/viewerOptions.js. Duplicated rather than
    imported because this module is shared by the Deno edge function and the Node
-   test suite, neither of which can reach the browser bundle. */
-function evenShelfFracs(count) {
+   test suite, neither of which can reach the browser bundle.
+
+   Exported so a test can hold the two equal. Nothing did, and this copy kept
+   the spacing the client had already dropped (0.08 to 0.90, which makes the
+   top compartment a sliver): a plan repaired here was drawn with 6.9 inches
+   over the top shelf of an 8-foot closet, and its own recommended basket was
+   flagged as not fitting. */
+export function evenShelfFracs(count) {
   const n = Math.max(1, Math.min(12, Math.round(Number(count) || 1)));
-  return Array.from({ length: n }, (_, i) => 0.08 + 0.82 * (n === 1 ? 0.5 : i / (n - 1)));
+  if (n === 1) return [0.5];
+  return Array.from({ length: n }, (_, i) => 0.92 * (i + 1) / n);
 }
 
 /**
@@ -647,6 +727,7 @@ export function validatePlan(raw, context = {}) {
   alignShelfCount(structural.data);
   normalizeShelfYFracs(structural.data.geometry);
   repairOptionalFields(structural.data, context);
+  trimClosetShelfNeeds(structural.data, context);
   const errors = checkInvariants(structural.data, context);
   if (errors.length) {
     return { ok: false, value: null, errors };

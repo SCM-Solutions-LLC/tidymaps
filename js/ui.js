@@ -87,8 +87,14 @@ export function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&am
 export function prefersReducedMotion(){
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
+/* A screen change lands at the top at once. This was a smooth scroll, and a
+   smooth scroll only moves while the tab is being painted: in a window that
+   is covered, or a tab driven by a tool, it stops part-way and the next
+   screen opens with its heading under the appbar (seen at 53 and at 81
+   pixels, 2026-10-10). The screen has already been swapped by the time this
+   runs, so there is nothing to animate between. */
 export function scrollToTop(){
-  window.scrollTo({ top:0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  window.scrollTo(0, 0);
 }
 export function scrollIntoViewSafely(el, opts={}){
   if(!el) return;

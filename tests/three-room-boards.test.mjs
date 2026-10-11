@@ -5,6 +5,7 @@ import {
   ROOM_TYPES, isRoomLayout, MIN_BOARD_PITCH, ARRANGEMENT_VERSION,
   boardCountFor, boardCountForMap, roomPlanFor, runLength, roomShelfDepth,
   boardYsFor, boardYsFromFracs, arrangementGeometryFor,
+  gapsAboveFor, plainBoardClearance, rowHeadroomFor, rodClosetDepth, CLOSET_SHELF_IN,
 } from '../js/three/roomBoards.js';
 import { shelfDepthFor } from '../js/catalog.js';
 
@@ -268,4 +269,60 @@ test('saved arrangements: a v2 room keeps its sizes only, v3 and units pass thro
   assert.equal(arrangementGeometryFor(null,true),null);
   assert.equal(arrangementGeometryFor({ version:3 },true),null,'no geometry saved');
   assert.equal(arrangementGeometryFor({ version:1, geometry:{ width:72 } },true),null,'version 1 never carried a geometry the viewer reads');
+});
+
+/* The headroom a product is drawn under and the headroom the card judges it
+   against have to be one number, so the scene takes its gaps from here and
+   carries no copy. */
+test('gapsAboveFor is the scene\'s headroom: to the next board up, or to the top panel',()=>{
+  const T=0.75;
+  assert.deepEqual(gapsAboveFor([80,50,T],96),[96-T-80,30,50-T]);
+  assert.deepEqual(gapsAboveFor([95,T],96),[2.2,95-T],'never less than 2.2 inches');
+  assert.deepEqual(gapsAboveFor([],96),[]);
+  assert.equal(plainBoardClearance(30),30-T,'the board above takes its own thickness');
+
+  const scene=readFileSync(new URL('../js/three/scene.js',import.meta.url),'utf8');
+  assert.match(scene,/import \{[^}]*\bgapsAboveFor\b[^}]*\} from '\.\/roomBoards\.js'/,'scene.js imports gapsAboveFor');
+  assert.match(scene,/const gapAbove=gapsAboveFor\(shelfYs, H\);/,'scene.js draws from it');
+  assert.doesNotMatch(scene,/Math\.max\(2\.2,/,'scene.js carries its own gap arithmetic');
+});
+
+test('rowHeadroomFor answers for a plain board and says nothing about the rest',()=>{
+  const geometry={ width:60, height:96, depth:30, shelfCount:3, shelfYFracs:[0.25,0.5,0.92] };
+  // 96 x 0.75 = 72, the top panel's underside is 95.25: 23.25 over the board, less the panel-thick board the scene counts.
+  assert.ok(Math.abs(rowHeadroomFor('closet-rod','shelf',geometry,0)-(95.25-72-0.75))<1e-9);
+  assert.ok(Math.abs(rowHeadroomFor('cabinet','shelf',geometry,1)-(72-48-0.75))<1e-9);
+  assert.ok(Math.abs(rowHeadroomFor('closet-rod','floor',geometry,2)-(48-0.75-0.75))<1e-9,'the floor row sits on the base panel');
+  for(const [type,surface,index,why] of [
+    ['closet-rod','rod',1,'a rod carries no organizer'],
+    ['drawer-bank','drawer',0,'a drawer publishes its own box height'],
+    ['shelves','shelf',0,'a floating shelf can be open above'],
+    ['garage-rack','shelf',0,'a rack\'s top shelf is open above'],
+    ['walkin-u','shelf',0,'a room is read from its room plan'],
+    ['cabinet','shelf',3,'a row the geometry does not have'],
+    ['cabinet','shelf',-1,'a row the geometry does not have'],
+  ]) assert.equal(rowHeadroomFor(type,surface,geometry,index),null,why);
+});
+
+/* One rule for the shelf over a hanging rod, on all three sides: what the
+   builder draws, what the card judges by, and (plan-schema.test.mjs) what the
+   server tells the model and trims to. */
+test('a rod closet\'s shelf is 14 inches or the closet, its floor is the closet, and the builder draws from the rule',()=>{
+  assert.equal(CLOSET_SHELF_IN,14);
+  assert.equal(rodClosetDepth(30),14);
+  assert.equal(rodClosetDepth(30,'shelf'),14);
+  assert.equal(rodClosetDepth(30,'floor'),30);
+  assert.equal(rodClosetDepth(12),12,'a closet shallower than the shelf keeps its own depth');
+  assert.equal(rodClosetDepth(12,'floor'),12);
+  for(const d_in of [10,12,14,20,24,30,36]){
+    for(const surface of [undefined,'shelf','floor','rod']){
+      assert.equal(shelfDepthFor({w_in:60,d_in},'closet-rod',surface),rodClosetDepth(d_in,surface),`${d_in} ${surface}`);
+    }
+  }
+  const src=readFileSync(new URL('../js/three/layouts/closet-rod.js',import.meta.url),'utf8');
+  assert.match(src,/import \{[^}]*\brodClosetDepth\b[^}]*\} from '\.\.\/roomBoards\.js'/,'closet-rod.js imports rodClosetDepth');
+  assert.match(src,/const shelfD=rodClosetDepth\(D\);/,'closet-rod.js draws its shelf from it');
+  assert.match(src,/depth:rowD/,'and publishes the depth each row is judged against');
+  const catalog=readFileSync(new URL('../js/catalog.js',import.meta.url),'utf8');
+  assert.doesNotMatch(catalog,/CLOSET_SHELF_IN\s*=/,'catalog.js carries its own copy of the shelf depth');
 });

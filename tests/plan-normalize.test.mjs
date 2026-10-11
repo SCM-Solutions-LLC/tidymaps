@@ -240,3 +240,30 @@ test('normalizing twice is a no-op with every new field present', () => {
   assert.equal(once.steps[0].goal, 'Looks cluttered');
   assert.equal(once.spotted.length, 2);
 });
+
+/* The server's repair pass wrote shelf heights from a stale copy of the even
+   spread until 2026-10-10: 0.08 to 0.90 in equal steps, a top shelf 8 percent
+   under the ceiling. Those numbers are stored in saved plans and are valid,
+   so nothing would ever replace them. An exact match is that repair's output
+   and is read as "no heights given". */
+test('the server\'s old even spread in a saved plan is read as no heights, and anything else is kept', async () => {
+  const { evenShelfFracs } = await import('../js/three/viewerOptions.js');
+  const legacy = (n) => Array.from({ length: n }, (_, i) => 0.08 + 0.82 * i / (n - 1));
+  const withFracs = (fracs) => {
+    const plan = planWith(fracs.map((_, i) => row(`Zone ${i}`, i)));
+    plan.geometry = { ...plan.geometry, shelfCount: fracs.length, shelfYFracs: fracs };
+    return normalizeAi(plan).geometry.shelfYFracs;
+  };
+  for (const n of [3, 4, 7, 12]) {
+    assert.deepEqual(withFracs(legacy(n)), evenShelfFracs(n), `${n} rows`);
+  }
+  // Idempotent: a plan read twice (the share-link path) lands in the same place.
+  const once = normalizeAi((() => { const p = planWith([0, 1, 2, 3].map((i) => row(`Zone ${i}`, i))); p.geometry = { ...p.geometry, shelfCount: 4, shelfYFracs: legacy(4) }; return p; })());
+  assert.deepEqual(normalizeAi(once).geometry.shelfYFracs, evenShelfFracs(4));
+  // Measured heights are the plan's own, however close: the sample plans use
+  // 0.08, 0.35, 0.62, 0.90, which is not the spread.
+  assert.deepEqual(withFracs([0.08, 0.35, 0.62, 0.90]), [0.08, 0.35, 0.62, 0.90]);
+  assert.deepEqual(withFracs([0.1, 0.5, 0.9]), [0.1, 0.5, 0.9]);
+  // Two rows at 0.08 and 0.90 is something a person could mean.
+  assert.deepEqual(withFracs([0.08, 0.9]), [0.08, 0.9]);
+});

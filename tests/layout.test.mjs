@@ -4,7 +4,7 @@ import {
   ARCHETYPES, SURFACES, ARCHETYPE_LABELS,
   SETUP_ARCHETYPE, SCENARIO_ARCHETYPE,
   surfaceFromIcon, surfaceFromLevelText, normalizeLayout,
-  resolveLayout, chipArchetypesFor,
+  resolveLayout, chipArchetypesFor, eyeMarkFor,
 } from '../js/layout.js';
 import { SETUP_TYPES } from '../js/wizard-data.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
@@ -280,4 +280,16 @@ test('chipArchetypesFor returns unique archetypes for known spaces', () => {
 test('chipArchetypesFor returns all archetypes for unknown spaces', () => {
   const chips = chipArchetypesFor('nonexistent');
   assert.deepEqual(chips, ARCHETYPES);
+});
+
+/* "Eye level" is a height. The model marks one row of every unit as the eye
+   row, so a kitchen drawer plan came back with its top drawer tagged "Eye
+   level" at knee height (2026-10-10, run 5). */
+test('a drawer is never marked "Eye level" in words; a shelf is', () => {
+  assert.equal(eyeMarkFor({ eye: true, surface: 'shelf', lv: 'Middle shelf' }), true);
+  assert.equal(eyeMarkFor({ eye: true, surface: 'drawer', lv: 'Top drawer' }), false);
+  assert.equal(eyeMarkFor({ eye: true, surface: null, lv: 'Drawer 1 of 3' }), false, 'a saved row with no surface is read from its name');
+  assert.equal(eyeMarkFor({ eye: true, surface: null, lv: 'Back wall: eye level' }), true);
+  assert.equal(eyeMarkFor({ eye: false, surface: 'shelf', lv: 'Top shelf' }), false);
+  assert.equal(eyeMarkFor(null), false);
 });

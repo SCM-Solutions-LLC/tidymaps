@@ -375,3 +375,15 @@ test('units default to imperial, and only a known value is honoured', async () =
   const { UNITS } = await import('../js/state.js');
   assert.deepEqual(UNITS, ['imperial', 'metric']);
 });
+
+/* The measure step asks "How big is your <space>?", and two of the nine
+   spaces are plural: "How big is your drawers?" (2026-10-10, run 5). The
+   heading reads the flag; the e2e suite reads the heading. */
+test('the spaces named in the plural say so', async () => {
+  const { AREAS } = await import('../js/wizard-data.js');
+  const plural = Object.values(AREAS).flat().filter((a) => a.plural).map((a) => a.id).sort();
+  assert.deepEqual(plural, ['cabinet', 'drawers']);
+  for (const area of Object.values(AREAS).flat()) {
+    assert.equal(/s$/.test(area.short) && !/ss$/.test(area.short), !!area.plural, `${area.id}: "${area.short}"`);
+  }
+});

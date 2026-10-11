@@ -116,6 +116,66 @@ export function boardYsFor(geometry){
   return boardYsFromFracs(g.shelfYFracs, g.height);
 }
 
+/* The space over each board: up to the next board above it, or to the
+   underside of the top panel for the highest one. scene.js draws from this,
+   and the product card reads it (js/catalog.js rowHeadroomFor), so the
+   headroom a pick is drawn under and the headroom it is judged against are
+   one number.
+   @param {number[]} boardYs @param {number} height */
+export function gapsAboveFor(boardYs, height){
+  const H=Number(height)||0;
+  const ys=Array.isArray(boardYs)?boardYs:[];
+  return ys.map(y=>{
+    const above=ys.filter(o=>o>y+0.5);
+    const ceil=above.length?Math.min(...above):H-T;
+    return Math.max(2.2, ceil-y);
+  });
+}
+
+/* What an organizer may stand as tall as on a plain board: the gap above it
+   less the board over it. scene.js surfaceClearance is this for every
+   surface whose builder publishes `gap: gapAbove[i]` and nothing else. */
+export function plainBoardClearance(gap){
+  return Number(gap)-T;
+}
+
+/* The layouts whose shelf and floor rows are plain boards in that sense.
+   Drawers publish their own box height, a rod carries no organizer, a
+   floating shelf and a rack's top shelf are open above, and a room is read
+   from its room plan, so none of those is answered here. */
+const PLAIN_BOARD_LAYOUTS = new Set(['cabinet', 'closet-rod', 'closet-system']);
+
+/* The headroom the drawing gives one row of a plain-board layout, or null
+   when this module cannot say (see PLAIN_BOARD_LAYOUTS). Null means "do not
+   judge height by the row", never "it fits".
+   @param {string} type  the layout drawn
+   @param {string} surface  the row's surface kind
+   @param {any} geometry  a viewer geometry
+   @param {number} index  the row's shelfIndex */
+export function rowHeadroomFor(type, surface, geometry, index){
+  if(!PLAIN_BOARD_LAYOUTS.has(type)) return null;
+  if(surface!=='shelf'&&surface!=='floor') return null;
+  const g=normalizeViewerGeometry(geometry, type);
+  if(!Number.isInteger(index)||index<0||index>=g.shelfCount) return null;
+  const gaps=gapsAboveFor(boardYsFromFracs(g.shelfYFracs, g.height), g.height);
+  return plainBoardClearance(gaps[index]);
+}
+
+/* A closet with a hanging rod (a reach-in, a wardrobe) is measured door to
+   back wall, and most of that is hanging space. The shelf over the rod is 12
+   to 16 inches deep however deep the closet is: 14, the same floor the room
+   formula below uses, or the closet's own depth when it is shallower. The
+   floor under the clothes is the whole closet. The closet-rod builder draws
+   from this, js/catalog.js shelfDepthFor judges by it, and the server's
+   usableShelfDepth is the same rule; tests hold the three equal.
+   @param {number} depth  the closet, door to back wall
+   @param {string} [surface]  'floor' for the floor, anything else is a shelf */
+export const CLOSET_SHELF_IN = 14;
+export function rodClosetDepth(depth, surface){
+  const D=Number(depth)||0;
+  return surface==='floor'?D:Math.min(D, CLOSET_SHELF_IN);
+}
+
 /* How deep the shelving along a room's walls is. A fifth of the smaller room
    dimension for a walk-in (0.22 for an L), held between 14 and 18 inches
    wherever the room can hold a 14-inch shelf: 14 is the shallowest closet
@@ -164,6 +224,7 @@ export function runLength(type, wallId, geometry){
    drawn order: the plan did not say, and an empty wall beside a crowded one
    is the worse guess. A floor row is drawn on the floor and counts on no
    wall. */
+/** @param {{map: any, layout: any, N: any, rowsByShelf?: any}} args */
 function assignWalls({ map, layout, N, rowsByShelf }){
   const type=layout&&layout.type;
   if(!isRoomLayout(type)) return null;

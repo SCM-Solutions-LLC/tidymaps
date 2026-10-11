@@ -104,7 +104,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "existing": [{"icon": string, "title": string, "detail": string}],
   "dontBuy": string,
   "steps": [{"task": string, "time": string, "why": string, "rows": [number], "goal": string|null}],   // ordered steps, time like "10 min". task: an instruction, max 8 words, starts with a verb. why: max 12 words, one sentence. rows: the shelfIndex values the step works on, at most ${STEP_ROWS_MAX}; the report prints the place under the task, so the task itself stays short. goal: one of the user's own goals copied exactly, when the step answers it; otherwise null. The exact count allowed for this request is in "Enforced limits" below.
-  "spotted": [{"name": string, "row": number|null}],  // only when "About this request" says the user confirmed a contents list: things you can see that the list leaves out, with the shelfIndex you see each on. At most ${SPOTTED_MAX}. These are never planned: no step, zone or product for them.
+  "spotted": [{"name": string, "row": number|null}],  // only when "About this request" says the user confirmed a contents list: things you can see that the list leaves out, with the shelfIndex you see each on. Name each one as what it is ("Stand mixer", "Shoe boxes"), because the user taps the name to add it to the plan. If you cannot tell what a thing is, leave it out: never name one by its color or where it sits ("Red item bottom right"). At most ${SPOTTED_MAX}. These are never planned: no step, zone or product for them.
   "time": string,                              // total estimate, e.g. "45-90 min"
   "cost": string                               // e.g. "$0 / $40-80"
 }
@@ -155,6 +155,7 @@ BREVITY IS A HARD REQUIREMENT. This plan is read on a phone by someone standing 
 - Every "why" is ONE sentence. Say the reason, stop. Do not add a second sentence telling the user what to put there: the zone already says that.
 - Never repeat in a "why" what the level or zone name already says.
 - Prefer 2 sharp problems over 6 padded ones. Fewer, better, shorter.
+- Never state how many shelves, levels, drawers or rods the space has, in summary, problems or opportunities. The map is the count, and it is drawn right beside the summary: "a three-shelf cabinet" over a map of four rows reads as a mistake. Say "a tall cabinet", not "a three-shelf cabinet".
 - steps.task is an instruction, not a description of one: start with a verb and stop at 8 words. "Group cans by type" beats "Take all of the canned goods and group them together by what kind they are". The step's why carries the reason, so the task must not.
 - The report shows an animation of each step next to it. Do not narrate what that picture already shows: no "as shown", no describing the motion, no restating the task inside its own why.
 Keep all text concise and practical. If the images do not show a storage space, still return the JSON with spaceType:"Unclear" and explain in summary.`;
@@ -249,10 +250,20 @@ Deno.serve(async (req) => {
      validation after the user had already waited out the analysis. */
   const roomDepth = usableShelfDepth(null, ctx.dims);
   const wallDepth = usableShelfDepth('walkin-u', ctx.dims);
+  /* A closet with a hanging rod is the third case: measured door to back
+     wall, with a shelf over the rod that is 14 inches deep however deep the
+     closet is. The validator trims a shelf need to that depth instead of
+     rejecting it (planSchema.js trimClosetShelfNeeds) and holds everything
+     to the closet's own depth, so the sentence says both, from the same
+     function, and names the floor as the one place the full depth applies. */
+  const closetShelf = usableShelfDepth('closet-rod', ctx.dims, 'shelf');
+  const closetLimit = roomDepth && roomDepth - closetShelf >= 0.5
+    ? ` If you classify this as closet-rod, the shelf over the rod is about ${closetShelf}in deep however deep the closet is: for anything that sits on a shelf keep maxDims.d_in at or under ${(closetShelf - 0.5).toFixed(1)}in (a deeper value there is trimmed to that, not rejected). Only what sits on the closet floor may use the full depth, up to ${(roomDepth - 0.5).toFixed(1)}in, and its targetZone must name the floor row.`
+    : '';
   const depthLimit = !roomDepth ? null
     : Math.abs(roomDepth - wallDepth) < 0.5
-      ? `- productNeeds: every maxDims.d_in must be at most ${(roomDepth - 0.5).toFixed(1)}in (the ${roomDepth}in depth less 0.5in clearance).`
-      : `- productNeeds: every maxDims.d_in must fit the usable SHELF depth, not the room. If you classify this as walkin-u or l-run, that is about ${wallDepth}in of shelving along the walls, so keep maxDims.d_in at or under ${(wallDepth - 0.5).toFixed(1)}in. For any other archetype the ${roomDepth}in measurement is the shelf itself, so the limit is ${(roomDepth - 0.5).toFixed(1)}in.`;
+      ? `- productNeeds: every maxDims.d_in must be at most ${(roomDepth - 0.5).toFixed(1)}in (the ${roomDepth}in depth less 0.5in clearance).${closetLimit}`
+      : `- productNeeds: every maxDims.d_in must fit the usable SHELF depth, not the room. If you classify this as walkin-u or l-run, that is about ${wallDepth}in of shelving along the walls, so keep maxDims.d_in at or under ${(wallDepth - 0.5).toFixed(1)}in. For ${closetLimit ? 'every archetype other than those two and closet-rod' : 'any other archetype'} the ${roomDepth}in measurement is the shelf itself, so the limit is ${(roomDepth - 0.5).toFixed(1)}in.${closetLimit}`;
   /* The archetype the app will DRAW. A setup the user actively picked wins that
      decision client-side, so a plan classified as anything else is describing a
      different piece of furniture from the one in the picture beside it. The
@@ -304,7 +315,7 @@ Deno.serve(async (req) => {
     /* The new fields are the one place the validator is looser than the
        prompt, and the model is told so, with the caps the repair pass
        applies, from the same constants. */
-    `- optional fields: "wall", "tier", "rows", "goal" and "spotted" are optional, and a bad value in any of them is dropped rather than rejected. "spotted" keeps at most ${SPOTTED_MAX} entries and "rows" at most ${STEP_ROWS_MAX} per step.`,
+    `- optional fields: "wall", "tier", "rows", "goal" and "spotted" are optional, and a bad value in any of them is dropped rather than rejected. "spotted" keeps at most ${SPOTTED_MAX} entries and "rows" at most ${STEP_ROWS_MAX} per step. A "spotted" entry that names no thing, only a color, a position or a word like "item", is dropped too.`,
     `- step length: every steps[].task must be ${STEP_TASK_MAX_WORDS} words or fewer and every steps[].why ${STEP_WHY_MAX_WORDS} or fewer. Aim well under both, at 8 and 12, because each step renders as one line beside a picture. Checked per step, so one long task rejects the whole plan.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
     `- text length: no string value may be longer than ${PLAN_TEXT_MAX_CHARS} characters, and every icon keyword ${PLAN_ICON_MAX_CHARS} or fewer. The word limits above are far tighter, so a plan that follows them never comes near these.`,

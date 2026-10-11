@@ -17,7 +17,7 @@ import { classifyAction, motifForSpace, glyphForStep, mediaKeyFor, hydrateStepMe
 import { track } from '../telemetry.js';
 import { applyCategoryEdits, includeSpotted } from '../personalize.js';
 import { placementFor, levelLabel, whereFor, wallGroups } from '../placement.js';
-import { resolveLayout } from '../layout.js';
+import { resolveLayout, eyeMarkFor } from '../layout.js';
 import { go } from '../router.js';
 import { runLoading } from './loading.js';
 import { buildRate } from './feedback.js';
@@ -633,7 +633,7 @@ export function renderUpgrades(){
   document.getElementById('res-upgrades').innerHTML=needs.map((need,i)=>{
     const sel=state.shopping[i];
     const options=matchProducts(need).filter(m=>m.fit!=='no-fit').slice(0,4);
-    const badge=fitBadge(sel.fit, need.type);
+    const badge=fitBadge(sel.fit, need.type, need);
     const links=searchLinks(need).map(l=>
       `<a href="${escapeHtml(l.url)}" target="_blank" rel="${affiliateRel(l.retailer)}" style="text-decoration:underline">${escapeHtml(l.retailer)}</a>`).join(' · ');
     const img=sel.img
@@ -865,6 +865,7 @@ function shelfRow(m, i, idx, stripWall){
      "eye level" already, so there the level itself becomes the mark (icon and
      word); a model row called something else gets the mark beside its titles. */
   const eyeLevel=!!m.eye&&/^eye level$/i.test(lv);
+  const eyeWords=eyeMarkFor(m)&&!eyeLevel;
   return `
     <div class="shelf${m.eye?' eye':''}" data-row="${idx}">
       <button type="button" class="shelf-head" aria-expanded="false" aria-controls="shelf-why-${i}">
@@ -873,7 +874,7 @@ function shelfRow(m, i, idx, stripWall){
           <span class="lv${eyeLevel?' eye-mark':''}">${eyeLevel?SVG.eye:''}${escapeHtml(lv)}</span>
           <span class="zone">${escapeHtml(m.zone)}${badge}</span>
         </span>
-        ${m.eye&&!eyeLevel?`<span class="eye-mark">${SVG.eye}Eye level</span>`:''}
+        ${eyeWords?`<span class="eye-mark">${SVG.eye}Eye level</span>`:''}
         <span class="shelf-chev" aria-hidden="true"></span>
       </button>
       ${itemsRow(m)}
@@ -1473,7 +1474,7 @@ export function renderAfter(mode){
     const lv=underWall?levelLabel(m.lv):String(m.lv||'');
     let shelfCls='', tag='';
     // The eye tag marks a row whose level does not already say "eye level".
-    if(m.eye){ shelfCls=' eye'; if(!/^eye level$/i.test(lv)) tag='<span class="cab-tag eyet">eye level</span>'; }
+    if(m.eye){ shelfCls=' eye'; if(eyeMarkFor(m)&&!/^eye level$/i.test(lv)) tag='<span class="cab-tag eyet">eye level</span>'; }
     if(mode==='Minimal look') items=items.slice(0,2);
     if(mode==='Kid-friendly setup' && isLast){ shelfCls=' kid'; tag='<span class="cab-tag kidt">kid reach</span>'; }
     let row;

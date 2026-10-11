@@ -8,7 +8,7 @@ import { semanticItemHeight, semanticItemKind } from './itemKinds.js';
 import { organizerSpecFor, needKeyFor, isVisualNeed, targetScore, visualTypeFor,
   surfaceAcceptsOrganizer, isMountedOrganizer } from './organizerKinds.js';
 import { evenShelfFracs } from './viewerOptions.js';
-import { roomPlanFor, boardYsFromFracs } from './roomBoards.js';
+import { roomPlanFor, boardYsFromFracs, gapsAboveFor } from './roomBoards.js';
 import { measuredCapacityProfile, naturalItemWidth, naturalOrganizerWidth, visualUnitCount } from './capacity.js';
 import { ITEM_NORMAL_OFFSET, depthRankStep, displayJitter, hashString, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
@@ -465,11 +465,7 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
      size arithmetic: never in the floor slab, never within 3.2 inches of the
      ceiling, and a fraction past 0.86 means the floor. */
   const shelfYs=boardYsFromFracs(shelfFracs, H);
-  const gapAbove=shelfYs.map(y=>{
-    const above=shelfYs.filter(o=>o>y+0.5);
-    const ceil=above.length?Math.min(...above):H-T;
-    return Math.max(2.2, ceil-y);
-  });
+  const gapAbove=gapsAboveFor(shelfYs, H);
 
   const rowsByShelf=new Map();
   map.forEach(row=>{ rowsByShelf.set(row.shelfIndex, row); });
