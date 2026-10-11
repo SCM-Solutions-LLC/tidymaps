@@ -2,6 +2,8 @@ import { state } from './state.js';
 import { withAffiliate } from './affiliates.js';
 import { SETUP_ARCHETYPE, resolveLayout } from './layout.js';
 import { planFromPhotos } from './planProvenance.js';
+import { rodClosetDepth, rowHeadroomFor, arrangementGeometryFor } from './three/roomBoards.js';
+import { targetScore, visualTypeFor, surfaceAcceptsOrganizer } from './three/organizerKinds.js';
 
 /* Dimension-aware product matching against the curated catalog
    (data/catalog.json: real SKUs with cross-referenced dimensions). Every entry
@@ -71,17 +73,21 @@ export const CARCASS_WIDTH_ALLOWANCE = 3.5;
    measured door to back wall, mostly hanging space, and the shelf over the
    rod is 12 to 16 inches deep however deep the closet is. A 2026-10-10 test
    run badged bins "Fits your 30" shelf depth" for a 30-inch reach-in. It is
-   capped at the builders' 14-inch floor the walk-in formula already uses.
-   Client-side only, deliberately: the server's usableShelfDepth still
-   treats this measurement as the shelf, which leaves its validator looser
-   than this check, never stricter. */
+   capped at the builders' 14-inch floor the walk-in formula already uses
+   (js/three/roomBoards.js rodClosetDepth, which the closet-rod builder draws
+   from and the server's usableShelfDepth repeats).
+
+   That cap is the SHELF's. The same run recommended a bin for the closet
+   floor, badged it "Fits your 14" shelf depth" and searched for one no
+   deeper than 14 inches, in a closet 30 inches deep. The third argument is
+   the surface a thing sits on: 'floor' is the whole closet, and anything
+   else, or nothing, is a shelf. */
 const ROOM_SHELF_FACTOR={'walkin-u':0.2,'l-run':0.22};
-const CLOSET_SHELF_IN=14;
-export function shelfDepthFor(dims, setupOrArchetype){
+export function shelfDepthFor(dims, setupOrArchetype, surface){
   const depth=Number(dims && dims.d_in)||0;
   if(!depth) return null;
   const archetype=SETUP_ARCHETYPE[setupOrArchetype]||setupOrArchetype;
-  if(archetype==='closet-rod') return Math.min(depth, CLOSET_SHELF_IN);
+  if(archetype==='closet-rod') return rodClosetDepth(depth, surface);
   const factor=ROOM_SHELF_FACTOR[archetype];
   if(!factor) return depth;
   const width=Number(dims && dims.w_in)||depth;
@@ -103,13 +109,54 @@ let liveLayoutOverride=null;
    capped by the drawn layout and judged by the saved one. The viewer tells
    this module what it is drawing (null when it restores or resets). */
 export function setLiveLayoutOverride(archetype){ liveLayoutOverride=archetype||null; }
-export function currentArchetype(){
+function currentLayout(){
   return resolveLayout({
     ai: state.ai, setup: state.setup, setupTouched: state.setupTouched,
     aiFromPhotos: planFromPhotos(), scenarioKey: state.space,
     override: liveLayoutOverride || (state.arrangement && state.arrangement.layoutOverride),
     map: null,
-  }).type;
+  });
+}
+export function currentArchetype(){ return currentLayout().type; }
+
+/* Where the 3D view draws a need: the row its targetZone names, and what
+   kind of surface that row is. The scene offers a need to the rows that
+   score best for it, first in order (js/three/scene.js, bestScoreByNeed), and
+   only rows that hold something are drawn with an organizer at all, so this
+   reads the plan the same way. Null when the plan has no rows, the need
+   names none of them, or nothing of its kind can sit anywhere: the caller
+   then judges it as it always did, against a shelf.
+
+   Without this the card knew the space and the need's own maxDims and
+   nothing about the level in between. A 2026-10-10 run recommended a 7-inch
+   basket for a top shelf drawn with 6.9 inches over it, under a green "Fits"
+   badge, and the 3D view of the same plan said it did not fit. */
+export function targetRowFor(need){
+  const map=state.ai && Array.isArray(state.ai.map) ? state.ai.map : [];
+  const visual=visualTypeFor(need);
+  if(!map.length || !visual) return null;
+  const layout=currentLayout();
+  const surfaceOf=row=>(row && row.surface) || layout.surfaceFor(row.shelfIndex) || 'shelf';
+  const stocked=map.filter(row=>Array.isArray(row.items) && row.items.length);
+  let best=null, bestScore=0;
+  for(const row of (stocked.length ? stocked : map)){
+    const surface=surfaceOf(row);
+    if(!surfaceAcceptsOrganizer(surface, visual)) continue;
+    const score=targetScore(need.targetZone, row);
+    if(score>bestScore){ best={ row, surface, index:row.shelfIndex }; bestScore=score; }
+  }
+  return best && { ...best, type:layout.type };
+}
+
+/* The headroom the drawing gives that row, in inches, or null when it cannot
+   be read (js/three/roomBoards.js rowHeadroomFor says which rows can). The
+   geometry is the one the viewer opens with: a saved arrangement's, else the
+   plan's. */
+function headroomFor(target){
+  if(!target) return null;
+  const geometry=arrangementGeometryFor(state.arrangement, false) || (state.ai && state.ai.geometry);
+  if(!geometry) return null;
+  return rowHeadroomFor(target.type, target.surface, geometry, target.index);
 }
 
 // Door racks and hook racks mount on a door, wall, or pegboard — outside the
@@ -125,8 +172,17 @@ export function fitFor(product, need){
   // maxDims used to override a smaller measured depth outright, so a 12.9″
   // tray on a 9″ shelf was badged "Fits your 9″ shelf depth".
   const md = need.maxDims || {};
-  const measured = MOUNTS_OUTSIDE.has(need.type) ? {} : (state.dims || {});
-  const shelfD = shelfDepthFor(measured, currentArchetype());
+  const mounted = MOUNTS_OUTSIDE.has(need.type);
+  const measured = mounted ? {} : (state.dims || {});
+  const target = mounted ? null : targetRowFor(need);
+  const shelfD = shelfDepthFor(measured, currentArchetype(), target && target.surface);
+  /* The level it is drawn on, where the drawing can say. Judged the way the
+     3D view judges it (js/three/scene.js: the product's height against the
+     row's clearance, yes or no), so it is a limit of its own and never a
+     "tight": the scene has no such answer, and half an inch of air under a
+     board is a fit there. */
+  const headroom = headroomFor(target);
+  if(headroom!==null && product.dims_in.h>headroom) return 'no-fit';
   const tighter = (a, b) => (a && b) ? Math.min(a, b) : (a || b || null);
   const limits={
     // The measured width is the outside of the carcass. Its sides and the
@@ -225,15 +281,19 @@ export function reconcileSelection(selection, need, products){
   };
 }
 
-export function fitBadge(fit, type){
+export function fitBadge(fit, type, need){
   // A label set has no size to fit, and a safety latch screws to a door or
   // frame (organizerKinds.js draws neither). A rack hangs outside the measured
   // space (fitFor already says so), so its fit is the plan's own cap, not a depth.
   if(type==='label-set' || type==='safety-latch') return {cls:'', txt:''};
-  const shelf=MOUNTS_OUTSIDE.has(type) ? null : shelfDepthFor(state.dims, currentArchetype());
+  // The need says where it goes, so the badge can name the floor when that is
+  // what the depth was measured against (shelfDepthFor). Without one it is a shelf.
+  const target=need && !MOUNTS_OUTSIDE.has(type) ? targetRowFor(need) : null;
+  const onFloor=!!target && target.surface==='floor';
+  const shelf=MOUNTS_OUTSIDE.has(type) ? null : shelfDepthFor(state.dims, currentArchetype(), target && target.surface);
   const depth=shelf ? Math.round(shelf) : null;
   switch(fit){
-    case 'fits':   return {cls:'green', txt: depth ? `Fits your ${depth}" shelf depth` : 'Fits the space we detected'};
+    case 'fits':   return {cls:'green', txt: depth ? `Fits your ${depth}" ${onFloor?'floor':'shelf'} depth` : 'Fits the space we detected'};
     // "check this" and "this will not fit" are different answers and no longer
     // share a colour — the words carry it too, so the state never rests on hue
     case 'tight':  return {cls:'warn',   txt:'Tight fit: double-check'};
@@ -266,7 +326,8 @@ export function searchLinks(need){
   let q=TYPE_QUERY[need.type]||need.type;
   // Same rule as fitFor: the search cap is the tighter of the two, so the
   // query can't send someone shopping for a bin deeper than their shelf.
-  const caps=[need.maxDims && need.maxDims.d_in, shelfDepthFor(state.dims, currentArchetype())].filter(Boolean);
+  const target=MOUNTS_OUTSIDE.has(need.type) ? null : targetRowFor(need);
+  const caps=[need.maxDims && need.maxDims.d_in, shelfDepthFor(state.dims, currentArchetype(), target && target.surface)].filter(Boolean);
   const depth=caps.length?Math.min(...caps):null;
   if(depth) q+=` max ${Math.floor(depth)} inch deep`;
   const enc=encodeURIComponent(q);

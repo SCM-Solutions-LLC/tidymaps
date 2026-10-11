@@ -60,13 +60,31 @@ const intOrNone = (v)=>{
 };
 const WALL_SET = new Set(WALLS);
 
+/* The spacing the server's repair pass wrote until 2026-10-10: 0.08 to 0.90
+   in equal steps. It was a copy of evenShelfFracs from before that function
+   stopped drawing the top compartment as a sliver, and nothing held the two
+   equal, so every plan whose own heights were unusable (two rows side by side
+   at one height is enough) came back with a top shelf 8 percent below the
+   ceiling: 6.9 inches of headroom in an 8-foot closet, and a "does not fit"
+   in the 3D view for the basket the plan itself recommended.
+
+   Those numbers are stored in saved plans, and they are valid, so nothing
+   downstream would ever replace them. An exact match to that spread is the
+   repair's output, not a measurement, and is read as "no heights given".
+   Three rows or more: two rows at 0.08 and 0.90 is something a person could
+   mean. */
+function isLegacySpread(fracs){
+  const n=fracs.length;
+  return n>=3 && fracs.every((v,i)=>Math.abs(v-(0.08+0.82*i/(n-1)))<1e-9);
+}
+
 function normalizeGeometry(g, mapLen){
   // the user's own shelf count wins over the AI estimate (map rows are clamped
   // to shelfCount downstream, so the two always stay consistent)
   const userShelves = state.dims && state.dims.shelves;
   const shelfCount = Math.max(1, Math.min(12, Math.round(positive(userShelves, positive(g&&g.shelfCount, mapLen||5)))));
   let fracs = Array.isArray(g&&g.shelfYFracs) ? g.shelfYFracs.map(Number).filter(n=>Number.isFinite(n)&&n>=0&&n<=1) : [];
-  if(fracs.length!==shelfCount) fracs = evenShelfFracs(shelfCount);
+  if(fracs.length!==shelfCount || isLegacySpread(fracs)) fracs = evenShelfFracs(shelfCount);
   const geo = {
     unit:'in',
     width: positive(g&&g.width, 30),

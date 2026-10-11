@@ -348,7 +348,8 @@ function renderMeasure(){
   if(!wrap) return;
   const area = areaFor(state.space);
   const h = document.querySelector('#screen-measure h1');
-  if(h) h.textContent = `How big is your ${area.short}?`;
+  // "How big is your drawers?" was the heading for two of the nine spaces.
+  if(h) h.textContent = `How big ${area.plural ? 'are' : 'is'} your ${area.short}?`;
   const roomy = ROOMY.includes(state.setup);
   const metric = isMetric();
   const n = dimsFtNums();

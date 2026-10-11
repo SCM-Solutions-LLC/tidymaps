@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validatePlan, EFFORT_STEP_RANGES, DEFAULT_STEP_RANGE, stepRangeFor, knownEffort, effortUntouched, PRESELECTED_EFFORT, listConfirmed, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, ARCHETYPES, SURFACES, PLACES, usableShelfDepth,
+         evenShelfFracs, namesAThing, CLOSET_SHELF_IN,
          STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS, PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../supabase/functions/_shared/planSchema.js';
 import {
   ARCHETYPES as CLIENT_ARCHETYPES,
@@ -1253,4 +1254,153 @@ test('the server shelf depth is the builders\' formula, term by term, and equal 
       assert.equal(usableShelfDepth(arch, dims), shelfDepthFor(dims, arch), `${arch} ${JSON.stringify(dims)}`);
     }
   }
+});
+
+/* The repair pass writes shelf heights when the model's are unusable, with a
+   copy of the client's even spread that nothing held to the original. The
+   client stopped drawing the top compartment as a sliver; the copy did not.
+   A 2026-10-10 reach-in with two shelf rows side by side (equal heights, so
+   not ascending, so repaired) came back with its top shelf 6.9 inches under
+   the ceiling of an 8-foot closet, and the 3D view said the basket the plan
+   itself recommended did not fit. */
+test('the server\'s even shelf spacing is the client\'s, for every count', async () => {
+  const client = await import('../js/three/viewerOptions.js');
+  for (let n = 1; n <= 12; n++) {
+    assert.deepEqual(evenShelfFracs(n), client.evenShelfFracs(n), `${n} rows`);
+  }
+  // And it is what a repaired plan carries: seven rows, two of them level.
+  const rows = ['Upper shelf: left side', 'Upper shelf: right side', 'Upper rod', 'Main rod', 'Second rod', 'Lower rod', 'Floor']
+    .map((level, shelfIndex) => ({ level, icon: 'up', zone: 'Clothes', why: 'Reach.', shelfIndex, safety: { flag: null, why: null } }));
+  const plan = basePlan({ map: rows });
+  plan.geometry = { unit: 'in', width: 60, height: 96, depth: 30, shelfCount: 7, shelfYFracs: [0.12, 0.12, 0.3, 0.45, 0.6, 0.75, 0.95], estimated: false };
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+  assert.deepEqual(result.value.geometry.shelfYFracs, client.evenShelfFracs(7));
+  const topBoard = 96 * (1 - result.value.geometry.shelfYFracs[0]);
+  assert.ok(96 - topBoard > 12, `the top shelf has a compartment over it, not a sliver (${(96 - topBoard).toFixed(1)}in)`);
+});
+
+/* The open item from the 2026-10-10 fix: the client judged a rod closet's
+   picks against the 14-inch shelf over the rod while the server still read
+   the closet's own depth as the shelf. Bringing the server in line the plain
+   way (one depth for every need) would have rejected that day's own plan: it
+   asked for a 15-inch bin on the closet FLOOR, which is 30 inches deep. So the
+   rule has a surface in it, a shelf need is trimmed and not rejected, and the
+   closet's own depth is still the hard limit. */
+function reachIn(productNeeds) {
+  const row = (level, zone, shelfIndex, surface) => ({ level, icon: 'up', zone, why: 'Reach.', shelfIndex, surface, safety: { flag: null, why: null } });
+  const plan = basePlan({
+    map: [
+      row('Upper shelf: left side', 'Folded knits', 0, 'shelf'),
+      row('Main rod', 'Dress shirts', 1, 'rod'),
+      row('Floor: bins and hamper', 'Folded overflow bin', 2, 'floor'),
+    ],
+    productNeeds,
+  });
+  plan.layout = { type: 'closet-rod', sections: [] };
+  return plan;
+}
+const need = (targetZone, d_in) => ({ type: 'basket', qty: 2, purpose: 'Corral folded things', targetZone, maxDims: { w_in: 16, h_in: 10, d_in }, priority: 'high' });
+const closetContext = { ...noKidsContext, dims: { w_in: 60, h_in: 96, d_in: 30 } };
+
+test('a rod closet: the shelf is 14 inches, the floor is the closet, and both sides agree', async () => {
+  assert.equal(CLOSET_SHELF_IN, 14);
+  assert.equal(usableShelfDepth('closet-rod', { w_in: 60, d_in: 30 }), 14);
+  assert.equal(usableShelfDepth('closet-rod', { w_in: 60, d_in: 30 }, 'shelf'), 14);
+  assert.equal(usableShelfDepth('closet-rod', { w_in: 60, d_in: 30 }, 'floor'), 30);
+  assert.equal(usableShelfDepth('closet-rod', { w_in: 36, d_in: 12 }), 12, 'a closet shallower than the shelf keeps its own depth');
+  assert.equal(usableShelfDepth('cabinet', { w_in: 36, d_in: 30 }, 'floor'), 30, 'no other archetype reads the surface');
+  assert.equal(usableShelfDepth('walkin-u', { w_in: 72, d_in: 72 }, 'floor'), usableShelfDepth('walkin-u', { w_in: 72, d_in: 72 }), 'a walk-in is unchanged');
+
+  const { shelfDepthFor } = await import('../js/catalog.js');
+  const { rodClosetDepth } = await import('../js/three/roomBoards.js');
+  for (const d_in of [10, 12, 14, 20, 24, 30, 36]) {
+    for (const surface of [undefined, 'shelf', 'rod', 'floor']) {
+      const dims = { w_in: 60, d_in };
+      assert.equal(usableShelfDepth('closet-rod', dims, surface), shelfDepthFor(dims, 'closet-rod', surface), `client ${d_in} ${surface}`);
+      assert.equal(usableShelfDepth('closet-rod', dims, surface), rodClosetDepth(d_in, surface), `builder ${d_in} ${surface}`);
+    }
+  }
+});
+
+test('a rod closet: a shelf need deeper than the shelf is trimmed, a floor need is left, and nothing passes the closet itself', () => {
+  // The plan from the day: 13 on the shelf, 15 on the floor. Nothing to do.
+  const asReturned = validatePlan(reachIn([need('Upper shelf: left side', 13), need('Floor: bins and hamper', 15)]), closetContext);
+  assert.equal(asReturned.ok, true, asReturned.errors && asReturned.errors.join('; '));
+  assert.deepEqual(asReturned.value.productNeeds.map((n) => n.maxDims.d_in), [13, 15]);
+
+  // A model that read the 30 inches as the shelf: trimmed to the shelf less
+  // the clearance, and the plan is kept.
+  const deepShelf = validatePlan(reachIn([need('Upper shelf: left side', 22), need('Floor: bins and hamper', 25)]), closetContext);
+  assert.equal(deepShelf.ok, true, deepShelf.errors && deepShelf.errors.join('; '));
+  assert.deepEqual(deepShelf.value.productNeeds.map((n) => n.maxDims.d_in), [13.5, 25], 'the shelf need is trimmed to 13.5; the floor need keeps its 25');
+
+  // Only a row the plan itself marked as a shelf is trimmed. A need that
+  // names no row, or a row with no surface, keeps what the model gave it.
+  const unnamed = validatePlan(reachIn([need('Somewhere in the closet', 22)]), closetContext);
+  assert.equal(unnamed.ok, true);
+  assert.equal(unnamed.value.productNeeds[0].maxDims.d_in, 22);
+  const noSurface = reachIn([need('Upper shelf: left side', 22)]);
+  delete noSurface.map[0].surface;
+  assert.equal(validatePlan(noSurface, closetContext).value.productNeeds[0].maxDims.d_in, 22);
+
+  // The closet's own depth is still a wall: 30 inches less the clearance.
+  for (const zone of ['Floor: bins and hamper', 'Somewhere in the closet']) {
+    const tooDeep = validatePlan(reachIn([need(zone, 31)]), closetContext);
+    assert.equal(tooDeep.ok, false, `${zone}: 31 inches does not fit a 30-inch closet`);
+    assert.match(tooDeep.errors.join('\n'), /does not fit the 30in usable shelf depth/);
+  }
+  assert.equal(validatePlan(reachIn([need('Floor: bins and hamper', 29.5)]), closetContext).ok, true);
+
+  // A closet no deeper than its shelf has nothing to trim, and no other layout is touched.
+  const shallow = validatePlan(reachIn([need('Upper shelf: left side', 11)]), { ...noKidsContext, dims: { w_in: 36, h_in: 84, d_in: 12 } });
+  assert.equal(shallow.value.productNeeds[0].maxDims.d_in, 11);
+  const cabinet = reachIn([need('Upper shelf: left side', 22)]);
+  cabinet.layout = { type: 'cabinet', sections: [] };
+  assert.equal(validatePlan(cabinet, closetContext).value.productNeeds[0].maxDims.d_in, 22);
+});
+
+test('the enforced-limits block tells the model the rod closet rule, from the validator\'s own function', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /const closetShelf = usableShelfDepth\('closet-rod', ctx\.dims, 'shelf'\);/, 'the shelf depth told is the one the repair trims to');
+  assert.match(fn, /If you classify this as closet-rod, the shelf over the rod is about \$\{closetShelf\}in deep/);
+  assert.match(fn, /at or under \$\{\(closetShelf - 0\.5\)\.toFixed\(1\)\}in \(a deeper value there is trimmed to that, not rejected\)/, 'the model is told a deep shelf need is trimmed');
+  assert.match(fn, /Only what sits on the closet floor may use the full depth, up to \$\{\(roomDepth - 0\.5\)\.toFixed\(1\)\}in/, 'and that the floor is the exception, with the limit the validator rejects at');
+  // Both shapes of the depth line carry it, and the sentence that used to
+  // call the measurement "the shelf itself" for every other archetype steps aside.
+  assert.equal((fn.match(/\$\{closetLimit\}`/g) || []).length, 2, 'both branches of depthLimit end with the closet clause');
+  assert.match(fn, /closetLimit \? 'every archetype other than those two and closet-rod' : 'any other archetype'/);
+});
+
+/* "Also in your photo" chips are tapped to add a thing to the plan. A live
+   plan returned "Red item bottom right": nothing in it says what the thing
+   is, so nobody can act on it. */
+test('a spotted entry that names no thing is dropped, and a real thing never is', () => {
+  for (const name of ['Red item bottom right', 'Unknown object', 'Items on the top shelf', 'Stuff', 'Blue thing', 'Misc', 'Top shelf', 'something on the floor']) {
+    assert.equal(namesAThing(name), false, name);
+  }
+  for (const name of ['Black bag', 'Shoe boxes on the high shelf', 'Loose shoes on the floor', 'Steamer on the shelf', 'Floor mat', 'Orange', 'Light', 'Door rack', 'Red wine', 'Top hat', 'Back scratcher', 'USB cables', 'Fan']) {
+    assert.equal(namesAThing(name), true, name);
+  }
+  const plan = basePlan();
+  plan.spotted = [{ name: 'Red item bottom right', row: 1 }, { name: 'Juicer', row: 0 }, { name: 'Unknown object' }];
+  const confirmed = { ...noKidsContext, categories: ['Drinks'], categoriesTouched: true };
+  const result = validatePlan(plan, confirmed);
+  assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+  assert.deepEqual(result.value.spotted, [{ name: 'Juicer', row: 0 }]);
+  // A list with nothing nameable in it is absent, the shape the client expects.
+  const none = basePlan();
+  none.spotted = [{ name: 'Red item bottom right', row: 1 }];
+  assert.equal('spotted' in validatePlan(none, confirmed).value, false);
+
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /If you cannot tell what a thing is, leave it out: never name one by its color or where it sits/, 'the model is asked for a name');
+  assert.match(fn, /A "spotted" entry that names no thing, only a color, a position or a word like "item", is dropped too\./, 'and told what the repair pass does');
+});
+
+/* Run 2b, 2026-10-10: the summary said "three-shelf cabinet" over a map of
+   four levels. The map is the count; the prose is told not to give one. */
+test('the prompt tells the model not to count shelves in prose', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /Never state how many shelves, levels, drawers or rods the space has, in summary, problems or opportunities\./);
 });

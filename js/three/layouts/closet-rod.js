@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { addBox, addShelfLabel, accentFor, makeHitbox } from './helpers.js';
+import { rodClosetDepth } from '../roomBoards.js';
 
 export function build(ctx){
   const { scene, geo, rowsByShelf, mats }=ctx;
@@ -14,6 +15,16 @@ export function build(ctx){
   const rodMat=new THREE.MeshStandardMaterial({ color:0xb0b0b0, metalness:0.5, roughness:0.3 });
   const surfaces=[];
   const usable=W-2*T-2;
+  /* The shelf over the rod is not as deep as the closet (roomBoards.js
+     rodClosetDepth). It used to be drawn door to back wall, a 30-inch board
+     in a 30-inch reach-in, so a 20-inch bin sat on it happily here while the
+     product card, which judges by the real shelf, called the same bin too
+     big. The board hangs off the back wall; a closet no deeper than the
+     shelf is drawn as it always was. */
+  const shelfD=rodClosetDepth(D);
+  const shallow=shelfD<D-T;
+  const boardD=shallow?shelfD:D-T;
+  const boardZ=shallow?-D/2+T+shelfD/2:T/4;
 
   shelfYs.forEach((y,i)=>{
     const row=rowsByShelf.get(i)||null;
@@ -60,26 +71,32 @@ export function build(ctx){
       });
     } else {
       if(isShelf && y<H-T*2 && y>T*1.6){
-        addBox(scene, W-2*T, T, D-T, 0, y-T/2, T/4, mats.shelf);
+        addBox(scene, W-2*T, T, boardD, 0, y-T/2, boardZ, mats.shelf);
       }
+      /* A shelf row lives on the board, so its marker, its hitbox and the
+         depth its contents are judged against are the board's. The floor row
+         is the whole closet, as before. */
+      const onBoard=isShelf&&shallow;
+      const rowD=onBoard?shelfD:D;
+      const rowZ=onBoard?boardZ:0;
 
       const accent=accentFor(row);
       if(accent){
-        addBox(scene, W-2*T, 0.4, 0.4, 0, y+0.2-T/2, D/2-0.3,
+        addBox(scene, W-2*T, 0.4, 0.4, 0, y+0.2-T/2, onBoard?boardZ+boardD/2-0.3:D/2-0.3,
           new THREE.MeshBasicMaterial({ color:accent }));
       }
       if(row) addShelfLabel(scene, row, -W/2, y+3.4, D/2+0.6);
 
       const hit=makeHitbox(scene,
-        W-2*T, Math.max(6, H/NSH*0.85), D,
-        0, y+Math.max(3, H/NSH*0.42), 0,
+        W-2*T, Math.max(6, H/NSH*0.85), rowD,
+        0, y+Math.max(3, H/NSH*0.42), rowZ,
         { shelfIndex:i, shelfY:y, row });
 
       surfaces.push({
         index:i, kind:isFloor?'floor':'shelf', row, y, hitbox:hit,
         uDir: new THREE.Vector3(1,0,0),
         normal: new THREE.Vector3(0,0,1),
-        length:usable, gap:gapAbove[i], itemDepth:Math.min(D*0.55, 8),
+        length:usable, gap:gapAbove[i], depth:rowD, itemDepth:Math.min(rowD*0.55, 8),
       });
     }
   });

@@ -20,8 +20,8 @@ export const ROOMS = [
 export const AREAS = {
   kitchen: [
     { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage, cabinet to walk-in', artKey: 'elPantry' },
-    { id: 'cabinet', label: 'Cabinets', short: 'cabinets', desc: 'Dishes, pots & counter clutter', artKey: 'elCabinets' },
-    { id: 'drawers', label: 'Drawers', short: 'drawers', desc: 'Cutlery, utensils & the junk drawer', artKey: 'elDrawers' },
+    { id: 'cabinet', label: 'Cabinets', short: 'cabinets', plural: true, desc: 'Dishes, pots & counter clutter', artKey: 'elCabinets' },
+    { id: 'drawers', label: 'Drawers', short: 'drawers', plural: true, desc: 'Cutlery, utensils & the junk drawer', artKey: 'elDrawers' },
   ],
   bedroom: [
     { id: 'closet', label: 'Closet', short: 'closet', desc: 'Clothes, shoes & accessories', artKey: 'elCloset' },

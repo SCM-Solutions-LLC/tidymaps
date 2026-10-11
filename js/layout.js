@@ -129,6 +129,16 @@ export function surfaceFromLevelText(lv) {
   return null;
 }
 
+/* Whether a row's `eye` flag is shown in words. The flag marks the row a plan
+   leans on, and the model sets it on exactly one row of every unit, so the top
+   drawer of a kitchen drawer bank came back tagged "Eye level" at knee height.
+   A drawer keeps the highlight and loses the words.
+   @param {{eye?: boolean, surface?: string|null, lv?: string}|null|undefined} row */
+export function eyeMarkFor(row) {
+  if (!row || !row.eye) return false;
+  return (row.surface || surfaceFromLevelText(row.lv)) !== 'drawer';
+}
+
 /* ---------- Archetype positional defaults ---------- */
 
 const ARCHETYPE_DEFAULTS = {
