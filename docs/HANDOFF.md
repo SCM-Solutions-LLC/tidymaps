@@ -291,11 +291,217 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-10 session changed, part 3 (the reach-in run, and what it and the two batches found)
+
+One more owner run, then the fixes for it and for the "small things" list in
+part 2 below. The client half is live on merge with the site; the prompt and
+validator half deploys with the functions on the same merge and **has not run
+against the model yet**. Read "After the merge" before trusting it.
+
+**Run 4c.** Closet, reach-in, "Open to a few ideas", three photos, the
+wizard's default 5' x 2'6" x 8'. One `analyze-space` POST, 200 on the first
+attempt, 18.5s server (19:57:54 to 19:58:13 UTC). 9 steps, 7 rows, 4 spotted,
+both goals covered, `rowsWithWall: 0`. Shoes were left unticked and came back
+twice in "Also in your photo". Both product cards read "Fits your 14" shelf
+depth", so #191's badge fix holds in production.
+
+**The run does not close #191's open item, and cannot.** The owner's closet
+is a walk-in, so this was run 4's mismatch again: walk-in photos entered as a
+reach-in. The model drew three walls as seven stacked rows (four rods about 13
+inches apart) and its summary said "walk-in style closet" under a "Reach-in"
+chip. The summary is doing what the prompt tells it to ("still use the chosen
+archetype and say what you see in the summary"). What the app should do when
+the photos and the setup disagree is a product decision and is **open**:
+nothing here changes it. A true reach-in or wardrobe photo is still needed to
+check a rod closet live.
+
+**What was wrong, in the order it mattered.**
+
+- **The server's even shelf spacing was a stale copy.** `evenShelfFracs` in
+  `planSchema.js` "mirrors" the client's and nothing held them equal. The
+  client stopped drawing the top compartment as a sliver on 09-08; the copy
+  still ran 0.08 to 0.90. `normalizeShelfYFracs` writes that copy whenever the
+  model's heights are not strictly ascending, and two rows side by side at
+  one height is enough ("Upper shelf: left side", "Upper shelf: right side").
+  So the plan came back with its top shelf 6.9 inches under the ceiling of an
+  8-foot closet, and the 3D view said "1 selected organizer group does not
+  fully fit" about the 7-inch basket the plan itself recommended. The copy is
+  the client's formula now, exported, and a test holds the two equal for
+  every count. `js/plan.js normalizeGeometry` reads an exact match to the old
+  spread (three rows or more) as "no heights given", because those numbers
+  are stored in saved plans and are valid, so nothing else would ever replace
+  them. Run 4c's own saved plan is one.
+- **The card knew nothing about the level a pick sits on.** `fitFor` judged
+  height against the need's own `maxDims.h_in` and the whole unit. It now
+  finds the row the need names (`targetRowFor`, the same `targetScore` the
+  scene ranks rows with) and reads that row's headroom from
+  `roomBoards.js gapsAboveFor`, which `scene.js` now draws from in place of
+  its own copy. A product taller than its row is `no-fit` on the card, as it
+  is in the view. **Only for plain boards**: a `shelf` or `floor` row of a
+  `cabinet`, `closet-rod` or `closet-system`. Drawers publish their own box
+  height, a floating shelf and a rack's top shelf are open above, a room is
+  read from its room plan, and for all of those `rowHeadroomFor` returns null
+  and the card judges as it did. This changes picks: a product the 3D view
+  would have flagged is no longer offered as a fit.
+- **A rod closet's 14-inch cap was applied to its floor.** The floor bin was
+  badged "Fits your 14" shelf depth" and searched for at 14 inches in a
+  30-inch closet. `shelfDepthFor(dims, archetype, surface)` takes the surface:
+  `floor` is the whole closet, anything else is the shelf. The badge says
+  "floor depth" when that is what it measured.
+- **The 3D view drew the shelf over the rod door to back wall.** #191's other
+  open half. `closet-rod.js` draws the board 14 inches deep off the back wall
+  (`roomBoards.js rodClosetDepth`, the one rule the card and the server
+  repeat), puts the row's hitbox and marker on it, and publishes `depth` per
+  row, so the scene's depth verdict and the card's are one answer.
+
+**The server half of #191, and why it trims.** `usableShelfDepth('closet-rod',
+dims, surface)` is the same rule, and the equality tests cover it on all
+three sides. The plain alignment the earlier entry asked for (one depth for
+every need) **would have rejected run 4c's own plan**: it asked for a 15-inch
+bin on the floor. So `checkInvariants` still rejects only past the closet's
+own depth, and `trimClosetShelfNeeds` lowers `maxDims.d_in` to 13.5 for a
+need whose `targetZone` names a row the plan marked `surface: "shelf"`. A
+need for the floor, one that names no row, and one on a row with no surface
+keep what the model gave them. Trimmed, not rejected: the right number is
+known, the client already searches at the tighter of the two, and a rejection
+would spend the analysis to ask for it. The enforced-limits line tells the
+model all three facts from `usableShelfDepth` (the shelf, the trim, the floor
+at the full depth), so the validator is looser than its prompt there, never
+stricter.
+
+**The small things from part 2.**
+
+- "How big is your drawers?": the two plural spaces carry `plural: true` and
+  the heading says "are". Cabinets had the same line.
+- A drawer tagged "Eye level": `layout.js eyeMarkFor`. The `eye` flag is the
+  row a plan leans on (the highlight, the default row for an unplaced item),
+  so it stays; a drawer loses only the words.
+- "Three-shelf cabinet" over four levels: the prompt now says never to state
+  how many shelves, levels, drawers or rods a space has in summary, problems
+  or opportunities. Prompt only; nothing checks it.
+- "Red item bottom right": the prompt asks for each spotted thing by name and
+  to leave out what it cannot name, and the repair pass drops an entry that
+  is only colors, positions and words like "item" (`namesAThing`). "Orange"
+  and "Light" are deliberately not on the color list.
+- The setup step opening scrolled down: **this was the automation, and part
+  2's guess was right.** `go()` smooth-scrolled to the top, and a smooth
+  scroll only moves while the tab is painted. Headless Chromium reaches 0 in
+  under 400ms; a tab driven by the extension stalled at 53 and at 81 pixels.
+  Nobody looking at the page sees it. `scrollToTop` jumps now anyway: the
+  screen has already been swapped, so there was nothing to animate, and the
+  next driven run reads a true screenshot. Revert it if the glide was wanted.
+- The clicks that did nothing within a second of load were not looked at.
+
+**Side effect to know about.** The hazard-height rule reads the repaired
+heights. With the old spread a repaired plan's top row sat at 92 percent of
+the unit's height; with the client's it sits at `1 - 0.92/n`, which is where
+it is drawn. For a household with a child of 9 or under, a chemical or sharp
+item on the top row of a short or two-level unit can now fall under 48 inches
+where it did not, and that plan is rejected and retried with the rule's own
+message. It is the truer number and the safer direction, and it only applies
+when the model's own heights were unusable. Watch for it.
+
+**After the merge.** (1) Read `analyze-space plan validation failed` in the
+function log for a week: a rise is this change. (2) Run a rod closet with
+photos of an actual reach-in or wardrobe and check three things: the model's
+shelf `maxDims.d_in` is at or under 13.5 without the trim, a floor need names
+the floor row, and the card and the 3D view agree. (3) Reopen run 4c's saved
+plan: its 3D view should open with no fit note.
+
+**Seen, not changed.**
+
+- `viewer3d.js shelfMaxDims` sizes an organizer added from the 3D view by the
+  compartment BELOW its row (`fracs[i+1] - fracs[i]`), not the one over it.
+  With even spacing the two are equal, so it only shows after a shelf is
+  moved. The card's row check above catches the too-tall case.
+- A walk-in's floor rows are still judged against the wall shelving on both
+  sides. The scene gives a walk-in's floor the room's depth. Left alone:
+  "Fits your 72" floor depth" is too close to the reading the 10-03 session
+  removed.
+- Run 4c offered "Script Pantry Labels for Food Containers" for a closet. The
+  catalog has one label set.
+- A visible bag was not spotted with Bags & purses unticked. One run.
+
+**Tests.** Each new unit assertion was proven red by neutering only its own
+behaviour, in a copy of the tree (the copy diffed clean against the branch
+afterwards). `fit-zones.spec.mjs` asks the card and the live scene the same
+question either side of each row's headroom and each surface's depth, so the
+two are held equal in a browser and not only by sharing a function. **Its
+seven browser tests pass but were not each proven red**, and of the e2e suite
+only `demo-fit` (all 33 setups still open their 3D view clean), the
+`viewer3d-*` and `three-*` specs, `organizer-depth-fit` and `fit-zones` were
+run locally: 85 passed, 1 skipped. The rest was left to CI.
+
+## What the 2026-10-10 session recorded, part 2 (two batches of owner test runs)
+
+Seven analyses on the owner's own spaces, driven through Claude in Chrome
+against production, signed in. No code changed. Every run was one
+`analyze-space` POST that returned 200 on the first attempt: no validation
+failure, no retry, no demo plan. Server time is OPTIONS to POST 200 in the edge
+logs; the browser saw about two seconds more.
+
+| Run | Space and setup | Size entered | Photos | Server | Steps | Rows | Spotted |
+|---|---|---|---|---|---|---|---|
+| 1 | Pantry, walk-in | 6' x 8' | - | 18.1s | 10 | 7 | 0 |
+| 2 | Cabinets, tall cabinet | 3' x 7' | - | 12.6s | 5 | 5 | 3 |
+| 4 | Closet, reach-in | 5' x 8' | - | 21.8s | 12 | 9 | 3 |
+| 1b | Pantry, walk-in | 6' x 6' x 8' | 1 | 19.8s | 9 | 9 | 3 |
+| 2b | Pantry, cabinet | 3' x 1' x 3'6" | 1 | 12.1s | 4 | 4 | 5 |
+| 4b | Closet, walk-in | 6' x 6' x 8' | 3 | 18.8s | 13 | 9 | 3 |
+| 5 | Drawers, in-counter | 2'6" x 2' x 3' | 2 | 12.3s | 5 | 2 | 2 |
+
+Batch 1 (runs 1, 2, 4) ran 04:42 to 05:05 UTC, batch 2 (1b, 2b, 4b, 5) ran
+16:31 to 19:32 UTC. Batch 1 sizes are the width and height its saved plans
+show; its depths and photo counts were not recorded. Run 3 was a fridge and was dropped: the wizard has nine
+spaces and a fridge is not one. Every step carried rows and every stated goal
+was covered in all seven plan-quality logs. The cabinet and drawer plans log
+`rowsWithWall: 0`, which is what a layout with no walls should log.
+
+**How the two batches differ.** Batch 1 ticked every category, so its plans
+followed the full list by design, and it asked for photo previews (about 8s
+each, and they showed suggested purchases). Batch 2 ticked only categories
+visible in the photo, left one visible category unticked, chose "Use what I
+have" and asked for no preview. Run 4 photographed a walk-in and was entered as
+a reach-in; 4b entered it as a walk-in. Run 2b went through Pantry, not
+Cabinets, so it is a different path from run 2 and not a repeat of it.
+
+**"Also in your photo" did not stay empty.** Run 1 logged `spotted: 0` with
+Canned goods unticked and cans in view. Run 1b, same photo, same width and height,
+Canned goods unticked again, returned Canned goods first, then foil and wrap boxes and
+sauce jars. One miss and one hit on one photo, so the prompt was left alone.
+The two runs are not identical: 1b also left Drinks unticked (none visible) and
+picked two goals where run 1 picked three. In the other runs the unticked
+visible category came back every time it was a distinct thing: shoes in 4b, the
+fan and juicer in 2b. In run 5 the cables went into the junk-drawer row and
+were not listed separately, which reads as correct.
+
+**The sizes are not measurements.** The owner gave none. The pantry and closet
+used the wizard's default, the drawers used the default, and the 2b cabinet is
+an estimate from the photo. Nothing here says whether a plan fits a measured
+space.
+
+**Not checked by these runs.** The rod-closet shelf depth badge from #191: all
+of batch 2 chose "Use what I have", so no product and no fit badge rendered.
+The open item to align the server prompt, `usableShelfDepth` and the closet-rod
+builder still needs a live reach-in run with products on.
+
+**Small things seen, none fixed here.** All but the early clicks are dealt
+with in part 3 above.
+
+- Run 2b's summary says "three-shelf cabinet" and its map lays out four levels.
+- Run 2b spotted "Red item bottom right", a chip nobody can act on.
+- Step 3 for Drawers asks "How big is your drawers?".
+- A drawer plan tags its top drawer "Eye level".
+- Twice a click made within a second of page load did nothing, and once a
+  space card opened the setup step scrolled 53px down with its heading under
+  the header. Neither repeated after waiting two seconds, so both may be the
+  automation's timing. Try by hand before treating either as a bug.
+
 ## What the 2026-10-10 session changed (a rod closet's shelf depth, portrait previews)
 
 Two fixes from the first owner test runs on Sonnet 5.5 (10-10, 04:42 to 05:05
-UTC, driven through Claude in Chrome). The runs themselves get their own entry
-once the second batch is in.
+UTC, driven through Claude in Chrome). The runs themselves are recorded in
+the entry above.
 
 **A rod closet is judged by its shelf, not its depth.** `shelfDepthFor` in
 `js/catalog.js` returned the measured depth for every layout that is not
@@ -313,8 +519,10 @@ the validator allows `maxDims.d_in` up to the closet depth less 0.5in. That
 leaves the validator looser than the client, never stricter, which is the
 direction that cannot fail an analysis; the client searches at the tighter of
 the two. The 3D view still draws a rod closet's shelves the full depth of the
-closet. **Open:** bring the prompt, `usableShelfDepth` and the closet-rod
-builder in line together, once a reach-in closet analysis can be checked live.
+closet. ~~**Open:** bring the prompt, `usableShelfDepth` and the closet-rod
+builder in line together, once a reach-in closet analysis can be checked live.~~
+**Done in part 3 above**, without the live check: the owner has no reach-in to
+photograph. The live check is that entry's "After the merge".
 The equality loop in `plan-schema.test.mjs` covers walkin-u, l-run, cabinet and
 shelves, not closet-rod, and the new case in `catalog-fit.test.mjs` pins the
 difference.
@@ -328,8 +536,9 @@ stripe both in view, and goes red under `cover`.
 
 **Open from the same runs:** "Also in your photo" came back empty
 (`spotted: 0` in the plan-quality log) on the walk-in pantry with Canned goods
-unticked and cans in plain view, which the prompt says belong there. One run,
-so a repeat is queued before the prompt is touched.
+unticked and cans in plain view, which the prompt says belong there. **Not
+repeated:** run 1b returned Canned goods (entry above), so the prompt stays as
+it is.
 
 ## What the 2026-10-06 session changed, part 2 (the funnel is off in the owner's browser, and no one else uses the app)
 
