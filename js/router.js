@@ -1,5 +1,5 @@
 import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord, resetWizardAnswers } from './state.js';
-import { track } from './telemetry.js';
+import { track, arrivalRef } from './telemetry.js';
 import { scrollToTop, closeSiteNav } from './ui.js';
 import { getSession } from './auth.js';
 import { buildAll, buildCustomize } from './screens/index.js';
@@ -202,7 +202,9 @@ export function go(id, opts={}){
      product library is itself a site page, and the menu that opened it stayed
      on screen over its heading. A menu is spent by the tap that uses it. */
   closeSiteNav();
-  track('screen_viewed', { screen:id });   // wizard funnel / drop-off
+  // wizard funnel / drop-off; ref is null without a tagged link, and the
+  // sanitizer drops a null prop
+  track('screen_viewed', { screen:id, ref:arrivalRef() });
   setRail();
   // step counter in appbar for wizard screens
   const stepEl=document.getElementById('appbar-step');

@@ -9,7 +9,9 @@
 // - No IPs, no exact timestamps from the client (the server stamps arrival).
 
 export const EVENT_NAMES = [
-  'screen_viewed',        // { screen } — wizard funnel / drop-off
+  'screen_viewed',        // { screen, ref } — wizard funnel / drop-off. ref
+                          //   is the ?ref= tag of the shared link the visit
+                          //   came in on, absent without one (js/telemetry.js)
   'plan_created',         // { space, source, steps, walls, spotted }: a plan
                           //   was generated. walls is how many map rows
                           //   resolved to a wall, spotted how many items the

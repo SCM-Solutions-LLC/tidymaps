@@ -217,7 +217,7 @@ test('the privacy policy discloses every telemetry event the server accepts', as
      that no longer exists fails too, so the paragraph cannot drift either way. */
   const { EVENT_NAMES } = await import('../supabase/functions/_shared/telemetryEvents.js');
   const DISCLOSED = {
-    screen_viewed: /which steps of the planner people reach/,
+    screen_viewed: /which steps of the planner people reach, and, when you came in through a link we posted, the short tag on that link that says where we posted it/,
     plan_created: /when a plan is generated, with the space type, whether the AI or our built-in fallback produced it, how many steps it has, how many of its zones name a wall, and how many items it set aside for you to add/,
     step_checked: /how many plan steps get checked off/,
     product_clicked: /which product links get clicked, as the retailer and whether it was a named pick or a search, never the product itself/,

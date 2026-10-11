@@ -88,6 +88,35 @@ function anonId() {
   }
 }
 
+/* Which shared link brought this visit, as the `ref` tag we put on it
+   (?ref=reddit-organization). Without it, posting in three places and
+   getting ten users cannot say which place sent them.
+
+   Only a short lowercase slug is kept. Anything else is dropped whole rather
+   than cleaned up, because the value comes from a URL anyone can edit: an
+   email address stripped to its letters is still the email address. Read once
+   at load, so a later rewrite of the URL cannot change the answer mid-visit.
+   Nothing is stored: the router only ever changes the fragment, so the query
+   survives every step and a reload. */
+const REF_PATTERN = /^[a-z0-9][a-z0-9-]{0,23}$/;
+
+export function parseRef(search) {
+  try {
+    const raw = new URLSearchParams(search || '').get('ref');
+    if (!raw) return null;
+    const ref = raw.toLowerCase();
+    return REF_PATTERN.test(ref) ? ref : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+const ARRIVAL_REF = typeof location === 'undefined' ? null : parseRef(location.search);
+
+export function arrivalRef() {
+  return ARRIVAL_REF;
+}
+
 let queue = [];
 let timer = null;
 
