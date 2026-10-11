@@ -16,7 +16,7 @@ const workflow = readFileSync(new URL('../.github/workflows/pages.yml', import.m
 
 test('the Pages workflow uploads the built artifact, not the checkout', () => {
   assert.match(workflow, /run: bash scripts\/build-site\.sh _site/, 'the deploy step does not build the artifact');
-  assert.match(workflow, /uses: actions\/upload-pages-artifact@v\d+\s*\n\s*with:\s*\n\s*path: _site/, 'the upload step still ships the whole checkout');
+  assert.match(workflow, /uses: actions\/upload-pages-artifact@\S+(?: #[^\n]*)?\n\s*with:\s*\n\s*path: _site/, 'the upload step still ships the whole checkout');
 });
 
 test('the built site carries every page and asset directory a browser fetches, and nothing else', () => {

@@ -3600,6 +3600,17 @@ Ordered by whether anyone can act on them today.
       commit they currently point at, and a guessed SHA is worse than an
       unpinned tag. Left for a session with broader GitHub read access (or a
       human, from the Actions tab's "pin to SHA" affordance).
+      **Pinning done 2026-10-11.** The API is still scoped to this repo, but
+      `git ls-remote --tags https://github.com/actions/<name>` reads public
+      repos through the git proxy. Each `uses:` now names the commit its
+      current major tag points at, with the release in a trailing comment
+      (checkout v6.1.0, setup-node v6.5.0, configure-pages v6.0.0,
+      upload-pages-artifact v5.0.0, deploy-pages v5.0.1, upload-artifact
+      v7.0.2). Each SHA was fetched and has an `action.yml`;
+      upload-pages-artifact is composite and already pins its own
+      upload-artifact by SHA. `tests/ci-pinned-actions.test.mjs` refuses a
+      tag ref or a pin without its version comment. Nothing bumps these now:
+      a new release lands only when someone re-resolves the pin.
       The OTP expiry/captcha check resolved itself: `get_advisors` carries a
       dedicated `auth_otp_long_expiry` finding when the hosted expiry exceeds
       Supabase's own 1-hour recommendation, and none appeared in this
@@ -3727,8 +3738,9 @@ Ordered by whether anyone can act on them today.
       repo warns before it expires.
     - ~~Bump the GitHub Actions off Node 20.~~ **Done in the PR that carries
       this entry**; the header has the versions and what stays unverified
-      until it merges. Pinning actions to SHAs is still open and still needs
-      broader GitHub access.
+      until it merges. ~~Pinning actions to SHAs is still open and still needs
+      broader GitHub access.~~ **Done 2026-10-11** without it; see open item
+      12, batch 3, the CI line.
 
 ### Waiting on traffic
 
