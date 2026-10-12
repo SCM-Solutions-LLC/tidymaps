@@ -255,3 +255,52 @@ test('a product taller than the row it is drawn on does not fit, whatever the ne
     assert.equal(fitFor({ dims_in: { w: 10, h: 9, d: 12 } }, need), 'no-fit');
   } finally { state.ai = null; state.arrangement = null; }
 });
+
+/* A room's rows are read from its room plan, as the 3D view draws them. The
+   card had no row check for a room, so a walk-in floor need was judged by
+   its own maxDims while the scene judged it under the lowest shelf: here,
+   anything up to the need's 40 inches was "Fits" under 28.26. Six
+   rows, two to a wall, the floor row filed under the right wall; the plan's
+   geometry counts rows, and the room is drawn with three boards a wall, the
+   lowest at 29.76 inches (three-room-boards.test.mjs has the arithmetic). */
+test('a room judges a pick against the row the room plan puts it on', () => {
+  const row = (i, lv, zone, surface = 'shelf') => ({ lv, zone, shelfIndex: i, surface, items: [{ name: 'Rice' }] });
+  state.space = 'pantry';
+  state.setup = 'walkin'; state.setupTouched = true;
+  state.dims = { w_in: 72, h_in: 96, d_in: 72, shelves: null };
+  state.ai = {
+    layout: { type: 'walkin-u', sections: [
+      { id: 'left', place: 'left', rows: [0, 1] }, { id: 'back', place: 'back', rows: [2, 3] }, { id: 'right', place: 'right', rows: [4, 5] },
+    ] },
+    geometry: { width: 72, height: 96, depth: 72, shelfCount: 6 },
+    map: [
+      row(0, 'Top left shelf', 'Paper towels'), row(1, 'Low left shelf', 'Cereal'),
+      row(2, 'Top back shelf', 'Baking'), row(3, 'Low back shelf', 'Soup'),
+      row(4, 'Top right shelf', 'Snacks'), row(5, 'Floor', 'Bulk rice', 'floor'),
+    ],
+  };
+  state.arrangement = null;
+  try {
+    assert.equal(currentArchetype(), 'walkin-u');
+    const floor = { type: 'clear-bin', targetZone: 'Bulk rice', maxDims: { w_in: 30, h_in: 40, d_in: 14 } };
+    const top = { type: 'basket', targetZone: 'Paper towels', maxDims: { w_in: 30, h_in: 40, d_in: 14 } };
+    assert.equal(targetRowFor(floor).surface, 'floor');
+    const box = (h) => ({ dims_in: { w: 12, h, d: 12 } });
+    // The floor clears 29.76 - 1.5 = 28.26 inches; the top shelf 96 - 0.75 - 73.92 - 0.75 = 20.58.
+    assert.equal(fitFor(box(28), floor), 'fits');
+    assert.equal(fitFor(box(28.5), floor), 'no-fit', 'taller than the space under the lowest shelf');
+    assert.equal(fitFor(box(20.5), top), 'fits', 'the row is a yes or no, the way the scene judges it');
+    assert.equal(fitFor(box(21), top), 'no-fit', 'taller than the top shelf\'s compartment');
+    // A version 2 arrangement's count was rows: it is re-derived as three boards a wall, as the viewer does.
+    state.arrangement = { version: 2, geometry: { width: 72, height: 96, depth: 72, shelfCount: 6, shelfYFracs: [0.1, 0.25, 0.4, 0.55, 0.7, 0.85] } };
+    assert.equal(fitFor(box(28), floor), 'fits');
+    assert.equal(fitFor(box(28.5), floor), 'no-fit');
+    // A version 3 one is boards, as the user left them: the lowest moved down to 19.2 inches.
+    state.arrangement = { version: 3, geometry: { width: 72, height: 96, depth: 72, shelfCount: 3, shelfYFracs: [0.1, 0.5, 0.8], levelsAre: 'boards' } };
+    assert.equal(fitFor(box(17.5), floor), 'fits');
+    assert.equal(fitFor(box(18), floor), 'no-fit');
+  } finally {
+    state.ai = null; state.arrangement = null;
+    state.space = 'pantry'; state.setup = 'cabinet'; state.setupTouched = false;
+  }
+});

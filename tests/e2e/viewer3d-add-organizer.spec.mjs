@@ -142,8 +142,8 @@ test('an added organizer is sized by the space over its row, the one the card ju
    number, so its printed limit was one the scene did not draw: the walk-in
    drew its floor 10 inches high. The live floor surface is the answer key,
    read the way the scene judges a fit (its gap less a board), and the limit
-   may not pass it: a room has no row check on the card to catch a printed
-   "Max 21h" over a floor the scene clears to 20.9. */
+   may not pass it: a printed "Max 21h" over a floor the scene clears to 20.9
+   sends someone shopping for a bin the plan then calls too tall. */
 const shelfRow = (i, extra = {}) => ({
   level: `Shelf ${i + 1}`, icon: 'up', zone: `Zone ${i + 1}`, why: 'Reachable from the doorway.',
   eye: false, shelfIndex: i, safety: { flag: null, why: null },
