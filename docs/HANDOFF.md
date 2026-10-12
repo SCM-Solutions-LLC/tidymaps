@@ -4,9 +4,9 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-10-12, after #194 merged (`main` at `dd00890`).
+**Last refreshed:** 2026-10-12, after #195 merged (`main` at `4a1ebe7`).
 This header still tells the 10-03 story; each later session has its own dated
-section below it, newest first, starting with 2026-10-11.
+section below it, newest first, starting with 2026-10-12.
 
 **Both owner blockers from the 09-14 and 09-19 outages are cleared.** The
 `ANTHROPIC_API_KEY` was rotated 09-29 to a dedicated key with no expiry
@@ -293,6 +293,19 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-12 session changed (recruiting slugs, #192's tests proven)
+
+Docs only. Open item 6 now lists a `?ref=` slug for each recruiting channel,
+and open item 12's header no longer says nothing past #138 is fixed: every
+line in it is struck through with its PR. Checked on `4a1ebe7`: lint, types
+and 819 unit tests pass locally; Pages run 199, "Deploy edge functions" run
+40 and canary run 56 are green on the Actions API. The site itself is not
+reachable from the sandbox (the proxy refuses `scmsolutions.org`).
+
+#192's seven `fit-zones.spec.mjs` browser tests, recorded as never proven
+red, now are: nine neuters in a copy of the tree, each alone, each turned
+its test red (that section's **Tests** paragraph lists them).
+
 ## What the 2026-10-11 session changed (SHA-pinned actions, `?ref=` tags)
 
 Two PRs, both deployed and checked from the Actions API on 10-12.
@@ -443,11 +456,20 @@ plan: its 3D view should open with no fit note.
 behaviour, in a copy of the tree (the copy diffed clean against the branch
 afterwards). `fit-zones.spec.mjs` asks the card and the live scene the same
 question either side of each row's headroom and each surface's depth, so the
-two are held equal in a browser and not only by sharing a function. **Its
-seven browser tests pass but were not each proven red**, and of the e2e suite
-only `demo-fit` (all 33 setups still open their 3D view clean), the
-`viewer3d-*` and `three-*` specs, `organizer-depth-fit` and `fit-zones` were
-run locally: 85 passed, 1 skipped. The rest was left to CI.
+two are held equal in a browser and not only by sharing a function. ~~Its
+seven browser tests pass but were not each proven red~~ **All seven proven
+red on 2026-10-12**, in a copy of `4a1ebe7` that diffed clean against it
+afterwards, by nine neuters, each alone: the card's headroom check off
+(`fitFor`); the floor capped at the shelf (`shelfDepthFor` without its
+surface); the shelf drawn door to back wall (`closet-rod.js` `shallow`
+false), which fails both the depth test and the 14-inch drawing test; the
+badge never naming the floor (`fitBadge` `onFloor` false); the search cap
+judged against the shelf (`searchLinks`); the singular measure heading; the
+smooth scroll back in `scrollToTop` (lands at 121, not 0); and
+`eyeMarkFor` always true. Of the e2e suite, only `demo-fit` (all 33 setups
+still open their 3D view clean), the `viewer3d-*` and `three-*` specs,
+`organizer-depth-fit` and `fit-zones` were run locally: 85 passed, 1
+skipped. The rest was left to CI.
 
 ## What the 2026-10-10 session recorded, part 2 (two batches of owner test runs)
 
@@ -3047,10 +3069,10 @@ Ordered by whether anyone can act on them today.
     (security, browser UI/UX with axe at 390 and 1280, throttled performance,
     copy and SEO) whose top claims were verified in source by the reviewer.
     Item 1, the icon XSS, shipped in #134, batch 1's pantry item in #136, and
-    its 3D-viewer item in #138. Nothing else is fixed. Each batch is roughly
-    one PR per line; the security items in batch 1 come first.
-    Not verified from the sandbox: live-site headers and contents, and the
-    hosted auth config.
+    its 3D-viewer item in #138. Every other line below has since shipped
+    too, each struck through with its PR (checked 2026-10-12). What is left
+    is what the sandbox cannot verify: live-site headers and contents, and
+    the hosted auth config.
 
     **Batch 1, fix now.**
     - ~~Pantry is pre-selected as the user's answer (`js/state.js` `space:'pantry'`).
@@ -3791,6 +3813,33 @@ Ordered by whether anyone can act on them today.
    rating has three answers (`FB_USEFUL` in `js/data.js`), and "Somewhat
    useful" is what a polite stranger taps, so counting it would pass the bar
    on weak interest.
+
+   **Slugs, set 2026-10-12.** Each link is
+   `https://scmsolutions.org/tidymaps/?ref=<slug>`, one slug per channel so
+   each reads on its own:
+
+   | Channel | Slug |
+   |---|---|
+   | Watched sessions (not strangers) | `watched` |
+   | r/organization | `reddit-organization` |
+   | r/declutter | `reddit-declutter` |
+   | Any other subreddit | `reddit-<sub>`, cut to fit |
+   | Nextdoor | `nextdoor` |
+   | Friends-of-friends | `fof-a`, `fof-b`, ... one letter per forwarder |
+   | Google Ads, later | `gads-<adgroup>`, e.g. `gads-pantry` |
+
+   The letter-to-name key for `fof-*` stays in the owner's notes, not here.
+   A slug outside `parseRef`'s pattern (lowercase letters, digits and
+   hyphens, at most 24) is dropped whole, and the visit reads as untagged:
+   it never counts as a stranger, so a typo loses the visit silently. The
+   owner does not open a tagged link: a browser that is not opted out
+   records it as a stranger, and a private window may not carry the
+   opt-out. A forwarding friend should not run a plan from their own link,
+   for the same reason. Google Ads is planned but the 10-12 session
+   recommended holding it until the bar is read: ad clicks are low intent,
+   and among the first 10 they would decide the bar for the channel's
+   reasons rather than the product's. Every link opens the homepage (there
+   is no deep link to a space), so the posts say to tap Pantry.
 
    **Reading it.** `screen_viewed` carries `ref` (a lowercase slug of at most
    24 characters; anything else is dropped whole, `js/telemetry.js parseRef`)
