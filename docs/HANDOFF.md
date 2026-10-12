@@ -3779,6 +3779,9 @@ Ordered by whether anyone can act on them today.
    own `?ref=` link. Bar, set before recruiting: of the first 10 strangers who
    start the wizard, 6 get a plan, 4 tap useful, 2 check off 3 or more steps
    within a week. Missing it means a product problem: stop recruiting.
+   The watched sessions go out on `?ref=watched`, so they can be left out:
+   an untagged visit has no `ref` and looks like any other traffic. A
+   stranger is a visit whose `ref` is set and is not `watched`.
 
    **Reading it.** `screen_viewed` carries `ref` (a lowercase slug of at most
    24 characters; anything else is dropped whole, `js/telemetry.js parseRef`)
