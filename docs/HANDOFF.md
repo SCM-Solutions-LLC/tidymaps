@@ -293,6 +293,39 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-12 session changed, part 2 (an added organizer's height)
+
+`viewer3d.js shelfMaxDims`, the size an organizer added from the 3D view is
+given, read a unit's headroom from the compartment below the row instead of
+the one over it. The 10-10 note said this only showed after a shelf was
+moved. It showed on the sample plan as it opens: a scenario's own fractions
+(0.08 to 0.90) are not the even spread, so the top shelf, 5.2 inches under
+the top panel, was given 17, and the lower shelf, 16 inches, was given 14.
+That number is printed on the card ("Max 29w × 17h × 14d") and in the
+exported list ("must fit"), so it is one someone shops by. The card's badge
+already caught a too-tall pick through `rowHeadroomFor`; the printed limit
+and the tight band did not.
+
+It now reads `gapsAboveFor(boardYsFromFracs(...))` at the row's
+`shelfIndex`, with `normalizeViewerGeometry(geometry, archetype)`: the gap
+the scene draws (its ceiling clamp and floor snap, and the under-sink height
+clamp) and the one the card's row check reads. A new test in
+`viewer3d-add-organizer.spec.mjs` adds an organizer to every shelf row of the
+sample and holds each `h_in` within a band of the card's
+`rowHeadroomFor` for that row. Proven red in a copy of the tree by two
+neuters, each alone: the old below-gap formula (17 under 5.22) and a gap
+above read from the raw fractions without the scene's clamps (6 under 5.22).
+
+**Seen, not changed.** A room's floor row, or a row the room plan cannot
+place, still falls through to this unit rule, which indexes board gaps by a
+row number, so its height limit is not the floor's. The scene draws a room
+floor with a fixed `gap:10`, and the card has no row check for a room
+(`rowHeadroomFor` returns null), so an organizer added to a walk-in's floor
+is limited by a number neither of them uses. That predates this change. And
+`h_in` is `round(gap - 1)`, which can sit up to a quarter inch over the drawn
+clearance (`gap - 0.75`); the card's row check covers that for the
+plain-board layouts.
+
 ## What the 2026-10-12 session changed (recruiting slugs, #192's tests proven)
 
 Docs only. Open item 6 now lists a `?ref=` slug for each recruiting channel,
@@ -440,10 +473,11 @@ plan: its 3D view should open with no fit note.
 
 **Seen, not changed.**
 
-- `viewer3d.js shelfMaxDims` sizes an organizer added from the 3D view by the
-  compartment BELOW its row (`fracs[i+1] - fracs[i]`), not the one over it.
-  With even spacing the two are equal, so it only shows after a shelf is
-  moved. The card's row check above catches the too-tall case.
+- ~~`viewer3d.js shelfMaxDims` sizes an organizer added from the 3D view by
+  the compartment BELOW its row (`fracs[i+1] - fracs[i]`), not the one over
+  it. With even spacing the two are equal, so it only shows after a shelf is
+  moved.~~ Fixed 10-12, and the "only after a shelf is moved" was wrong: the
+  sample plan showed it untouched (see the 10-12 part 2 section).
 - A walk-in's floor rows are still judged against the wall shelving on both
   sides. The scene gives a walk-in's floor the room's depth. Left alone:
   "Fits your 72" floor depth" is too close to the reading the 10-03 session

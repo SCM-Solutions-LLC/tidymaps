@@ -87,3 +87,50 @@ test('a "use what I have" plan offers no way to add a purchase', async ({ page }
   await openAdd(page);
   await expect(page.locator('#v3d-add-organizer')).toBeHidden();
 });
+
+test('an added organizer is sized by the space over its row, the one the card judges', async ({ page }) => {
+  /* maxDims.h_in is printed on the card ("Max 29w × 17h × 14d") and in the
+     exported list ("must fit"), so it is a number someone shops by. It was
+     read from the compartment BELOW the row: the sample's top shelf, about 5
+     inches under the top panel, said 17, and its lower shelf said 14 under
+     16. The card's own row check (js/catalog.js headroomFor) is the answer
+     key, so the two cannot drift apart again. */
+  await openPlan(page);
+  await openAdd(page);
+  const rows = await page.evaluate(async () => {
+    const { activeMapV2 } = await import('/js/plan.js');
+    return activeMapV2().map((row, i) => ({ i, lv: row.lv, surface: row.surface }))
+      .filter((row) => row.surface === 'shelf');
+  });
+  expect(rows.length, 'the sample has no shelf rows to add to').toBeGreaterThan(2);
+  for (const row of rows) {
+    await page.selectOption('#v3d-add-type', 'clear-bin');
+    await page.selectOption('#v3d-add-level', { index: row.i });
+    await page.locator('#v3d-add-btn').click();
+    await page.waitForTimeout(300);
+  }
+  const checks = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const { activeMapV2 } = await import('/js/plan.js');
+    const { currentArchetype } = await import('/js/catalog.js');
+    const { rowHeadroomFor, arrangementGeometryFor } = await import('/js/three/roomBoards.js');
+    const geometry = arrangementGeometryFor(state.arrangement, false) || state.ai.geometry;
+    const map = activeMapV2();
+    return state.ai.productNeeds.filter((need) => need.addedByUser).map((need) => {
+      const row = map.find((r) => r.lv === need.targetZone);
+      return {
+        zone: need.targetZone,
+        h: need.maxDims.h_in,
+        headroom: rowHeadroomFor(currentArchetype(), 'shelf', geometry, row.shelfIndex),
+      };
+    });
+  });
+  expect(checks.length).toBe(rows.length);
+  for (const { zone, h, headroom } of checks) {
+    expect(headroom, `the card cannot read the ${zone}'s headroom`).not.toBeNull();
+    expect(h, `${zone}: added at ${h} in. under ${headroom.toFixed(2)} in. of headroom`)
+      .toBeLessThanOrEqual(headroom + 0.5);
+    expect(h, `${zone}: added at ${h} in. under ${headroom.toFixed(2)} in. of headroom`)
+      .toBeGreaterThan(headroom - 1);
+  }
+});
