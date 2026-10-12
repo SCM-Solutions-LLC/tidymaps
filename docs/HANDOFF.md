@@ -295,6 +295,9 @@ the data" before concluding anything about demand.
 
 ## What the 2026-10-12 session changed, part 3 (a room's floor row)
 
+#197 deployed: Pages run 201 (`494e08c`) went green 10-12 17:43 UTC, the
+check part 2 left open.
+
 Closes the "Seen, not changed" note in part 2. An organizer added from the 3D
 view to a walk-in's or an L's floor row got a height limit neither the scene
 nor the card used, and the scene's own floor numbers were stand-ins with no
