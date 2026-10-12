@@ -3781,7 +3781,13 @@ Ordered by whether anyone can act on them today.
    within a week. Missing it means a product problem: stop recruiting.
    The watched sessions go out on `?ref=watched`, so they can be left out:
    an untagged visit has no `ref` and looks like any other traffic. A
-   stranger is a visit whose `ref` is set and is not `watched`.
+   stranger is a visit whose `ref` is set and is not `watched`. Only an AI
+   plan counts: "gets a plan" is a `plan_created` with `source = 'ai'`, and
+   a rating counts only from a `plan_rated` with the same `source`. `'demo'`
+   is the fallback
+   when the analysis fails (as during the expired-key outage, when the app
+   still looked like it worked) or the landing page's sample plan, so it
+   says nothing about whether the product helped.
 
    **Reading it.** `screen_viewed` carries `ref` (a lowercase slug of at most
    24 characters; anything else is dropped whole, `js/telemetry.js parseRef`)
