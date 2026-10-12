@@ -129,7 +129,7 @@ test('an added organizer is sized by the space over its row, the one the card ju
   for (const { zone, h, headroom } of checks) {
     expect(headroom, `the card cannot read the ${zone}'s headroom`).not.toBeNull();
     expect(h, `${zone}: added at ${h} in. under ${headroom.toFixed(2)} in. of headroom`)
-      .toBeLessThanOrEqual(headroom + 0.5);
+      .toBeLessThanOrEqual(headroom + 1e-6);
     expect(h, `${zone}: added at ${h} in. under ${headroom.toFixed(2)} in. of headroom`)
       .toBeGreaterThan(headroom - 1);
   }
@@ -141,7 +141,9 @@ test('an added organizer is sized by the space over its row, the one the card ju
    added to one fell through to the unit rule, which picks a board gap by row
    number, so its printed limit was one the scene did not draw: the walk-in
    drew its floor 10 inches high. The live floor surface is the answer key,
-   read the way the scene judges a fit (its gap less a board). */
+   read the way the scene judges a fit (its gap less a board), and the limit
+   may not pass it: a room has no row check on the card to catch a printed
+   "Max 21h" over a floor the scene clears to 20.9. */
 const shelfRow = (i, extra = {}) => ({
   level: `Shelf ${i + 1}`, icon: 'up', zone: `Zone ${i + 1}`, why: 'Reachable from the doorway.',
   eye: false, shelfIndex: i, safety: { flag: null, why: null },
@@ -221,7 +223,7 @@ for (const room of ROOM_FLOORS) {
     const clearance = gap - 0.75;
     const { w_in: w, h_in: h } = got.max;
     expect(h, `added at ${h} in. high on a floor drawn with ${clearance.toFixed(2)} in. of headroom`)
-      .toBeLessThanOrEqual(clearance + 0.5);
+      .toBeLessThanOrEqual(clearance + 1e-6);
     expect(h, `added at ${h} in. high on a floor drawn with ${clearance.toFixed(2)} in. of headroom`)
       .toBeGreaterThan(clearance - 1);
     expect(w, `added at ${w} in. wide on a floor drawn ${length.toFixed(2)} in. long`).toBeLessThanOrEqual(length);

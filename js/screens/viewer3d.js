@@ -19,7 +19,7 @@ import {
 } from '../three/viewerOptions.js';
 import {
   isRoomLayout,roomPlanFor,runLength,roomFloorRun,boardCountForMap,boardYsFor,
-  boardYsFromFracs,gapsAboveFor,arrangementGeometryFor,ARRANGEMENT_VERSION,
+  boardYsFromFracs,gapsAboveFor,plainBoardClearance,arrangementGeometryFor,ARRANGEMENT_VERSION,
 } from '../three/roomBoards.js';
 
 /* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
@@ -496,8 +496,15 @@ function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   const g=normalizeViewerGeometry(geometry, archetype);
   const boardYs=boardYsFromFracs(g.shelfYFracs, g.height);
   const gaps=gapsAboveFor(boardYs, g.height);
+  /* The height is the tallest whole inch the scene passes under that gap
+     (its clearance, the gap less the board over it). round(gap - 1) could
+     print up to a quarter inch over it: "Max 21h" on a walk-in floor the
+     scene clears to 20.9, and a room has no row check on the card to catch
+     that. */
   const size=(width,gap)=>({
-    w_in:Math.round(Math.max(4,width)), h_in:Math.max(3,Math.round(gap-1)), d_in:Math.round(usableDepth),
+    w_in:Math.round(Math.max(4,width)),
+    h_in:Math.max(3,Math.floor(plainBoardClearance(gap)+1e-9)),
+    d_in:Math.round(usableDepth),
   });
   if(isRoomLayout(archetype)){
     const plan=roomPlanFor({ map, layout:layout||currentLayout(map), N:rows, boardYs:boardYsFor(geometry) });
