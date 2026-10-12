@@ -315,20 +315,29 @@ the builders draw (`gapsAboveFor`), not the raw fractions, so the top
 board's limit is no longer up to a board thickness taller than drawn.
 
 On the two fixtures: a 72 x 96 x 72 walk-in printed "Max 14h" (its wall's
-board gap) over a floor the scene judged at 9.25; both now say 21 under
+board gap) over a floor the scene judged at 9.25; it now prints 20 under
 20.9 inches of clearance. A 72 x 84 x 60 L printed "Max 71w x 14h" over a
-54.5-inch run the scene judged at 14 inches high; both now say 54w x 20h
-under 20.7. Browser-checked: the added basket sits on the floor run with no
-fit note, and walk-in floor items stand at their own height (10 inches for
-a large item) instead of being squashed to 8.6.
+54.5-inch run the scene judged at 14 inches high; it now prints 54w x 20h
+under 20.7.
+
+The printed height is now the tallest whole inch the scene passes,
+`floor(gap - T)`, on every branch of `shelfMaxDims`. It was `round(gap - 1)`,
+up to a quarter inch over the clearance: the first cut of this printed
+"Max 21h" over the walk-in's 20.9, and a room has no row check on the card
+to catch that. It only ever lowers a number, by at most an inch.
+
+Browser-checked: the added basket sits on the floor run with no fit note,
+and walk-in floor items stand at their own height (10 inches for a large
+item) instead of being squashed to 8.6. Full local run on the first commit:
+lint, types, 820 unit tests, and 328 e2e passed with the one standing skip.
 
 **A judgment call, revertible in one function.** The walk-in draws its floor
 rows in the aisle, which is open to the ceiling. The limit is the space under
 the lowest board anyway, because floor storage in a fitted room goes under
 the shelving along its walls; "open" would have printed the scene's 24-inch
 `OPEN_HEADROOM` stand-in instead. Side effect: the scene now passes taller
-floor products in a walk-in (up to about 21 inches where it flagged anything
-over 9.25), which is the truer direction.
+floor products in a walk-in (up to the 20.9-inch clearance on the fixture,
+where it flagged anything over 9.25), which is the truer direction.
 
 **Tests.** `three-room-boards.test.mjs` asserts `roomFloorRun`'s numbers and
 reads both builders as text (they import it, draw their floor from it, and
@@ -340,14 +349,18 @@ alone: the floor branch off (all three e2e); the `surface` check dropped
 (walk-in and L side wall); the walk-in's `gap:10` back; the L's
 `gapAbove[NSH-1]` back; the L's wall-filed floor on its board gap; the run
 ignoring the wall (side-wall width, 54 on a 42.5-inch run); and the gap an
-inch short (unit only, since the scene and the limit share it).
+inch short (unit only, since the scene and the limit share it). Both
+height assertions in the spec (this one and part 2's) now hold the printed
+height at or under the clearance instead of within half an inch over; an
+eighth neuter, `round(gap - 1)` back, turns the walk-in floor red (21 over
+20.9). Part 2's sample-plan test stays green under it: no sample row lands
+in the quarter inch.
 
 **Still not changed.** The card has no row check for a room
 (`rowHeadroomFor` returns null), so a floor need the model recommended is
 judged by its own `maxDims` only; `roomFloorRun` is what that check would
 read. A walk-in floor's depth is still judged against the wall shelving
-(part 2's note). `h_in` is still `round(gap - 1)`, up to a quarter inch over
-the drawn clearance.
+(part 2's note).
 
 ## What the 2026-10-12 session changed, part 2 (an added organizer's height)
 
@@ -379,10 +392,10 @@ floor with a fixed `gap:10`, and the card has no row check for a room
 (`rowHeadroomFor` returns null), so an organizer added to a walk-in's floor
 is limited by a number neither of them uses.~~ Fixed in part 3 for floor
 rows; a row the plan cannot place still falls through. That predates this
-change. And
+change. ~~And
 `h_in` is `round(gap - 1)`, which can sit up to a quarter inch over the drawn
 clearance (`gap - 0.75`); the card's row check covers that for the
-plain-board layouts.
+plain-board layouts.~~ Now `floor(gap - 0.75)` (part 3).
 
 ## What the 2026-10-12 session changed (recruiting slugs, #192's tests proven)
 
