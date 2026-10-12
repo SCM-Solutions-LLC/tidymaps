@@ -4,7 +4,7 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-10-12, after #197 merged (`main` at `494e08c`).
+**Last refreshed:** 2026-10-12, after #198 merged (`main` at `cec8fff`).
 This header still tells the 10-03 story; each later session has its own dated
 section below it, newest first, starting with 2026-10-12.
 
@@ -293,6 +293,75 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-12 session changed, part 4 (a room's row check on the card)
+
+#198 deployed: Pages run 202 (`cec8fff`) went green 10-12 18:45 UTC, the
+check part 3 left open.
+
+Closes part 3's first "Still not changed" note. The product card judged a
+pick's height against the row it is drawn on for a cabinet or a closet
+(`rowHeadroomFor`), and returned null for a walk-in or an L, so a room's
+picks were judged by their own `maxDims` while the 3D view judged them under
+the board over their row. It now answers for a room.
+
+`roomBoards.js roomRowRun({ type, geometry, map, layout, index })` is the one
+rule for where a room draws a row: its wall, the kind of surface the builder
+makes of it, the run it is laid along, and the gap over it (that board's
+`gapsAboveFor`, or `roomFloorRun`'s for a floor row, read off the plan's
+floor section OR the row's own `surface`, as the builders draw it).
+`rowHeadroomFor` takes the plan as an optional fifth argument and, for a
+room, returns `plainBoardClearance(run.gap)` for a drawn shelf or floor and
+null for anything else (a rod the card guessed was a shelf included).
+`viewer3d.js shelfMaxDims` reads the same function for an added organizer's
+size, so the printed limit, the badge and the scene's verdict are one number.
+Its numbers are unchanged: the L fixture still prints 54w under 20.7.
+
+A plan's geometry counts rows, a room is drawn with boards per wall, and the
+card read the plan's geometry. `roomBoardGeometry(geometry, map, layout)` is
+the conversion `currentSceneInput` did inline (`boardCountForMap`, then
+`roomGeometryFor`; kept as it is when `levelsAre: 'boards'`), now shared by
+the screen and `roomRowRun`. `catalog.js headroomFor` passes the map and the
+resolved layout.
+
+On a 72 x 96 x 72 walk-in with six rows, two to a wall and the floor row filed
+under the right wall: three boards a wall at 73.92, 51.84 and 29.76 inches,
+so a top row clears 20.58 and the floor 28.26. Before this the card passed
+anything on that floor up to the need's own `maxDims` height.
+
+**Tests.** `three-room-boards.test.mjs` holds `rowHeadroomFor` and
+`roomRowRun` to those numbers by hand arithmetic, both L floor filings, a
+moved-board (version 3) geometry, and the nulls. `catalog-fit.test.mjs` runs
+`fitFor` on the walk-in, with no arrangement, a version 2 one and a version 3
+one. `fit-zones.spec.mjs` seeds a walk-in and an L, reads the live scene's
+surface for three rows each, and holds the card and the 3D view to one
+verdict 0.1 inch either side of that clearance. Proven red in a copy of the
+tree, six neuters, each alone: the card passing no plan (unit, both e2e);
+the floor read off the plan section only (unit, walk-in e2e, two part 3
+add-organizer specs); no boards-per-wall conversion (unit); the drawn kind
+not checked (unit); a wall row given the floor's gap (unit, both e2e); the
+floor gap an inch short (unit, both e2e, all three part 3 specs). A seventh,
+reading a room's saved arrangement with `arrangementGeometryFor(..., true)`
+instead of `false`, turned nothing red: `levelsAre` and version 3 shipped in
+the same commit (`e062710`), so the conversion already discards a version 2
+count, and the change was dropped instead of shipped untested.
+
+Browser-checked on a walk-in with its lowest board moved to 19.2 inches: the
+card picks a 6-inch bin with "Fits", and the 3D view draws it on the floor
+with no fit note. **On today's catalog this check changes no verdict**: the
+tallest bin or basket is 7.25 inches, and a room's default boards are
+spread no tighter than `MIN_BOARD_PITCH` (9 inches; it caps the count). It
+bites only where the reader drags boards closer on the slider (it allows 3
+inches) or the catalog adds something taller: a guard, not a fix anyone
+would have seen this week. Full local run: lint, types, 822 unit tests, and 330 e2e
+passed with the one standing skip.
+
+**Still not changed, and the bigger of the two today.** A walk-in floor's
+depth is still judged against the wall shelving: the same card reads "Fits
+your 14" floor depth" on a 72-inch-deep floor (part 2's note). Two of the
+catalog's four available clear bins (14.5 and 20 inches deep, 6 high) are
+ranked no-fit on that floor for that reason alone, while the 3D view draws
+the floor 72 deep.
+
 ## What the 2026-10-12 session changed, part 3 (a room's floor row)
 
 #197 deployed: Pages run 201 (`494e08c`) went green 10-12 17:43 UTC, the
@@ -359,11 +428,11 @@ eighth neuter, `round(gap - 1)` back, turns the walk-in floor red (21 over
 20.9). Part 2's sample-plan test stays green under it: no sample row lands
 in the quarter inch.
 
-**Still not changed.** The card has no row check for a room
+**Still not changed.** ~~The card has no row check for a room
 (`rowHeadroomFor` returns null), so a floor need the model recommended is
 judged by its own `maxDims` only; `roomFloorRun` is what that check would
-read. A walk-in floor's depth is still judged against the wall shelving
-(part 2's note).
+read.~~ Fixed in part 4. A walk-in floor's depth is still judged against the
+wall shelving (part 2's note).
 
 ## What the 2026-10-12 session changed, part 2 (an added organizer's height)
 

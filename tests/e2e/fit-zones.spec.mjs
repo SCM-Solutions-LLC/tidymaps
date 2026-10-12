@@ -168,6 +168,91 @@ test('the report badges a floor pick against the floor and a shelf pick against 
   expect(decodeURIComponent(floorSearch)).toContain('max 25 inch deep');
 });
 
+/* ---------- a room: the row its plan puts a pick on ----------
+
+   The card had no row check for a walk-in or an L (rowHeadroomFor returned
+   null for a room), so a floor pick was judged by its own maxDims while the
+   scene judged it under the lowest shelf. The rows below are spread over
+   the walls by the room plan; the floor row in the walk-in is filed under
+   its right wall and drawn on the floor all the same. The answer key is the
+   live scene's own surface for the row, its gap less the board over it, so
+   neither side is checked against the other's arithmetic. */
+const roomRow = (i, level, zone, surface = 'shelf') => ({
+  level, icon: surface === 'floor' ? 'down' : 'up', zone, why: 'Reachable from the doorway.', eye: false,
+  shelfIndex: i, surface, safety: { flag: null, why: null }, items: [{ name: 'Canned goods', size: 'm', flags: [] }],
+});
+const ROOMS = [
+  {
+    label: 'a walk-in', type: 'walkin-u', setup: 'walkin', dims: { w_in: 72, h_in: 96, d_in: 72, shelves: null },
+    plan: {
+      ...PLAN, spaceType: 'Pantry',
+      map: [
+        roomRow(0, 'Top left shelf', 'Paper towels'), roomRow(1, 'Low left shelf', 'Cereal'),
+        roomRow(2, 'Top back shelf', 'Baking'), roomRow(3, 'Low back shelf', 'Soup'),
+        roomRow(4, 'Top right shelf', 'Snacks'), roomRow(5, 'Floor', 'Bulk rice', 'floor'),
+      ],
+      layout: { type: 'walkin-u', sections: [
+        { id: 'left', label: 'Left wall', place: 'left', rows: [0, 1] },
+        { id: 'back', label: 'Back wall', place: 'back', rows: [2, 3] },
+        { id: 'right', label: 'Right wall', place: 'right', rows: [4, 5] },
+      ] },
+      geometry: { unit: 'in', width: 72, height: 96, depth: 72, shelfCount: 6, estimated: false },
+    },
+    picks: [['Paper towels', 0], ['Cereal', 1], ['Bulk rice', 5]],
+  },
+  {
+    label: 'an L', type: 'l-run', setup: 'lshape', dims: { w_in: 72, h_in: 84, d_in: 60, shelves: null },
+    plan: {
+      ...PLAN, spaceType: 'Pantry',
+      map: [
+        roomRow(0, 'Top back shelf', 'Paper towels'), roomRow(1, 'Low back shelf', 'Cereal'),
+        roomRow(2, 'Top side shelf', 'Baking'), roomRow(3, 'Low side shelf', 'Soup'),
+        roomRow(4, 'Floor', 'Bulk rice', 'floor'),
+      ],
+      layout: { type: 'l-run', sections: [
+        { id: 'back', label: 'Back wall', place: 'back', rows: [0, 1] },
+        { id: 'right', label: 'Right wall', place: 'right', rows: [2, 3] },
+        { id: 'floor', label: 'Floor', place: 'floor', rows: [4] },
+      ] },
+      geometry: { unit: 'in', width: 72, height: 84, depth: 60, shelfCount: 5, estimated: false },
+    },
+    picks: [['Paper towels', 0], ['Soup', 3], ['Bulk rice', 4]],
+  },
+];
+
+for (const room of ROOMS) {
+  test(`the card and the 3D view give one verdict on height in ${room.label}, row by row`, async ({ page }) => {
+    await page.goto('/index.html');
+    await page.evaluate(async ({ plan, setup, dims }) => {
+      const [{ state }, { normalizeAi }] = await Promise.all([import('/js/state.js'), import('/js/plan.js')]);
+      state.space = 'pantry';
+      state.setup = setup; state.setupTouched = true;
+      state.dims = dims;
+      state.arrangement = null;
+      state.upgrades = true;
+      state.ai = normalizeAi(plan);
+      state.planMeta = { model: 'test', source: 'ai', analyzedAt: 0 };
+      state.shopping = null;
+    }, { plan: room.plan, setup: room.setup, dims: room.dims });
+
+    for (const [zone, row] of room.picks) {
+      const first = await verdicts(page, { zone, dims: { w: 9, h: 3, d: 9 } });
+      expect(first.layout).toBe(room.type);
+      expect(first.row, `${zone}: on the row its need names`).toBe(row);
+      const clearance = await page.evaluate((index) => {
+        const surface = window.__v3dView.surfaces.find((s) => s.index === index);
+        return surface.gap - 0.75;
+      }, row);
+      for (const [h, fits] of [[clearance - 0.1, true], [clearance + 0.1, false]]) {
+        const v = await verdicts(page, { zone, dims: { w: 9, h, d: 9 } });
+        expect(v.row, `${zone}: on the row its need names`).toBe(row);
+        expect(v.scene, `${zone}, ${h.toFixed(2)}in tall under ${clearance.toFixed(2)}in: the 3D view`).toBe(fits);
+        expect(v.card !== 'no-fit', `${zone}, ${h.toFixed(2)}in tall under ${clearance.toFixed(2)}in: the card says ${v.card}`).toBe(fits);
+      }
+    }
+  });
+}
+
 /* ---------- the small things from the same day's runs ---------- */
 
 /* The measure step's heading is built from the space's short name, and two of

@@ -6,6 +6,7 @@ import {
   boardCountFor, boardCountForMap, roomPlanFor, runLength, roomShelfDepth, roomFloorRun,
   boardYsFor, boardYsFromFracs, arrangementGeometryFor,
   gapsAboveFor, plainBoardClearance, rowHeadroomFor, rodClosetDepth, CLOSET_SHELF_IN,
+  roomBoardGeometry, roomRowRun,
 } from '../js/three/roomBoards.js';
 import { shelfDepthFor } from '../js/catalog.js';
 
@@ -331,10 +332,80 @@ test('rowHeadroomFor answers for a plain board and says nothing about the rest',
     ['drawer-bank','drawer',0,'a drawer publishes its own box height'],
     ['shelves','shelf',0,'a floating shelf can be open above'],
     ['garage-rack','shelf',0,'a rack\'s top shelf is open above'],
-    ['walkin-u','shelf',0,'a room is read from its room plan'],
+    ['walkin-u','shelf',0,'a room handed no plan cannot place the row'],
     ['cabinet','shelf',3,'a row the geometry does not have'],
     ['cabinet','shelf',-1,'a row the geometry does not have'],
   ]) assert.equal(rowHeadroomFor(type,surface,geometry,index),null,why);
+});
+
+/* A room's row is on one wall's board, or on the floor, and which is the
+   room plan's to say. The card had no row check for a room at all, so a
+   walk-in floor need was judged by its own maxDims while the 3D view judged
+   it under the lowest shelf. Six rows, two to a wall, the last a floor row
+   the plan files under the right wall (the case part 3 of 2026-10-12 found
+   the builders draw on the floor anyway). */
+test('rowHeadroomFor reads a room row from its room plan: its board on its wall, or the floor under the lowest board',()=>{
+  const T=0.75;
+  const near=(got,want,why)=>assert.ok(got!==null&&Math.abs(got-want)<1e-9,`${why}: ${got} against ${want}`);
+  const row=(i,zone,surface='shelf')=>({ lv:surface==='floor'?'Floor':`Shelf ${i+1}`, zone, shelfIndex:i, surface, items:[{ name:'Rice' }] });
+  const map=[row(0,'Paper towels'),row(1,'Cereal'),row(2,'Baking'),row(3,'Soup'),row(4,'Snacks'),row(5,'Bulk rice','floor')];
+  const layout={ type:'walkin-u', sections:[
+    { id:'left', place:'left', rows:[0,1] }, { id:'back', place:'back', rows:[2,3] }, { id:'right', place:'right', rows:[4,5] },
+  ] };
+  const plan={ map, layout };
+  // The plan's geometry counts six rows; the room is drawn with three boards a wall, 0.23, 0.46 and 0.69 down.
+  const geometry={ width:72, height:96, depth:72, shelfCount:6 };
+  const drawn=roomBoardGeometry(geometry,map,layout);
+  assert.equal(drawn.shelfCount,3);
+  assert.equal(drawn.levelsAre,'boards');
+  assert.deepEqual(boardYsFromFracs(drawn.shelfYFracs,96).map(y=>Math.round(y*100)/100),[73.92,51.84,29.76]);
+
+  near(rowHeadroomFor('walkin-u','shelf',geometry,0,plan),96-T-73.92-T,'a wall\'s first row is on its top board');
+  near(rowHeadroomFor('walkin-u','shelf',geometry,1,plan),51.84-29.76-T,'its second on its lowest');
+  near(rowHeadroomFor('walkin-u','shelf',geometry,2,plan),96-T-73.92-T,'every wall shares the boards');
+  near(rowHeadroomFor('walkin-u','floor',geometry,5,plan),29.76-T-T,'a floor row filed under a wall is the floor, up to the lowest board');
+  near(rowHeadroomFor('walkin-u','shelf',geometry,5,plan),29.76-T-T,'judged by the row the scene draws, not the surface the card guessed');
+  // The size an added organizer is given and the card's check read the same run.
+  const floor=roomRowRun({ type:'walkin-u', geometry, map, layout, index:5 });
+  assert.deepEqual({ ...floor, gap:null },{ wall:'right', kind:'floor', length:72-2*T-2, gap:null });
+  near(floor.gap,29.76-T,'the floor run\'s gap');
+  assert.equal(roomRowRun({ type:'walkin-u', geometry, map, layout, index:0 }).wall,'left');
+  assert.equal(roomRowRun({ type:'walkin-u', geometry, map, layout, index:0 }).length,runLength('walkin-u','left',geometry));
+
+  // A converted geometry (a version 3 arrangement, or boards moved on the slider) is the user's and is read as it stands.
+  const moved={ ...drawn, shelfYFracs:[0.1,0.5,0.8] };
+  assert.deepEqual(roomBoardGeometry(moved,map,layout).shelfYFracs,moved.shelfYFracs);
+  near(rowHeadroomFor('walkin-u','floor',moved,5,plan),96*0.2-T-T,'the floor under a board moved down to 19.2 inches');
+  near(rowHeadroomFor('walkin-u','shelf',moved,0,plan),96-T-96*0.9-T,'the top board moved up to 86.4');
+
+  // The L: its floor runs along the back unless the plan files it under the side wall, under the lowest of four boards either way.
+  const ellMap=[0,1,2,3,4,5,6].map(i=>row(i,`Zone ${i}`)).concat(row(7,'Bulk','floor'));
+  const ellGeometry={ width:72, height:84, depth:60, shelfCount:8 };
+  const lowest=84*(1-0.736);
+  for(const [sections,wall] of [
+    [[{ id:'back', place:'back', rows:[0,1,2,3] },{ id:'right', place:'right', rows:[4,5,6] },{ id:'floor', place:'floor', rows:[7] }],null],
+    [[{ id:'back', place:'back', rows:[0,1,2,3] },{ id:'right', place:'right', rows:[4,5,6,7] }],'side'],
+  ]){
+    const ell={ map:ellMap, layout:{ type:'l-run', sections } };
+    near(rowHeadroomFor('l-run','floor',ellGeometry,7,ell),lowest-T-T,`the L's floor (${wall||'floor section'})`);
+    const run=roomRowRun({ type:'l-run', geometry:ellGeometry, ...ell, index:7 });
+    assert.equal(run.wall,wall);
+    assert.equal(run.length,runLength('l-run',wall||'back',ellGeometry));
+    near(rowHeadroomFor('l-run','shelf',ellGeometry,0,ell),84-T-84*(1-0.184)-T,'the L\'s top board');
+  }
+
+  for(const [type,surface,index,p,why] of [
+    ['walkin-u','rod',0,plan,'a rod carries no organizer'],
+    ['walkin-u','shelf',0,{ layout },'no rows to place it by'],
+    ['walkin-u','shelf',9,plan,'a row the plan does not have'],
+    ['walkin-u','drawer',0,plan,'a surface this does not judge'],
+  ]) assert.equal(rowHeadroomFor(type,surface,geometry,index,p),null,why);
+  const rodded={ map:map.map(r=>r.shelfIndex===0?{ ...r, surface:'rod' }:r), layout };
+  assert.equal(rowHeadroomFor('walkin-u','shelf',geometry,0,rodded),null,'the scene draws a rod there whatever the card guessed');
+
+  // A unit's geometry passes through, normalized and unconverted.
+  assert.equal(roomBoardGeometry({ width:36, height:78, depth:18, shelfCount:5 },[],{ type:'cabinet' }).shelfCount,5);
+  assert.equal(roomRowRun({ type:'cabinet', geometry, map, layout, index:0 }),null);
 });
 
 /* One rule for the shelf over a hanging rod, on all three sides: what the

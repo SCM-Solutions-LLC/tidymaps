@@ -22,7 +22,7 @@
    ============================================================ */
 
 import { placementFor, placementFromSections } from '../placement.js';
-import { normalizeViewerGeometry } from './viewerOptions.js';
+import { normalizeViewerGeometry, roomGeometryFor } from './viewerOptions.js';
 
 export const ROOM_TYPES = ['walkin-u', 'l-run'];
 
@@ -140,21 +140,29 @@ export function plainBoardClearance(gap){
 }
 
 /* The layouts whose shelf and floor rows are plain boards in that sense.
-   Drawers publish their own box height, a rod carries no organizer, a
-   floating shelf and a rack's top shelf are open above, and a room is read
-   from its room plan, so none of those is answered here. */
+   Drawers publish their own box height, a rod carries no organizer, and a
+   floating shelf and a rack's top shelf are open above, so none of those is
+   answered here. A room's boards are plain too, but which one a row sits on
+   is the room plan's to say (roomRowRun). */
 const PLAIN_BOARD_LAYOUTS = new Set(['cabinet', 'closet-rod', 'closet-system']);
 
-/* The headroom the drawing gives one row of a plain-board layout, or null
-   when this module cannot say (see PLAIN_BOARD_LAYOUTS). Null means "do not
-   judge height by the row", never "it fits".
+/* The headroom the drawing gives one row of a plain-board layout or a room,
+   or null when this module cannot say (see PLAIN_BOARD_LAYOUTS). Null means
+   "do not judge height by the row", never "it fits". A room needs the plan
+   (`map`, `layout`) to place the row, and is null without one.
    @param {string} type  the layout drawn
    @param {string} surface  the row's surface kind
    @param {any} geometry  a viewer geometry
-   @param {number} index  the row's shelfIndex */
-export function rowHeadroomFor(type, surface, geometry, index){
-  if(!PLAIN_BOARD_LAYOUTS.has(type)) return null;
+   @param {number} index  the row's shelfIndex
+   @param {{map?: any[], layout?: any}} [plan]  the plan, for a room */
+export function rowHeadroomFor(type, surface, geometry, index, plan){
   if(surface!=='shelf'&&surface!=='floor') return null;
+  if(isRoomLayout(type)){
+    if(!plan||!Array.isArray(plan.map)) return null;
+    const run=roomRowRun({ type, geometry, map:plan.map, layout:plan.layout, index });
+    return run&&(run.kind==='shelf'||run.kind==='floor')?plainBoardClearance(run.gap):null;
+  }
+  if(!PLAIN_BOARD_LAYOUTS.has(type)) return null;
   const g=normalizeViewerGeometry(geometry, type);
   if(!Number.isInteger(index)||index<0||index>=g.shelfCount) return null;
   const gaps=gapsAboveFor(boardYsFromFracs(g.shelfYFracs, g.height), g.height);
@@ -235,6 +243,59 @@ export function roomFloorRun(type, geometry, boardYs, wallId){
   return {
     length:type==='l-run'?runLength('l-run',wallId||'back',geometry):W-2*T-2,
     gap:Math.max(2.2, lowest-T),
+  };
+}
+
+/* The geometry a room is drawn with: its shelfCount read as boards per wall.
+   A plan's own geometry counts rows, one per plan row, and the screen
+   converts it when it opens (js/screens/viewer3d.js currentSceneInput) to
+   the board count the plan needs (boardCountForMap). One already converted
+   (`levelsAre: 'boards'`: a version 3 arrangement, or a count set on the
+   slider) is kept. Anything else comes back normalized.
+   @param {any} geometry @param {any[]} map @param {any} layout */
+export function roomBoardGeometry(geometry, map, layout){
+  const type=layout&&layout.type;
+  const g=normalizeViewerGeometry(geometry, type);
+  if(!isRoomLayout(type)||g.levelsAre==='boards') return g;
+  return normalizeViewerGeometry(roomGeometryFor(g, boardCountForMap(map, layout, g.height)), type);
+}
+
+/* Where a room draws one row, and the space over it: the wall it is on, the
+   kind of surface the builder makes of it, the run that surface is laid
+   along, and the gap from it to the board over it (gapsAboveFor, or
+   roomFloorRun's for a floor row). A row whose surface is the floor is drawn
+   on the floor wherever the plan files it, so that is read off the row as
+   well as the plan. The card's row check (rowHeadroomFor) and the size an
+   organizer added from the 3D view is given (js/screens/viewer3d.js
+   shelfMaxDims) both read this, so the badge, the printed limit and the
+   scene's verdict are one number. Null for a unit, or for a row the plan
+   puts on no board.
+   @param {{type: string, geometry: any, map: any[], layout: any, index: number}} args
+   @returns {null|{wall: string|null, kind: string, length: number, gap: number}} */
+export function roomRowRun({ type, geometry, map, layout, index }){
+  if(!isRoomLayout(type)) return null;
+  const rows=Array.isArray(map)?map:[];
+  const roomLayout={...(layout||{}), type};
+  const g=roomBoardGeometry(geometry, rows, roomLayout);
+  const boardYs=boardYsFromFracs(g.shelfYFracs, g.height);
+  /** @type {Map<number, any>} */
+  const rowsByShelf=new Map();
+  rows.forEach(row=>{ if(row) rowsByShelf.set(row.shelfIndex, row); });
+  const plan=roomPlanFor({ map:rows, layout:roomLayout, N:g.shelfCount, boardYs, rowsByShelf });
+  if(!plan) return null;
+  const row=rowsByShelf.get(index)||null;
+  const wall=plan.wallOf.get(index)||null;
+  if(plan.floorRows.includes(index)||(row&&row.surface)==='floor'){
+    const floor=roomFloorRun(type, g, boardYs, wall||undefined);
+    return { wall, kind:'floor', length:floor.length, gap:floor.gap };
+  }
+  const board=plan.boardOf.get(index);
+  if(!wall||!Number.isInteger(board)||board>=boardYs.length) return null;
+  return {
+    wall,
+    kind:(row&&row.surface)||'shelf',
+    length:runLength(type, wall, g),
+    gap:gapsAboveFor(boardYs, g.height)[board],
   };
 }
 

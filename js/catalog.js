@@ -151,12 +151,18 @@ export function targetRowFor(need){
 /* The headroom the drawing gives that row, in inches, or null when it cannot
    be read (js/three/roomBoards.js rowHeadroomFor says which rows can). The
    geometry is the one the viewer opens with: a saved arrangement's, else the
-   plan's. */
+   plan's. A room's row is placed by its room plan, so the plan goes too
+   (a room geometry that still counts rows is read as boards per wall there,
+   as the viewer reads it). Before rooms were read here, a pick for a
+   walk-in's floor was judged by the need's own maxDims, so one taller than
+   the space under the lowest shelf was "Fits" on the card and did not fit
+   in the 3D view of the same plan. */
 function headroomFor(target){
   if(!target) return null;
   const geometry=arrangementGeometryFor(state.arrangement, false) || (state.ai && state.ai.geometry);
   if(!geometry) return null;
-  return rowHeadroomFor(target.type, target.surface, geometry, target.index);
+  const map=state.ai && Array.isArray(state.ai.map) ? state.ai.map : [];
+  return rowHeadroomFor(target.type, target.surface, geometry, target.index, { map, layout:currentLayout() });
 }
 
 // Door racks and hook racks mount on a door, wall, or pegboard — outside the

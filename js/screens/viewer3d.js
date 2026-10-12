@@ -15,10 +15,10 @@ import { planFromPhotos, planIsSample } from '../planProvenance.js';
 import { placementFor, wallGroups, levelLabel } from '../placement.js';
 import {
   normalizeViewerGeometry,geometryWithShelfCount,geometryWithShelfHeight,
-  shelfHeightInches,mapForShelfCount,inferLSide,roomGeometryFor,
+  shelfHeightInches,mapForShelfCount,inferLSide,
 } from '../three/viewerOptions.js';
 import {
-  isRoomLayout,roomPlanFor,runLength,roomFloorRun,boardCountForMap,boardYsFor,
+  isRoomLayout,roomPlanFor,roomBoardGeometry,roomRowRun,boardYsFor,
   boardYsFromFracs,gapsAboveFor,plainBoardClearance,arrangementGeometryFor,ARRANGEMENT_VERSION,
 } from '../three/roomBoards.js';
 
@@ -167,8 +167,7 @@ function currentSceneInput(){
      the walk-in from fixing the cabinet's shelf count when the reader
      switches back to compare. */
   if(isRoomLayout(resolved.type)&&geometry.levelsAre!=='boards'){
-    const boards=boardCountForMap(map,resolved,geometry.height);
-    geometry=normalizeViewerGeometry(roomGeometryFor(geometry,boards),resolved.type);
+    geometry=roomBoardGeometry(geometry,map,resolved);
     if(dimsPreview){
       if(Number.isInteger(dimsPreview.shelfCount)) unitLevels={ shelfCount:dimsPreview.shelfCount, shelfYFracs:dimsPreview.shelfYFracs };
       dimsPreview=geometry;
@@ -484,8 +483,9 @@ const ORGANIZER_LABELS={
    is filed, is the room's floor run (roomFloorRun), the length and headroom
    the builders draw it with. It used to fall through to the unit rule, or
    take its wall's board, so a walk-in's floor was given a limit that
-   neither the scene (a fixed 10 inches then) nor the card used. A row the
-   plan cannot place still falls through. */
+   neither the scene (a fixed 10 inches then) nor the card used. Both are
+   roomRowRun's (js/three/roomBoards.js), which the card's row check reads
+   too. A row the plan cannot place still falls through. */
 function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   const rows=Math.max(1,geometry.shelfCount||1);
   const usableDepth=Math.max(4,shelfDepthFor({w_in:geometry.width, d_in:geometry.depth}, archetype)||(geometry.depth||14));
@@ -499,22 +499,16 @@ function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   /* The height is the tallest whole inch the scene passes under that gap
      (its clearance, the gap less the board over it). round(gap - 1) could
      print up to a quarter inch over it: "Max 21h" on a walk-in floor the
-     scene clears to 20.9, and a room has no row check on the card to catch
-     that. */
+     scene clears to 20.9, when the card had no row check for a room to
+     catch it. */
   const size=(width,gap)=>({
     w_in:Math.round(Math.max(4,width)),
     h_in:Math.max(3,Math.floor(plainBoardClearance(gap)+1e-9)),
     d_in:Math.round(usableDepth),
   });
   if(isRoomLayout(archetype)){
-    const plan=roomPlanFor({ map, layout:layout||currentLayout(map), N:rows, boardYs:boardYsFor(geometry) });
-    const wall=plan&&plan.wallOf.get(idx);
-    if(plan&&(plan.floorRows.includes(idx)||(row&&row.surface)==='floor')){
-      const floor=roomFloorRun(plan.type, g, boardYs, wall);
-      return size(floor.length-1, floor.gap);
-    }
-    const board=plan&&plan.boardOf.get(idx);
-    if(wall&&Number.isInteger(board)&&board<gaps.length) return size(runLength(plan.type,wall,geometry)-1, gaps[board]);
+    const run=roomRowRun({ type:archetype, geometry, map, layout:layout||currentLayout(map), index:idx });
+    if(run) return size(run.length-1, run.gap);
   }
   return size(usableWidth, gaps[idx]??g.height/rows);
 }
