@@ -3787,6 +3787,10 @@ Ordered by whether anyone can act on them today.
    is the fallback when the analysis fails (as during the expired-key
    outage, when the app still looked like it worked) or the landing page's
    sample plan, so it says nothing about whether the product helped.
+   "Taps useful" means `useful = 'Very useful'` (decided 2026-10-12). The
+   rating has three answers (`FB_USEFUL` in `js/data.js`), and "Somewhat
+   useful" is what a polite stranger taps, so counting it would pass the bar
+   on weak interest.
 
    **Reading it.** `screen_viewed` carries `ref` (a lowercase slug of at most
    24 characters; anything else is dropped whole, `js/telemetry.js parseRef`)
