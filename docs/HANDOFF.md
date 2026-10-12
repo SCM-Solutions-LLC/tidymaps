@@ -293,7 +293,7 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
-## What the 2026-10-12 session changed (recruiting slugs)
+## What the 2026-10-12 session changed (recruiting slugs, #192's tests proven)
 
 Docs only. Open item 6 now lists a `?ref=` slug for each recruiting channel,
 and open item 12's header no longer says nothing past #138 is fixed: every
@@ -301,6 +301,10 @@ line in it is struck through with its PR. Checked on `4a1ebe7`: lint, types
 and 819 unit tests pass locally; Pages run 199, "Deploy edge functions" run
 40 and canary run 56 are green on the Actions API. The site itself is not
 reachable from the sandbox (the proxy refuses `scmsolutions.org`).
+
+#192's seven `fit-zones.spec.mjs` browser tests, recorded as never proven
+red, now are: nine neuters in a copy of the tree, each alone, each turned
+its test red (that section's **Tests** paragraph lists them).
 
 ## What the 2026-10-11 session changed (SHA-pinned actions, `?ref=` tags)
 
@@ -452,11 +456,20 @@ plan: its 3D view should open with no fit note.
 behaviour, in a copy of the tree (the copy diffed clean against the branch
 afterwards). `fit-zones.spec.mjs` asks the card and the live scene the same
 question either side of each row's headroom and each surface's depth, so the
-two are held equal in a browser and not only by sharing a function. **Its
-seven browser tests pass but were not each proven red**, and of the e2e suite
-only `demo-fit` (all 33 setups still open their 3D view clean), the
-`viewer3d-*` and `three-*` specs, `organizer-depth-fit` and `fit-zones` were
-run locally: 85 passed, 1 skipped. The rest was left to CI.
+two are held equal in a browser and not only by sharing a function. ~~Its
+seven browser tests pass but were not each proven red~~ **All seven proven
+red on 2026-10-12**, in a copy of `4a1ebe7` that diffed clean against it
+afterwards, by nine neuters, each alone: the card's headroom check off
+(`fitFor`); the floor capped at the shelf (`shelfDepthFor` without its
+surface); the shelf drawn door to back wall (`closet-rod.js` `shallow`
+false), which fails both the depth test and the 14-inch drawing test; the
+badge never naming the floor (`fitBadge` `onFloor` false); the search cap
+judged against the shelf (`searchLinks`); the singular measure heading; the
+smooth scroll back in `scrollToTop` (lands at 121, not 0); and
+`eyeMarkFor` always true. Of the e2e suite, only `demo-fit` (all 33 setups
+still open their 3D view clean), the `viewer3d-*` and `three-*` specs,
+`organizer-depth-fit` and `fit-zones` were run locally: 85 passed, 1
+skipped. The rest was left to CI.
 
 ## What the 2026-10-10 session recorded, part 2 (two batches of owner test runs)
 
