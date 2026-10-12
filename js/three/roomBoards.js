@@ -211,6 +211,33 @@ export function runLength(type, wallId, geometry){
   return wallId==='back'?Math.max(8,W-2*depth-2*T-2):Math.max(8,D-depth-2*T-6);
 }
 
+/* A room's floor rows: the run one is laid along and the space over it,
+   measured the way gapsAboveFor measures a board's (from the surface an
+   item stands on to the top of the board over it). The walk-in lays every
+   floor row across the room. The L lays one along its back run, or along
+   the run of the wall the plan put it on: a row whose surface is the floor
+   is drawn on the floor wherever the sections file it. The space is the
+   floor to the lowest board either way, because floor storage in a fitted
+   room goes under the shelving along its walls. The builders draw from
+   this and an organizer added to a floor row is sized by it
+   (js/screens/viewer3d.js shelfMaxDims). The walk-in drew its floor with a
+   fixed 10 inches and the L with the gap ABOVE a board, and an organizer
+   added to either was given a board gap picked by its row number, so the
+   scene's verdict and the printed limit were three numbers.
+   @param {string} type @param {{width?: number, height?: number, depth?: number}} geometry
+   @param {number[]} boardYs  the room's boards, as boardYsFromFracs gives them
+   @param {string} [wallId]  the L's run the row is on, when the plan put it on one */
+export function roomFloorRun(type, geometry, boardYs, wallId){
+  const W=Math.max(8, Number(geometry&&geometry.width)||30);
+  const H=Number(geometry&&geometry.height)||0;
+  const above=(Array.isArray(boardYs)?boardYs:[]).filter(y=>y>T+0.5);
+  const lowest=above.length?Math.min(...above):H-T;
+  return {
+    length:type==='l-run'?runLength('l-run',wallId||'back',geometry):W-2*T-2,
+    gap:Math.max(2.2, lowest-T),
+  };
+}
+
 /* Which wall each row is on, before any board is chosen. Shared by the room
    plan and the board count, because the count depends on how the rows fall
    once the ones the plan did not place have been dealt out.
