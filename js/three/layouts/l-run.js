@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { addBox, addShelfLabel, accentFor, makeHitbox, addRod } from './helpers.js';
-import { roomPlanFor, roomShelfDepth, runLength } from '../roomBoards.js';
+import { roomPlanFor, roomShelfDepth, runLength, roomFloorRun } from '../roomBoards.js';
 
 /* Open, integrated L-shaped room. Width and depth define room footprint;
    shelves keep realistic 10 to 18 inch depth instead of becoming full-room
@@ -73,7 +73,10 @@ export function build(ctx){
     const length=back?usableA:usableB;
     const centerX=back?backX:sideX;
     const centerZ=back?backZ:sideZ;
-    const gap=gapAbove[board];
+    /* A row whose surface is the floor is drawn on this run's floor, under
+       its boards, so its headroom is the floor's (roomFloorRun), not the
+       gap above the board it was dealt. */
+    const gap=floor?roomFloorRun('l-run',geometry,shelfYs,side).gap:gapAbove[board];
     const y=rod?rodY(board):floor?T:baseY;
 
     const accent=accentFor(row);
@@ -103,7 +106,10 @@ export function build(ctx){
   }
 
   for(const wall of room.walls) wall.rows.forEach(idx=>buildSurface(idx,wall.id));
-  /* Floor rows run along the back, as they did before the room plan. */
+  /* Floor rows run along the back, as they did before the room plan, under
+     its boards: roomFloorRun (roomBoards.js) is their run and headroom, and
+     the size an organizer added to one is given. */
+  const floorRun=roomFloorRun('l-run',geometry,shelfYs);
   room.floorRows.forEach(idx=>{
     const row=rowFor(idx);
     const hit=makeHitbox(scene,usableA,Math.max(6,H/NSH*0.8),shelfDepth,backX,T+3,backZ,{shelfIndex:idx,shelfY:T,row});
@@ -111,7 +117,7 @@ export function build(ctx){
     surfaces.push({
       index:idx,kind:'floor',row,y:T,hitbox:hit,
       uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),
-      length:usableA,gap:gapAbove[NSH-1]||10,depth:shelfDepth,itemDepth:Math.min(shelfDepth*0.58,8),
+      length:floorRun.length,gap:floorRun.gap,depth:shelfDepth,itemDepth:Math.min(shelfDepth*0.58,8),
     });
   });
   scene.userData.layoutFootprint={type:'l-run',width:W,depth:D,shelfDepth,lSide:sideSign<0?'left':'right'};

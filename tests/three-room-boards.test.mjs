@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   ROOM_TYPES, isRoomLayout, MIN_BOARD_PITCH, ARRANGEMENT_VERSION,
-  boardCountFor, boardCountForMap, roomPlanFor, runLength, roomShelfDepth,
+  boardCountFor, boardCountForMap, roomPlanFor, runLength, roomShelfDepth, roomFloorRun,
   boardYsFor, boardYsFromFracs, arrangementGeometryFor,
   gapsAboveFor, plainBoardClearance, rowHeadroomFor, rodClosetDepth, CLOSET_SHELF_IN,
 } from '../js/three/roomBoards.js';
@@ -238,6 +238,39 @@ test('runLength is the builders\' board length, and the builders read it and the
     assert.match(src,/\baddRod\b[^\n]*from '\.\/helpers\.js'/,`${file}.js imports addRod from helpers`);
     assert.doesNotMatch(src,/new THREE\.CylinderGeometry/,`${file}.js draws its own rod`);
   }
+});
+
+/* A room's floor row is drawn along a run with the space up to the lowest
+   board over it, and an organizer added to one from the 3D view is sized by
+   the same two numbers. The walk-in drew its floor with a fixed 10 inches
+   and the L with the gap above its lowest board; both are read as text so
+   neither comes back. viewer3d-add-organizer.spec.mjs holds the added
+   organizer to the live scene's floor. */
+test('roomFloorRun: a room floor runs under its lowest board, and both builders draw it from here',()=>{
+  const T=0.75;
+  const walk={ width:72, height:96, depth:72 };
+  assert.deepEqual(roomFloorRun('walkin-u',walk,[80,50,25]),{ length:72-2*T-2, gap:25-T });
+  const ell={ width:72, height:84, depth:60 };
+  assert.deepEqual(roomFloorRun('l-run',ell,[70,40,20]),{ length:runLength('l-run','back',ell), gap:20-T });
+  // A floor row the plan filed under the L's side run is laid along that run.
+  assert.deepEqual(roomFloorRun('l-run',ell,[70,40,20],'side'),{ length:runLength('l-run','side',ell), gap:20-T });
+  assert.equal(roomFloorRun('walkin-u',walk,[80,50,25],'left').length,72-2*T-2,'a walk-in floor is the room\'s');
+  // Board order does not matter; the lowest is the one over the floor.
+  assert.equal(roomFloorRun('l-run',ell,[20,70,40]).gap,20-T);
+  // A board on the floor is the floor, not a lid over it.
+  assert.equal(roomFloorRun('walkin-u',walk,[60,T]).gap,60-T);
+  assert.equal(roomFloorRun('walkin-u',walk,[]).gap,96-2*T,'no board: up to the ceiling');
+  assert.equal(roomFloorRun('walkin-u',walk,[1.5]).gap,2.2,'never less than 2.2 inches');
+
+  for(const file of ['walkin-u','l-run']){
+    const src=readFileSync(new URL(`../js/three/layouts/${file}.js`,import.meta.url),'utf8');
+    assert.match(src,/import \{[^}]*\broomFloorRun\b[^}]*\} from '\.\.\/roomBoards\.js'/,`${file}.js imports roomFloorRun`);
+    assert.match(src,/kind:'floor'[^}]*length:floorRun\.length,gap:floorRun\.gap\b/s,`${file}.js draws its floor from it`);
+    assert.doesNotMatch(src,/gap:10\b|gapAbove\[NSH-1\]/,`${file}.js carries its own floor headroom`);
+  }
+  const ellSrc=readFileSync(new URL('../js/three/layouts/l-run.js',import.meta.url),'utf8');
+  assert.match(ellSrc,/const gap=floor\?roomFloorRun\('l-run',geometry,shelfYs,side\)\.gap:gapAbove\[board\];/,
+    'the L draws a floor row filed under a wall with the floor\'s headroom');
 });
 
 test('board heights: the scene\'s clamp, with a fraction past 0.86 on the floor',()=>{

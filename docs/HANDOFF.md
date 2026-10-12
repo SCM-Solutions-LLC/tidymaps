@@ -4,7 +4,7 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-10-12, after #195 merged (`main` at `4a1ebe7`).
+**Last refreshed:** 2026-10-12, after #197 merged (`main` at `494e08c`).
 This header still tells the 10-03 story; each later session has its own dated
 section below it, newest first, starting with 2026-10-12.
 
@@ -293,6 +293,78 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-12 session changed, part 3 (a room's floor row)
+
+#197 deployed: Pages run 201 (`494e08c`) went green 10-12 17:43 UTC, the
+check part 2 left open.
+
+Closes the "Seen, not changed" note in part 2. An organizer added from the 3D
+view to a walk-in's or an L's floor row got a height limit neither the scene
+nor the card used, and the scene's own floor numbers were stand-ins with no
+recorded reason: the walk-in drew its floor a fixed 10 inches high, and the L
+used the gap ABOVE a board (its lowest one for a row filed under the floor,
+the board it was dealt for a floor row filed under a wall).
+
+`roomBoards.js roomFloorRun(type, geometry, boardYs, wallId)` is now the one
+rule: the run a floor row lies along (the walk-in's is the room, `W - 2T - 2`;
+the L's is its back run, or the run of the wall the plan filed it under) and
+the space from the floor to the lowest board. Both builders draw from it, and
+`viewer3d.js shelfMaxDims` sizes an added floor organizer by it. A row counts
+as floor when the room plan files it there or its own `surface` is `floor`,
+because the builders draw it on the floor either way: the walk-in fixture
+files its floor row under the right wall, which is how the first cut of this
+missed it. A room wall row's headroom now reads the same clamped board gaps
+the builders draw (`gapsAboveFor`), not the raw fractions, so the top
+board's limit is no longer up to a board thickness taller than drawn.
+
+On the two fixtures: a 72 x 96 x 72 walk-in printed "Max 14h" (its wall's
+board gap) over a floor the scene judged at 9.25; it now prints 20 under
+20.9 inches of clearance. A 72 x 84 x 60 L printed "Max 71w x 14h" over a
+54.5-inch run the scene judged at 14 inches high; it now prints 54w x 20h
+under 20.7.
+
+The printed height is now the tallest whole inch the scene passes,
+`floor(gap - T)`, on every branch of `shelfMaxDims`. It was `round(gap - 1)`,
+up to a quarter inch over the clearance: the first cut of this printed
+"Max 21h" over the walk-in's 20.9, and a room has no row check on the card
+to catch that. It only ever lowers a number, by at most an inch.
+
+Browser-checked: the added basket sits on the floor run with no fit note,
+and walk-in floor items stand at their own height (10 inches for a large
+item) instead of being squashed to 8.6. Full local run on the first commit:
+lint, types, 820 unit tests, and 328 e2e passed with the one standing skip.
+
+**A judgment call, revertible in one function.** The walk-in draws its floor
+rows in the aisle, which is open to the ceiling. The limit is the space under
+the lowest board anyway, because floor storage in a fitted room goes under
+the shelving along its walls; "open" would have printed the scene's 24-inch
+`OPEN_HEADROOM` stand-in instead. Side effect: the scene now passes taller
+floor products in a walk-in (up to the 20.9-inch clearance on the fixture,
+where it flagged anything over 9.25), which is the truer direction.
+
+**Tests.** `three-room-boards.test.mjs` asserts `roomFloorRun`'s numbers and
+reads both builders as text (they import it, draw their floor from it, and
+carry neither `gap:10` nor `gapAbove[NSH-1]`). `viewer3d-add-organizer.spec.mjs`
+adds a basket to a walk-in floor, an L floor, and an L floor row filed under
+its side wall, and holds the printed `maxDims` to the live floor surface's
+length and clearance. Proven red in copies of the tree, seven neuters, each
+alone: the floor branch off (all three e2e); the `surface` check dropped
+(walk-in and L side wall); the walk-in's `gap:10` back; the L's
+`gapAbove[NSH-1]` back; the L's wall-filed floor on its board gap; the run
+ignoring the wall (side-wall width, 54 on a 42.5-inch run); and the gap an
+inch short (unit only, since the scene and the limit share it). Both
+height assertions in the spec (this one and part 2's) now hold the printed
+height at or under the clearance instead of within half an inch over; an
+eighth neuter, `round(gap - 1)` back, turns the walk-in floor red (21 over
+20.9). Part 2's sample-plan test stays green under it: no sample row lands
+in the quarter inch.
+
+**Still not changed.** The card has no row check for a room
+(`rowHeadroomFor` returns null), so a floor need the model recommended is
+judged by its own `maxDims` only; `roomFloorRun` is what that check would
+read. A walk-in floor's depth is still judged against the wall shelving
+(part 2's note).
+
 ## What the 2026-10-12 session changed, part 2 (an added organizer's height)
 
 `viewer3d.js shelfMaxDims`, the size an organizer added from the 3D view is
@@ -316,15 +388,17 @@ sample and holds each `h_in` within a band of the card's
 neuters, each alone: the old below-gap formula (17 under 5.22) and a gap
 above read from the raw fractions without the scene's clamps (6 under 5.22).
 
-**Seen, not changed.** A room's floor row, or a row the room plan cannot
+**Seen, not changed.** ~~A room's floor row, or a row the room plan cannot
 place, still falls through to this unit rule, which indexes board gaps by a
 row number, so its height limit is not the floor's. The scene draws a room
 floor with a fixed `gap:10`, and the card has no row check for a room
 (`rowHeadroomFor` returns null), so an organizer added to a walk-in's floor
-is limited by a number neither of them uses. That predates this change. And
+is limited by a number neither of them uses.~~ Fixed in part 3 for floor
+rows; a row the plan cannot place still falls through. That predates this
+change. ~~And
 `h_in` is `round(gap - 1)`, which can sit up to a quarter inch over the drawn
 clearance (`gap - 0.75`); the card's row check covers that for the
-plain-board layouts.
+plain-board layouts.~~ Now `floor(gap - 0.75)` (part 3).
 
 ## What the 2026-10-12 session changed (recruiting slugs, #192's tests proven)
 

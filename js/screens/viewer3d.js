@@ -18,8 +18,8 @@ import {
   shelfHeightInches,mapForShelfCount,inferLSide,roomGeometryFor,
 } from '../three/viewerOptions.js';
 import {
-  isRoomLayout,roomPlanFor,runLength,boardCountForMap,boardYsFor,
-  boardYsFromFracs,gapsAboveFor,arrangementGeometryFor,ARRANGEMENT_VERSION,
+  isRoomLayout,roomPlanFor,runLength,roomFloorRun,boardCountForMap,boardYsFor,
+  boardYsFromFracs,gapsAboveFor,plainBoardClearance,arrangementGeometryFor,ARRANGEMENT_VERSION,
 } from '../three/roomBoards.js';
 
 /* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
@@ -471,41 +471,52 @@ const ORGANIZER_LABELS={
    and an item added here used to be capped at 72 inches under a badge that
    said the shelves were 14.
 
+   The headroom is the gap from the row's board up to the next one, or to
+   the top panel, as the scene draws it (the same clamps and floor snap,
+   and the gap the card's row check reads). This read the gap to the board
+   BELOW, so the sample plan's top shelf, 5 inches under the top panel,
+   printed "Max 17h" on an added organizer's card and in the exported list.
+
    In a room the level is a row on one wall's board, not a tier of the whole
-   room: its width is that wall's run, and its headroom is the pitch from its
-   board to the one above (the ceiling, for the top board), read from the
-   same room plan the builders draw from. A floor row, or a row the plan
-   cannot place, falls through to the unit rule below. */
+   room: its width is that wall's run and its headroom that board's gap, read
+   from the same room plan the builders draw from. A floor row, one the
+   plan files under the floor or one whose surface is the floor wherever it
+   is filed, is the room's floor run (roomFloorRun), the length and headroom
+   the builders draw it with. It used to fall through to the unit rule, or
+   take its wall's board, so a walk-in's floor was given a limit that
+   neither the scene (a fixed 10 inches then) nor the card used. A row the
+   plan cannot place still falls through. */
 function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   const rows=Math.max(1,geometry.shelfCount||1);
   const usableDepth=Math.max(4,shelfDepthFor({w_in:geometry.width, d_in:geometry.depth}, archetype)||(geometry.depth||14));
   const usableWidth=Math.max(4,(geometry.width||30)-1);
-  const fracs=Array.isArray(geometry.shelfYFracs)?geometry.shelfYFracs:[];
   const map=activeMapV2();
   const row=map[levelIndex];
   const idx=row&&Number.isInteger(row.shelfIndex)?row.shelfIndex:levelIndex;
+  const g=normalizeViewerGeometry(geometry, archetype);
+  const boardYs=boardYsFromFracs(g.shelfYFracs, g.height);
+  const gaps=gapsAboveFor(boardYs, g.height);
+  /* The height is the tallest whole inch the scene passes under that gap
+     (its clearance, the gap less the board over it). round(gap - 1) could
+     print up to a quarter inch over it: "Max 21h" on a walk-in floor the
+     scene clears to 20.9, and a room has no row check on the card to catch
+     that. */
+  const size=(width,gap)=>({
+    w_in:Math.round(Math.max(4,width)),
+    h_in:Math.max(3,Math.floor(plainBoardClearance(gap)+1e-9)),
+    d_in:Math.round(usableDepth),
+  });
   if(isRoomLayout(archetype)){
     const plan=roomPlanFor({ map, layout:layout||currentLayout(map), N:rows, boardYs:boardYsFor(geometry) });
     const wall=plan&&plan.wallOf.get(idx);
-    const board=plan&&plan.boardOf.get(idx);
-    if(wall&&Number.isInteger(board)&&fracs.length>board){
-      const pitch=(fracs[board]-(board?fracs[board-1]:0))*(geometry.height||60);
-      return {
-        w_in:Math.round(Math.max(4,runLength(plan.type,wall,geometry)-1)),
-        h_in:Math.max(3,Math.round(pitch-1)),
-        d_in:Math.round(usableDepth),
-      };
+    if(plan&&(plan.floorRows.includes(idx)||(row&&row.surface)==='floor')){
+      const floor=roomFloorRun(plan.type, g, boardYs, wall);
+      return size(floor.length-1, floor.gap);
     }
+    const board=plan&&plan.boardOf.get(idx);
+    if(wall&&Number.isInteger(board)&&board<gaps.length) return size(runLength(plan.type,wall,geometry)-1, gaps[board]);
   }
-  /* The headroom is the gap from the row's board up to the next one, or to
-     the top panel, as the scene draws it (the same clamps and floor snap,
-     and the gap the card's row check reads). This read the gap to the board
-     BELOW, so the sample plan's top shelf, 5 inches under the top panel,
-     printed "Max 17h" on an added organizer's card and in the exported
-     list. */
-  const g=normalizeViewerGeometry(geometry, archetype);
-  const gap=gapsAboveFor(boardYsFromFracs(g.shelfYFracs, g.height), g.height)[idx]??g.height/rows;
-  return { w_in:Math.round(usableWidth), h_in:Math.max(3,Math.round(gap-1)), d_in:Math.round(usableDepth) };
+  return size(usableWidth, gaps[idx]??g.height/rows);
 }
 
 function populateAddOrganizer(){

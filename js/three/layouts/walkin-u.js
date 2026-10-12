@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {addBox,addShelfLabel,accentFor,makeHitbox,addRod} from './helpers.js';
-import { roomPlanFor, roomShelfDepth, runLength } from '../roomBoards.js';
+import { roomPlanFor, roomShelfDepth, runLength, roomFloorRun } from '../roomBoards.js';
 
 /* Walk-in room using full measured footprint. Three storage walls wrap one
    open aisle. Shelves and rods stay realistic depth instead of filling room.
@@ -66,11 +66,14 @@ export function build(ctx){
     }
   }
 
+  /* The floor's run and headroom are roomFloorRun's (roomBoards.js), the
+     size an organizer added to a floor row is given. */
+  const floorRun=roomFloorRun('walkin-u',geometry,shelfYs);
   function buildFloor(idx){
     const row=rowFor(idx);
     const hit=makeHitbox(scene,W-2*T,6,D-2*T,0,T+3,0,{shelfIndex:idx,shelfY:T,row});
     if(row) addShelfLabel(scene,row,-W/2,T+3.5,D/2+0.7);
-    surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:W-2*T-2,gap:10,depth:D,itemDepth:Math.min(D*0.3,9)});
+    surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:floorRun.length,gap:floorRun.gap,depth:D,itemDepth:Math.min(D*0.3,9)});
   }
 
   function buildSurface(idx,wall){
