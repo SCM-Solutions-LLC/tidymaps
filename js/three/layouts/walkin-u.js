@@ -67,13 +67,20 @@ export function build(ctx){
   }
 
   /* The floor's run and headroom are roomFloorRun's (roomBoards.js), the
-     size an organizer added to a floor row is given. */
+     size an organizer added to a floor row is given. It is the strip under
+     the back wall's shelving, as deep as that shelving: floor storage in a
+     fitted room goes under the shelves along its walls (which is why its
+     headroom stops at the lowest board), and the aisle is left to walk in.
+     It was drawn across the middle of the room and judged the room's 72
+     inches deep, while the card and the server judge a walk-in floor by the
+     shelf (js/catalog.js shelfDepthFor, planSchema.js usableShelfDepth), so
+     a 20-inch bin did not fit on the card and fit in the 3D view. */
   const floorRun=roomFloorRun('walkin-u',geometry,shelfYs);
   function buildFloor(idx){
     const row=rowFor(idx);
-    const hit=makeHitbox(scene,W-2*T,6,D-2*T,0,T+3,0,{shelfIndex:idx,shelfY:T,row});
-    if(row) addShelfLabel(scene,row,-W/2,T+3.5,D/2+0.7);
-    surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:floorRun.length,gap:floorRun.gap,depth:D,itemDepth:Math.min(D*0.3,9)});
+    const hit=makeHitbox(scene,W-2*T,6,shelfDepth,0,T+3,backZ,{shelfIndex:idx,shelfY:T,row});
+    if(row) addShelfLabel(scene,row,-W/2,T+3.5,backZ+shelfDepth/2+0.7);
+    surfaces.push({index:idx,kind:'floor',row,y:T,hitbox:hit,uDir:new THREE.Vector3(1,0,0),normal:new THREE.Vector3(0,0,1),length:floorRun.length,gap:floorRun.gap,depth:shelfDepth,itemDepth:Math.min(shelfDepth*0.58,8)});
   }
 
   function buildSurface(idx,wall){

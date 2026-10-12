@@ -253,6 +253,51 @@ for (const room of ROOMS) {
   });
 }
 
+/* A walk-in's floor is the strip under its back wall's shelving, as deep as
+   that shelving: the card and the server judged it by the shelf, and the
+   scene drew it across the middle of the room and judged it 72 inches deep,
+   so a 20-inch bin was "does not fit" on the card and fit in the 3D view.
+   The answer key is the live floor surface: as deep as the wall shelves, and
+   carrying its organizer under the back wall. */
+test('a walk-in floor is judged and drawn at the shelving\'s depth, on the card and in the 3D view', async ({ page }) => {
+  const room = ROOMS[0];
+  await page.goto('/index.html');
+  await page.evaluate(async ({ plan, setup, dims }) => {
+    const [{ state }, { normalizeAi }] = await Promise.all([import('/js/state.js'), import('/js/plan.js')]);
+    state.space = 'pantry';
+    state.setup = setup; state.setupTouched = true;
+    state.dims = dims;
+    state.arrangement = null;
+    state.upgrades = true;
+    state.ai = normalizeAi(plan);
+    state.planMeta = { model: 'test', source: 'ai', analyzedAt: 0 };
+    state.shopping = null;
+  }, { plan: room.plan, setup: room.setup, dims: room.dims });
+
+  const first = await verdicts(page, { zone: 'Bulk rice', type: 'clear-bin', dims: { w: 9, h: 4, d: 9 } });
+  expect(first.layout).toBe('walkin-u');
+  expect(first.row, 'on the floor row').toBe(5);
+  const drawn = await page.evaluate(async () => {
+    const { shelfDepthFor } = await import('/js/catalog.js');
+    const view = window.__v3dView;
+    const floor = view.surfaces.find((s) => s.kind === 'floor');
+    const shelf = view.surfaces.find((s) => s.kind === 'shelf');
+    const bin = view.organizers.find((o) => o.userData.shelfIndex === 5);
+    return { floor: floor.depth, shelf: shelf.depth, card: shelfDepthFor({ w_in: 72, d_in: 72 }, 'walkin-u', 'floor'), binZ: bin.position.z };
+  });
+  expect(drawn.floor, 'the floor is as deep as the wall shelving').toBeCloseTo(drawn.shelf, 6);
+  expect(drawn.floor, 'and as deep as the card judges it').toBeCloseTo(drawn.card, 6);
+  // The back wall's inside face is at -36 + 0.75; the shelving runs 14.4 inches in from it.
+  expect(drawn.binZ, 'the floor\'s bin sits under the back wall\'s shelving').toBeLessThan(-36 + 0.75 + drawn.shelf);
+
+  for (const [d, fits] of [[drawn.floor - 0.1, true], [drawn.floor + 0.2, false], [20, false]]) {
+    const v = await verdicts(page, { zone: 'Bulk rice', type: 'clear-bin', dims: { w: 9, h: 4, d } });
+    expect(v.row, 'on the floor row').toBe(5);
+    expect(v.scene, `${d.toFixed(2)}in deep on a ${drawn.floor.toFixed(2)}in floor strip: the 3D view`).toBe(fits);
+    expect(v.card !== 'no-fit', `${d.toFixed(2)}in deep on a ${drawn.floor.toFixed(2)}in floor strip: the card says ${v.card}`).toBe(fits);
+  }
+});
+
 /* ---------- the small things from the same day's runs ---------- */
 
 /* The measure step's heading is built from the space's short name, and two of
