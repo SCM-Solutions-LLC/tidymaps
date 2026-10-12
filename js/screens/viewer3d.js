@@ -19,7 +19,7 @@ import {
 } from '../three/viewerOptions.js';
 import {
   isRoomLayout,roomPlanFor,runLength,boardCountForMap,boardYsFor,
-  arrangementGeometryFor,ARRANGEMENT_VERSION,
+  boardYsFromFracs,gapsAboveFor,arrangementGeometryFor,ARRANGEMENT_VERSION,
 } from '../three/roomBoards.js';
 
 /* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
@@ -481,10 +481,10 @@ function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   const usableDepth=Math.max(4,shelfDepthFor({w_in:geometry.width, d_in:geometry.depth}, archetype)||(geometry.depth||14));
   const usableWidth=Math.max(4,(geometry.width||30)-1);
   const fracs=Array.isArray(geometry.shelfYFracs)?geometry.shelfYFracs:[];
+  const map=activeMapV2();
+  const row=map[levelIndex];
+  const idx=row&&Number.isInteger(row.shelfIndex)?row.shelfIndex:levelIndex;
   if(isRoomLayout(archetype)){
-    const map=activeMapV2();
-    const row=map[levelIndex];
-    const idx=row&&Number.isInteger(row.shelfIndex)?row.shelfIndex:levelIndex;
     const plan=roomPlanFor({ map, layout:layout||currentLayout(map), N:rows, boardYs:boardYsFor(geometry) });
     const wall=plan&&plan.wallOf.get(idx);
     const board=plan&&plan.boardOf.get(idx);
@@ -497,9 +497,14 @@ function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
       };
     }
   }
-  // the gap to the level above is the headroom an organizer has to fit under
-  let gap=(geometry.height||60)/rows;
-  if(fracs.length>levelIndex+1) gap=Math.abs(fracs[levelIndex+1]-fracs[levelIndex])*(geometry.height||60);
+  /* The headroom is the gap from the row's board up to the next one, or to
+     the top panel, as the scene draws it (the same clamps and floor snap,
+     and the gap the card's row check reads). This read the gap to the board
+     BELOW, so the sample plan's top shelf, 5 inches under the top panel,
+     printed "Max 17h" on an added organizer's card and in the exported
+     list. */
+  const g=normalizeViewerGeometry(geometry, archetype);
+  const gap=gapsAboveFor(boardYsFromFracs(g.shelfYFracs, g.height), g.height)[idx]??g.height/rows;
   return { w_in:Math.round(usableWidth), h_in:Math.max(3,Math.round(gap-1)), d_in:Math.round(usableDepth) };
 }
 
