@@ -3755,6 +3755,26 @@ Ordered by whether anyone can act on them today.
    `off: Do Not Track` (checked 10-10), so nothing on the measurement side is
    left open.
 
+   **Plan, decided 2026-10-11.** Lead with the pantry (the most-tested path;
+   item 1 does not block it). Five watched sessions with people the owner
+   knows first, which find breakage and do not count as demand; then 20 to 30
+   strangers from organizing subreddits and local groups, each channel on its
+   own `?ref=` link. Bar, set before recruiting: of the first 10 strangers who
+   start the wizard, 6 get a plan, 4 tap useful, 2 check off 3 or more steps
+   within a week. Missing it means a product problem: stop recruiting.
+
+   **Reading it.** `screen_viewed` carries `ref` (a lowercase slug of at most
+   24 characters; anything else is dropped whole, `js/telemetry.js parseRef`)
+   on every step of a visit that arrived on a tagged link. Per channel:
+   `select props->>'ref' ref, props->>'screen' screen, count(distinct anon_id)
+   from telemetry_events where name = 'screen_viewed' group by 1, 2`; join
+   `plan_rated` and `step_checked` on `anon_id`. Telemetry undercounts: DNT or
+   GPC turns it off, and Brave sends GPC by default. The analysis count to
+   trust is `usage_events` where `fn = 'analyze-space'` (server side, every
+   call, 30 days), less the canary's one anonymous run a day. Capacity is not
+   a constraint at this scale: anonymous callers get 6 analyses a day each and
+   300 between them, and 100 previews.
+
 ### Waiting on business input
 
 7. **#5 products:** SKU curation and real affiliate IDs, then flip the flags in

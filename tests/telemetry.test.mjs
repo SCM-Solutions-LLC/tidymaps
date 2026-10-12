@@ -145,3 +145,31 @@ test('driving a real save from Node opens no socket', async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+/* The ?ref= tag is the only way to tell which posted link sent a visitor, and
+   it comes from a URL anyone can edit. Only a short slug survives; anything
+   else is dropped whole, because an email address cleaned down to its
+   letters would still be the email address. */
+test('parseRef keeps a short slug and drops everything else whole', async () => {
+  const { parseRef } = await import('../js/telemetry.js');
+  assert.equal(parseRef('?ref=reddit-organization'), 'reddit-organization');
+  assert.equal(parseRef('?space=pantry&ref=Nextdoor'), 'nextdoor');
+  assert.equal(parseRef('?ref=me@example.com'), null);
+  assert.equal(parseRef('?ref=jane.doe'), null);
+  assert.equal(parseRef('?ref=' + 'a'.repeat(25)), null);
+  assert.equal(parseRef('?ref=-lead'), null);
+  assert.equal(parseRef('?ref='), null);
+  assert.equal(parseRef(''), null);
+  assert.equal(parseRef(undefined), null);
+});
+
+/* The boundary gates event names, not props, so nothing on the server would
+   notice if the router stopped sending the tag. The call site is read
+   directly, like plan_created's above. */
+test('screen_viewed sends the ref tag the privacy page and the contract name', async () => {
+  const { readFileSync } = await import('node:fs');
+  const router = readFileSync(new URL('../js/router.js', import.meta.url), 'utf8');
+  assert.match(router, /track\('screen_viewed', \{ screen:id, ref:arrivalRef\(\) \}\)/, 'router.js no longer sends ref on screen_viewed');
+  const contract = readFileSync(new URL('../supabase/functions/_shared/telemetryEvents.js', import.meta.url), 'utf8');
+  assert.match(contract, /'screen_viewed',\s*\/\/ \{ screen, ref \}/, 'the allowlist comment does not name the props screen_viewed sends');
+});
