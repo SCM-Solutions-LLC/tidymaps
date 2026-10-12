@@ -4,7 +4,10 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-10-03, after #179 merged (`main` at `6ad3040`).
+**Last refreshed:** 2026-10-12, after #194 merged (`main` at `dd00890`).
+This header still tells the 10-03 story; each later session has its own dated
+section below it, newest first, starting with 2026-10-11.
+
 **Both owner blockers from the 09-14 and 09-19 outages are cleared.** The
 `ANTHROPIC_API_KEY` was rotated 09-29 to a dedicated key with no expiry
 (Production health #3), and the `SUPABASE_ACCESS_TOKEN` secret was replaced
@@ -26,10 +29,9 @@ the four workflows to a version that runs on Node 24: checkout 6, setup-node
 Node 20, and `upload-pages-artifact@v4` pins a Node 20 `upload-artifact`
 internally, so v5 is the first that is Node 24 end to end. v5 also leaves out
 dotfiles by default, which costs nothing here (nothing under the directories
-`scripts/build-site.sh` copies starts with a dot). Not verified from the
-sandbox: `pages.yml`, `supabase-functions.yml` and the canary on the new
-versions, which first run after merge (`supabase-functions.yml` runs on that
-merge because its own file changed; it redeploys unchanged functions).
+`scripts/build-site.sh` copies starts with a dot). All three workflows have
+since run green on these versions, and again on the SHA pins that replaced
+the tags (2026-10-11 section).
 
 Before that, 2026-09-16, after #176 merged: the tap-targets e2e
 spec at `tests/e2e/tap-targets.spec.mjs:87` had a latent flake in its
@@ -290,6 +292,21 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-10-11 session changed (SHA-pinned actions, `?ref=` tags)
+
+Two PRs, both deployed and checked from the Actions API on 10-12.
+
+- **#193 pinned every GitHub Action to a commit SHA** (open item 12, batch 3,
+  the CI line). The pins first ran on #193's own merge, not on #194 as #194's
+  PR description says: "Deploy edge functions" run 38, Pages run 197 and
+  canary run 55 all went green on `20495a1`.
+- **#194 tags the funnel with `?ref=`** (open item 6 has the plan and the
+  query). Deploy run 39 and Pages run 198 went green on `dd00890`, so
+  `track-events` and the site both carry it. The server's `sanitizeEvent`
+  keeps any flat string prop, so `ref` needs no allowlist entry of its own;
+  the `telemetryEvents.js` change is the comment. `privacy.html` names the
+  tag, effective October 11.
 
 ## What the 2026-10-10 session changed, part 3 (the reach-in run, and what it and the two batches found)
 
@@ -3737,8 +3754,8 @@ Ordered by whether anyone can act on them today.
       health #5). A calendar reminder is the whole mechanism; nothing in the
       repo warns before it expires.
     - ~~Bump the GitHub Actions off Node 20.~~ **Done in the PR that carries
-      this entry**; the header has the versions and what stays unverified
-      until it merges. ~~Pinning actions to SHAs is still open and still needs
+      this entry**; the header has the versions, all since run green.
+      ~~Pinning actions to SHAs is still open and still needs
       broader GitHub access.~~ **Done 2026-10-11** without it; see open item
       12, batch 3, the CI line.
 
@@ -3762,6 +3779,18 @@ Ordered by whether anyone can act on them today.
    own `?ref=` link. Bar, set before recruiting: of the first 10 strangers who
    start the wizard, 6 get a plan, 4 tap useful, 2 check off 3 or more steps
    within a week. Missing it means a product problem: stop recruiting.
+   The watched sessions go out on `?ref=watched`, so they can be left out:
+   an untagged visit has no `ref` and looks like any other traffic. A
+   stranger is a visit whose `ref` is set and is not `watched`. Only an AI
+   plan counts: "gets a plan" is a `plan_created` with `source = 'ai'`, and
+   a rating counts only from a `plan_rated` with the same `source`. `'demo'`
+   is the fallback when the analysis fails (as during the expired-key
+   outage, when the app still looked like it worked) or the landing page's
+   sample plan, so it says nothing about whether the product helped.
+   "Taps useful" means `useful = 'Very useful'` (decided 2026-10-12). The
+   rating has three answers (`FB_USEFUL` in `js/data.js`), and "Somewhat
+   useful" is what a polite stranger taps, so counting it would pass the bar
+   on weak interest.
 
    **Reading it.** `screen_viewed` carries `ref` (a lowercase slug of at most
    24 characters; anything else is dropped whole, `js/telemetry.js parseRef`)
