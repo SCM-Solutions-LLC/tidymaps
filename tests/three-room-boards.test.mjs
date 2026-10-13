@@ -269,6 +269,10 @@ test('roomFloorRun: a room floor runs under its lowest board, and both builders 
     assert.match(src,/kind:'floor'[^}]*length:floorRun\.length,gap:floorRun\.gap\b/s,`${file}.js draws its floor from it`);
     assert.doesNotMatch(src,/gap:10\b|gapAbove\[NSH-1\]/,`${file}.js carries its own floor headroom`);
   }
+  // A walk-in's floor is the strip under its shelving, judged as deep as the shelving, the way the card and the server judge it.
+  const walkSrc=readFileSync(new URL('../js/three/layouts/walkin-u.js',import.meta.url),'utf8');
+  assert.match(walkSrc,/kind:'floor'[^}]*\bdepth:shelfDepth,/s,'the walk-in floor is as deep as its shelving');
+  assert.doesNotMatch(walkSrc,/kind:'floor'[^}]*\bdepth:D\b/s,'the walk-in floor is judged by the room\'s depth');
   const ellSrc=readFileSync(new URL('../js/three/layouts/l-run.js',import.meta.url),'utf8');
   assert.match(ellSrc,/const gap=floor\?roomFloorRun\('l-run',geometry,shelfYs,side\)\.gap:gapAbove\[board\];/,
     'the L draws a floor row filed under a wall with the floor\'s headroom');

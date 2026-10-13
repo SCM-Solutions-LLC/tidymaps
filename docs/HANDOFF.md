@@ -4,7 +4,7 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-10-12, after #198 merged (`main` at `cec8fff`).
+**Last refreshed:** 2026-10-12, after #199 merged (`main` at `158a5df`).
 This header still tells the 10-03 story; each later session has its own dated
 section below it, newest first, starting with 2026-10-12.
 
@@ -293,6 +293,54 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-12 session changed, part 5 (a walk-in floor's depth)
+
+#199 deployed: Pages run 203 (`158a5df`) went green 10-12 21:24 UTC.
+
+Closes part 4's "Still not changed" note, in the direction that note did not
+expect. A walk-in's floor was judged three ways: the card
+(`catalog.js shelfDepthFor`) and the server (`planSchema.js
+usableShelfDepth`, which rejects a need deeper than it less half an inch)
+both by the wall shelving, 14.4 inches in a 72 x 72 room, and the 3D view by
+the room, `depth:D`, 72. So a 20-inch bin did not fit on the card and fit in
+the 3D view. The 10-10 session left it alone so as not to bring back "Fits
+your 72" floor depth"; part 4 called the card's verdict the bug.
+
+**The 3D view moved, not the card.** Part 3 already decided a walk-in floor
+is the space under the wall shelving (its headroom stops at the lowest
+board), and floor storage in a fitted room goes there, leaving the aisle to
+walk in. `walkin-u.js buildFloor` now draws the floor as the strip under the
+back wall's shelving: its hitbox and label at the back run's `backZ`,
+`depth: shelfDepth`, and `itemDepth: min(shelfDepth * 0.58, 8)`, the L's
+floor numbers. The run length and headroom are part 3's `roomFloorRun`,
+unchanged. No server or prompt change. The owner chose this direction over
+moving the card and server to the room's depth.
+
+What it changes on screen: floor items stand along the back wall under its
+lowest board instead of in the middle of the aisle. A hand-built plan whose
+22-inch baskets fit no wall shelf used to park them on the 72-inch floor in
+mid-aisle with no note; it now says they have no spot. A real plan cannot
+get there: the server rejects a walk-in need deeper than the shelving less
+half an inch, and every catalog bin and basket that fits the shelf fits the
+floor. `demo-fit.spec.mjs` walks the pantry, closet and linen walk-ins
+through the wizard and stays green.
+
+**Tests.** `fit-zones.spec.mjs` seeds the part 4 walk-in and asks the live
+floor surface to be as deep as the wall shelving and the card's
+`shelfDepthFor`, its bin to stand under the back shelving, and the card and
+the 3D view to agree at 0.1 under the depth and 0.2 and 20 inches over it.
+`three-room-boards.test.mjs` reads `walkin-u.js` as text for the floor's
+`depth:shelfDepth` and no `depth:D` on it. Proven red in a copy of the tree,
+two neuters, each alone: `depth:D` back (unit, e2e: 72 against 14.4); the
+hitbox back in the middle of the room (e2e: the bin at z 0.375). The unit
+check first matched the room's `layoutFootprint` (`depth:D`, which is right)
+and was narrowed to the floor surface before either neuter ran.
+
+Browser-checked the walk-in demo at 96 x 84 x 72, before and after: the
+floor's shoes and laundry basket moved from mid-aisle (z 0.4) to under the
+back wall (z -27.7). Full local run: lint, types, 822 unit tests, and 331
+e2e passed with the one standing skip.
+
 ## What the 2026-10-12 session changed, part 4 (a room's row check on the card)
 
 #198 deployed: Pages run 202 (`cec8fff`) went green 10-12 18:45 UTC, the
@@ -355,12 +403,13 @@ inches) or the catalog adds something taller: a guard, not a fix anyone
 would have seen this week. Full local run: lint, types, 822 unit tests, and 330 e2e
 passed with the one standing skip.
 
-**Still not changed, and the bigger of the two today.** A walk-in floor's
-depth is still judged against the wall shelving: the same card reads "Fits
-your 14" floor depth" on a 72-inch-deep floor (part 2's note). Two of the
-catalog's four available clear bins (14.5 and 20 inches deep, 6 high) are
-ranked no-fit on that floor for that reason alone, while the 3D view draws
-the floor 72 deep.
+**Still not changed.** ~~A walk-in floor's depth is still judged against
+the wall shelving: the same card reads "Fits your 14" floor depth" on a
+72-inch-deep floor (part 2's note). Two of the catalog's four available
+clear bins (14.5 and 20 inches deep, 6 high) are ranked no-fit on that floor
+for that reason alone, while the 3D view draws the floor 72 deep.~~ Part 5:
+the card was right and the 3D view was the outlier; this note called the
+card's verdict the bug, which it was not.
 
 ## What the 2026-10-12 session changed, part 3 (a room's floor row)
 
@@ -621,10 +670,10 @@ plan: its 3D view should open with no fit note.
   it. With even spacing the two are equal, so it only shows after a shelf is
   moved.~~ Fixed 10-12, and the "only after a shelf is moved" was wrong: the
   sample plan showed it untouched (see the 10-12 part 2 section).
-- A walk-in's floor rows are still judged against the wall shelving on both
+- ~~A walk-in's floor rows are still judged against the wall shelving on both
   sides. The scene gives a walk-in's floor the room's depth. Left alone:
   "Fits your 72" floor depth" is too close to the reading the 10-03 session
-  removed.
+  removed.~~ The scene now judges it by the shelving too (10-12 part 5).
 - Run 4c offered "Script Pantry Labels for Food Containers" for a closet. The
   catalog has one label set.
 - A visible bag was not spotted with Bags & purses unticked. One run.
