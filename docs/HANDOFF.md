@@ -4,7 +4,8 @@ A durable snapshot of what shipped, how it fits together, what's deployed, and
 what's still open — so a fresh session (or human) can continue without
 re-deriving anything.
 
-**Last refreshed:** 2026-10-12, after #199 merged (`main` at `158a5df`).
+**Last refreshed:** 2026-10-13, after #200 merged and deployed (`main` at
+`01d8c5e`).
 This header still tells the 10-03 story; each later session has its own dated
 section below it, newest first, starting with 2026-10-12.
 
@@ -296,6 +297,8 @@ the data" before concluding anything about demand.
 ## What the 2026-10-12 session changed, part 5 (a walk-in floor's depth)
 
 #199 deployed: Pages run 203 (`158a5df`) went green 10-12 21:24 UTC.
+This section is #200, and it deployed too: Pages run 204 (`01d8c5e`) went
+green 10-13 00:30 UTC. It touched no edge function, so no function deploy ran.
 
 Closes part 4's "Still not changed" note, in the direction that note did not
 expect. A walk-in's floor was judged three ways: the card
