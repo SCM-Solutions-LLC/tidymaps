@@ -18,6 +18,8 @@ const demoScenarios=()=>import('../demo-scenarios.js');
 import { scenarioKeyFor, areaFor } from '../wizard-data.js';
 import { resolveLayout } from '../layout.js';
 import { enforceArchetypeHonesty } from '../setupStructure.js';
+import { setupMismatch } from '../setupMismatch.js';
+import { switchSetup } from './wizard.js';
 
 function showFrames(frames){
   const fw=document.getElementById('frames-wrap');
@@ -114,7 +116,10 @@ export function cancelAnalysis(){
   if(activeAnalysis){ activeAnalysis.abort(); activeAnalysis=null; }
 }
 
-export function runLoading(){
+/* `setupConfirmed`: the user just answered the setup check (#3) for this
+   build, so it is not asked again even if the rebuild's photos read
+   differently a second time. */
+export function runLoading({ setupConfirmed=false }={}){
   /* Retire the previous run before claiming a token, so the old run's
      isCurrent() is already false by the time its aborted request rejects. */
   cancelAnalysis();
@@ -125,8 +130,9 @@ export function runLoading(){
   const isCurrent=()=>analysisRun===runId && planInstanceIsCurrent(planInstance);
   /* This run's answer, held here rather than in `state` until the handoff.
      `{ ai, meta }` on success, `{ error }` on failure. */
-  const run={ result:null };
+  const run={ result:null, setupConfirmed };
 
+  hideSetupCheck();
   const wrap=document.getElementById('load-steps'); wrap.innerHTML='';
   const fw=document.getElementById('frames-wrap');
   fw.classList.add('hide');
@@ -240,7 +246,10 @@ export function runLoading(){
          through to the report. */
       citeGoals(plan, state.goals || []);
       if(!isCurrent()) return;   // superseded mid-flight: this plan is for answers that changed
-      run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() } };
+      run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() },
+        // What the photos show, read off the raw plan: normalizeAi does not
+        // carry it, and it is a question for the user, not part of the plan.
+        seenLayout: typeof plan.seenLayout==='string' ? plan.seenLayout : null };
     })().catch(e=>{
       if(!isCurrent()) return;
       run.result = { error: readableError(e), failure: failureOf(e) };
@@ -379,9 +388,47 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
       }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');
+      const mismatch=!run.setupConfirmed && setupMismatch({ space:state.space, setup:state.setup, setupTouched:state.setupTouched, seenLayout:result.seenLayout });
+      if(mismatch){ askSetupCheck(mismatch, ()=>enterResults(result), isCurrent); return; }
       setTimeout(()=>enterResults(result), 550);
     }
   };
   if(aiPromise){ aiPromise.then(proceed); }
   else { setTimeout(proceed, 450); }   // let the final check land visually
+}
+
+/* #3: the photos show a different setup from the card the user picked. Asked
+   once, here, before the plan opens. Keep opens the plan already built for
+   their pick; Switch changes the setup and builds again for it, so the plan
+   always matches the setup they confirmed. Which button was pressed is
+   counted, nothing else: no setup names, no photos. */
+function askSetupCheck(m, keep, isCurrent){
+  const box=document.getElementById('setup-check');
+  if(!box){ keep(); return; }
+  box.innerHTML=`<p class="setup-check-q" id="setup-check-q">${escapeHtml(m.question)}</p>`+
+    `<div class="setup-check-actions">`+
+    `<button type="button" class="btn btn-primary" id="setup-check-switch">${escapeHtml(m.switchLabel)}</button>`+
+    `<button type="button" class="btn btn-ghost" id="setup-check-keep">${escapeHtml(m.keepLabel)}</button>`+
+    `</div>`;
+  box.classList.remove('hide');
+  document.getElementById('load-sub').textContent='One quick check before your plan opens.';
+  const sw=/** @type {HTMLButtonElement} */ (document.getElementById('setup-check-switch'));
+  const kp=/** @type {HTMLButtonElement} */ (document.getElementById('setup-check-keep'));
+  let answered=false;
+  const answer=(choice)=>{
+    if(answered || !isCurrent() || getCurrentScreen()!=='loading') return;
+    answered=true;
+    track('setup_mismatch_choice', { choice });
+    hideSetupCheck();
+    if(choice==='keep'){ keep(); return; }
+    switchSetup(m.toId);
+    runLoading({ setupConfirmed:true });
+  };
+  sw.onclick=()=>answer('switch');
+  kp.onclick=()=>answer('keep');
+  sw.focus();
+}
+function hideSetupCheck(){
+  const box=document.getElementById('setup-check');
+  if(box){ box.classList.add('hide'); box.innerHTML=''; }
 }

@@ -92,6 +92,14 @@ try{
   }
 }catch(e){ /* no storage available; nothing to clean up */ }
 
+/* Every inline handler now has its global and every screen is built, so the
+   head guard in index.html can stop holding clicks and replay the one it
+   kept. Here, not after initializeRoute: that waits on account setup, and a
+   replayed click that lands before the restore is exactly the "visitor chose
+   a route first" case initializeRoute already yields to. */
+const releaseClicks = /** @type {any} */ (window).__tmReleaseClicks;
+if(typeof releaseClicks === 'function') releaseClicks();
+
 // Session restore + deep links, then guest-draft recovery as the fallback.
 // Route restoration is guarded so delayed account setup cannot interrupt a
 // person who has already opened the wizard, results, or 3D viewer.

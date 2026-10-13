@@ -227,6 +227,7 @@ test('the privacy policy discloses every telemetry event the server accepts', as
     share_link_created: /when a share link is created/,
     shared_plan_viewed: /when one is opened/,
     space_saved: /when a plan is saved to an account, with the space type and whether the save was automatic/,
+    setup_mismatch_choice: /when your photos look like a different setup from the one you picked, whether you chose to switch or keep yours/,
   };
   assert.deepEqual(Object.keys(DISCLOSED).sort(), [...EVENT_NAMES].sort(), 'the disclosure map and the server allowlist name different events');
   const policy = source['privacy.html'];

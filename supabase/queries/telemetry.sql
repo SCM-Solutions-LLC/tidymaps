@@ -214,3 +214,15 @@ from public.telemetry_events
 where name = 'feedback_submitted'
 group by 1, 2, 3
 order by 4 desc;
+
+-- Photos that disagreed with the setup the user picked (#3): how often the
+-- one-tap check fires, and which way people go. Mostly "keep" says the
+-- detection is noisy or the cards are clear; mostly "switch" says the setup
+-- cards are being misread.
+select
+  props->>'choice' as choice,
+  count(*)         as times
+from public.telemetry_events
+where name = 'setup_mismatch_choice'
+group by 1
+order by 2 desc;

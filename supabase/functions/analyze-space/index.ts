@@ -104,6 +104,7 @@ Return ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "existing": [{"icon": string, "title": string, "detail": string}],
   "dontBuy": string,
   "steps": [{"task": string, "time": string, "why": string, "rows": [number], "goal": string|null}],   // ordered steps, time like "10 min". task: an instruction, max 8 words, starts with a verb. why: max 12 words, one sentence. rows: the shelfIndex values the step works on, at most ${STEP_ROWS_MAX}; the report prints the place under the task, so the task itself stays short. goal: one of the user's own goals copied exactly, when the step answers it; otherwise null. The exact count allowed for this request is in "Enforced limits" below.
+  "seenLayout": ${ARCHETYPES.map((a) => `"${a}"`).join('|')}|null,  // the archetype the PHOTOS show, judged from the photos alone (see "Layout classification rules"), even when the user picked a different setup and layout.type follows their pick. null when the photos do not show enough to tell. The app uses it to ask the user whether their pick is right.
   "spotted": [{"name": string, "row": number|null}],  // only when "About this request" says the user confirmed a contents list: things you can see that the list leaves out, with the shelfIndex you see each on. Name each one as what it is ("Stand mixer", "Shoe boxes"), because the user taps the name to add it to the plan. If you cannot tell what a thing is, leave it out: never name one by its color or where it sits ("Red item bottom right"). At most ${SPOTTED_MAX}. These are never planned: no step, zone or product for them.
   "time": string,                              // total estimate, e.g. "45-90 min"
   "cost": string                               // e.g. "$0 / $40-80"
@@ -302,7 +303,7 @@ Deno.serve(async (req) => {
       '- productNeeds: this user chose to use only what they already have, so return an EMPTY productNeeds array and write every step to work with containers, boxes and jars already in the space. Do not name a product to buy anywhere in the plan, including in summary, problems, opportunities and dontBuy.',
     ] : []),
     ...(chosenArchetype ? [
-      `- layout.type: the user picked their own setup from a set of cards, so classify this space as "${chosenArchetype}" and write every level name, step, and product suggestion for that shape. Describe only the surfaces "${chosenArchetype}" actually has. If the photos show something genuinely different, still use "${chosenArchetype}" and say what you see in the summary instead.`,
+      `- layout.type: the user picked their own setup from a set of cards, so classify this space as "${chosenArchetype}" and write every level name, step, and product suggestion for that shape. Describe only the surfaces "${chosenArchetype}" actually has. If the photos show something genuinely different, still use "${chosenArchetype}" and say what you see in the summary instead, and set seenLayout to the archetype the photos show.`,
     ] : []),
     ...(!usesWhatTheyHave ? [
       '- productNeeds vs steps: if any step tells the user to use a turntable, riser, airtight container, door rack, hook rack or drawer organizer, that item MUST also appear in productNeeds — checked per item, so listing one product does not cover the others. A plan that instructs a purchase it does not list gives the user a shopping list missing the thing the step needs, and a cost that does not add up. Either list what they need to buy, or write the step to work with what is already in the space.',
@@ -315,7 +316,7 @@ Deno.serve(async (req) => {
     /* The new fields are the one place the validator is looser than the
        prompt, and the model is told so, with the caps the repair pass
        applies, from the same constants. */
-    `- optional fields: "wall", "tier", "rows", "goal" and "spotted" are optional, and a bad value in any of them is dropped rather than rejected. "spotted" keeps at most ${SPOTTED_MAX} entries and "rows" at most ${STEP_ROWS_MAX} per step. A "spotted" entry that names no thing, only a color, a position or a word like "item", is dropped too.`,
+    `- optional fields: "wall", "tier", "rows", "goal", "seenLayout" and "spotted" are optional, and a bad value in any of them is dropped rather than rejected. "spotted" keeps at most ${SPOTTED_MAX} entries and "rows" at most ${STEP_ROWS_MAX} per step. A "spotted" entry that names no thing, only a color, a position or a word like "item", is dropped too.`,
     `- step length: every steps[].task must be ${STEP_TASK_MAX_WORDS} words or fewer and every steps[].why ${STEP_WHY_MAX_WORDS} or fewer. Aim well under both, at 8 and 12, because each step renders as one line beside a picture. Checked per step, so one long task rejects the whole plan.`,
     '- map: 12 rows maximum, and geometry.shelfCount must equal the number of rows.',
     `- text length: no string value may be longer than ${PLAN_TEXT_MAX_CHARS} characters, and every icon keyword ${PLAN_ICON_MAX_CHARS} or fewer. The word limits above are far tighter, so a plan that follows them never comes near these.`,
