@@ -40,11 +40,16 @@ const plan = (seenLayout, summary) => ({
 
 /* Answers the first request with walk-in photos, and any rebuild with a plan
    that agrees with the setup it was sent, so a Switch ends on the report. */
-async function mockAnalysis(page, firstSeen = 'walkin-u', secondSeen = null) {
+async function mockAnalysis(page, firstSeen = 'walkin-u', secondSeen = null, { rebuildFails = false } = {}) {
   const calls = [];
   await page.route('**/functions/v1/analyze-space', async (route) => {
     const body = JSON.parse(route.request().postData() || '{}');
     calls.push(body);
+    if (rebuildFails && calls.length > 1) {
+      // The anonymous hourly cap: a first build plus a Switch is two of three.
+      await route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: 'rate_limited', retryAfterSeconds: 1800 }) });
+      return;
+    }
     const p = calls.length === 1
       ? plan(firstSeen, 'First build, for the card the user picked.')
       : plan(secondSeen || body.context.setup.archetype, 'Second build, for the confirmed setup.');
@@ -66,6 +71,8 @@ test('photos that show a different setup ask before the plan opens, and Keep ope
   await expect(check).toBeVisible({ timeout: 30_000 });
   await expect(check.locator('#setup-check-q')).toHaveText('Your photos look like a walk-in. Switch?');
   await expect(check.getByRole('button', { name: 'Switch', exact: true })).toBeFocused();
+  // Switch is a second full analysis, and the box says so before the choice.
+  await expect(check.locator('#setup-check-note')).toHaveText('Switching builds your plan again, which takes one to two minutes.');
   // Held: the report does not open behind the question.
   await page.waitForTimeout(1200);
   await expect(page.locator('#screen-loading')).toHaveClass(/active/);
@@ -106,4 +113,23 @@ test('the check is asked once: a rebuild whose photos read differently again ope
   await page.locator('#setup-check').getByRole('button', { name: 'Switch', exact: true }).click();
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 30_000 });
   expect(calls).toHaveLength(2);
+});
+
+test('a Switch whose rebuild fails opens the plan already built, with the setup it was built for', async ({ page }) => {
+  const calls = await mockAnalysis(page, 'walkin-u', null, { rebuildFails: true });
+  await build(page);
+  await page.locator('#setup-check').getByRole('button', { name: 'Switch', exact: true }).click();
+
+  await expect(page.locator('#load-sub')).toHaveText('We could not build it again, so here is the plan for the setup you picked.', { timeout: 30_000 });
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 10_000 });
+  expect(calls).toHaveLength(2);
+  const text = await page.evaluate(() => document.body.innerText);
+  expect(text).toContain('First build, for the card the user picked.');
+  expect(text).not.toMatch(/demo plan/i);
+  // The plan and the setup agree again: the walk-in switch was undone.
+  const st = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return { setup: state.setup, source: state.planMeta && state.planMeta.source, aiError: state.aiError };
+  });
+  expect(st).toEqual({ setup: 'reachin', source: 'ai', aiError: null });
 });

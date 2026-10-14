@@ -84,10 +84,14 @@ export function setSetup(setupId){
 /* #3's Switch, from the loading screen. Unlike picking a card, it keeps
    measurements the user typed: they measured their space, and the photos
    changing the setup does not change the space. Numbers still at the old
-   card's defaults were never measured, so those follow the new card. */
+   card's defaults were never measured, so those follow the new card.
+   Returns a function that puts the old setup back, for a rebuild that fails
+   and falls back to the plan built for it; null when there is no such card. */
 export function switchSetup(setupId){
   const st = (SETUP_TYPES[state.space] || []).find(t => t.id === setupId);
-  if(!st) return false;
+  if(!st) return null;
+  const before = { setup: state.setup, setupLabel: state.setupLabel, setupTouched: state.setupTouched,
+                   dimsFt: state.dimsFt ? { ...state.dimsFt } : state.dimsFt };
   const dd = SETUP_DIMS[state.setup];
   const f = state.dimsFt;
   const untouched = !f || !dd || (Number(f.w) === dd.w && Number(f.h) === dd.h && Number(f.d) === dd.d);
@@ -95,7 +99,13 @@ export function switchSetup(setupId){
   state.setupLabel = st.label;
   state.setupTouched = true;
   if(untouched) applySetupDims(st.id);
-  return true;
+  return () => {
+    state.setup = before.setup;
+    state.setupLabel = before.setupLabel;
+    state.setupTouched = before.setupTouched;
+    state.dimsFt = before.dimsFt;
+    syncDims();
+  };
 }
 
 function applySetupDims(setupId){

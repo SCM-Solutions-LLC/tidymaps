@@ -407,7 +407,7 @@
       "dimsVerified": "cross-referenced",
       "img": null,
       "checked": "2026-07",
-      "spaces": ["pantry"],
+      "spaces": ["pantry", "cabinet"],
       "available": true
     },
     {
@@ -423,7 +423,7 @@
       "dimsVerified": "cross-referenced",
       "img": null,
       "checked": "2026-07",
-      "spaces": ["pantry"],
+      "spaces": ["pantry", "cabinet"],
       "available": true
     },
     {

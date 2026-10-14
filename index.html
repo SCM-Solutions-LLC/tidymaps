@@ -68,55 +68,6 @@
   }
 }
 </script>
-<!-- The startup module graph, so the browser fetches it in parallel instead
-     of discovering it one import level at a time. Must stay after the import
-     map: a module fetch that starts before it makes Chrome ignore the map.
-     tests/startup-preload.test.mjs keeps this list equal to main.js's static
-     imports. -->
-<link rel="modulepreload" href="js/main.js" />
-<link rel="modulepreload" href="js/affiliates.js" />
-<link rel="modulepreload" href="js/api.js" />
-<link rel="modulepreload" href="js/auth.js" />
-<link rel="modulepreload" href="js/catalog.js" />
-<link rel="modulepreload" href="js/config.js" />
-<link rel="modulepreload" href="js/data.js" />
-<link rel="modulepreload" href="js/db.js" />
-<link rel="modulepreload" href="js/icons.js" />
-<link rel="modulepreload" href="js/imageQuality.js" />
-<link rel="modulepreload" href="js/images.js" />
-<link rel="modulepreload" href="js/layout.js" />
-<link rel="modulepreload" href="js/media.js" />
-<link rel="modulepreload" href="js/optout.js" />
-<link rel="modulepreload" href="js/personalize.js" />
-<link rel="modulepreload" href="js/placement.js" />
-<link rel="modulepreload" href="js/plan.js" />
-<link rel="modulepreload" href="js/planExport.js" />
-<link rel="modulepreload" href="js/planProvenance.js" />
-<link rel="modulepreload" href="js/product-art.js" />
-<link rel="modulepreload" href="js/router.js" />
-<link rel="modulepreload" href="js/screens/account.js" />
-<link rel="modulepreload" href="js/screens/capture.js" />
-<link rel="modulepreload" href="js/screens/customize.js" />
-<link rel="modulepreload" href="js/screens/dashboard.js" />
-<link rel="modulepreload" href="js/screens/feedback.js" />
-<link rel="modulepreload" href="js/screens/index.js" />
-<link rel="modulepreload" href="js/screens/landing.js" />
-<link rel="modulepreload" href="js/screens/loading.js" />
-<link rel="modulepreload" href="js/screens/results.js" />
-<link rel="modulepreload" href="js/screens/save.js" />
-<link rel="modulepreload" href="js/screens/wizard.js" />
-<link rel="modulepreload" href="js/setupMismatch.js" />
-<link rel="modulepreload" href="js/setupStructure.js" />
-<link rel="modulepreload" href="js/startup.js" />
-<link rel="modulepreload" href="js/state.js" />
-<link rel="modulepreload" href="js/stepMedia.js" />
-<link rel="modulepreload" href="js/telemetry.js" />
-<link rel="modulepreload" href="js/three/organizerKinds.js" />
-<link rel="modulepreload" href="js/three/roomBoards.js" />
-<link rel="modulepreload" href="js/three/viewerOptions.js" />
-<link rel="modulepreload" href="js/ui.js" />
-<link rel="modulepreload" href="js/wizard-data.js" />
-<link rel="modulepreload" href="supabase/functions/_shared/telemetryEvents.js" />
 </head>
 <body data-screen="landing" data-site="1">
 <a class="skip-link" href="#main">Skip to content</a>

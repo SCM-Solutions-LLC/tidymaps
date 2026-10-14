@@ -1,25 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { rankProducts, reconcileSelection, searchLinks, inSpace } from '../js/catalog.js';
+import { rankProducts, reconcileSelection, searchLinks, inSpace, FOOD_SPACES } from '../js/catalog.js';
 import { state } from '../js/state.js';
 
 /* #2: "Script Pantry Labels for Food Containers" showed up in closet plans.
    A label-set need is generic ("label the bins"), and the cheapest label set
    in the catalog won it in any space. Both label sets are preprinted food
-   labels, so they carry `spaces: ["pantry"]` and the matcher honours it. */
+   labels, so they carry `spaces: ["pantry", "cabinet"]`, the two spaces that
+   hold food, and the matcher honours it. */
 
 const catalog = JSON.parse(readFileSync(new URL('../data/catalog.json', import.meta.url), 'utf8'));
 const need = { type: 'label-set', maxDims: null };
 
-test('the food label sets are offered in a pantry and nowhere else', () => {
+test('the food label sets are offered where food is kept and nowhere else', () => {
   state.dims = null;
-  const pantry = rankProducts(catalog.products, need, 'pantry').map((r) => r.product.id);
-  assert.ok(pantry.includes('talented-kitchen-157-pantry-labels'));
-  for (const space of ['closet', 'dresser', 'linen', 'bathroom', 'garage', 'workbench', 'cabinet', 'drawers']) {
+  for (const space of ['pantry', 'cabinet']) {
+    const offered = rankProducts(catalog.products, need, space).map((r) => r.product.id);
+    assert.ok(offered.includes('talented-kitchen-157-pantry-labels'), `${space} plan offered ${offered}`);
+  }
+  for (const space of ['closet', 'dresser', 'linen', 'bathroom', 'garage', 'workbench', 'drawers']) {
     const offered = rankProducts(catalog.products, need, space).map((r) => r.product.name);
     assert.deepEqual(offered.filter((n) => /pantry|food/i.test(n)), [], `${space} plan offered ${offered}`);
   }
+});
+
+test('every label set is scoped to exactly the food spaces the search uses', () => {
+  const labelSets = catalog.products.filter((p) => p.type === 'label-set');
+  assert.ok(labelSets.length > 0);
+  for (const p of labelSets) assert.deepEqual(p.spaces, FOOD_SPACES, p.id);
 });
 
 test('a product with no spaces list is still offered everywhere', () => {
@@ -45,10 +54,12 @@ test('a closet plan saved with the pantry labels drops them to the bare type, no
   assert.equal(reconcileSelection(saved, need, catalog.products, 'pantry').productId, 'talented-kitchen-157-pantry-labels');
 });
 
-test('the fallback search outside a pantry does not ask for pantry labels', () => {
+test('the fallback search outside a food space does not ask for pantry labels', () => {
   state.dims = null;
   state.space = 'closet';
   assert.doesNotMatch(decodeURIComponent(searchLinks(need)[0].url), /pantry/i);
-  state.space = 'pantry';
-  assert.match(decodeURIComponent(searchLinks(need)[0].url), /pantry label set/);
+  for (const space of FOOD_SPACES) {
+    state.space = space;
+    assert.match(decodeURIComponent(searchLinks(need)[0].url), /pantry label set/, space);
+  }
 });

@@ -15,14 +15,18 @@ trail `main`. When it and `git log --oneline -20` disagree, git is right
 
 One PR; merging deploys the site and the edge functions.
 - **#1:** an inline `<head>` guard holds the last early button click until
-  `main.js` calls `__tmReleaseClicks` (before `initializeRoute`); startup
-  modules are `modulepreload`ed (see Decisions, "Measured").
-- **#2:** catalog `spaces: ["pantry"]` keeps the food label sets out of other
-  spaces (`rankProducts`, `reconcileSelection`, the fallback search).
+  `main.js` calls `__tmReleaseClicks` (before `initializeRoute`). No
+  `modulepreload` (see Decisions, "Measured and not done").
+- **#2:** catalog `spaces: ["pantry", "cabinet"]` (`FOOD_SPACES` in
+  `js/catalog.js`) keeps the food label sets out of non-food spaces
+  (`rankProducts`, `reconcileSelection`, the fallback search).
 - **#3:** `analyze-space` returns `seenLayout`; if it contradicts a picked
-  card, "Your photos look like a <x>. Switch?" shows before the plan. Keep =
-  plan already built; Switch = rebuild, typed measurements kept.
-  `setup_mismatch_choice {choice}`; mostly "keep" means noisy detection.
+  card, "Your photos look like a <x>. Switch?" shows before the plan, with a
+  note that switching takes one to two minutes. Keep = plan already built;
+  Switch = rebuild, typed measurements kept. A rebuild that fails (rate
+  limit, timeout) opens the first plan and restores the original setup,
+  never the demo. `setup_mismatch_choice {choice}`; mostly "keep" means noisy
+  detection. Privacy policy effective date moved to 10-14 for the new event.
 - **This file** trimmed from 4,117 lines; the rest is in the archive.
 
 ## Product state
@@ -214,11 +218,13 @@ npm run check:model-path  # the canary, by hand
   per material, never `scene.environment` (it relights every surface).
   Packing jitter is a hash, never `Math.random`.
 - **Measured and not done:** the builder thunk map (54KB, lazy chunk); more
-  boot deferral (item 12); CSS concatenation (slower). `modulepreload` was
-  re-measured 10-13 (HTTP/2, 390px, median of 11): slow 4G boot 6.6 to 6.0s,
+  boot deferral (item 12); CSS concatenation (slower). `modulepreload`, twice:
+  09-14, and 10-13 (HTTP/2, 390px, median of 11): slow 4G boot 6.6 to 6.0s,
   paint unchanged; fast link boot 1.16 to 1.0s but LCP (the H1's font swap)
-  about 0.2s later. Shipped for the slow-phone case; revert = delete the links
-  and `tests/startup-preload.test.mjs`.
+  about 0.2s later. Dropped by the owner 10-14: the early-click guard already
+  keeps clicks made before boot, so the gain left is 0.6s on slow 4G against
+  a later headline for most visitors and a 44-line list to maintain.
+  `tests/early-click-guard.test.mjs` fails if the links come back.
 - **Advisor non-fixes** (`0009`): `pg_net` in public, `handle_new_user`
   EXECUTE, policy-less RLS, no captcha or leaked-password check.
 - **Not dead, do not remove:** household counts and `state.detected` (#170
@@ -254,7 +260,10 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
     calendar reminder, since nothing in the repo warns.
 
 Also open, unnumbered (from the dated sections):
-- **After #192:** watch `analyze-space plan validation failed` for a rise;
+- **After #192:** watch `analyze-space plan validation failed` for a rise,
+  a week from its deploy (`09b1271`, merged 10-10 23:36 UTC), so through
+  10-18. The 10-13 PR's `seenLayout` cannot reject a plan (a bad value is
+  dropped), so a rise is still #192's;
   run a real reach-in or wardrobe with products on (shelf `maxDims.d_in`
   <=13.5 untrimmed, floor needs name the floor row, card and 3D agree);
   reopen run 4c's saved plan and expect no fit note. No record of these yet.

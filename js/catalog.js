@@ -217,6 +217,11 @@ export function fitFor(product, need){
   return margin>=0.5 ? 'fits' : 'tight';
 }
 
+/* Where food is kept, so food labels belong: the pantry and the kitchen
+   cabinet ("Spot staples and leftovers fast"). The label sets' `spaces` in
+   data/catalog.json and the fallback search below both follow this list. */
+export const FOOD_SPACES=['pantry','cabinet'];
+
 /* A product with a `spaces` list is made for those spaces only. Both label
    sets in the catalog are preprinted food labels ("Flour", "Pasta"), and a
    closet plan's "label the bins" need was handed one because it was the
@@ -348,12 +353,12 @@ export const TYPE_LABEL={
   'drawer-organizer':'Drawer organizer','hook-rack':'Hook rack','label-set':'Label set','safety-latch':'Safety latch',
 };
 
-// Outside a pantry, the search must not send someone to food labels either.
-const NON_PANTRY_QUERY={ 'label-set':'storage bin label set' };
+// Outside a food space, the search must not send someone to food labels either.
+const NON_FOOD_QUERY={ 'label-set':'storage bin label set' };
 
 // Dimension-qualified search links — always available as a fallback
 export function searchLinks(need){
-  let q=(state.space!=='pantry' && NON_PANTRY_QUERY[need.type]) || TYPE_QUERY[need.type] || need.type;
+  let q=(!FOOD_SPACES.includes(state.space) && NON_FOOD_QUERY[need.type]) || TYPE_QUERY[need.type] || need.type;
   // Same rule as fitFor: the search cap is the tighter of the two, so the
   // query can't send someone shopping for a bin deeper than their shelf.
   const target=MOUNTS_OUTSIDE.has(need.type) ? null : targetRowFor(need);
