@@ -99,6 +99,10 @@ textarea{resize:vertical;min-height:84px}
 /* ---------- Loading ---------- */
 .load-steps{display:grid;gap:2px;margin-top:8px}
 .load-step{display:flex;align-items:center;gap:13px;padding:11px 4px;color:var(--ink-3);transition:.3s;font-size:15px}
+.setup-check{margin:0 0 16px;text-align:center}
+.setup-check-q{margin:0 0 4px;font-size:16px;font-weight:600;color:var(--ink)}
+.setup-check-note{margin:0 0 14px}
+.setup-check-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
 .load-step .dot{width:20px;height:20px;border:2px solid var(--field-line);border-radius:50%;flex:none;display:grid;place-items:center;transition:.3s;background:var(--stock)}
 .load-step .dot svg{width:12px;height:12px;color:var(--stock);opacity:0}
 .load-step.doing{color:var(--ink)}

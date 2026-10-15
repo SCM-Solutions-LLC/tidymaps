@@ -47,8 +47,8 @@ The Playwright browser is not installed in the web sandbox; use
 
 - **Prove a new test fails without its fix.** Not by stashing the whole change:
   that only shows the test needs the file. Neuter the specific behaviour and
-  confirm the test goes red. `docs/HANDOFF.md` lists real tests from this repo
-  that passed against unfixed code.
+  confirm the test goes red. `docs/handoff-archive.md` lists real tests from
+  this repo that passed against unfixed code.
 - **Never make the validator stricter than its own prompt.** A rule in
   `checkInvariants` that `analyze-space` was not told costs the user an
   80-second analysis and returns a demo plan. Three production failures came

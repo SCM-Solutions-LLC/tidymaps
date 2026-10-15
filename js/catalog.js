@@ -217,12 +217,26 @@ export function fitFor(product, need){
   return margin>=0.5 ? 'fits' : 'tight';
 }
 
-/* Products of the need's type that can still be bought, best fit first and
-   cheapest within a fit. Pure, so the test suite can hand it a catalog. */
-export function rankProducts(products, need){
+/* Where food is kept, so food labels belong: the pantry and the kitchen
+   cabinet ("Spot staples and leftovers fast"). The label sets' `spaces` in
+   data/catalog.json and the fallback search below both follow this list. */
+export const FOOD_SPACES=['pantry','cabinet'];
+
+/* A product with a `spaces` list is made for those spaces only. Both label
+   sets in the catalog are preprinted food labels ("Flour", "Pasta"), and a
+   closet plan's "label the bins" need was handed one because it was the
+   cheapest label set (#2). No list means any space. */
+export function inSpace(product, space){
+  return !Array.isArray(product.spaces) || !space || product.spaces.includes(space);
+}
+
+/* Products of the need's type that can still be bought in this space, best
+   fit first and cheapest within a fit. Pure, so the test suite can hand it a
+   catalog. */
+export function rankProducts(products, need, space=state.space){
   const order={fits:0, tight:1, unknown:2, 'no-fit':3};
   return (products||[])
-    .filter(p=>p.type===need.type && p.available!==false)
+    .filter(p=>p.type===need.type && p.available!==false && inSpace(p, space))
     .map(p=>({product:p, fit:fitFor(p, need)}))
     .sort((a,b)=>(order[a.fit]-order[b.fit]) || (a.product.price_usd-b.product.price_usd));
 }
@@ -262,10 +276,22 @@ export function selectionFor(need, needIdx){
    card keeps `formerName` for its notice. Its id stays as `formerProductId`:
    "currently unavailable" is often temporary, and a product that comes back
    is restored on the next load instead of staying "no longer sold" for good. */
-export function reconcileSelection(selection, need, products){
+export function reconcileSelection(selection, need, products, space=state.space){
   const id=selection.productId||selection.formerProductId||null;
   const product=id?(products||[]).find(p=>p.id===id):null;
   const base={...selection, type:need.type};
+  /* Picked before products were scoped to spaces (a closet plan saved with
+     pantry labels). It is still sold, so "no longer available" would be
+     false: drop it to the bare type, the row a need gets when nothing in the
+     catalog matches. */
+  if(product && !inSpace(product, space)){
+    delete base.unavailable; delete base.formerName; delete base.formerProductId;
+    return {
+      ...base,
+      productId:null, name:TYPE_LABEL[need.type]||need.type, retailer:null,
+      price_usd:null, url:null, img:null, checkedOn:null, fit:'unknown', dims_in:null,
+    };
+  }
   if(product && product.available!==false){
     delete base.unavailable; delete base.formerName; delete base.formerProductId;
     return {
@@ -327,9 +353,12 @@ export const TYPE_LABEL={
   'drawer-organizer':'Drawer organizer','hook-rack':'Hook rack','label-set':'Label set','safety-latch':'Safety latch',
 };
 
+// Outside a food space, the search must not send someone to food labels either.
+const NON_FOOD_QUERY={ 'label-set':'storage bin label set' };
+
 // Dimension-qualified search links — always available as a fallback
 export function searchLinks(need){
-  let q=TYPE_QUERY[need.type]||need.type;
+  let q=(!FOOD_SPACES.includes(state.space) && NON_FOOD_QUERY[need.type]) || TYPE_QUERY[need.type] || need.type;
   // Same rule as fitFor: the search cap is the tighter of the two, so the
   // query can't send someone shopping for a bin deeper than their shelf.
   const target=MOUNTS_OUTSIDE.has(need.type) ? null : targetRowFor(need);

@@ -34,6 +34,10 @@ export const EVENT_NAMES = [
   'space_saved',          // { auto, space } — a row reached the spaces table.
                           //   auto:true is the autosave that fires with the
                           //   plan; false is an explicit save or share.
+  'setup_mismatch_choice', // { choice } — the photos showed a different
+                          //   setup from the card picked, and the user chose
+                          //   'switch' or 'keep'. Counts only: no setup names,
+                          //   no photos.
 ];
 
 const MAX_STRING = 80;

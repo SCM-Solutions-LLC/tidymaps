@@ -21,6 +21,34 @@
 <meta name="twitter:description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own." />
 <meta name="twitter:image" content="https://scmsolutions.org/tidymaps/assets/og.png" />
 <link rel="icon" href="assets/favicon.svg" />
+<!-- Early-click guard. The header and landing buttons are plain HTML, so they
+     can be seen and clicked before js/main.js and its module graph have run,
+     and each one calls a global that main.js has not defined yet: on a cold
+     load that window was about 0.9s and every click in it was lost. This holds
+     the last button click and main.js replays it the moment the handlers
+     exist (__tmReleaseClicks, which also sets __tidymapReady). Inline because
+     it has to be listening before anything can be clicked. -->
+<script>
+(function(){
+  var held=null;
+  function hold(e){
+    var el=e.target&&e.target.closest&&e.target.closest('button,[role="button"]');
+    if(!el||el.disabled) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    held=el;
+  }
+  addEventListener('click',hold,true);
+  window.__tidymapReady=false;
+  window.__tmReleaseClicks=function(){
+    if(window.__tidymapReady) return;
+    window.__tidymapReady=true;
+    removeEventListener('click',hold,true);
+    var el=held; held=null;
+    if(el&&el.isConnected) el.click();
+  };
+})();
+</script>
 <!-- The two faces are swapped in on arrival (font-display:swap), so the sooner
      they are requested the shorter the flash of the fallback. -->
 <link rel="preload" href="vendor/fonts/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin />
@@ -550,6 +578,7 @@
     <h1 id="load-title">Putting your plan together</h1>
     <p class="muted small" id="load-sub">Placing zones, sorting by reach, and keeping the little ones in mind.</p>
   </div>
+  <div class="card pad setup-check hide" id="setup-check" role="group" aria-labelledby="setup-check-q"></div>
   <div class="card pad">
     <div class="load-steps" id="load-steps"></div>
     <div id="frames-wrap" class="hide">

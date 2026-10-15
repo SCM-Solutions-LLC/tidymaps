@@ -18,6 +18,8 @@ const demoScenarios=()=>import('../demo-scenarios.js');
 import { scenarioKeyFor, areaFor } from '../wizard-data.js';
 import { resolveLayout } from '../layout.js';
 import { enforceArchetypeHonesty } from '../setupStructure.js';
+import { setupMismatch } from '../setupMismatch.js';
+import { switchSetup } from './wizard.js';
 
 function showFrames(frames){
   const fw=document.getElementById('frames-wrap');
@@ -114,7 +116,13 @@ export function cancelAnalysis(){
   if(activeAnalysis){ activeAnalysis.abort(); activeAnalysis=null; }
 }
 
-export function runLoading(){
+/* `setupConfirmed`: the user just answered the setup check (#3) for this
+   build, so it is not asked again even if the rebuild's photos read
+   differently a second time. `fallback`: the plan already built for the
+   setup they switched away from, and how to put that setup back. A rebuild
+   that fails opens that plan rather than the demo: they waited for a real
+   one, and Switch must never cost them it. */
+export function runLoading({ setupConfirmed=false, fallback=null }={}){
   /* Retire the previous run before claiming a token, so the old run's
      isCurrent() is already false by the time its aborted request rejects. */
   cancelAnalysis();
@@ -125,8 +133,9 @@ export function runLoading(){
   const isCurrent=()=>analysisRun===runId && planInstanceIsCurrent(planInstance);
   /* This run's answer, held here rather than in `state` until the handoff.
      `{ ai, meta }` on success, `{ error }` on failure. */
-  const run={ result:null };
+  const run={ result:null, setupConfirmed, fallback };
 
+  hideSetupCheck();
   const wrap=document.getElementById('load-steps'); wrap.innerHTML='';
   const fw=document.getElementById('frames-wrap');
   fw.classList.add('hide');
@@ -240,7 +249,10 @@ export function runLoading(){
          through to the report. */
       citeGoals(plan, state.goals || []);
       if(!isCurrent()) return;   // superseded mid-flight: this plan is for answers that changed
-      run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() } };
+      run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() },
+        // What the photos show, read off the raw plan: normalizeAi does not
+        // carry it, and it is a question for the user, not part of the plan.
+        seenLayout: typeof plan.seenLayout==='string' ? plan.seenLayout : null };
     })().catch(e=>{
       if(!isCurrent()) return;
       run.result = { error: readableError(e), failure: failureOf(e) };
@@ -349,6 +361,19 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
        expected — so the run token is checked with it. */
     if(!isCurrent() || getCurrentScreen()!=='loading') return;
     const result=run.result || { error:'We could not read the plan that came back.' };
+    if(result.error && run.fallback){
+      document.getElementById('load-sub').textContent='We could not build it again, so here is the plan for the setup you picked.';
+      if(fin){ fin.classList.remove('doing'); fin.classList.add('err'); }
+      const { result:first, undo }=run.fallback;
+      // The setup goes back with the plan, together, inside the guard: a
+      // Back press in the delay leaves neither changed.
+      setTimeout(()=>{
+        if(!isCurrent() || getCurrentScreen()!=='loading') return;
+        undo();
+        enterResults(first);
+      }, 1400);
+      return;
+    }
     if(result.error){
       /* Most of api.js's messages already end "Showing the demo plan
          instead."; the ones that do not (a rate limit says how long to wait)
@@ -379,9 +404,50 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
       }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');
+      const mismatch=!run.setupConfirmed && setupMismatch({ space:state.space, setup:state.setup, setupTouched:state.setupTouched, seenLayout:result.seenLayout });
+      if(mismatch){ askSetupCheck(mismatch, result, ()=>enterResults(result), isCurrent); return; }
       setTimeout(()=>enterResults(result), 550);
     }
   };
   if(aiPromise){ aiPromise.then(proceed); }
   else { setTimeout(proceed, 450); }   // let the final check land visually
+}
+
+/* #3: the photos show a different setup from the card the user picked. Asked
+   once, here, before the plan opens. Keep opens the plan already built for
+   their pick; Switch changes the setup and builds again for it, so the plan
+   always matches the setup they confirmed. Switch is a second full wait, so
+   the box says so before they choose. Which button was pressed is counted,
+   nothing else: no setup names, no photos. */
+function askSetupCheck(m, result, keep, isCurrent){
+  const box=document.getElementById('setup-check');
+  if(!box){ keep(); return; }
+  box.innerHTML=`<p class="setup-check-q" id="setup-check-q">${escapeHtml(m.question)}</p>`+
+    `<p class="muted small setup-check-note" id="setup-check-note">Switching builds your plan again, which takes one to two minutes.</p>`+
+    `<div class="setup-check-actions">`+
+    `<button type="button" class="btn btn-primary" id="setup-check-switch">${escapeHtml(m.switchLabel)}</button>`+
+    `<button type="button" class="btn btn-ghost" id="setup-check-keep">${escapeHtml(m.keepLabel)}</button>`+
+    `</div>`;
+  box.classList.remove('hide');
+  document.getElementById('load-sub').textContent='One quick check before your plan opens.';
+  const sw=/** @type {HTMLButtonElement} */ (document.getElementById('setup-check-switch'));
+  const kp=/** @type {HTMLButtonElement} */ (document.getElementById('setup-check-keep'));
+  let answered=false;
+  const answer=(choice)=>{
+    if(answered || !isCurrent() || getCurrentScreen()!=='loading') return;
+    answered=true;
+    track('setup_mismatch_choice', { choice });
+    hideSetupCheck();
+    if(choice==='keep'){ keep(); return; }
+    const undo=switchSetup(m.toId);
+    if(!undo){ keep(); return; }
+    runLoading({ setupConfirmed:true, fallback:{ result, undo } });
+  };
+  sw.onclick=()=>answer('switch');
+  kp.onclick=()=>answer('keep');
+  sw.focus();
+}
+function hideSetupCheck(){
+  const box=document.getElementById('setup-check');
+  if(box){ box.classList.add('hide'); box.innerHTML=''; }
 }

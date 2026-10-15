@@ -216,6 +216,10 @@ export const planSchema = z.object({
   existing: z.array(z.object({ icon: iconKeyword(), title: text(), detail: text() })).optional(),
   dontBuy: text().optional(),
   steps: z.array(stepSchema).min(1),
+  // What the photos show when it differs from the setup the user picked
+  // (#3). Optional and soft: an unknown archetype is dropped, never a reason
+  // to reject a plan the user waited a minute for.
+  seenLayout: z.enum(ARCHETYPES).nullable().optional().catch(undefined),
   spotted: spottedSchema,
   time: text().optional(),
   cost: text().optional(),
@@ -622,6 +626,7 @@ function repairOptionalFields(plan, context) {
     .filter((s) => { const k = s.name.toLowerCase(); if (seenSpotted.has(k)) return false; seenSpotted.add(k); return true; })
     .slice(0, SPOTTED_MAX);
   if (spotted.length) plan.spotted = spotted; else delete plan.spotted;
+  if (plan.seenLayout == null) delete plan.seenLayout;
   for (const row of plan.map) {
     if (row.wall == null) delete row.wall;
     if (!Number.isInteger(row.tier) || row.tier < 0) delete row.tier;
