@@ -26,7 +26,7 @@ One PR; merging deploys the site and the edge functions.
   Switch = rebuild, typed measurements kept. A rebuild that fails (rate
   limit, timeout) opens the first plan and restores the original setup,
   never the demo. `setup_mismatch_choice {choice}`; mostly "keep" means noisy
-  detection. Privacy policy effective date moved to 10-14 for the new event.
+  detection. Privacy policy effective date moved to 10-15, the day it merged.
 - **This file** trimmed from 4,117 lines; the rest is in the archive.
 
 ## Product state
