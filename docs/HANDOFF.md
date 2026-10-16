@@ -145,7 +145,7 @@ npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
 npm test                  # 838 unit tests at 10-16
 export CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
-npx playwright test       # 338 e2e + 1 standing skip at 10-13
+npx playwright test       # 344 e2e + 1 standing skip at 10-16
 npm run check:model-path  # the canary, by hand
 ```
 
