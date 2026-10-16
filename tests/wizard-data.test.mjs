@@ -61,7 +61,7 @@ test('every room has areas and every area id is unique', () => {
   }
   const ids = allAreas.map(a => a.id);
   assert.equal(new Set(ids).size, ids.length, 'duplicate area ids');
-  assert.equal(ids.length, 9, 'design contract: 9 areas across 4 rooms');
+  assert.equal(ids.length, 10, 'design contract: 10 areas across 4 rooms');
 });
 
 test('every area has categories, goals, detection, styles, and setup types', () => {

@@ -22,6 +22,7 @@ const MATRIX = {
   pantry: ['Kitchen', 'Pantry', 'Pantry'],
   cabinet: ['Kitchen', 'Cabinets', 'Kitchen cabinet'],
   drawers: ['Kitchen', 'Drawers', 'Kitchen drawers'],
+  fridge: ['Kitchen', 'Fridge & freezer', 'Fridge & freezer'],
   closet: ['Bedroom', 'Closet', 'Closet'],
   dresser: ['Bedroom', 'Dresser', 'Dresser'],
   bathroom: ['Bathroom & hall', 'Vanity & under-sink', 'Bathroom vanity'],

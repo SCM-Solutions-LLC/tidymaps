@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-13, main at ae2427d (after #201), plus this session's PR.** History (dated
+**Last refreshed: 2026-10-16, main at 7204de5 (after #203), plus this session's PR.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,33 +11,22 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-10-13 session changed
+## What the 2026-10-16 session changed
 
-One PR; merging deploys the site and the edge functions.
-- **#1:** an inline `<head>` guard holds the last early button click until
-  `main.js` calls `__tmReleaseClicks` (before `initializeRoute`). No
-  `modulepreload` (see Decisions, "Measured and not done").
-- **#2:** catalog `spaces: ["pantry", "cabinet"]` (`FOOD_SPACES` in
-  `js/catalog.js`) keeps the food label sets out of non-food spaces
-  (`rankProducts`, `reconcileSelection`, the fallback search).
-- **#3:** `analyze-space` returns `seenLayout`; if it contradicts a picked
-  card, "Your photos look like a <x>. Switch?" shows before the plan, with a
-  note that switching takes one to two minutes. Keep = plan already built;
-  Switch = rebuild, typed measurements kept. A rebuild that fails (rate
-  limit, timeout) opens the first plan and restores the original setup,
-  never the demo. `setup_mismatch_choice {choice}`; mostly "keep" means noisy
-  detection. Privacy policy effective date moved to 10-15, the day it merged.
-- **This file** trimmed from 4,117 lines; the rest is in the archive.
+One PR (site, `get-shared-space`). **Fridge & freezer is the tenth space**:
+four cards on the existing `fridge` archetype, builder and demo (37 setups);
+"Inside depth" (`INSIDE_DEPTH`); demo raw meat lost `keep-high`; one product
+`spaces: ["fridge"]`; `SPACE_QUERY`; fridge words in `NOTE_COMMON`.
 
 ## Product state
 
 Static ES-module site (no build step) on GitHub Pages at
 `scmsolutions.org/tidymaps`; Supabase backend (Postgres + RLS, magic-code
 auth, private `space-media` storage, Deno edge functions holding the AI keys;
-BYOK is gone). An 11-step wizard (`js/router.js FLOW`) feeds `analyze-space`
+BYOK is gone). An 11-step wizard over ten spaces and 37 setups (`js/router.js FLOW`) feeds `analyze-space`
 (Sonnet 5.5 since 10-06). The plan reads as a report (wall tabs for rooms,
 steps with where-lines, "Also in your photo", a shopping list from a
-30-product catalog) and a 3D viewer with a builder per layout. Also: a
+31-product catalog) and a 3D viewer with a builder per layout. Also: a
 homepage, product library, dashboard, read-only share links, and an AI photo
 preview (`render-after`, Gemini). Design: "The Warm Shelf" (`DESIGN.md`).
 Only the owner has used it (Production health #9); first users: item 6.
@@ -154,7 +143,7 @@ archive has the 08-27 text, where 4 and 5 were each used twice.
 ```
 npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
-npm test                  # 835 unit tests at 10-13
+npm test                  # 838 unit tests at 10-16
 export CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
 npx playwright test       # 338 e2e + 1 standing skip at 10-13
 npm run check:model-path  # the canary, by hand
@@ -164,7 +153,7 @@ npm run check:model-path  # the canary, by hand
   `localStorage` (`saved-space.spec.mjs`) covers signed-in. Telemetry needs
   `--disable-blink-features=AutomationControlled` (webdriver suppresses it).
 - Browser-test every user-facing change at 390 and 1280. Long specs:
-  `demo-fit` and `three-setup-matrix` walk all 33 setups (~4 min).
+  `demo-fit` and `three-setup-matrix` walk all 37 setups (~4 min).
 - **Fresh-session traps:** the sandbox cannot reach `supabase.co` (use MCP)
   or the live site; renders need the owner's browser; repo photos are
   <=1000px, so `assets/product/plan-shopping.png` is the render fixture.
@@ -246,34 +235,36 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
    pantry only. Run garages, closets, workbenches; compare object count with
    the input (the model once multiplied a container). Needs the owner's
    browser (~20 min); a failed render no longer costs quota (#109).
-12. **The 2026-09-14 site review: residue only.** Every line shipped
-    (#134 to #174). Left: JSON-LD (product-metadata decisions),
-    `apple-touch-icon` (needs a PNG), the 72-character title (copy), live-site
-    headers and the hosted auth config (sandbox cannot see them), and the
-    "Last reviewed" dates on `cookies.html`/`accessibility.html` (nobody
-    reviewed them). Eager JS (41 modules at boot) needs `landing.js`,
-    `router.js`, `save.js`, `customize.js` and the `wizard-data.js` graph
-    untangled; measure with a real import-graph walk first.
+12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped).
+    Left: JSON-LD, `apple-touch-icon` (needs a PNG), the 72-character title,
+    live-site headers and hosted auth config (sandbox cannot see them), the
+    unreviewed "Last reviewed" dates on `cookies.html`/`accessibility.html`.
+    Eager JS (41 boot modules) needs `landing.js`, `router.js`, `save.js`,
+    `customize.js` and `wizard-data.js` untangled; walk the import graph first.
 13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
     calendar reminder, since nothing in the repo warns.
 
+14. **Fridge (10-16).** Before merge, open the Target listing for
+    `idesign-fridge-freezer-bin-14x8x4-2pk` and replace its `note`; after
+    deploy, run one real fridge analysis. Gaps: an AI "Door shelves" row draws
+    as an interior shelf (owner's call); multipacks price per bin (3 x a set
+    of 2 reads $81; the mDesign 2-pack too).
+
 Also open, unnumbered (from the dated sections):
-- **After #192:** watch `analyze-space plan validation failed` for a rise,
-  a week from its deploy (`09b1271`, merged 10-10 23:36 UTC), so through
-  10-18. The 10-13 PR's `seenLayout` cannot reject a plan (a bad value is
-  dropped), so a rise is still #192's;
-  run a real reach-in or wardrobe with products on (shelf `maxDims.d_in`
-  <=13.5 untrimmed, floor needs name the floor row, card and 3D agree);
-  reopen run 4c's saved plan and expect no fit note. No record of these yet.
+- **After #192:** watch `analyze-space plan validation failed` for a rise
+  through 10-18 (`09b1271`, merged 10-10); `seenLayout` cannot reject a plan,
+  so a rise is #192's. Run a real reach-in or wardrobe with products on
+  (shelf `maxDims.d_in` <=13.5 untrimmed, floor needs name the floor row,
+  card and 3D agree); reopen run 4c's plan, expect no fit note. Not done yet.
 - **Sonnet 5.5:** read several `analyze-space` times before quoting a
   speedup; try effort `low` only after a day at `medium`; the lower spotted
   count (4 vs 6 to 8) is a question, not a regression.
 
-Closed (archive has the text): 2 canary built; 3 preview button (#101); 4
-step caps at 12/18; 5 3D ports (#112, #113); 9 canary heartbeat (#171,
-#178, #179); 10 all 33 setups open clean (09-08); 11 token replaced 10-03.
+Closed (archive has the text): 2 canary; 3 preview button (#101); 4 step caps
+12/18; 5 3D ports (#112, #113); 9 heartbeat (#171, #178, #179); 10 the 33
+setups of 09-08 open clean; 11 token replaced 10-03.
 
 ### Waiting on traffic
 
@@ -288,7 +279,7 @@ step caps at 12/18; 5 3D ports (#112, #113); 9 canary heartbeat (#171,
 
 ### Waiting on business input
 
-7. **Products.** Affiliate IDs in `js/affiliates.js` are empty, so all 30
+7. **Products.** Affiliate IDs in `js/affiliates.js` are empty, so all 31
    products link plain with no disclosure. Two entries are
    `available:false` and need an owner-checked replacement
    (`copco-basics-lazy-susan-9in`, `mdesign-open-front-bin-15in-2pk`). Want

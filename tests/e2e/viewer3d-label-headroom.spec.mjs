@@ -79,7 +79,7 @@ test('every setup builds its scene with its labels inside the frame', async ({ p
     }
     return out;
   }, { limit: LIMIT, src: highestLabelTop.toString() });
-  expect(results).toHaveLength(33);
+  expect(results).toHaveLength(37);
   const over = results.filter((r) => r.over).map((r) => `${r.key} (${r.layout}) ${r.max} "${r.worst}"`);
   expect(over, `label tops above the frame limit:\n${over.join('\n')}`).toEqual([]);
 });

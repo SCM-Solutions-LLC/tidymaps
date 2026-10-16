@@ -10,7 +10,7 @@ import { test, expect } from 'playwright/test';
    The original version of this spec only checked the four room cards, so the
    ~34 setup cards — the ones users spend the most time comparing — were never
    covered, and an entire step (Bedroom > Closet) shipped with every card
-   effectively static. The sweep below drives all nine areas.
+   effectively static. The sweep below drives all ten areas.
 
    Travel is sampled across the FULL animation timeline rather than at a fixed
    phase. Cards carry a stagger (animation-delay), so a fixed-phase reading
@@ -27,7 +27,7 @@ const MIN_SIZE = 14;    // px on the moving detail's long edge
 
 // room card text → area card text, for every area the wizard offers
 const AREAS = [
-  ['Kitchen', 'Pantry'], ['Kitchen', 'Cabinets'], ['Kitchen', 'Drawers'],
+  ['Kitchen', 'Pantry'], ['Kitchen', 'Cabinets'], ['Kitchen', 'Drawers'], ['Kitchen', 'Fridge & freezer'],
   ['Bedroom', 'Closet'], ['Bedroom', 'Dresser'],
   ['Bathroom & hall', 'Vanity & under-sink'], ['Bathroom & hall', 'Linen closet'],
   ['Garage', 'Shelving & storage'], ['Garage', 'Workbench'],
@@ -109,7 +109,7 @@ async function openArea(page, area) {
   await page.waitForTimeout(350);
 }
 
-/* All nine spaces sit on one screen since the room and spot steps merged, so
+/* All ten spaces sit on one screen since the room and spot steps merged, so
    one reading covers what used to take a room pass and four area passes. */
 test('space card illustrations move enough to read', async ({ page }) => {
   await page.goto('/index.html');

@@ -38,7 +38,7 @@ export const ARCHETYPE_LABELS = {
   'fridge':        'Fridge',
 };
 
-/* ---------- Setup → archetype (33 entries, one per SETUP_TYPES id) ---------- */
+/* ---------- Setup → archetype (37 entries, one per SETUP_TYPES id) ---------- */
 export const SETUP_ARCHETYPE = {
   cabinet:    'cabinet',
   reachin:    'shelves',
@@ -52,6 +52,12 @@ export const SETUP_ARCHETYPE = {
   incounter:  'drawer-bank',
   tower:      'drawer-bank',
   sideboard:  'drawer-bank',
+  // Every fridge is one archetype: the 3D view and the plan read a fridge's
+  // shelves, crispers and freezer the same way whichever way its doors split.
+  topfreezer: 'fridge',
+  bottomfreezer: 'fridge',
+  sidebyside: 'fridge',
+  frenchdoor: 'fridge',
   wardrobe:   'closet-rod',
   reachinC:   'closet-rod',
   walkinC:    'walkin-u',
@@ -220,7 +226,7 @@ export function normalizeLayout(raw, shelfCount) {
 
    The "actually chose" part matters. state.setup is never empty — setArea()
    preselects the first setup type for the area and falls back to 'cabinet' —
-   and all 33 setup ids map to an archetype, so the plain `setup` branch always
+   and all 37 setup ids map to an archetype, so the plain `setup` branch always
    won and the ai branch below was unreachable code. The setup step also runs
    before the photos are taken, so what always won was a guess made before
    there was anything to look at, and the AI's wall-by-wall sections were

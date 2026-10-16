@@ -18,9 +18,9 @@ import { getDemoScenario } from '../js/demo-scenarios.js';
 import { ACTIONS, mediaKeyFor, motifForSpace, glyphForStep } from '../js/stepMedia.js';
 import * as wizard from '../js/wizard-data.js';
 
-// The nine wizard areas plus the extra space ids stepMedia knows defaults for.
-const AREAS = ['pantry','cabinet','drawers','closet','dresser','bathroom','linen','garage','workbench'];
-const ALL_SPACES = [...AREAS, 'junk', 'walkin', 'fridge', 'attic', 'laundry', 'kids'];
+// The ten wizard areas plus the extra space ids stepMedia knows defaults for.
+const AREAS = ['pantry','cabinet','drawers','fridge','closet','dresser','bathroom','linen','garage','workbench'];
+const ALL_SPACES = [...AREAS, 'junk', 'walkin', 'attic', 'laundry', 'kids'];
 
 const HOUSEHOLDS = [
   { adults: 2, kids: 0, pets: 0 },

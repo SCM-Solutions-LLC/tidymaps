@@ -1,7 +1,7 @@
 /* ============================================================
    Setup structure — what the chosen setup actually HAS.
 
-   The wizard's step 3 asks which of 33 setups looks like the user's space,
+   The wizard's step 3 asks which of 37 setups looks like the user's space,
    and every one of them maps to an archetype in js/layout.js
    (SETUP_ARCHETYPE). The 3D viewer and the analyze-space prompt both honour
    that archetype already. The deterministic scenarios did not: they are
@@ -23,8 +23,8 @@
    projectOntoArchetype() re-projects one onto the other, so an L-shaped
    pantry keeps pantry content on an L-run's levels, and an L-shaped closet
    keeps closet content on the same levels. That is why this is a transform
-   and not 33 hand-written scenarios: shape and contents are independent, and
-   33 = 9 contents x their shapes.
+   and not 37 hand-written scenarios: shape and contents are independent, and
+   37 = 10 contents x their shapes.
    ============================================================ */
 
 /* ---------- Level templates, in top-to-bottom (or front-to-back) order ----------
@@ -509,7 +509,7 @@ const LEVEL_NOUN_ONE = {
    "L-shaped", "Reach-in", "Counter + uppers". Dropping one into a sentence
    needs the full noun, and whether it takes has/have is not derivable from
    the spelling ("Vanity with drawers" is singular, "Wall shelves" is not).
-   33 entries, one per SETUP_TYPES id. [noun, isPlural] */
+   37 entries, one per SETUP_TYPES id. [noun, isPlural] */
 export const SETUP_NOUN = {
   cabinet: ['pantry cabinet', false], reachin: ['reach-in pantry', false],
   walkin: ['walk-in pantry', false], lshape: ['L-shaped pantry', false],
@@ -518,6 +518,8 @@ export const SETUP_NOUN = {
   tallcabK: ['tall kitchen cabinet', false], openshelf: ['open kitchen shelving', false],
   incounter: ['in-counter drawers', true], tower: ['drawer tower', false],
   sideboard: ['sideboard', false],
+  topfreezer: ['top-freezer fridge', false], bottomfreezer: ['bottom-freezer fridge', false],
+  sidebyside: ['side-by-side fridge', false], frenchdoor: ['French-door fridge', false],
   wardrobe: ['wardrobe', false], reachinC: ['reach-in closet', false],
   walkinC: ['walk-in closet', false], lshapeC: ['L-shaped closet', false],
   builtin: ['built-in closet', false],

@@ -35,7 +35,7 @@ never "guaranteed to fit".
 ## Operating Context
 
 - Free during early access. Built by SCM Solutions LLC, a small team.
-- Entry is the marketing homepage leading with nine spaces across four rooms;
+- Entry is the marketing homepage leading with ten spaces across four rooms;
   tapping one opens the planner there.
 - The wizard is an 11-step contract (`js/router.js FLOW`): landing, space,
   setup, measure, capture (photos), household, contents, goals, style, effort,

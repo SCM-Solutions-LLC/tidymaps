@@ -5,7 +5,7 @@
    contents → goals → style → effort → shopping → review
 
    The design's first two steps (room, then a spot in it) are one screen
-   now: the nine spaces, grouped under their room the way the homepage
+   now: every space, grouped under its room the way the homepage
    gallery shows them. Two taps and a Continue for a nine-item choice was
    the wizard's slowest opening, and the homepage already made it in one.
 
@@ -15,7 +15,7 @@
    All other copy is lifted verbatim from TidyMap Wizard.dc.html.
    ============================================================ */
 import {
-  ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY,
+  ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY, INSIDE_DEPTH,
   KID_AGES, MOBILITY_NEEDS, PET_TYPES, EFFORT_OPTS, SHOPPING_OPTS,
   roomFor, areaFor, goalIdFor, mergePrefs, optionsForHousehold,
   fmtFt, measureSummary, art, HOME_CONSTRAINTS,
@@ -221,7 +221,7 @@ function roveTo(wrap, card){
   wrap.querySelectorAll('.room-card').forEach(c => { c.tabIndex = c === card ? 0 : -1; });
 }
 
-/* One screen for the nine spaces, grouped under their room the way the
+/* One screen for every space, grouped under its room the way the
    homepage gallery is. Both answers are still recorded: the card carries its
    room, and setArea() sets the pair, so nothing downstream (the setup list,
    the context string, the review rows, the saved space) knows the step went. */
@@ -229,11 +229,11 @@ function renderSpace(){
   const wrap = document.getElementById('space-cards');
   if(!wrap) return;
   wrap.innerHTML = '';
-  /* One answer among nine cards is a radio group: each card is a radio that
+  /* One answer among ten cards is a radio group: each card is a radio that
      says whether it is checked, one card is in the Tab order (the chosen one,
      or the first), and the arrow keys move between the cards and choose, the
-     way radios do. Nine buttons with aria-pressed read as nine separate
-     switches; a radio group reads as one question with nine answers and
+     way radios do. Ten buttons with aria-pressed read as ten separate
+     switches; a radio group reads as one question with ten answers and
      says which is checked. */
   wrap.setAttribute('role', 'radiogroup');
   const question = wrap.closest('.screen')?.querySelector('h1,h2');
@@ -378,6 +378,7 @@ function renderMeasure(){
   // "How big is your drawers?" was the heading for two of the nine spaces.
   if(h) h.textContent = `How big ${area.plural ? 'are' : 'is'} your ${area.short}?`;
   const roomy = ROOMY.includes(state.setup);
+  const inside = INSIDE_DEPTH.includes(state.setup);
   const metric = isMetric();
   const n = dimsFtNums();
   const raw = state.dimsFt || n;
@@ -388,7 +389,7 @@ function renderMeasure(){
     return `
     <label class="wz-measure">
       <span class="wm-row">
-        <span class="wm-name">${f.k === 'd' && roomy ? 'Room depth' : f.label}</span>
+        <span class="wm-name">${f.k === 'd' && roomy ? 'Room depth' : f.k === 'd' && inside ? 'Inside depth' : f.label}</span>
         <span class="wm-input">
           <input type="number" min="${b.min}" max="${b.max}" step="${b.step}" value="${shown}"
             id="m-num-${f.k}" aria-label="${f.aria} in ${metric ? 'centimetres' : 'feet'}" inputmode="decimal">

@@ -56,14 +56,14 @@ function planFor({ space, id }, { household = NO_KIDS, dimsFt = null, shopping =
   return normalizeAi(getDemoScenario(scenarioKeyFor(space, id), null, household, buildAnalysisContext(), id));
 }
 
-test('all 33 setups are covered by the archetype and noun tables', () => {
+test('all 37 setups are covered by the archetype and noun tables', () => {
   for (const s of ALL_SETUPS) {
     assert.ok(SETUP_ARCHETYPE[s.id], `${s.id}: no archetype`);
     assert.ok(ARCHETYPE_LEVELS[SETUP_ARCHETYPE[s.id]], `${s.id}: archetype has no level template`);
     assert.ok(ARCHETYPE_SURFACES[SETUP_ARCHETYPE[s.id]], `${s.id}: archetype has no surface list`);
     assert.ok(SETUP_NOUN[s.id], `${s.id}: no noun phrase for the summary`);
   }
-  assert.equal(ALL_SETUPS.length, 33);
+  assert.equal(ALL_SETUPS.length, 37);
 });
 
 test('every zone sits on a surface the chosen setup actually has', () => {
