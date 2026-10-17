@@ -314,7 +314,7 @@ test('kid-friendly revision leaves a visible trace even when a kid-safe zone alr
    lock-or-latch hazard zone (the bathroom's chemicals caddy sits at
    map[len-2], which the old handler picked by position). */
 test('the kid revision never touches a hazard zone', () => {
-  for (const space of ['pantry', 'cabinet', 'closet', 'garage', 'bathroom', 'dresser', 'linen', 'drawers', 'workbench']) {
+  for (const space of ['pantry', 'cabinet', 'closet', 'garage', 'bathroom', 'dresser', 'linen', 'drawers', 'workbench', 'fridge']) {
     state.dims = null;
     const plan = normalizeAi(getDemoScenario(space, null,
       { kids: { present: 'yes', ages: ['Toddler'] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' }));
@@ -388,7 +388,7 @@ const STYLE_HOUSEHOLD = {
 const STYLE_SETUP = {
   pantry: 'cabinet', cabinet: 'cabinet', drawers: 'drawers', closet: 'reachin',
   dresser: 'dresser', bathroom: 'undersink', linen: 'linen', garage: 'utility',
-  workbench: 'workbench',
+  workbench: 'workbench', fridge: 'bottomfreezer',
 };
 const styleAnswers = (label) => ({
   prefs: [...prefsForStyles([label])], styles: [label],

@@ -945,7 +945,7 @@ function linenScenario() {
 function fridgeScenario() {
   return {
     spaceType: 'Fridge & freezer',
-    summary: 'A standard fridge where leftovers get lost behind condiments, produce wilts unseen in overstuffed drawers, and the door shelves carry heavy bottles they were not built for. The freezer below is a single avalanche of unlabeled bags.',
+    summary: 'A standard fridge where leftovers get lost behind condiments, produce wilts unseen in overstuffed drawers, and the door shelves carry heavy bottles they were not built for. The freezer is a single avalanche of unlabeled bags.',
     categories: ['Leftovers', 'Fresh produce', 'Dairy & eggs', 'Condiments & sauces', 'Drinks', 'Raw meat & fish', 'Frozen meals', 'Frozen vegetables & fruit'],
     problems: [
       'Leftovers disappear behind taller items and expire',
@@ -974,14 +974,19 @@ function fridgeScenario() {
       {level: 'Lowest shelf', icon: 'down', zone: 'Raw meat & fish, on a tray',
         why: 'Raw proteins belong at the bottom so nothing can drip onto ready food.',
         eye: false, shelfIndex: 2,
-        safety: {flag: 'keep-high', why: 'Food safety: raw meat stays below everything ready to eat.'},
+        /* Not a safety flag. The flags are about who lives here (kids, pets),
+           and 'keep-high' on the lowest shelf said the opposite of the row;
+           the food-safety reason is the row's own why. */
+        safety: {flag: null, why: null},
         items: [{name: 'Raw meat & fish', size: 'm', flags: []}], surface: 'shelf'},
       {level: 'Crisper drawers', icon: 'drawer', zone: 'Leafy greens (high humidity) · Fruit (low humidity)',
         why: 'Set correctly, the two drawers roughly double produce life.',
         eye: false, shelfIndex: 3,
         safety: {flag: null, why: null},
         items: [{name: 'Leafy greens', size: 'm', flags: []}, {name: 'Fruit', size: 'm', flags: []}], surface: 'drawer'},
-      {level: 'Freezer drawer', icon: 'down', zone: 'Bags filed upright · Meals dated on top',
+      /* 'Freezer', not 'Freezer drawer': the same plan serves a top-freezer
+         fridge, whose freezer is a compartment above, not a drawer below. */
+      {level: 'Freezer', icon: 'down', zone: 'Bags filed upright · Meals dated on top',
         why: 'Upright bags read like files. No more archaeology.',
         eye: false, shelfIndex: 4,
         safety: {flag: null, why: null},
@@ -994,9 +999,12 @@ function fridgeScenario() {
       'Kid snacks and drinks sit on the lowest door shelf where small hands reach safely.'
     ],
     productNeeds: [
-      {type: 'clear-bin', qty: 3, purpose: 'Leftovers “eat me first” bin plus two zone bins', targetZone: 'Eye level', maxDims: {w_in: 10, h_in: 6, d_in: 14}, priority: 'high'},
+      /* 16 inches deep: fridge bins run 14.5 front to back, and a 14-inch cap
+         turned every one of them away on a shelf that holds them. A shallower
+         measured fridge still caps this (fitNeedsToSpace). */
+      {type: 'clear-bin', qty: 3, purpose: 'Leftovers “eat me first” bin plus two zone bins', targetZone: 'Eye level', maxDims: {w_in: 10, h_in: 6, d_in: 16}, priority: 'high'},
       {type: 'turntable', qty: 1, purpose: 'Spin sauces into view instead of digging', targetZone: 'Top shelf', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
-      {type: 'label-set', qty: 1, purpose: 'Date labels for leftovers and freezer bags', targetZone: 'Freezer drawer', maxDims: null, priority: 'high'}
+      {type: 'label-set', qty: 1, purpose: 'Date labels for leftovers and freezer bags', targetZone: 'Freezer', maxDims: null, priority: 'high'}
     ],
     existingLede: 'The fridge already has the hardware. Adjustable shelves, humidity controls, door racks. The plan mostly turns on features you own.',
     existing: [

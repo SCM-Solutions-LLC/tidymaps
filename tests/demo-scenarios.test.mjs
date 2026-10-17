@@ -64,7 +64,7 @@ test("pets:'no' (wizard string) adds no pet content", () => {
    one sentence, so dropping the sentence removed the hazard guidance and
    the keep-high flag for every household without kids. */
 
-const REACHABLE_SPACES = ['pantry', 'cabinet', 'drawers', 'closet', 'walkin', 'dresser', 'bathroom', 'linen', 'garage', 'workbench'];
+const REACHABLE_SPACES = ['pantry', 'cabinet', 'drawers', 'fridge', 'closet', 'walkin', 'dresser', 'bathroom', 'linen', 'garage', 'workbench'];
 const NO_KIDS_NO_PETS = { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' };
 const NO_KIDS_PETS = { kids: { present: 'no', ages: [] }, pets: { present: 'yes', types: ['Dog'] }, mobility: [], notes: '' };
 
@@ -523,6 +523,27 @@ test('no unobserved plan asserts an inventory it never saw', () => {
     for (const card of plan.existing || []) {
       const title = String(card.title || '').replace(/^[^:]*:\s*/, '');
       assert.ok(!leadingCount.test(title), `${key}: a reuse card counts — "${card.title}"`);
+    }
+  }
+});
+
+/* The fridge became a wizard space on 2026-10-16, and its demo plan had been
+   written before anyone could reach it. Two things in it were wrong for a
+   real visitor: raw meat on the lowest shelf carried 'keep-high', a badge
+   that says the opposite of where the row sits, and the text put the freezer
+   "below", which a top-freezer card contradicts. One plan serves all four
+   fridge cards, so it is checked under each. */
+test('the fridge plan reads true under every fridge card', () => {
+  const NONE = { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' };
+  for (const { id } of SETUP_TYPES.fridge) {
+    for (const household of [NONE, toddlerHousehold]) {
+      const plan = getDemoScenario('fridge', 'find', household, { household }, id);
+      const meat = plan.map.find(row => /raw meat/i.test(row.zone || ''));
+      assert.ok(meat, `${id}: the raw meat row is gone`);
+      assert.notEqual(meat.safety && meat.safety.flag, 'keep-high', `${id}: raw meat on the lowest shelf is badged keep-high`);
+      const text = JSON.stringify(plan);
+      assert.doesNotMatch(text, /freezer (?:below|drawer)/i, `${id}: the plan says where the freezer is`);
+      assert.equal(plan.layout && plan.layout.type, 'fridge', `${id}: not drawn as a fridge`);
     }
   }
 });

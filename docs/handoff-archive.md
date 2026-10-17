@@ -12,7 +12,7 @@ What is here, in order:
 - The pre-trim header (the 2026-09 and 2026-10 status story, the 08-27
   memory review, and the correction of the 08-05 refresh).
 - Every dated "What the ... session changed" section, newest first, from
-  2026-10-12 part 5 back to 2026-09-02.
+  2026-10-13 (moved here 10-16) and 2026-10-12 part 5 back to 2026-09-02.
 - "Product state in one paragraph" and the scorecard of the original eight
   handoff items (including "#1 Plan engine", cited as `HANDOFF §#1` in
   `tests/plan-schema.test.mjs`).
@@ -321,6 +321,24 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-10-13 session changed
+
+One PR; merging deploys the site and the edge functions.
+- **#1:** an inline `<head>` guard holds the last early button click until
+  `main.js` calls `__tmReleaseClicks` (before `initializeRoute`). No
+  `modulepreload` (see Decisions, "Measured and not done").
+- **#2:** catalog `spaces: ["pantry", "cabinet"]` (`FOOD_SPACES` in
+  `js/catalog.js`) keeps the food label sets out of non-food spaces
+  (`rankProducts`, `reconcileSelection`, the fallback search).
+- **#3:** `analyze-space` returns `seenLayout`; if it contradicts a picked
+  card, "Your photos look like a <x>. Switch?" shows before the plan, with a
+  note that switching takes one to two minutes. Keep = plan already built;
+  Switch = rebuild, typed measurements kept. A rebuild that fails (rate
+  limit, timeout) opens the first plan and restores the original setup,
+  never the demo. `setup_mismatch_choice {choice}`; mostly "keep" means noisy
+  detection. Privacy policy effective date moved to 10-15, the day it merged.
+- **This file** trimmed from 4,117 lines; the rest is in the archive.
 
 ## What the 2026-10-12 session changed, part 5 (a walk-in floor's depth)
 

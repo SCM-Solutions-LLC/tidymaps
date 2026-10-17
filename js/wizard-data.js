@@ -10,7 +10,7 @@
 
 /* ---------- Rooms ---------- */
 export const ROOMS = [
-  { id: 'kitchen', label: 'Kitchen', desc: 'Pantry, cabinets & drawers', artKey: 'roomKitchen' },
+  { id: 'kitchen', label: 'Kitchen', desc: 'Pantry, cabinets, drawers & fridge', artKey: 'roomKitchen' },
   { id: 'bedroom', label: 'Bedroom', desc: 'Closet & dresser', artKey: 'roomBedroom' },
   { id: 'bath', label: 'Bathroom & hall', desc: 'Vanity & linen closet', artKey: 'roomBath' },
   { id: 'garage', label: 'Garage', desc: 'Shelving & workbench', artKey: 'roomGarage' },
@@ -22,6 +22,7 @@ export const AREAS = {
     { id: 'pantry', label: 'Pantry', short: 'pantry', desc: 'Food storage, cabinet to walk-in', artKey: 'elPantry' },
     { id: 'cabinet', label: 'Cabinets', short: 'cabinets', plural: true, desc: 'Dishes, pots & counter clutter', artKey: 'elCabinets' },
     { id: 'drawers', label: 'Drawers', short: 'drawers', plural: true, desc: 'Cutlery, utensils & the junk drawer', artKey: 'elDrawers' },
+    { id: 'fridge', label: 'Fridge & freezer', short: 'fridge', desc: 'Leftovers, produce & the freezer pile', artKey: 'elFridge' },
   ],
   bedroom: [
     { id: 'closet', label: 'Closet', short: 'closet', desc: 'Clothes, shoes & accessories', artKey: 'elCloset' },
@@ -70,6 +71,12 @@ export const SPACE_CFG = {
     goals: ["Can't find anything", 'Always running out of room', 'It became the junk drawer', 'Things jam when it opens', 'Looks cluttered', 'Hard to keep tidy'],
     detect: ['Loose utensils', 'Wraps & foil boxes', 'Odds and ends'],
     detectCats: ['Cooking utensils', 'Wraps & foil', 'Junk-drawer bits'],
+  },
+  fridge: {
+    categories: ['Leftovers', 'Fresh produce', 'Dairy & eggs', 'Condiments & sauces', 'Drinks', 'Raw meat & fish', 'Frozen meals', 'Frozen vegetables & fruit', "Kids' snacks"],
+    goals: ["Can't find anything", 'Leftovers get forgotten', 'Produce goes bad before we eat it', 'Expired food hides in back', 'The freezer is a mystery pile', 'Always running out of room', 'Hard to keep tidy'],
+    detect: ['Leftover containers', 'Condiment bottles', 'Produce bags', 'Frozen bags'],
+    detectCats: ['Leftovers', 'Condiments & sauces', 'Fresh produce', 'Frozen vegetables & fruit'],
   },
   closet: {
     categories: ['Hanging clothes', 'Folded clothes', 'Shoes', 'Bags & purses', 'Accessories', 'Seasonal coats', 'Extra bedding', "Kids' clothes"],
@@ -127,6 +134,12 @@ export const STYLESETS = {
     { label: 'A slot for everything', desc: 'Dividers keep order on autopilot' },
     { label: 'Trays & caddies', desc: 'Lift a whole kit out at once' },
     { label: 'Labeled sections', desc: 'No more mystery drawer' },
+    { label: 'Keep it simple', desc: 'Work with what’s there, low-maintenance' },
+  ],
+  fridge: [
+    { label: 'Clear containers', desc: 'See leftovers and produce at a glance' },
+    { label: 'Labeled & dated', desc: 'Every leftover and freezer bag says when' },
+    { label: 'Minimal & airy', desc: 'Fewer things, so every shelf stays in view' },
     { label: 'Keep it simple', desc: 'Work with what’s there, low-maintenance' },
   ],
   closet: [
@@ -187,6 +200,12 @@ export const SETUP_TYPES = {
     { id: 'tower', label: 'Drawer tower', desc: 'A tall, narrow stack of drawers', artKey: 'artTower' },
     { id: 'sideboard', label: 'Sideboard', desc: 'A wide, low piece, like a buffet or credenza', artKey: 'artSideboard' },
   ],
+  fridge: [
+    { id: 'topfreezer', label: 'Top freezer', desc: 'A freezer door above the fridge', artKey: 'artFridgeTop' },
+    { id: 'bottomfreezer', label: 'Bottom freezer', desc: 'Fridge on top, freezer drawer below', artKey: 'artFridgeBottom' },
+    { id: 'sidebyside', label: 'Side-by-side', desc: 'Freezer and fridge doors next to each other', artKey: 'artFridgeSide' },
+    { id: 'frenchdoor', label: 'French door', desc: 'Two fridge doors over a freezer drawer', artKey: 'artFridgeFrench' },
+  ],
   closet: [
     { id: 'wardrobe', label: 'Wardrobe', desc: 'A freestanding closet with doors', artKey: 'artWardrobe' },
     { id: 'reachinC', label: 'Reach-in', desc: 'Standard closet behind sliding or hinged doors', artKey: 'artClosetReachIn' },
@@ -227,6 +246,9 @@ export const SETUP_DIMS = {
   cabinet: { w: 3, h: 6.5, d: 1.5 }, reachin: { w: 5, h: 7.5, d: 2 }, walkin: { w: 6, h: 8, d: 6 }, lshape: { w: 6, h: 8, d: 5 }, butler: { w: 7, h: 8, d: 2 },
   counterup: { w: 8, h: 8, d: 2 }, lshapeK: { w: 8, h: 8, d: 6 }, tallcabK: { w: 3, h: 7, d: 1.5 }, openshelf: { w: 6, h: 7.5, d: 1 },
   incounter: { w: 2.5, h: 3, d: 2 }, tower: { w: 1.5, h: 4.5, d: 1.5 }, sideboard: { w: 5, h: 3, d: 1.5 },
+  // A fridge's depth is the inside depth, shelf front to back wall, not the
+  // 30-odd inches from the door handle: the plan fits bins to it.
+  topfreezer: { w: 2.5, h: 5.5, d: 1.5 }, bottomfreezer: { w: 2.5, h: 5.5, d: 1.5 }, sidebyside: { w: 3, h: 5.75, d: 1.5 }, frenchdoor: { w: 3, h: 5.75, d: 1.5 },
   wardrobe: { w: 3.5, h: 6.5, d: 2 }, reachinC: { w: 5, h: 8, d: 2.5 }, walkinC: { w: 6, h: 8, d: 6 }, lshapeC: { w: 6, h: 8, d: 5 }, builtin: { w: 6, h: 8, d: 2.5 },
   dresser: { w: 4, h: 3, d: 1.5 }, chest: { w: 2.5, h: 4.5, d: 1.5 }, underbed: { w: 4.5, h: 1, d: 2 },
   undersink: { w: 2.5, h: 2.5, d: 1.75 }, vanitydr: { w: 4, h: 2.75, d: 1.75 }, wallshelf: { w: 2.5, h: 2.5, d: 0.75 },
@@ -237,6 +259,11 @@ export const SETUP_DIMS = {
 
 /* Room-like setups: depth reads as "Room depth" and the summary says "room". */
 export const ROOMY = ['walkin', 'lshape', 'walkinC', 'lshapeC', 'walkinL', 'lshapeL', 'lshapeK'];
+
+/* A fridge's depth field reads "Inside depth". Measured from the handle, a
+   fridge is about 30 inches deep, and the plan sizes bins against this
+   number, so the door-to-back figure would pass a bin that cannot fit. */
+export const INSIDE_DEPTH = SETUP_TYPES.fridge.map(t => t.id);
 
 /* Setup → 3D geometry family, and the matching 3D-viewer layout chip. */
 
@@ -349,7 +376,7 @@ export const SHOPPING_OPTS = [
 /** @type {[RegExp, string][]} */
 const GOAL_IDS = [
   // findability: knowing where a thing is, or getting to it in date order
-  [/can'?t find|can’t find|outfits take forever|sets? get separated|lids everywhere|seasonal stuff gets buried|expired|hides in back/i, 'find'],
+  [/can'?t find|can’t find|outfits take forever|sets? get separated|lids everywhere|seasonal stuff gets buried|expired|hides in back|leftovers get forgotten|goes bad before|mystery pile/i, 'find'],
   // reach: a child getting their own things without help
   [/kids can'?t reach|kids can’t reach/i, 'kid'],
   // capacity: out of room, or too full to close
@@ -618,7 +645,7 @@ const ART_MOTION = {
   artLinenLShape: towelMotion(15, 35, 22),
 };
 
-/* ---------- The nine space cards: elevations ----------
+/* ---------- The space cards: elevations ----------
    Drawn the way the landing page draws Figure 1: a front elevation of the
    cupboard in one thin ink line, square corners, white stock bodies, the
    plate's tint for a zone, and a short spot rule where a label would sit
@@ -672,6 +699,13 @@ const EL_ART = {
     + box(23, 10, 12, 12) + can(38, 14, 8, 8) + `<rect x="50" y="11" width="10" height="11" fill="#fff"/><path d="M50 14h10"/>` + can(63, 15, 7, 7)
     + `<rect x="23" y="29" width="14" height="11" fill="${T}"/><path d="M23 29h14M27 34h6" class="lbl"/>` + jar(41, 30, 8, 10) + `<rect x="52" y="32" width="18" height="8" fill="#fff"/><path d="M52 32h18"/>`
     + `<path d="M23 68h55"/>`,
+  /* An open bottom-freezer fridge: three shelves, the eye-level zone tinted,
+     two crispers, and the freezer drawer below (the moving part). */
+  elFridge: elCase(26, 4, 44, 62, [18, 31, 45])
+    + bottle(30, 5) + bottle(37, 5) + jar(45, 8) + can(55, 11) + can(62, 11, 5, 7)
+    + `<rect x="27" y="19" width="42" height="11" fill="${T}"/>` + box(30, 20, 9, 10) + box(41, 20, 9, 10) + jar(54, 21, 8, 9)
+    + `<rect x="29" y="34" width="18" height="9" fill="#fff"/><rect x="49" y="34" width="18" height="9" fill="#fff"/><path d="M34 38.5h8M54 38.5h8"/>`
+    + `<path d="M26 66h44"/>`,
   elWorkbench: `<rect x="14" y="4" width="68" height="24" fill="${T}"/>`
     + `<path d="M24 8v3M34 8v3M44 8v3M54 8v3M64 8v3M74 8v3M24 16v3M34 16v3M44 16v3M54 16v3M74 16v3"/>`
     + `<path d="M30 11v10M26 21h8"/><path d="M45 11v8"/><rect x="42" y="19" width="6" height="4" fill="#fff"/>`
@@ -697,6 +731,7 @@ const EL_MOTION = {
   elLinen: elTowel(31, 55, 16),
   elGarageShelf: elBin(48, 47, 20, 10),
   elWorkbench: elTool(64, 8),
+  elFridge: elDrawer(29, 49, 38, 13),
 };
 Object.assign(ART, EL_ART);
 /* ---------- The setup cards: the same elevation voice ----------
@@ -712,7 +747,23 @@ const rail = (x, w, y) => `<path d="M${x} ${y}h${w}"/>`;
 const leftReturn = (x, y, w, h) => `<path d="M${x + w} ${y}L${x} ${y + 6}v${h - 12}l${w} 6z" fill="${T}"/>`;
 const rightReturn = (x, y, w, h) => `<path d="M${x} ${y}l${w} 6v${h - 12}l-${w} 6z" fill="${T}"/>`;
 
+/* Fridges are told apart by how their doors split, so the cards draw them
+   closed, with the handles where the real ones sit. The moving door hinges
+   on its left (motion-cabinet-door's origin) and opens onto shelves, or onto
+   stacked bags for the freezer. */
+const fridgeInside = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${T}"/>`
+  + `<path d="M${x + 1} ${y + h * .38}h${w - 2}M${x + 1} ${y + h * .7}h${w - 2}"/>`
+  + jar(x + 3, y + h * .38 - 9, 6, 8) + can(x + w - 9, y + h * .7 - 6, 6, 6);
+const freezerInside = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${T}"/>`
+  + stack(x + 3, y + 5, w - 6, 3) + stack(x + 3, y + h * .55, w - 6, 3);
+const fridgeDoor = (x, y, w, h, inside) => `<g class="motion-cabinet-interior">${inside}</g><g class="art-motion motion-cabinet-door"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/><path d="M${x + w - 4} ${y + h / 2 - 5}v10"/></g>`;
+const fridgeBody = (x, w) => `<rect x="${x}" y="4" width="${w}" height="60" fill="#fff" class="case"/>` + legs(x + 3, x + w - 3, 64);
+
 const SETUP_ART = {
+  artFridgeTop: fridgeBody(30, 36) + `<path d="M30 22h36"/><path d="M62 9v8"/>`,
+  artFridgeBottom: fridgeBody(30, 36) + `<path d="M30 44h36"/>` + drawerRow(32, 47, 32, 14),
+  artFridgeSide: fridgeBody(22, 52) + `<path d="M44 4v60"/><path d="M48 29v10"/>`,
+  artFridgeFrench: fridgeBody(26, 44) + `<path d="M26 40h44M48 4v36"/><path d="M52 17v10"/>` + drawerRow(28, 43, 40, 18),
   artTallCab: doorPair(30, 4, 36, 60) + legs(34, 62, 64),
   artPantryReachIn: elCase(16, 4, 64, 62, [20, 36, 52]) + jar(21, 10) + jar(30, 10) + can(39, 13) + box(48, 9, 8, 11) + bottle(60, 7) + jar(69, 10, 7, 10)
     + `<rect x="17" y="21" width="62" height="14" fill="${T}"/>` + box(21, 24, 9, 11) + box(32, 24, 9, 11) + jar(44, 25, 8, 10) + jar(55, 25, 8, 10) + can(66, 28)
@@ -764,6 +815,10 @@ const SETUP_ART = {
 
 const cabinetInterior = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${T}"/>` + stack(x + 4, y + 5, w - 8, 3) + stack(x + 4, y + h * .6, w - 8, 2);
 const SETUP_MOTION = {
+  artFridgeTop: fridgeDoor(30, 22, 36, 42, fridgeInside(30, 22, 36, 42)),
+  artFridgeBottom: fridgeDoor(30, 4, 36, 40, fridgeInside(30, 4, 36, 40)),
+  artFridgeSide: fridgeDoor(22, 4, 22, 60, freezerInside(22, 4, 22, 60)),
+  artFridgeFrench: fridgeDoor(26, 4, 22, 36, fridgeInside(26, 4, 22, 36)),
   artTallCab: elDoor(30, 4, 18, 60, cabinetInterior(30, 4, 18, 60)),
   artPantryReachIn: elBin(21, 53, 24, 12),
   artPantryWalkIn: elBin(25, 44, 22, 12),

@@ -140,6 +140,10 @@ const NOTE_COMMON = new Set([
   'reachable', 'right', 'room', 'shelf', 'shelves', 'side', 'sides', 'small', 'sort', 'space',
   'spare', 'spot', 'stack', 'stacked', 'storage', 'store', 'stored', 'stuff', 'tall', 'thing',
   'things', 'tidy', 'wall', 'walls', 'wide', 'zone', 'zones',
+  // The fridge's own words, since it became a space (a note saying "insulin
+  // in the fridge door" took every sentence that said fridge with it).
+  'condiments', 'crisper', 'crispers', 'dairy', 'freezer', 'fridge', 'frozen', 'leftovers',
+  'produce', 'refrigerator',
 ]);
 
 function noteTerms(notes) {

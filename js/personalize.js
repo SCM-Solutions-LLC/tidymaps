@@ -507,6 +507,18 @@ const GOAL_ADVICE = [
   { match: /expired|hides in back/i, dedupe: /pull everything forward|oldest at the front/i,
     task: 'Pull everything forward and put the oldest at the front, newest behind',
     why: 'Date-order beats depth-order: what is oldest is what you reach first, so nothing expires unseen.' },
+  /* The fridge's three. Each dedupes against the fridge plan's own step for
+     the same fix, so the answer is cited there rather than said twice. */
+  { match: /leftovers get forgotten/i, dedupe: /eat (?:me )?first/i,
+    task: 'Give leftovers one “eat first” bin at eye level, and check it before you cook',
+    noBuy: 'Clear one spot at eye level for leftovers only, and check it before you cook',
+    why: 'Leftovers are forgotten because they slide behind taller things. One spot in plain sight is the whole fix.' },
+  { match: /produce goes bad/i, dedupe: /crisper/i,
+    task: 'Set one crisper to high humidity for greens and the other to low for fruit',
+    why: 'Greens wilt in dry air and fruit rots in damp air. The two settings roughly double how long both last.' },
+  { match: /mystery pile/i, dedupe: /freezer bags upright/i,
+    task: 'File freezer bags upright like folders and write the date on each one before it goes in',
+    why: 'A flat stack hides everything under the top bag. Filed upright and dated, the oldest is the one you see first.' },
   { match: /restock/i, dedupe: /restock/i,
     task: 'Write the restock level on the shelf edge: the count that means "buy more"',
     why: 'A number on the shelf turns restocking into a glance instead of a memory test.' },

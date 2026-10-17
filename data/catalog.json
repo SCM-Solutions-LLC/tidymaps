@@ -79,6 +79,23 @@
       "note": "The Target page returned 404 on the 2026-10-03 deploy-time link check."
     },
     {
+      "id": "idesign-fridge-freezer-bin-14x8x4-2pk",
+      "type": "clear-bin",
+      "name": "iDesign Plastic Refrigerator and Freezer Storage Bin, Set of 2, 14.5\" x 8\" x 4\"",
+      "brand": "iDesign",
+      "dims_in": { "w": 8.0, "h": 4.0, "d": 14.5 },
+      "price_usd": 26.99,
+      "retailer": "Target",
+      "url": "https://www.target.com/p/idesign-plastic-refrigerator-and-freezer-storage-bin-with-lids/-/A-92267979",
+      "tags": ["fridge-safe", "freezer-safe", "stackable", "handles", "bpa-free", "set-of-2"],
+      "dimsVerified": "cross-referenced",
+      "img": null,
+      "checked": "2026-10-16",
+      "spaces": ["fridge"],
+      "available": true,
+      "note": "Added 2026-10-16 from Target's listing as search indexed it (title, price, in stock); Kohl's lists the same bins at 14.5 x 8 x 4 in. The sandbox cannot open retailer pages, so no person has opened this listing yet."
+    },
+    {
       "id": "brightroom-y-weave-basket-medium",
       "type": "basket",
       "name": "Y-Weave Medium Decorative Storage Basket - Brightroom",

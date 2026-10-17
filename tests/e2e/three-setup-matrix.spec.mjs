@@ -55,7 +55,7 @@ test('every setup builds its own semantic 3D scene inside measured bounds',async
     return results;
   });
 
-  expect(scenes).toHaveLength(33);
+  expect(scenes).toHaveLength(37);
   for(const scene of scenes){
     expect(scene.layout,`${scene.space}/${scene.id}`).toBe(scene.expected);
     expect(scene.surfaces.length,`${scene.space}/${scene.id} surfaces`).toBeGreaterThan(0);

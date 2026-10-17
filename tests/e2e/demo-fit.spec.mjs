@@ -40,7 +40,7 @@ test('the sample plan opens in 3D with every organizer placed and fitting', asyn
    own measurements, shopping left at its default so the organizer panel
    shows) and asks the note to stay hidden. One test per space so a failure
    names the room and the run stays inside the per-test budget. */
-const SPACES = ['pantry', 'cabinet', 'drawers', 'closet', 'dresser', 'bathroom', 'linen', 'garage', 'workbench'];
+const SPACES = ['pantry', 'cabinet', 'drawers', 'fridge', 'closet', 'dresser', 'bathroom', 'linen', 'garage', 'workbench'];
 
 async function walkWizardTo3d(page, space, label) {
   await page.goto('/index.html');

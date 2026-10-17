@@ -280,6 +280,22 @@ test('common words in a note do not redact the plan they appear in', () => {
   assert.ok(!JSON.stringify(plan).toLowerCase().includes('vacuum'));
 });
 
+test('a fridge plan keeps its fridge sentences when the note mentions the fridge', () => {
+  /* The fridge's own nouns are the app's subject matter once it is a space.
+     Without them in the common list, a note about where one thing lives
+     redacted every sentence of the plan that named the appliance. */
+  const household = { notes: 'insulin lives in the fridge door, away from the freezer' };
+  const plan = sanitizeSharedPlan({
+    summary: 'A standard fridge where leftovers get lost behind condiments. The freezer is one pile.',
+    steps: [{ t: 'Set up an eat-first bin in the fridge', w: 'Leftovers get eaten when seen.' }],
+  }, household);
+
+  assert.equal(plan.summary, 'A standard fridge where leftovers get lost behind condiments. The freezer is one pile.');
+  assert.equal(plan.steps.length, 1);
+  // 'insulin' is what identifies this household, and it does not travel.
+  assert.ok(!JSON.stringify(plan).toLowerCase().includes('insulin'));
+});
+
 test('an older row written in the plan contract’s own field names is covered too', () => {
   /* Stored plans are normalized ({t,m,w} / {lv,zone}), but a row saved by an
      earlier build — or a fixture taken straight off the model — uses
