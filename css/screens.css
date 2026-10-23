@@ -11,15 +11,15 @@
   .wiz{grid-template-columns:7fr 4fr;gap:52px}
   .wiz-rail{display:block;position:sticky;top:calc(var(--appbar-h,57px) + 22px)}
 }
-.rail-note{font-size:14px;color:var(--ink);line-height:1.55;padding:14px 16px;border:1px solid var(--butter-l);border-radius:var(--radius);background:var(--butter-f);margin-bottom:26px}
+.rail-note{font-size:var(--fs-md);color:var(--ink);line-height:1.55;padding:14px 16px;border:1px solid var(--butter-l);border-radius:var(--radius);background:var(--butter-f);margin-bottom:26px}
 .rail-note strong{color:var(--ink-2);font-weight:600}
 .rail-sum{border-top:1px solid var(--line);padding-top:14px}
-.rail-sum .rs-h{font-size:10px;font-weight:600;color:var(--ink-3);margin-bottom:10px}
+.rail-sum .rs-h{font-size:var(--fs-2xs);font-weight:600;color:var(--ink-3);margin-bottom:10px}
 .rail-sum dl{margin:0;display:grid;gap:8px}
 .rail-sum .rs-row{display:grid;grid-template-columns:86px 1fr;gap:10px;align-items:baseline}
-.rail-sum dt{font-size:10px;font-weight:600;color:var(--ink-3)}
-.rail-sum dd{margin:0;font-size:13.5px;color:var(--ink);font-weight:500}
-.rail-sum .rs-empty{font-size:12.5px;color:var(--ink-3);font-style:italic}
+.rail-sum dt{font-size:var(--fs-2xs);font-weight:600;color:var(--ink-3)}
+.rail-sum dd{margin:0;font-size:var(--fs-sm);color:var(--ink);font-weight:500}
+.rail-sum .rs-empty{font-size:var(--fs-xs);color:var(--ink-3);font-style:italic}
 
 /* ---------- Dashboard: editorial index of saved spaces ---------- */
 .dash-grid{display:grid;gap:16px;grid-template-columns:1fr}
@@ -33,34 +33,34 @@
 .dash-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
 .dash-cover{aspect-ratio:16/9;background:var(--tint);position:relative;overflow:hidden}
 .dash-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.dash-cover .dc-type{position:absolute;left:10px;top:10px;font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.01em;text-transform:none;background:var(--ink);border-radius:var(--radius-pill);padding:3px 10px;color:var(--stock)}
+.dash-cover .dc-type{position:absolute;left:10px;top:10px;font-family:var(--sans);font-size:var(--fs-xs);font-weight:700;letter-spacing:.01em;text-transform:none;background:var(--ink);border-radius:var(--radius-pill);padding:3px 10px;color:var(--stock)}
 /* The feedback screen's follow-up questions: h2 under the screen's h1, set
    at the size the questions were. */
-.fb-q{font-size:clamp(17px,3vw,19px);letter-spacing:var(--tracking-tight);line-height:1.15;margin-top:28px}
+.fb-q{font-size:var(--fs-title);letter-spacing:var(--tracking-tight);line-height:1.15;margin-top:28px}
 .dash-body{padding:14px 16px 15px}
-.dash-body h2{margin:0;font-family:var(--sans);font-size:19px;font-weight:800;letter-spacing:-.01em}
-.dash-meta{font-family:var(--sans);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--spot-ink);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.dash-body h2{margin:0;font-family:var(--sans);font-size:var(--fs-lg);font-weight:800;letter-spacing:-.01em}
+.dash-meta{font-family:var(--sans);font-variant-numeric:tabular-nums;font-size:var(--fs-sm);font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--spot-ink);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
 .dash-prog{height:6px;background:var(--tint);border-radius:var(--radius-pill);overflow:hidden;margin-top:12px}
 .dash-prog > i{display:block;height:100%;background:var(--primary)}
 .dash-acts{display:flex;gap:8px;margin-top:12px}
-.dash-acts .del{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:12px;padding:6px}
+.dash-acts .del{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:var(--fs-xs);padding:6px}
 .dash-acts .del:hover{color:var(--clay)}
 .dash-new{
   border:1.5px dashed var(--line-2);border-radius:var(--radius-lg);background:none;font-family:var(--sans);
   display:grid;place-items:center;min-height:180px;color:var(--ink-3);
-  font-weight:600;font-size:15px;transition:.15s;
+  font-weight:600;font-size:var(--fs-ui);transition:.15s;
 }
 .dash-new:hover{border-color:var(--spot);color:var(--ink);background:var(--tint)}
 .dash-empty{grid-column:1/-1;text-align:center;padding:30px 10px;color:var(--ink-3)}
 
 /* ---------- 3D viewer ---------- */
 
-.v3d-label{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);margin-bottom:10px}
+.v3d-label{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);margin-bottom:10px}
 
 .v3d-layout-chips{display:flex;flex-wrap:wrap;gap:8px}
 .v3d-chip{
   display:inline-flex;align-items:center;gap:7px;min-height:44px;
-  font-size:14px;font-weight:600;color:var(--ink);
+  font-size:var(--fs-md);font-weight:600;color:var(--ink);
   background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);
   padding:9px 16px;cursor:pointer;transition:.15s;
 }
@@ -73,7 +73,7 @@
    in the 280px Adjust panel three abreast would be 80px each. */
 .v3d-dims{display:grid;gap:14px;grid-template-columns:1fr}
 .v3d-dim{display:block}
-.v3d-dim span{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2);margin-bottom:6px}
+.v3d-dim span{display:flex;justify-content:space-between;font-size:var(--fs-md);color:var(--ink-2);margin-bottom:6px}
 .v3d-dim strong{color:var(--ink);font-weight:700}
 /* The rule is 4px, and the input used to be the same 4px tall, so on a phone
    the whole target was the rule and an 18px thumb. The box is 44px now and
@@ -102,7 +102,7 @@
 .v3d-advanced>summary{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:12px 14px;cursor:pointer;list-style:none;
-  font-size:14px;font-weight:700;color:var(--ink-2);
+  font-size:var(--fs-md);font-weight:700;color:var(--ink-2);
 }
 .v3d-advanced>summary::-webkit-details-marker{display:none}
 .v3d-advanced>summary::after{
@@ -117,12 +117,12 @@
 .v3d-adv-body{display:grid;gap:18px;padding:4px 14px 16px}
 .v3d-heights-section{display:grid;gap:11px}
 .v3d-option-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-.v3d-option-name{font-size:14px;font-weight:700;color:var(--ink-2)}
+.v3d-option-name{font-size:var(--fs-md);font-weight:700;color:var(--ink-2)}
 .v3d-shelf-controls{display:grid;gap:18px}
 .v3d-shelf-height-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .v3d-shelf-heights{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}
 .v3d-shelf-height{padding:10px 12px;border:var(--rule);border-radius:var(--radius-sm);background:var(--stock)}
-.v3d-shelf-height span{font-size:12px;margin-bottom:5px}
+.v3d-shelf-height span{font-size:var(--fs-xs);margin-bottom:5px}
 .v3d-fit-note{margin:10px 0 0;padding:9px 12px;background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line);border-radius:var(--radius-sm)}
 /* the harder case: selected organizers that cannot be placed at all */
 .v3d-fit-note.danger{background:var(--danger-bg);color:var(--danger-ink);border-color:var(--danger-line)}
@@ -157,7 +157,7 @@
 .v3d-keys-btn{
   position:absolute;top:10px;right:10px;z-index:1;width:44px;height:44px;
   border:var(--rule);border-radius:50%;background:var(--stock);color:var(--ink);
-  font-family:var(--sans);font-size:18px;font-weight:700;display:grid;place-items:center;
+  font-family:var(--sans);font-size:var(--fs-lg);font-weight:700;display:grid;place-items:center;
   box-shadow:var(--shadow-sm);cursor:pointer;transition:.15s;
 }
 .v3d-keys-btn:hover{background:var(--tint)}
@@ -211,7 +211,7 @@
    a 44px pill with the selected one in the selection tint, two of them
    sharing the column. */
 .v3d-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
-.v3d-tabs [role=tab]{min-height:44px;height:44px;padding:0 12px;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-pill);font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .16s,background-color .16s,color .16s}
+.v3d-tabs [role=tab]{min-height:44px;height:44px;padding:0 12px;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-pill);font-family:var(--sans);font-size:var(--fs-md);font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .16s,background-color .16s,color .16s}
 .v3d-tabs [role=tab]:hover{background:var(--tint)}
 .v3d-tabs [role=tab][aria-selected="true"]{background:var(--sel-bg);border-color:var(--primary-line);color:var(--primary-2)}
 .v3d-tabs [role=tab]:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
@@ -219,7 +219,7 @@
    panel on show: an unconditional display on an id would beat the browser's
    own [hidden]{display:none}, and both panels would be on screen at once. */
 #v3d-panel-adjust:not([hidden]){display:grid;gap:20px}
-.v3d-zones-h{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em}
+.v3d-zones-h{font-size:var(--fs-lg);font-weight:700;margin:0;letter-spacing:-.01em}
 /* No one-word last lines in the sidebar's paragraphs: the column is narrow
    and a lone "it." under a sentence reads as a mistake. It is also a paint
    fix. Chromium (the Playwright build, 1194) left exactly that two-letter
@@ -229,11 +229,11 @@
 .v3d-zones p{text-wrap:pretty}
 /* The wall a run of zones is on, and the source a run of organizers has: the
    report's .cab-wall look, a small label over the rows it heads. */
-.v3d-wall-h,.v3d-org-h{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:var(--tracking-label);margin:12px 0 6px}
+.v3d-wall-h,.v3d-org-h{font-family:var(--sans);font-size:var(--fs-xs);font-weight:700;color:var(--ink-3);letter-spacing:var(--tracking-label);margin:12px 0 6px}
 .v3d-zone-list .v3d-wall-h:first-child,.v3d-organizer-list .v3d-org-h:first-child{margin-top:2px}
 /* A room's level without its wall, over the zone name: "Eye level", since the
    wall heading above has already said "Back wall". */
-.v3d-zone-lv{display:block;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-3);margin-bottom:2px}
+.v3d-zone-lv{display:block;font-family:var(--sans);font-size:var(--fs-xs);font-weight:600;color:var(--ink-3);margin-bottom:2px}
 #v3d-size-line{margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line)}
 .v3d-zone-list{display:grid;gap:0}
 /* The zone-label switch. A real 44px row rather than a bare checkbox: it sits
@@ -243,7 +243,7 @@
   display:flex;align-items:center;gap:9px;
   margin:0 0 14px;padding:9px 10px;min-height:44px;
   border:var(--rule);border-radius:var(--radius-sm);font-family:var(--sans);
-  font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;
+  font-size:var(--fs-sm);font-weight:600;color:var(--ink);cursor:pointer;
 }
 .v3d-labels-toggle:hover{background:var(--tint)}
 .v3d-labels-toggle input{width:16px;height:16px;flex:none;accent-color:var(--primary);cursor:pointer}
@@ -253,13 +253,13 @@
 }
 .v3d-zone-item:hover{background:var(--surface)}
 .v3d-zone-item .vz-dot{width:12px;height:12px;flex:none;margin-top:4px;border-radius:50%;border:1px solid oklch(0.27 0.02 40 / .35)}
-.v3d-zone-item h3{font-size:15px;font-weight:700;margin:0}
-.v3d-zone-item p{font-size:13px;color:var(--ink-3);margin:3px 0 0;line-height:1.45}
+.v3d-zone-item h3{font-size:var(--fs-ui);font-weight:700;margin:0}
+.v3d-zone-item p{font-size:var(--fs-sm);color:var(--ink-3);margin:3px 0 0;line-height:1.45}
 .v3d-organizers{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
 .v3d-organizer-list{display:grid;gap:0}
 .v3d-org-chips{display:flex;flex-wrap:wrap;gap:7px}
 .v3d-org-note{margin:8px 0 0}
-.v3d-organizer-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:var(--rule-2);border-radius:var(--radius-pill);background:var(--stock);font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink)}
+.v3d-organizer-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:var(--rule-2);border-radius:var(--radius-pill);background:var(--stock);font-family:var(--sans);font-size:var(--fs-sm);font-weight:700;color:var(--ink)}
 .v3d-organizer-chip i{width:10px;height:10px;border-radius:3px;background:var(--tint);border:1px solid oklch(0.27 0.02 40 / .35)}
 .v3d-organizer-chip[data-type="basket"] i{background:var(--spot)}
 .v3d-organizer-chip[data-type="divider"] i{background:var(--stock)}

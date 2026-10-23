@@ -116,7 +116,7 @@
     </div>
     <div id="auth-step-code" class="hide">
       <label class="field"><span>Verification code</span>
-        <input type="text" id="auth-code" placeholder="12345678" inputmode="numeric" autocomplete="one-time-code" maxlength="8" style="font-family:var(--mono);letter-spacing:.25em;font-size:18px;text-align:center">
+        <input type="text" id="auth-code" placeholder="12345678" inputmode="numeric" autocomplete="one-time-code" maxlength="8" style="font-family:var(--mono);letter-spacing:.25em;font-size:var(--fs-lg);text-align:center">
       </label>
       <button class="btn btn-primary btn-block" id="auth-verify-btn" onclick="verifyAuthCode()">Sign in</button>
       <p class="small auth-alt"><button class="home-link" onclick="sendAuthCode()">Resend code</button></p>
@@ -596,7 +596,7 @@
       <div class="report-byline">
         <span id="mast-space" style="display:none">Pantry</span>
         <span id="res-byline">Example plan &middot; demo data</span>
-        <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-size:11.5px;color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:600">Analyzed by Claude</span>
+        <span id="res-ai-badge" style="display:none;align-items:center;gap:5px;font-size:var(--fs-2xs);color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent);border-radius:6px;padding:3px 8px;font-weight:600">Analyzed by Claude</span>
       </div>
       <div class="plan-chips" id="plan-chips">
         <span class="plan-chip" id="chip-dims">Cabinet &middot; 3&rsquo; &times; 6&rsquo;6&Prime;</span>
@@ -670,7 +670,7 @@
       <section class="chapter collapsed" id="ch-reuse">
         <div class="ch-head" onclick="var c=this.closest('.chapter');c.classList.toggle('collapsed');this.setAttribute('aria-expanded',!c.classList.contains('collapsed'))" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" aria-labelledby="ch-reuse-h"><div class="ch-titles"><h2 id="ch-reuse-h">Use what you already have first</h2></div></div>
         <div class="card pad" style="background:var(--sage-f);border-color:var(--sage-l)">
-          <p style="margin:0 0 14px;font-size:15px;color:var(--ink-2)" id="res-existing-lede"></p>
+          <p style="margin:0 0 14px;font-size:var(--fs-ui);color:var(--ink-2)" id="res-existing-lede"></p>
           <div class="feat-grid" id="res-existing"></div>
           <div class="callout info" style="margin-top:16px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -778,9 +778,12 @@
             <ul class="shopping" id="res-shopping"></ul>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1.5px solid var(--line)">
               <span style="font-weight:600">Estimated cost</span>
-              <span style="font-weight:600;font-family:var(--serif);font-size:18px" id="res-shop-total">$45-$85</span>
+              <span style="font-weight:600;font-family:var(--serif);font-size:var(--fs-lg)" id="res-shop-total">$45-$85</span>
             </div>
-            <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
+            <!-- A 10px row gap: each small button's tap band reaches 5px past
+                 its box, and at 9px the bands of a wrapped row overlapped, so
+                 a tap just under "Download list" went to the button below. -->
+            <div style="display:flex;gap:10px 9px;flex-wrap:wrap;margin-top:16px">
               <button class="btn btn-ghost btn-sm" onclick="downloadShoppingList()">Download list</button>
               <button class="btn btn-ghost btn-sm" onclick="sendShoppingList()">Send list</button>
               <button class="btn btn-ghost btn-sm" onclick="uncheckAllUpgrades()">Remove all upgrades</button>

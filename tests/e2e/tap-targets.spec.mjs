@@ -51,6 +51,13 @@ async function openSample(page) {
      the reader taps. */
   await expect(page.locator('#res-upgrades .prod').first()).toBeVisible({ timeout: 15_000 });
   await expandChapters(page);
+  /* The screen rises 10px into place over 400ms and the cards arrive over
+     540ms. A probe that lands mid-rise measures a page still moving, and the
+     small-button band read 1px longer than it was settled: this passed most
+     runs against a band that reached 4px, not 5. Measure the page at rest. */
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter((a) => a.effect && a.effect.getComputedTiming().endTime !== Infinity)
+    .map((a) => a.finished.catch(() => {}))));
 }
 
 test.describe('phone', () => {

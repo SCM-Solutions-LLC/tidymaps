@@ -104,7 +104,11 @@ test('what-you-get explains with drawn panels, not shrunken screenshots', () => 
 });
 
 test('room labels read as headings and their cards are centred', () => {
-  assert.match(landingCss, /\.space-room\{[^}]*font-size:clamp\(2[0-9]px/, 'room labels shrank back to caption size');
+  // a heading size from the scale (tokens.css), at least 20px at its smallest
+  const size = (landingCss.match(/\.space-room\{[^}]*font-size:var\((--fs-[\w-]+)\)/) || [])[1];
+  const tokens = readFileSync(new URL('../css/tokens.css', import.meta.url), 'utf8');
+  const value = size && (tokens.match(new RegExp(`${size}\\s*:\\s*([^;]+);`)) || [])[1];
+  assert.match(value || '', /^clamp\((2\d|[3-9]\d)px/, 'room labels shrank back to caption size');
   assert.match(landingCss, /\.space-room\{[^}]*text-align:center/, 'room labels are no longer centred');
   assert.match(landingCss, /\.space-group \.room-cards\{[^}]*justify-content:center/, 'space cards are no longer centred');
 });
