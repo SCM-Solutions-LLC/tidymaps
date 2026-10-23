@@ -322,6 +322,12 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## Closed open items, as listed in the handoff until 2026-10-23
+
+2 canary; 3 preview button (#101); 4 step caps 12/18; 5 3D ports (#112,
+#113); 9 heartbeat (#171, #178, #179); 10 the 33 setups of 09-08 open clean;
+11 token replaced 10-03.
+
 ## What the 2026-10-16 session changed
 
 One PR (site, `get-shared-space`). **Fridge & freezer is the tenth space**:

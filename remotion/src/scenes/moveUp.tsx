@@ -11,7 +11,9 @@ import { itemSpots } from './helpers';
    direction (sa-move-up: rest to 18%, arrived by 55%, hold to 85%, return —
    the return is the spec's loop). Here the glyph travels between the
    motif's low and high levels. */
-const ARROW_X: Record<string, number> = { shelves: 252, drawers: 240, rail: 272, bench: 256 };
+const ARROW_X: Record<string, number> = {
+  shelves: 252, drawers: 240, rail: 272, bench: 256, fridge: 262, cabinet: 250, undersink: 252,
+};
 
 export const Scene: React.FC<SceneProps> = ({ motif, glyph }) => {
   const frame = useCurrentFrame();

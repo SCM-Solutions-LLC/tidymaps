@@ -14,6 +14,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateKeys } from './enumerate-keys.mjs';
 import { parseMediaKey } from '../js/stepMedia.js';
+import { inkMargin, MIN_MARGIN } from './check-edges.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..');
@@ -64,6 +65,9 @@ for (const key of keys) {
     } catch (e) { lastErr = e; console.log(`  retry ${attempt} ${key}: ${String(e.message).split('\n')[0]}`); }
   }
   if (lastErr) throw lastErr;
+  // A clip that draws at the edge of its frame draws at the edge of the band.
+  const { margin } = inkMargin(outPath);
+  if (margin < MIN_MARGIN) throw new Error(`${key}: ink ${margin} units from the frame edge (needs ${MIN_MARGIN}); see check-edges.mjs`);
   rendered++;
   console.log(`  ${String(rendered + skipped).padStart(3)}/${keys.length}  ${key}.webm`);
 }

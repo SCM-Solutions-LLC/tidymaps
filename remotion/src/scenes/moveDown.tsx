@@ -9,7 +9,9 @@ import { itemSpots } from './helpers';
 /* moveDown — "heavy things live low". Exact mirror of moveUp, per the
    sa-down spec: the glyph glides from the high level to the low one and the
    arrow points the way down. */
-const ARROW_X: Record<string, number> = { shelves: 252, drawers: 240, rail: 272, bench: 256 };
+const ARROW_X: Record<string, number> = {
+  shelves: 252, drawers: 240, rail: 272, bench: 256, fridge: 262, cabinet: 250, undersink: 252,
+};
 
 export const Scene: React.FC<SceneProps> = ({ motif, glyph }) => {
   const frame = useCurrentFrame();

@@ -87,12 +87,13 @@ motion clips — same staging, same story (unload = items OUT into a box, wipe
 Produced clips are declared in `data/step-media.json` under the key contract
 `{action}-{motif}-{glyph}`:
 
-- **action** — one of the 13 `STEP_ART` scene types
-  (`purge|unload|wipe|label|hang|fold|photo|contain|group|moveUp|moveDown|zones|done`)
-- **motif** — the furniture the scene is staged on (`shelves|drawers|rail|bench`),
+- **action** — one of the 14 `STEP_ART` scene types
+  (`purge|unload|wipe|label|hang|fold|photo|contain|group|moveUp|moveDown|zones|stock|done`)
+- **motif** — the furniture the scene is staged on
+  (`shelves|drawers|rail|bench|fridge|cabinet|undersink`),
   derived from the chosen space (`js/stepMedia.js: motifForSpace`)
 - **glyph** — the item being moved
-  (`shoe|hanger|foldedclothes|towel|jar|can|bottle|utensil|tool|tote|plate|bag`)
+  (`shoe|hanger|foldedclothes|towel|jar|can|bottle|utensil|tool|tote|plate|bag|produce|carton|leftovers|meat`)
 
 Files live at `media/steps/{key}.(mp4|webm|json)`. mp4/webm play natively;
 `.json` is Lottie and is used only once a player is vendored. Clips lazy-load
