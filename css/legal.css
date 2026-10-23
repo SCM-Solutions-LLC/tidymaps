@@ -8,21 +8,21 @@
    moment they diverge the set stops reading as one company's paperwork. */
 
 .legal{max-width:680px;margin:0 auto;padding:40px 18px 90px}
-.legal h1{font-size:clamp(30px,5vw,42px);margin-bottom:8px}
-.legal .updated{font-family:var(--sans);color:var(--spot-ink);font-size:13px;font-weight:600;margin-bottom:14px}
-.legal h2{font-size:21px;margin:36px 0 10px}
-.legal h3{font-size:16.5px;margin:22px 0 6px}
-.legal p,.legal li{font-size:16.5px;line-height:1.7;color:var(--ink)}
+.legal h1{font-size:var(--fs-page);margin-bottom:8px}
+.legal .updated{font-family:var(--sans);color:var(--spot-ink);font-size:var(--fs-sm);font-weight:600;margin-bottom:14px}
+.legal h2{font-size:var(--fs-xl);margin:36px 0 10px}
+.legal h3{font-size:var(--fs-body);margin:22px 0 6px}
+.legal p,.legal li{font-size:var(--fs-body);line-height:1.7;color:var(--ink)}
 .legal ul{padding-left:22px;margin:10px 0}
 .legal li{margin-bottom:8px}
 .legal strong{color:var(--ink)}
 .legal a{color:var(--spot-ink);text-decoration:underline;text-decoration-color:var(--spot);text-underline-offset:3px}
 
-.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:30px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);text-decoration:none}
+.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:30px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);text-decoration:none}
 .back:hover{color:var(--ink)}
 
 /* The lede under the title: what this document is for, before the clauses. */
-.legal-lede{font-size:19px;line-height:1.55;color:var(--ink);margin-bottom:8px}
+.legal-lede{font-size:var(--fs-lg);line-height:1.55;color:var(--ink);margin-bottom:8px}
 
 /* Sibling navigation. Someone who lands on the terms from a footer link has no
    other way to reach the security page, so every legal document carries the
@@ -31,7 +31,7 @@
 .legal-nav{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 34px;padding:0;list-style:none}
 .legal-nav a{
   display:block;padding:7px 14px;border:var(--rule-2);border-radius:var(--radius-pill);
-  font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;
+  font-family:var(--sans);font-stretch:var(--label-stretch);font-size:var(--fs-sm);font-weight:700;
   letter-spacing:.01em;text-transform:none;color:var(--ink);text-decoration:none;background:var(--stock);
 }
 .legal-nav a:hover{background:var(--tint)}
@@ -52,13 +52,13 @@
 
 /* Contact / effective-date block that closes each document. */
 .legal-foot{margin-top:44px;padding-top:22px;border-top:var(--rule)}
-.legal-foot p{font-size:14.5px;color:var(--ink)}
+.legal-foot p{font-size:var(--fs-md);color:var(--ink)}
 
 /* The in-app opt-out on cookies.html. A bordered card so the interactive control
    reads as one, distinct from the surrounding prose but still in the reading
    column rather than off in a settings screen it does not deserve. */
 .optout{margin:16px 0;padding:16px 18px;border:var(--rule);border-radius:var(--radius);background:var(--stock)}
-.optout-status{margin:0 0 12px;font-size:16.5px;line-height:1.55;color:var(--ink)}
+.optout-status{margin:0 0 12px;font-size:var(--fs-body);line-height:1.55;color:var(--ink)}
 .optout .btn{margin:0}
 /* .btn sets display:inline-flex, and any explicit display beats the browser's
    `[hidden] { display: none }` UA rule on specificity. Scoped so it fixes the

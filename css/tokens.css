@@ -30,6 +30,28 @@
   --serif:var(--sans);
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
+  /* ---- Type scale ------------------------------------------------------
+     Every font-size on the site is one of these (tests/type-scale.test.mjs).
+     The stylesheets had grown 40 sizes, many half a pixel apart (13, 13.5,
+     14, 14.5px), so text that meant the same thing never quite matched. Eight
+     steps for set sizes, one pixel apart where text is read and wider above;
+     six fluid sizes for the headings that grow with the window. Archivo
+     still sets everything: hierarchy comes from weight and space. */
+  --fs-2xs:  11px;  /* the floor: time chips, flags, badges */
+  --fs-xs:   12px;  /* meta lines, nav links, small counts */
+  --fs-sm:   13px;  /* labels, small buttons, tags, the contents */
+  --fs-md:   14px;  /* small text, captions, list rows */
+  --fs-ui:   15px;  /* buttons, inputs, task names, card text */
+  --fs-body: 16px;  /* reading text */
+  --fs-lg:   18px;  /* card names, sub-titles, figures' values */
+  --fs-xl:   22px;  /* block titles inside a page */
+  --fs-title:   clamp(17px, 3vw, 19px);    /* h3: card and step titles */
+  --fs-lede:    clamp(16px, 2vw, 18px);    /* the paragraph under a title */
+  --fs-chapter: clamp(20px, 3vw, 24px);    /* report chapters, gallery rooms */
+  --fs-section: clamp(26px, 3.4vw, 34px);  /* h2 section heads */
+  --fs-page:    clamp(30px, 4.6vw, 44px);  /* a screen's h1 */
+  --fs-display: clamp(32px, 4.2vw, 46px);  /* the landing hero only */
+
   /* ---- Paper, cards, ink and the colour family ------------------------
      The page is warm cream paper; cards, inputs and buttons sit on it in
      near-white. Ink is a soft warm brown-black. Borders are a light warm
