@@ -75,7 +75,7 @@ test('every classifiable action is in the vocabulary', () => {
   }
 });
 
-test('motif derivation: rails for closets, drawers for drawer banks and dressers, bench for the workbench, shelves otherwise', () => {
+test('motif derivation: rails for closets, drawers for drawer banks and dressers, bench for the workbench, a fridge, cabinet and vanity of their own, shelves otherwise', () => {
   assert.equal(motifForSpace('closet'), 'rail');
   assert.equal(motifForSpace('walkin'), 'rail');
   assert.equal(motifForSpace('drawers'), 'drawers');
@@ -87,8 +87,13 @@ test('motif derivation: rails for closets, drawers for drawer banks and dressers
   assert.equal(motifForSpace('garage'), 'shelves');
   assert.equal(motifForSpace('workbench'), 'bench');
   assert.equal(motifForSpace('pantry'), 'shelves');
+  assert.equal(motifForSpace('linen'), 'shelves');
+  // These three drew the open bookcase until 10-23.
+  assert.equal(motifForSpace('fridge'), 'fridge');
+  assert.equal(motifForSpace('cabinet'), 'cabinet');
+  assert.equal(motifForSpace('bathroom'), 'undersink');
   assert.equal(motifForSpace('unknown-space'), 'shelves');
-  for (const s of ['closet','drawers','garage','pantry']) {
+  for (const s of ['closet','drawers','garage','pantry','fridge','cabinet','bathroom']) {
     assert.ok(MOTIFS.includes(motifForSpace(s)));
   }
 });
@@ -146,18 +151,18 @@ test('playableClip only accepts ready clips in playable formats', () => {
    they must get. */
 test('the first real fridge plan gets fridge pictures, not closet ones', () => {
   const steps = [
-    ['Empty the fridge onto the shelf', 'A full view shows what you really have.', 'unload-shelves-jar'],
-    ['Toss expired food and old leftovers', 'Frees space and removes hidden spoilage.', 'purge-shelves-jar'],
-    ['Wipe shelves, drawers and door bins', 'A clean start keeps it easy to maintain.', 'wipe-shelves-jar'],
-    ['Set a clear leftovers bin at eye level', 'Leftovers stay in sight and get eaten.', 'contain-shelves-jar'],
-    ['Move produce into the crisper drawers', 'Drawer humidity slows spoilage.', 'zones-shelves-jar'],
-    ['Put raw meat in a tray below', 'Lowest spot prevents drips onto food.', 'moveDown-shelves-jar'],
-    ['Group dairy, bread and spreads on top shelf', 'Daily staples sit together.', 'moveUp-shelves-jar'],
-    ['Sort condiments by use into door shelves', 'Door bins hold sauces and jars neatly.', 'zones-shelves-jar'],
-    ['Empty the freezer and toss freezer-burned food', 'Reveals the mystery pile and frees space.', 'purge-shelves-jar'],
-    ['Sort freezer into bins: meat, veg, meals', 'Each food type has one home.', 'contain-shelves-jar'],
-    ['Label bins and date every leftover', 'Dates show what to eat first.', 'label-shelves-jar'],
-    ['Do a weekly five-minute fridge check', 'Small checks keep the system working.', 'done-shelves-jar'],
+    ['Empty the fridge onto the shelf', 'A full view shows what you really have.', 'unload-fridge-carton'],
+    ['Toss expired food and old leftovers', 'Frees space and removes hidden spoilage.', 'purge-fridge-leftovers'],
+    ['Wipe shelves, drawers and door bins', 'A clean start keeps it easy to maintain.', 'wipe-fridge-carton'],
+    ['Set a clear leftovers bin at eye level', 'Leftovers stay in sight and get eaten.', 'contain-fridge-leftovers'],
+    ['Move produce into the crisper drawers', 'Drawer humidity slows spoilage.', 'zones-fridge-produce'],
+    ['Put raw meat in a tray below', 'Lowest spot prevents drips onto food.', 'moveDown-fridge-meat'],
+    ['Group dairy, bread and spreads on top shelf', 'Daily staples sit together.', 'moveUp-fridge-carton'],
+    ['Sort condiments by use into door shelves', 'Door bins hold sauces and jars neatly.', 'zones-fridge-jar'],
+    ['Empty the freezer and toss freezer-burned food', 'Reveals the mystery pile and frees space.', 'purge-fridge-carton'],
+    ['Sort freezer into bins: meat, veg, meals', 'Each food type has one home.', 'contain-fridge-meat'],
+    ['Label bins and date every leftover', 'Dates show what to eat first.', 'label-fridge-leftovers'],
+    ['Do a weekly five-minute fridge check', 'Small checks keep the system working.', 'done-fridge-carton'],
   ];
   for (const [t, w, want] of steps) assert.equal(mediaKeyFor({ t, w }, 'fridge'), want, t);
 });
@@ -203,3 +208,59 @@ test('no demo plan draws clothes outside a space that holds clothes', async () =
   assert.deepEqual(wrong, []);
 });
 
+
+test('fridge food is drawn as fridge food, and the container a step names still wins', () => {
+  const g = (t) => glyphForStep({ t, w: '' }, 'fridge');
+  assert.equal(g('Move berries and greens to the crisper'), 'produce');
+  assert.equal(g('Keep milk and eggs on the middle shelf'), 'carton');
+  assert.equal(g('Date every leftover'), 'leftovers');
+  assert.equal(g('Thaw chicken on the bottom shelf'), 'meat');
+  // the named container beats the food it holds
+  assert.equal(g('Line up juice bottles in the door'), 'bottle');
+  assert.equal(g('Group condiment jars in a bin'), 'jar');
+  // words inside other words are not food
+  assert.notEqual(g('Remove the vegan label'), 'produce');
+  assert.notEqual(g('Fishing gear goes elsewhere'), 'meat');
+});
+
+/* ---------- one vocabulary, five places ----------
+   The vocabulary lives in stepMedia.js, but each furniture and each item is
+   drawn twice (the Remotion clip and the inline fallback) and placed by
+   per-furniture tables in the scenes. Every lookup falls back silently, to
+   the bookcase or the tote or a shelf's coordinates, so a motif added in one
+   place and not another renders a plausible wrong picture and nothing fails.
+   Remotion is not built in CI; these read its source. */
+const src = (p) => readFileSync(new URL(p, root), 'utf8');
+const keysOf = (text, start, indent = '  ') => {
+  const body = text.slice(text.indexOf(start));
+  const block = body.slice(0, body.search(/\n\};/));
+  return [...block.matchAll(new RegExp(`^${indent}(\\w+):`, 'gm'))].map((m) => m[1]);
+};
+const enumOf = (text, field) => JSON.parse(text.match(new RegExp(`${field}: z\\.enum\\((\\[[^\\]]*\\])\\)`))[1].replace(/'/g, '"'));
+const same = (got, want, what) => assert.deepEqual([...got].sort(), [...want].sort(), what);
+
+test('the clip renderer accepts exactly the vocabulary stepMedia speaks', () => {
+  const clip = src('remotion/src/StepClip.tsx');
+  same(enumOf(clip, 'action'), ACTIONS, 'remotion/src/StepClip.tsx actions');
+  same(enumOf(clip, 'motif'), MOTIFS, 'remotion/src/StepClip.tsx motifs');
+  same(enumOf(clip, 'glyph'), GLYPHS, 'remotion/src/StepClip.tsx glyphs');
+});
+
+test('every motif is drawn, placed and staged in the clips and in the fallback', () => {
+  const motifs = src('remotion/src/motifs.tsx');
+  same(keysOf(motifs, 'export const MOTIF_GEO'), MOTIFS, 'MOTIF_GEO in remotion/src/motifs.tsx');
+  const drawn = [...motifs.matchAll(/case '(\w+)': return </g)].map((m) => m[1]);
+  same([...drawn, 'shelves'], MOTIFS, 'the Motif switch in remotion/src/motifs.tsx (shelves is its default)');
+  same(keysOf(src('remotion/src/scenes/label.tsx'), 'const TAG_SPOT'), MOTIFS, 'TAG_SPOT in scenes/label.tsx');
+  same(keysOf(src('remotion/src/scenes/zones.tsx'), 'const BANDS'), MOTIFS, 'BANDS in scenes/zones.tsx');
+  for (const f of ['moveUp', 'moveDown']) {
+    const arrows = src(`remotion/src/scenes/${f}.tsx`).match(/const ARROW_X[^{]*\{([^}]*)\}/)[1];
+    same([...arrows.matchAll(/(\w+):/g)].map((m) => m[1]), MOTIFS, `ARROW_X in scenes/${f}.tsx`);
+  }
+  same(keysOf(src('js/screens/results.js'), 'const MOTIF_ART'), MOTIFS, 'MOTIF_ART in js/screens/results.js');
+});
+
+test('every glyph is drawn in the clips and in the fallback', () => {
+  same(keysOf(src('remotion/src/glyphs.tsx'), 'const BODIES'), GLYPHS, 'BODIES in remotion/src/glyphs.tsx');
+  same(keysOf(src('js/screens/results.js'), 'const GLYPH_ART'), GLYPHS, 'GLYPH_ART in js/screens/results.js');
+});

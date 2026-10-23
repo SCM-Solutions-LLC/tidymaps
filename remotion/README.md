@@ -12,9 +12,13 @@ holding the item glyph of its media key.
 - `src/tokens.ts` — the site's palette (`css/tokens.css`) as constants, per-
   action loop lengths matching the CSS animation durations, easing curves.
   **A palette change in tokens.css means updating this file and re-rendering.**
+  Each colour names the variable it copies; `tests/remotion-palette.test.mjs`
+  fails when one drifts (it did, for three weeks, after the 10-03 warm-up).
 - `src/Stage.tsx` / `src/motifs.tsx` / `src/glyphs.tsx` — the shared visual
-  language: 320×80 stage on the `.step-art` band's surface color, four
-  furniture motifs with a geometry API, twelve item glyphs.
+  language: 320×80 stage on the `.step-art` band's surface color, seven
+  furniture motifs with a geometry API (shelves, an open drawer bank, a closet
+  rail, a workbench, a fridge, a kitchen cabinet, a vanity under its sink),
+  sixteen item glyphs (four of them fridge food).
 - `src/Ambience.tsx` — the contents the story is NOT about: a pale pair of
   items at the far ends of every surface, so a scene is staged in a space
   rather than on empty furniture. Sits outside the x-band the choreographies
@@ -28,8 +32,12 @@ holding the item glyph of its media key.
   every space's default-pair × all actions (see the header comment).
 - `render-steps.mjs` — bundles once, renders each key to
   `../media/steps/{key}.webm` (VP9, opaque `--surface-2` background so
-  `object-fit: contain` letterboxing is invisible), then rebuilds the
-  `clips` block of `../data/step-media.json`.
+  `object-fit: contain` letterboxing is invisible), refuses a clip that draws
+  near its frame's edge, then rebuilds the `clips` block of
+  `../data/step-media.json`.
+- `check-edges.mjs` — measures every rendered clip for ink within 2 units of
+  the frame edge (the band crops nothing, so that is the band's edge).
+- `sheet.mjs` — a contact sheet of stills, for review before a full render.
 
 ## Commands
 
@@ -40,6 +48,8 @@ npm run render         # render missing clips + update the manifest
 node render-steps.mjs --force            # re-render everything (design change)
 node render-steps.mjs --only purge-shelves-can,wipe-shelves-bottle
 npm run studio         # live-preview compositions while editing scenes
+node sheet.mjs --motif fridge --glyph carton --at 0.2,0.5,0.8 --out fridge.png
+node check-edges.mjs   # every clip in ../media/steps
 ```
 
 A design change to `Stage`, `Ambience`, `motifs` or `glyphs` touches every
@@ -77,4 +87,14 @@ already landed.
   (tri-tone bins in purge, honey label tag, primary move arrows…). Items stay
   plain ink; structure is ink-3.
 - Every scene must read on every motif: placement goes through
-  `itemSpots()` / `MotifGeo`, never hardcoded to one furniture.
+  `itemSpots()` / `MotifGeo`, never hardcoded to one furniture. A scene with
+  a per-motif table (`TAG_SPOT`, `ARROW_X`, `BANDS`) needs an entry for each
+  motif; `tests/step-media.test.mjs` checks that, and that the vocabulary
+  here, in `js/stepMedia.js` and in the inline fallback are the same.
+- Nothing leaves the frame: every mark stays `STAGE_MARGIN` (3 units) inside
+  it. `Glyph` clamps items; furniture, bins and accents are on you, and
+  `check-edges.mjs` measures them.
+- Nothing passes through furniture except on its way out of it: an item
+  moving between compartments goes around, or the story is told on one
+  level (the purge bins stand on the floor beside the furniture, the
+  contain basket's front hides the items sliding in).

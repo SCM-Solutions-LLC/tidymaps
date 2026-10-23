@@ -18,21 +18,47 @@ const BANDS: Record<string, Band[]> = {
     { x: 96, y: 28, w: 128, h: 16 },
     { x: 96, y: 48, w: 128, h: 16 },
   ],
+  // the open drawer's three organizer compartments
   drawers: [
-    { x: 118, y: 26, w: 84, h: 9 },
-    { x: 118, y: 43, w: 84, h: 9 },
-    { x: 118, y: 60, w: 84, h: 7 },
+    { x: 114, y: 27, w: 32, h: 8 },
+    { x: 148, y: 27, w: 24, h: 8 },
+    { x: 174, y: 27, w: 32, h: 8 },
   ],
   rail: [
-    { x: 76, y: 22, w: 54, h: 42 },
-    { x: 134, y: 22, w: 54, h: 42 },
-    { x: 192, y: 22, w: 52, h: 42 },
+    { x: 76, y: 30, w: 54, h: 38 },
+    { x: 134, y: 30, w: 54, h: 38 },
+    { x: 192, y: 30, w: 52, h: 38 },
   ],
   bench: [
     { x: 112, y: 12, w: 96, h: 20 },
     { x: 92, y: 42, w: 136, h: 6 },
     { x: 100, y: 58, w: 120, h: 12 },
   ],
+  // a shelf, the crispers, the door bins: the zones a fridge plan names
+  fridge: [
+    { x: 110, y: 30, w: 100, h: 15 },
+    { x: 112, y: 54, w: 96, h: 11 },
+    { x: 224, y: 9, w: 14, h: 58 },
+  ],
+  cabinet: [
+    { x: 111, y: 11, w: 47, h: 25 },
+    { x: 162, y: 11, w: 47, h: 25 },
+    { x: 111, y: 41, w: 98, h: 25 },
+  ],
+  // the half shelf, then the floor either side of the trap
+  undersink: [
+    { x: 110, y: 28, w: 36, h: 14 },
+    { x: 110, y: 47, w: 44, h: 15 },
+    { x: 166, y: 47, w: 44, h: 15 },
+  ],
+};
+/* Where the zoned items stand, one per band, on furniture whose zones are not
+   simply its shelves or its rod. */
+const ZONE_ITEMS: Record<string, Array<{ x: number; y: number; s?: number }>> = {
+  drawers: [{ x: 130, y: 36 }, { x: 160, y: 36 }, { x: 190, y: 36 }],
+  fridge: [{ x: 160, y: 47 }, { x: 186, y: 64 }, { x: 231, y: 31, s: 0.62 }],
+  cabinet: [{ x: 134, y: 38 }, { x: 186, y: 38 }, { x: 160, y: 68 }],
+  undersink: [{ x: 128, y: 44 }, { x: 132, y: 64 }, { x: 188, y: 64 }],
 };
 const FILLS = [color.honey, color.primaryBg, color.sageBg];
 
@@ -53,7 +79,9 @@ export const Scene: React.FC<SceneProps> = ({ motif, glyph }) => {
             fill={FILLS[i]} stroke="none" opacity={o} />
         );
       })}
-      {motif === 'shelves'
+      {ZONE_ITEMS[motif]
+        ? ZONE_ITEMS[motif].map((p, i) => <Glyph key={i} kind={glyph} x={p.x} y={p.y} scale={p.s ?? 1} />)
+        : motif === 'shelves'
         ? geo.surfaces.map((s, i) => <Glyph key={i} kind={glyph} x={xs[i]} y={s.y} />)
         : motif === 'rail'
           ? bands.map((b, i) => <Glyph key={i} kind={glyph} x={b.x + b.w / 2} y={y} />)

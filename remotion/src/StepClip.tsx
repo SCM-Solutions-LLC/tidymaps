@@ -11,8 +11,8 @@ import { SCENES } from './scenes';
    the story moves. */
 export const stepClipSchema = z.object({
   action: z.enum(['purge','unload','wipe','label','hang','fold','photo','contain','group','moveUp','moveDown','zones','stock','done']),
-  motif: z.enum(['shelves','drawers','rail','bench']),
-  glyph: z.enum(['shoe','hanger','foldedclothes','towel','jar','can','bottle','utensil','tool','tote','plate','bag']),
+  motif: z.enum(['shelves','drawers','rail','bench','fridge','cabinet','undersink']),
+  glyph: z.enum(['shoe','hanger','foldedclothes','towel','jar','can','bottle','utensil','tool','tote','plate','bag','produce','carton','leftovers','meat']),
 });
 export type StepClipProps = z.infer<typeof stepClipSchema>;
 export type SceneProps = { motif: string; glyph: string };

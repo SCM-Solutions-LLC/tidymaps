@@ -4,19 +4,28 @@
       running getDemoScenario across the full wizard matrix (area × setup ×
       goal × household variants) and classifying each step exactly the way
       the runtime does.
-   2. All 13 actions for every space's default (motif, glyph) pair, plus the
+   2. All 14 actions for every space's default (motif, glyph) pair, plus the
       hang/fold keys their glyph rules force (hang→hanger, fold→
-      foldedclothes on any motif). Live plans are AI-written free text, so
+      foldedclothes) in the spaces that keep clothes. Outside them a hang or
+      fold step is drawn as `stock` and no hanger or shirt is ever drawn
+      (stepMedia's allowedAction / glyphAllowed), so those keys would be
+      clips nothing can request. Live plans are AI-written free text, so
       their step wording is open-ended — but the action set is closed and an
       unmatched step falls back to the space default glyph, which makes these
       the keys real plans land on. Anything rarer keeps its SVG fallback by
       design.
+   3. Every step of the real AI plans the repo keeps as fixtures. The first
+      real fridge plan named leftovers and meat in steps no demo plan
+      phrases that way, and three of its twelve steps had no clip.
 
    Run directly for a human-readable report, or import enumerateKeys() (the
    render script does). */
 import { getDemoScenario } from '../js/demo-scenarios.js';
-import { ACTIONS, mediaKeyFor, motifForSpace, glyphForStep } from '../js/stepMedia.js';
+import { ACTIONS, mediaKeyFor, motifForSpace, glyphForStep, allowedAction, glyphAllowed } from '../js/stepMedia.js';
 import * as wizard from '../js/wizard-data.js';
+import { PLAN as FRIDGE_1023 } from '../tests/fixtures/fridge-1023.mjs';
+
+const REAL_PLANS = [['fridge', FRIDGE_1023]];
 
 // The ten wizard areas plus the extra space ids stepMedia knows defaults for.
 const AREAS = ['pantry','cabinet','drawers','fridge','closet','dresser','bathroom','linen','garage','workbench'];
@@ -79,9 +88,14 @@ export function enumerateKeys() {
   for (const space of ALL_SPACES) {
     const motif = motifForSpace(space);
     const glyph = glyphForStep({ t: '', w: '' }, space);
-    for (const action of ACTIONS) add(`${action}-${motif}-${glyph}`, `(default pair for ${space})`);
-    add(`hang-${motif}-hanger`, `(forced by /hang/ glyph rule on ${motif})`);
-    add(`fold-${motif}-foldedclothes`, `(forced by /fold/ glyph rule on ${motif})`);
+    for (const action of ACTIONS) add(`${allowedAction(action, space)}-${motif}-${glyph}`, `(default pair for ${space})`);
+    if (glyphAllowed('hanger', space)) add(`hang-${motif}-hanger`, `(forced by /hang/ glyph rule on ${motif})`);
+    if (glyphAllowed('foldedclothes', space)) add(`fold-${motif}-foldedclothes`, `(forced by /fold/ glyph rule on ${motif})`);
+  }
+
+  // 3. real plans
+  for (const [space, plan] of REAL_PLANS) {
+    for (const s of plan.steps) add(mediaKeyFor({ t: s.task, w: s.why }, space), s.task);
   }
 
   return [...keys.entries()]
