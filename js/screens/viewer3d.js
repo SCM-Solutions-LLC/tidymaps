@@ -3,7 +3,7 @@ import { fmtIn, midSentence } from '../wizard-data.js';
 import { toast, escapeHtml } from '../ui.js';
 import { go } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
-import { LEVEL_NOUN } from '../setupStructure.js';
+import { LEVEL_NOUN, SETUP_NOUN } from '../setupStructure.js';
 import { PRODUCT_TYPES } from '../plan.js';
 import { TYPE_LABEL, shelfDepthFor, setLiveLayoutOverride } from '../catalog.js';
 import { addProductNeed } from './results.js';
@@ -13,13 +13,14 @@ import { resolveLayout, chipArchetypesFor, ARCHETYPE_LABELS } from '../layout.js
 import { selectedProductNeeds, groupOrganizers } from '../three/organizerKinds.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
 import { placementFor, wallGroups, levelLabel } from '../placement.js';
+import { fridgeParts, fridgeRowRun } from '../three/fridgePlan.js';
 import {
   normalizeViewerGeometry,geometryWithShelfCount,geometryWithShelfHeight,
   shelfHeightInches,mapForShelfCount,inferLSide,
 } from '../three/viewerOptions.js';
 import {
   isRoomLayout,roomPlanFor,roomBoardGeometry,roomRowRun,boardYsFor,
-  boardYsFromFracs,gapsAboveFor,plainBoardClearance,arrangementGeometryFor,ARRANGEMENT_VERSION,
+  boardYsFromFracs,gapsAboveFor,doorRowsOf,shelfRowsOf,cabinetShelfGeometry,plainBoardClearance,arrangementGeometryFor,ARRANGEMENT_VERSION,
 } from '../three/roomBoards.js';
 
 /* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
@@ -166,6 +167,15 @@ function currentSceneInput(){
      handed, which is this one, and leaving the preview empty keeps a look at
      the walk-in from fixing the cabinet's shelf count when the reader
      switches back to compare. */
+  /* A cabinet with rows on its door counts its shelves without them, the
+     same once-only conversion (roomBoards.cabinetShelfGeometry). */
+  if(resolved.type==='cabinet'&&geometry.levelsAre!=='shelves'){
+    const shelves=cabinetShelfGeometry(geometry,map,resolved);
+    if(shelves.levelsAre==='shelves'){
+      geometry=shelves;
+      if(dimsPreview) dimsPreview=geometry;
+    }
+  }
   if(isRoomLayout(resolved.type)&&geometry.levelsAre!=='boards'){
     geometry=roomBoardGeometry(geometry,map,resolved);
     if(dimsPreview){
@@ -382,7 +392,13 @@ function updateStatus(geometry, resolved, sourceGeometry=geometry){
      word, naming both produced "Shown as your cabinet, drawn as Cabinet" — a
      sentence that says one thing twice and reads like a bug. */
   const sameWord = chosen && state.setupLabel.toLowerCase()===String(label).toLowerCase();
-  note += chosen
+  /* A fridge is drawn as the card itself (js/three/fridgePlan.js), so it
+     is named once, by the card's full noun: "your French-door fridge", not
+     "your french door, drawn as Fridge". */
+  const cardNoun = chosen && resolved.type==='fridge' && SETUP_NOUN[state.setup] ? SETUP_NOUN[state.setup][0] : null;
+  note += cardNoun
+    ? ` Shown as your ${midSentence(cardNoun)}.`
+    : chosen
     ? (sameWord
         ? ` Shown as your ${midSentence(state.setupLabel)}.`
         : ` Shown as your ${midSentence(state.setupLabel)}, drawn as ${label}.`)
@@ -494,8 +510,7 @@ function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   const row=map[levelIndex];
   const idx=row&&Number.isInteger(row.shelfIndex)?row.shelfIndex:levelIndex;
   const g=normalizeViewerGeometry(geometry, archetype);
-  const boardYs=boardYsFromFracs(g.shelfYFracs, g.height);
-  const gaps=gapsAboveFor(boardYs, g.height);
+  const gaps=gapsAboveFor(boardYsFromFracs(g.shelfYFracs, g.height), g.height);
   /* The height is the tallest whole inch the scene passes under that gap
      (its clearance, the gap less the board over it). round(gap - 1) could
      print up to a quarter inch over it: "Max 21h" on a walk-in floor the
@@ -509,6 +524,22 @@ function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
   if(isRoomLayout(archetype)){
     const run=roomRowRun({ type:archetype, geometry, map, layout:layout||currentLayout(map), index:idx });
     if(run) return size(run.length-1, run.gap);
+  }
+  /* A cabinet's door rack rows are not boards (layouts/cabinet.js): a shelf
+     row sits on the board its place among the shelf rows gives it. */
+  if(archetype==='cabinet'){
+    const resolved=layout||currentLayout(map);
+    if(doorRowsOf(map, resolved).size){
+      const c=cabinetShelfGeometry(geometry, map, resolved);
+      const board=shelfRowsOf(map, resolved).indexOf(idx);
+      const cGaps=gapsAboveFor(boardYsFromFracs(c.shelfYFracs, c.height), c.height);
+      if(board>=0&&board<cGaps.length) return size(usableWidth, cGaps[board]);
+    }
+  }
+  if(archetype==='fridge'){
+    const resolved=layout||currentLayout(map);
+    const run=fridgeRowRun({ setup:resolved&&resolved.setup, map, layout:resolved, geometry:g, index:idx });
+    if(run) return size(run.length, run.gap);
   }
   return size(usableWidth, gaps[idx]??g.height/rows);
 }
@@ -778,18 +809,33 @@ function populateZones(map, resolved=currentLayout(), geometry=null){
       /* Named against the layout's own level noun, so the sidebar and the
          controls describe one thing: "6 zones, one per shelf", not "Zones"
          beside "Number of shelves" with nothing connecting them. */
-      const noun=singularLevel(LEVEL_NOUN[drawn]||'shelves');
-      heading.textContent=rows.length===1
-        ? `1 zone: the ${noun.toLowerCase()}`
-        : `${rows.length} zones, one per ${noun.toLowerCase()}`;
+      const nouns=LEVEL_NOUN[drawn]||'shelves';
+      const noun=singularLevel(nouns);
+      /* A fridge's rows are not one kind of level, so it is counted by
+         part. Every other "zones" noun said "12 zones, one per zone". */
+      const onDoor=drawn==='cabinet'?doorRowsOf(rows, resolved).size:0;
+      heading.textContent=drawn==='fridge'
+        ? fridgeZoneHeading(rows, resolved)
+        : onDoor
+          ? `${rows.length} zones: ${rows.length-onDoor} shel${rows.length-onDoor===1?'f':'ves'}, ${onDoor} on the door`
+        : rows.length===1
+          ? `1 zone: the ${noun.toLowerCase()}`
+          : nouns==='zones'
+            ? `${rows.length} zones`
+            : `${rows.length} zones, one per ${noun.toLowerCase()}`;
     }
   }
   if(sub){
+    const nouns=LEVEL_NOUN[drawn]||'shelves';
     sub.textContent=groups
       ?roomSubLine(groups)
       :room
         ?'The plan does not say which wall each zone is on, so the drawing spreads them. Hover a zone to spotlight it.'
-        :'One per shelf: what that shelf is for. Hover a zone to spotlight it.';
+        :drawn==='fridge'
+          ?'What each shelf, drawer and door bin is for. Hover a zone to spotlight it.'
+          :nouns==='zones'
+            ?'What each zone is for. Hover a zone to spotlight it.'
+            :`One per ${singularLevel(nouns)}: what that ${singularLevel(nouns)} is for. Hover a zone to spotlight it.`;
   }
   if(!groups){
     rows.forEach((row,i)=>list.appendChild(zoneItem(row,i,{ room })));
@@ -925,6 +971,21 @@ function initLayoutChips(resolved){
 /* "Shelves" minus its s is "Shelve", and the heights heading has been saying
    so. Plural level nouns here are shelves/drawers/zones/baskets, so one rule
    for the -ves case and one for the rest covers the vocabulary. */
+/* "12 zones: 3 shelves, 3 drawers, 2 door bins, 4 in the freezer", counted
+   by the same reading the drawing places them with (js/three/fridgePlan.js). */
+function fridgeZoneHeading(rows, resolved){
+  const count={ shelf:0, drawer:0, door:0, freezer:0 };
+  for(const { part } of fridgeParts(rows, resolved)) count[part]++;
+  const bits=[
+    count.shelf&&`${count.shelf} shel${count.shelf===1?'f':'ves'}`,
+    count.drawer&&`${count.drawer} drawer${count.drawer===1?'':'s'}`,
+    count.door&&`${count.door} door bin${count.door===1?'':'s'}`,
+    count.freezer&&`${count.freezer} in the freezer`,
+  ].filter(Boolean);
+  const head=`${rows.length} zone${rows.length===1?'':'s'}`;
+  return bits.length?`${head}: ${bits.join(', ')}`:head;
+}
+
 function singularLevel(noun){
   if(/ves$/i.test(noun)) return noun.replace(/ves$/i,'f');
   return noun.replace(/s$/i,'');
@@ -1010,9 +1071,16 @@ function initStructureControls(geometry,resolved){
   const room=isRoomLayout(resolved.type);
   const levelNoun=LEVEL_NOUN[resolved.type]||'shelves';
   const Noun=room?'Shelves':levelNoun.charAt(0).toUpperCase()+levelNoun.slice(1);
-  structure.classList.toggle('hide',false);
+  /* A fridge's parts come from the card picked (js/three/fridgePlan.js),
+     not from a level count: the slider would have counted its twelve rows
+     as twelve shelves and moved nothing in the drawing. Its overall size
+     still adjusts. */
+  const fixedParts=resolved.type==='fridge';
+  structure.classList.toggle('hide',fixedParts);
   lControl.classList.toggle('hide',!isL);
-  shelfControls.classList.toggle('hide',false);
+  shelfControls.classList.toggle('hide',fixedParts);
+  const heightsSection=document.getElementById('v3d-heights-section');
+  if(heightsSection) heightsSection.classList.toggle('hide',fixedParts);
   const structureLabel=document.getElementById('v3d-structure-label');
   if(structureLabel) structureLabel.textContent=Noun;
   const countLabel=document.getElementById('v3d-shelf-count-label');

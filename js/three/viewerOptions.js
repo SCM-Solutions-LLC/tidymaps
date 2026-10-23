@@ -64,7 +64,7 @@ function isDefaultSpread(fracs,boards){
   return fracs.every((value,index)=>Math.abs(value-spread[index])<1e-9);
 }
 
-function resampleShelfFracs(fracs,count,boards){
+export function resampleShelfFracs(fracs,count,boards){
   const src=Array.isArray(fracs)?fracs.map(Number).filter(Number.isFinite):[];
   if(!src.length||count<1) return defaultShelfFracs(count,boards);
   if(count===src.length) return src.slice();

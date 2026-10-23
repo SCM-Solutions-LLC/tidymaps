@@ -434,3 +434,43 @@ test('a rod closet\'s shelf is 14 inches or the closet, its floor is the closet,
   const catalog=readFileSync(new URL('../js/catalog.js',import.meta.url),'utf8');
   assert.doesNotMatch(catalog,/CLOSET_SHELF_IN\s*=/,'catalog.js carries its own copy of the shelf depth');
 });
+
+/* A cabinet with a row on its door. The sample pantry is one: its "Door /
+   side" row was drawn as a fifth board at the cabinet's floor, a shelf the
+   cabinet does not have. The boards are its other rows now, converted once
+   and marked so the controls move real boards. */
+const doorCabinet={
+  map:[
+    { lv:'Top shelf', shelfIndex:0, surface:'shelf' },
+    { lv:'Eye level', shelfIndex:1, surface:'shelf' },
+    { lv:'Middle shelf', shelfIndex:2, surface:'shelf' },
+    { lv:'Lower shelf', shelfIndex:3, surface:'shelf' },
+    { lv:'Door / side', shelfIndex:4, surface:'door' },
+  ],
+  layout:{ type:'cabinet' },
+  geometry:{ width:36, height:78, depth:18, shelfCount:5, shelfYFracs:[0.1,0.3,0.5,0.7,0.92] },
+};
+
+test('a cabinet counts its boards without the rows on its door, once', async () => {
+  const { cabinetShelfGeometry, shelfRowsOf, doorRowsOf } = await import('../js/three/roomBoards.js');
+  const { map, layout, geometry } = doorCabinet;
+  assert.deepEqual([...doorRowsOf(map, layout)], [4]);
+  assert.deepEqual(shelfRowsOf(map, layout), [0, 1, 2, 3]);
+  const c=cabinetShelfGeometry(geometry, map, layout);
+  assert.equal(c.shelfCount, 4);
+  assert.equal(c.levelsAre, 'shelves');
+  // The lowest shelf row takes the floor the door row used to stand on.
+  assert.equal(boardYsFromFracs(c.shelfYFracs, c.height).at(-1), boardYsFromFracs(geometry.shelfYFracs, geometry.height).at(-1));
+  assert.deepEqual(cabinetShelfGeometry(c, map, layout), c, 'converting twice changes nothing');
+  const plain=cabinetShelfGeometry(geometry, map.slice(0, 4), layout);
+  assert.equal(plain.shelfCount, 5, 'a cabinet with nothing on its door is left as it came');
+  assert.equal(plain.levelsAre, undefined);
+});
+
+test('the card judges a cabinet shelf by the board it is drawn on, not by its row number', () => {
+  const { map, layout, geometry } = doorCabinet;
+  const withPlan=rowHeadroomFor('cabinet', 'shelf', geometry, 3, { map, layout });
+  const byRow=rowHeadroomFor('cabinet', 'shelf', geometry, 3);
+  assert.ok(withPlan > byRow + 3, `the lower shelf sits on the floor now, with more over it: ${withPlan} vs ${byRow}`);
+  assert.equal(rowHeadroomFor('cabinet', 'door', geometry, 4, { map, layout }), null);
+});

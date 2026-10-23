@@ -149,7 +149,10 @@ test('the sidebar says the zones are the shelves', async ({ page }) => {
      use for the same rows. */
   const heading = await page.locator('#v3d-zones-h').textContent();
   expect(heading).toContain(`${rows} zones`);
-  expect(heading).toMatch(/one per (shelf|drawer|zone|level|bay|rod)/i);
+  /* The sample is a cabinet with a row on its door, so the heading counts
+     both: "5 zones: 4 shelves, 1 on the door". A unit with no door rows
+     still reads "one per shelf". Either way it names the controls' noun. */
+  expect(heading).toMatch(/one per (shelf|drawer|zone|level|bay|rod)|: \d+ (shelves|shelf|drawers|bays), \d+ on the door/i);
 
   /* The sidebar names one row ("one per shelf"); the controls count them
      ("Number of shelves"). They differ by a plural, and shelf/shelves is
@@ -158,7 +161,11 @@ test('the sidebar says the zones are the shelves', async ({ page }) => {
      the two to land on the same word. A prefix or substring check would pass
      on "shel" and prove nothing. */
   const controls = await page.locator('#v3d-shelf-count-label').textContent();
-  const headingNoun = heading.match(/one per (\w+)/i)[1].toLowerCase();
+  const perOne = heading.match(/one per (\w+)/i);
+  const counted = heading.match(/: \d+ (\w+),/i);
+  const headingNoun = perOne
+    ? perOne[1].toLowerCase()
+    : counted[1].toLowerCase().replace(/ves$/, 'f').replace(/s$/, '');
   const controlsPlural = controls.toLowerCase().match(/number of (\w+)/)[1];
   const singular = /ves$/.test(controlsPlural)
     ? controlsPlural.replace(/ves$/, 'f')

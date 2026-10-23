@@ -8,7 +8,7 @@ import { semanticItemHeight, semanticItemKind } from './itemKinds.js';
 import { organizerSpecFor, needKeyFor, isVisualNeed, targetScore, visualTypeFor,
   surfaceAcceptsOrganizer, isMountedOrganizer } from './organizerKinds.js';
 import { evenShelfFracs } from './viewerOptions.js';
-import { roomPlanFor, boardYsFromFracs, gapsAboveFor } from './roomBoards.js';
+import { roomPlanFor, boardYsFromFracs, gapsAboveFor, cabinetShelfGeometry } from './roomBoards.js';
 import { measuredCapacityProfile, naturalItemWidth, naturalOrganizerWidth, visualUnitCount } from './capacity.js';
 import { ITEM_NORMAL_OFFSET, depthRankStep, displayJitter, hashString, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
@@ -387,6 +387,11 @@ export function createRenderer(canvas){
    so the per-canvas cache above never hits — where paying for a cubemap
    nothing will look at is the whole cost. The viewer itself never sets it. */
 export function buildScene({ geometry, map, placements, canvas, layout, organizerPlan={}, representativeItems=true, environment=true }){
+  /* A cabinet's door rows hang on its door, so its boards are its other
+     rows (roomBoards.cabinetShelfGeometry). The viewer converts before it
+     builds; a caller that hands over the plan's own geometry is converted
+     here, and a converted one passes through unchanged. */
+  if(layout&&layout.type==='cabinet') geometry=cabinetShelfGeometry(geometry, map, layout);
   const W=Math.max(8, Number(geometry.width)||30);
   const rawH=Math.max(10, Number(geometry.height)||60);
   const H=layout&&layout.type==='under-sink'?Math.max(28,Math.min(42,rawH)):rawH;
@@ -427,7 +432,9 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   // Walk-ins stay nearly centered so neither side wall blocks the aisle.
   const cameraX=layout&&layout.type==='walkin-u'?-0.08:
     layout&&layout.type==='l-run'&&layout.lSide==='left'?0.68:-0.68;
-  const cameraDistance=S*(isOverhead?0.98:1.55);
+  /* A fridge is drawn with its doors swung open, which the envelope above
+     does not count, so the camera stands a little further back. */
+  const cameraDistance=S*(isOverhead?0.98:layout&&layout.type==='fridge'?1.75:1.55);
   camera.position.copy(new THREE.Vector3(cameraX, 0.38, 1).normalize().multiplyScalar(cameraDistance).add(target));
 
   const controls=new OrbitControls(camera, canvas);
@@ -945,12 +952,41 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   }
   fitLabelsInFrame();
 
+  /* A builder that draws past its box (a fridge or a cabinet with a door
+     swung open) names the points it reaches out to, and on a narrow
+     canvas the camera backs off until that fits across. A phone showed the
+     open fridge doors cut off at both edges. Like the label fit above it
+     only ever moves out, so a wide canvas is left as it was. */
+  function fitWidthInFrame(){
+    const points=scene.userData.framePoints;
+    if(!Array.isArray(points)||!points.length) return;
+    camera.updateMatrixWorld();
+    const right=new THREE.Vector3(), up=new THREE.Vector3(), back=new THREE.Vector3();
+    camera.matrixWorld.extractBasis(right, up, back);
+    const halfTanH=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect;
+    const rel=new THREE.Vector3();
+    let dist=camera.position.distanceTo(controls.target);
+    const start=dist;
+    for(const [x,y,z] of points){
+      rel.set(x,y,z).sub(controls.target);
+      const front=-rel.dot(back);
+      dist=Math.max(dist, Math.abs(rel.dot(right))/(0.92*halfTanH)-front);
+    }
+    if(dist<=start) return;
+    /* A full-width door swung toward the camera on a phone can need more
+       room than the orbit allows, so the limit grows with it. */
+    controls.maxDistance=Math.max(controls.maxDistance, dist*1.05);
+    camera.position.copy(back).multiplyScalar(dist).add(controls.target);
+    controls.update();
+  }
+
   function setSize(){
     const w=canvas.clientWidth||canvas.parentElement.clientWidth||640;
     const h=canvas.clientHeight||Math.min(innerHeight*0.68, 560)||420;
     renderer.setSize(w, h, false);
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
+    fitWidthInFrame();
     requestRender();
   }
   setSize();
