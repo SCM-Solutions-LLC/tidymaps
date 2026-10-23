@@ -49,7 +49,7 @@ typography:
     letterSpacing: "-0.012em"
   lede:
     fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
-    fontSize: "clamp(16px, 1.6vw, 18px)"
+    fontSize: "clamp(16px, 2vw, 18px)"
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: "normal"
@@ -222,14 +222,17 @@ Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`).
 
 **Character:** One grotesque at rest. Titles are firm (700) but held to moderate sizes, so hierarchy comes from weight, cards and space rather than scale. Labels are small, bold and in sentence case. Nothing on the site is set in caps.
 
+### Scale
+Every font-size is a token from `css/tokens.css`; `tests/type-scale.test.mjs` rejects any other. Eight set sizes: `--fs-2xs` 11px (the floor), `--fs-xs` 12, `--fs-sm` 13, `--fs-md` 14, `--fs-ui` 15, `--fs-body` 16, `--fs-lg` 18, `--fs-xl` 22. Six fluid ones for headings: `--fs-title`, `--fs-lede`, `--fs-chapter` `clamp(20px, 3vw, 24px)`, `--fs-section`, `--fs-page` `clamp(30px, 4.6vw, 44px)`, `--fs-display`. Until 10-23 the sheets carried 40 sizes, half a pixel apart in places, so the same kind of text never quite matched; half-pixel sizes now sit on the step below.
+
 ### Hierarchy
-- **Display** (Archivo 700, `clamp(32px, 4.2vw, 46px)`, 1.08, -0.022em): h1 only. The landing hero at 22ch max; the legal h1 at `clamp(30px, 5vw, 42px)`. The report and plan-hero h2 step up to `clamp(30px, 4vw, 44px)` because they open a chapter.
-- **Headline** (Archivo 700, `clamp(26px, 3.4vw, 34px)`, 1.12, -0.018em): h2 section heads. The room heading in the spaces gallery is the same voice at `clamp(22px, 2.4vw, 26px)`, centred.
-- **Title** (Archivo 700, `clamp(17px, 3vw, 19px)`, 1.15, -0.012em): h3 card names, method-step titles, list items. Card names run 800 at 18 to 19px; product-shot titles 22px; h4 is 16px / 700.
-- **Lede** (Archivo 400, `clamp(16px, 1.6vw, 18px)`, 1.6): the paragraph under the hero title, 44ch max. Section subtitles run 17px.
-- **Body** (Archivo 400, 16px, 1.6): reading text. Small is 14px / 1.5; figure captions and table cells 14 to 15.5px; legal prose 16.5px / 1.7.
-- **Label** (Archivo 700, 13px, 0.005em, sentence case): figure numbers, column heads, nav items, step counters, the contents heading, legend headings. Zone names inside a figure are Archivo 700 at 18px.
-- **Button** (Archivo 700, 15px, 0.01em, sentence case): every button label; small buttons drop to 13.5px; the hero primary sits at 16px with 16px 28px padding.
+- **Display** (Archivo 700, `--fs-display`, 1.08, -0.022em): the landing hero's h1 only, 22ch max. Every other screen's h1 (wizard, report, plan hero, legal) is `--fs-page`.
+- **Headline** (Archivo 700, `--fs-section`, 1.12, -0.018em): h2 section heads. Report chapters and the room heading in the spaces gallery are `--fs-chapter`.
+- **Title** (Archivo 700, `--fs-title`, 1.15, -0.012em): h3 card names, method-step titles, list items. Card names run 800 at `--fs-lg`; product-shot titles `--fs-xl`; h4 is `--fs-body` / 700.
+- **Lede** (Archivo 400, `--fs-lede`, 1.6): the paragraph under a title, 44ch max. Section subtitles run `--fs-lg`.
+- **Body** (Archivo 400, `--fs-body`, 1.6): reading text, legal prose included (1.7 there). Small is `--fs-md` / 1.5; figure captions and table cells `--fs-md` to `--fs-ui`.
+- **Label** (Archivo 700, `--fs-sm`, 0.005em, sentence case): figure numbers, column heads, nav items, step counters, the contents and its rows, legend headings. Zone names inside a figure are Archivo 700 at `--fs-lg`.
+- **Button** (Archivo 700, `--fs-ui`, 0.01em, sentence case): every button label; small buttons drop to `--fs-sm`; the hero primary sits at `--fs-body` with 16px 28px padding.
 
 ### Named Rules
 **The One-Family Rule.** Archivo sets everything. A heading that needs more presence gets a card, a numeral or more space, never a second face.
@@ -272,13 +275,13 @@ A pill with a sentence-case label. The primary one is terracotta; the ghost is t
 - **Primary:** terracotta fill, white label, a 1px warm shadow; 14px 22px padding; 16px 28px in the hero.
 - **Hover / Focus:** hover deepens to `spot-deep`; active deepens further and drops 1px; focus-visible is a 2px terracotta outline offset 2px. Transitions 180ms on colour, 120ms on transform.
 - **Ghost:** white fill, ink label; hover to sand, active to peach.
-- **Small:** 11px 16px padding at 13.5px. Disabled is opacity 0.45.
+- **Small:** 11px 16px padding at 13px. Disabled is opacity 0.45.
 - **Text buttons** (nav, back, home links): label style in ink, hover to `spot-ink`; nav items draw a 2px terracotta underline on hover; home links are Archivo 600 with a 1px terracotta underline, hover to ink.
 
 ### Chips
 - **Style:** white pill, 1.5px `line-2` border, 9px 16px, Archivo 600 at 14px.
 - **State:** hover to sand; selected fills terracotta with white text. Segmented yes/no controls and the unit toggle are a pill track with 3px padding and the selected segment as a terracotta pill inside it. The legal-page sibling nav is a chip row with the current page terracotta.
-- **Tags** (small, non-interactive): sand pill, `line` border, 13.5px; semantic variants use sage, butter and sky, and the correction pencil only for danger.
+- **Tags** (small, non-interactive): sand pill, `line` border, 13px; semantic variants use sage, butter and sky, and the correction pencil only for danger.
 
 ### Cards / Containers
 - **Corner Style:** 16px; 24px for space cards, the review card, the signup card, the 3D stage and the modal.
@@ -294,8 +297,8 @@ A pill with a sentence-case label. The primary one is terracotta; the ghost is t
 - **Error:** correction-pencil border and outline with a 320ms shake (none under reduced motion).
 
 ### Navigation
-- **Running head:** sticky white bar with a soft line beneath, small shadow once scrolled; brand as a 32px terracotta rounded square with a white pin plus the wordmark in Archivo 800 at 19px; nav items in label style with a terracotta underline drawn on hover; a step counter ("Step 1 of 11") in `spot-ink` on wizard screens; below 860px the nav folds into a white dropdown with 24px bottom corners and the medium shadow, 48px rows separated by soft lines.
-- **Report contents:** a sticky 190px column with a soft-lined heading and soft-lined rows (Archivo 600 at 13.5px), current chapter in `spot-ink`; below 960px it becomes a scrolling bar under the running head with a terracotta underline on the current chapter.
+- **Running head:** sticky white bar with a soft line beneath, small shadow once scrolled; brand as a 32px terracotta rounded square with a white pin plus the wordmark in Archivo 800 at 18px; nav items in label style with a terracotta underline drawn on hover; a step counter ("Step 1 of 11") in `spot-ink` on wizard screens; below 860px the nav folds into a white dropdown with 24px bottom corners and the medium shadow, 48px rows separated by soft lines.
+- **Report contents:** a sticky 190px column with a soft-lined heading and soft-lined rows (Archivo 600 at 13px), current chapter in `spot-ink`; below 960px it becomes a scrolling bar under the running head with a terracotta underline on the current chapter.
 - **Flow footer:** fixed, white, soft line above with a faint upward shadow, back link in label style at left, primary pill at right, 44px minimum targets.
 
 ### Figures (signature)

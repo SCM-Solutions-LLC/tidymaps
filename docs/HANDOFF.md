@@ -215,8 +215,9 @@ npm run check:model-path  # the canary, by hand
   keeps clicks made before boot, so the gain left is 0.6s on slow 4G against
   a later headline for most visitors and a 44-line list to maintain.
   `tests/early-click-guard.test.mjs` fails if the links come back.
-- **Advisor non-fixes** (`0009`): `pg_net` in public, `handle_new_user`
-  EXECUTE, policy-less RLS, no captcha or leaked-password check.
+- **Advisor non-fixes** (`0009`): Production health #11, plus no captcha.
+- **One type scale** (`--fs-*` in `tokens.css`, 8 set sizes and 6 fluid).
+  A raw font-size fails `tests/type-scale.test.mjs`; half pixels went down.
 - **Not dead, do not remove:** household counts and `state.detected` (#170
   audit). `plan.features` was removed symmetrically from prompt and schema.
 - **Render:** 1568px input; parts order, `responseModalities` and the key are

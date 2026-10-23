@@ -4,11 +4,11 @@
 
 /* ---------- Masthead ---------- */
 .report-mast{padding:8px 0 26px;border-bottom:var(--rule)}
-.dash-count{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--spot-ink);margin:10px 0 0}
-.report-mast h1{font-size:clamp(30px,5.4vw,44px);margin-top:14px;max-width:20ch}
+.dash-count{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--spot-ink);margin:10px 0 0}
+.report-mast h1{font-size:var(--fs-page);margin-top:14px;max-width:20ch}
 .report-byline{
   display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:14px;
-  font-size:15px;color:var(--ink-2);line-height:1.6;
+  font-size:var(--fs-ui);color:var(--ink-2);line-height:1.6;
 }
 .report-byline .sep{color:var(--line-2)}
 /* An action in the byline (Sign out) is a button, not a link to "#": it reads
@@ -25,12 +25,12 @@
 }
 @media(min-width:880px){.plan-hero{grid-template-columns:46fr 54fr;gap:clamp(36px,4vw,64px)}}
 .plan-hero-copy{min-width:0}
-.plan-hero h1{font-size:clamp(30px,4vw,44px);font-weight:700;letter-spacing:-.02em;line-height:1.08;max-width:18ch}
+.plan-hero h1{font-size:var(--fs-page);font-weight:700;letter-spacing:-.02em;line-height:1.08;max-width:18ch}
 
 
 .plan-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
 .plan-chip{
-  font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink);
+  font-family:var(--sans);font-size:var(--fs-sm);font-weight:700;color:var(--ink);
   background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);
   padding:8px 14px;
 }
@@ -45,7 +45,7 @@
 .plan-3d-badge{
   position:absolute;bottom:16px;right:16px;
   display:inline-flex;align-items:center;gap:7px;
-  font-family:var(--sans);font-size:14px;font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--ink);
+  font-family:var(--sans);font-size:var(--fs-md);font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--ink);
   background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);padding:10px 16px;cursor:pointer;
   transition:.15s;
 }
@@ -85,7 +85,7 @@
 }
 .report-toc ol::-webkit-scrollbar{display:none}
 .report-toc a{
-  display:block;padding:11px 14px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13.5px;font-weight:700;
+  display:block;padding:11px 14px;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:var(--fs-sm);font-weight:700;
   letter-spacing:.01em;text-transform:none;color:var(--ink);
   white-space:nowrap;transition:color .15s;border-bottom:3px solid transparent;
 }
@@ -99,14 +99,14 @@
     align-self:start;padding-top:34px;
     background:none;border-bottom:none;margin:0;padding-left:0;padding-right:0;
   }
-  .report-toc .toc-h{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);margin-bottom:10px;padding-bottom:8px;border-bottom:var(--rule)}
+  .report-toc .toc-h{display:block;font-family:var(--sans);font-stretch:var(--label-stretch);font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink);margin-bottom:10px;padding-bottom:8px;border-bottom:var(--rule)}
   .report-toc ol{display:grid;gap:2px;overflow:visible}
   /* The entries carry the chapter headings' own words now, and the longest
      of them is wider than the column: they wrap here, where the phone bar
      above keeps them on one line and scrolls. */
   .report-toc a{
-    display:flex;gap:10px;align-items:baseline;padding:7px 2px;font-size:13.5px;font-weight:500;
-    border-top:var(--rule);border-bottom:none;text-transform:none;letter-spacing:0;font-stretch:100%;font-weight:600;font-size:13.5px;
+    display:flex;gap:10px;align-items:baseline;padding:7px 2px;font-size:var(--fs-sm);font-weight:500;
+    border-top:var(--rule);border-bottom:none;text-transform:none;letter-spacing:0;font-stretch:100%;font-weight:600;font-size:var(--fs-sm);
     white-space:normal;
   }
 }
@@ -124,20 +124,20 @@
    mattered) and the chapter body starts where it did. */
 .ch-head{display:flex;align-items:baseline;gap:16px;margin-bottom:10px;border-top:var(--rule);padding:14px 0 7px}
 .ch-head .ch-titles{min-width:0}
-.ch-head h2{font-size:clamp(20px,3.2vw,24px);letter-spacing:-.02em}
+.ch-head h2{font-size:var(--fs-chapter);letter-spacing:-.02em}
 /* Survives the fold, unlike .ch-sub, because it is the only hint a reader gets
    that this chapter holds a tool rather than a picture. margin-left:auto pins
    it to the right of the head, clear of the chevron. */
 .ch-flag{
   flex:none;margin-left:auto;margin-right:6px;align-self:center;
-  font-family:var(--sans);font-size:12.5px;font-weight:700;letter-spacing:.01em;text-transform:none;
+  font-family:var(--sans);font-size:var(--fs-xs);font-weight:700;letter-spacing:.01em;text-transform:none;
   color:var(--stock);background:var(--spot);border-radius:var(--radius-pill);
   padding:4px 11px;white-space:nowrap;
 }
-.ch-head .ch-sub{font-size:13.5px;color:var(--ink-3);margin-top:6px;line-height:1.5}
+.ch-head .ch-sub{font-size:var(--fs-sm);color:var(--ink-3);margin-top:6px;line-height:1.5}
 
 /* Summary chapter: editorial, no card chrome */
-.report .summary-lede{font-size:clamp(15.5px,2vw,17.5px);line-height:1.6;color:var(--ink-2);max-width:62ch;margin:0}
+.report .summary-lede{font-size:var(--fs-lede);line-height:1.6;color:var(--ink-2);max-width:62ch;margin:0}
 
 /* KPI band: hairline-separated mono figures, no tiles */
 .report .kpis{
@@ -151,8 +151,8 @@
   background:none;border:none;border-radius:0;padding:9px 0;
   border-bottom:var(--rule);display:flex;justify-content:space-between;gap:16px;align-items:baseline;
 }
-.report .kpi .k{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:13px;font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink)}
-.report .kpi .v{font-family:var(--serif);font-size:17px;font-weight:600;margin:0;font-variant-numeric:tabular-nums;text-align:right}
+.report .kpi .k{font-family:var(--sans);font-stretch:var(--label-stretch);font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--tracking-label);text-transform:none;color:var(--ink)}
+.report .kpi .v{font-family:var(--serif);font-size:var(--fs-lg);font-weight:600;margin:0;font-variant-numeric:tabular-nums;text-align:right}
 @media(min-width:560px){.report .kpi:nth-child(odd){padding-right:20px;border-right:var(--rule)}.report .kpi:nth-child(even){padding-left:20px}}
 
 /* Safety margin notes (populated when the plan carries household flags) */
@@ -160,7 +160,7 @@
   display:flex;gap:10px;align-items:flex-start;margin-top:14px;
   padding:14px 16px;border:1px solid var(--sage-l);border-radius:var(--radius);
   background:var(--sage-f);
-  font-size:14px;color:var(--ink);line-height:1.5;
+  font-size:var(--fs-md);color:var(--ink);line-height:1.5;
 }
 .safety-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--sage-d)}
 
@@ -169,7 +169,7 @@
 #report-hero{position:relative;margin-top:20px;overflow:hidden;border:var(--rule);border-radius:var(--radius-lg)}
 #report-hero img{width:100%;max-height:420px;object-fit:cover;display:block}
 #report-hero .hero-tag{
-  position:absolute;left:12px;bottom:12px;font-size:11.5px;font-weight:600;
+  position:absolute;left:12px;bottom:12px;font-size:var(--fs-2xs);font-weight:600;
   background:rgba(0,0,0,.55);color:var(--stock);
   border-radius:var(--radius-pill);padding:4px 8px;pointer-events:none;
 }
@@ -192,7 +192,7 @@
   width:34px;height:34px;border-radius:50%;background:var(--stock);border:2px solid var(--spot);box-shadow:var(--shadow);
 }
 .ba-slider .ba-tag{
-  position:absolute;top:10px;font-size:11.5px;font-weight:600;
+  position:absolute;top:10px;font-size:var(--fs-2xs);font-weight:600;
   background:rgba(0,0,0,.55);color:var(--stock);border-radius:var(--radius-pill);padding:4px 8px;pointer-events:none;
 }
 .ba-slider .ba-tag.b{left:10px}
@@ -206,11 +206,11 @@
    thing on this screen asking rather than telling — but without a heavier
    surface than the chapters it follows. */
 .plan-rate{margin-top:48px;padding:24px;border:1px solid var(--butter-l);border-radius:var(--radius-lg);background:var(--butter-f)}
-.plan-rate h2{font-family:var(--sans);font-size:22px;line-height:1.15}
-.plan-rate h3{font-size:14px;font-weight:600;color:var(--ink-2)}
+.plan-rate h2{font-family:var(--sans);font-size:var(--fs-xl);line-height:1.15}
+.plan-rate h3{font-size:var(--fs-md);font-weight:600;color:var(--ink-2)}
 .plan-rate textarea{width:100%;min-height:76px}
 .plan-rate .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
-.rate-thanks{display:flex;align-items:center;gap:10px;color:var(--good);font-weight:600;font-size:14.5px}
+.rate-thanks{display:flex;align-items:center;gap:10px;color:var(--good);font-weight:600;font-size:var(--fs-md)}
 @media (max-width:600px){.plan-rate{padding:18px}.plan-rate .grid{grid-template-columns:1fr}}
 
 /* Chapter end actions */
@@ -232,7 +232,7 @@
    the plan is about the user's own space, not another list to read. They sit
    in the card under its head, in view while the reasons stay folded. */
 .map-items{display:flex;flex-wrap:wrap;gap:5px;margin-top:0;padding:0 14px 12px}
-.map-items .mi{font-family:var(--sans);font-size:13px;line-height:1.5;
+.map-items .mi{font-family:var(--sans);font-size:var(--fs-sm);line-height:1.5;
   background:var(--stock);color:var(--ink);border:var(--rule);border-radius:var(--radius-pill);padding:2px 10px}
 .map-items .mi-flag{background:var(--tint)}
 
@@ -266,6 +266,6 @@
      unfolds under its own wall name, and so does each row's reasoning. */
   .wall-nav { display: none }
   .wall-panel[hidden] { display: block }
-  .wall-panel::before { content: attr(data-label); display: block; font-family: var(--sans); font-size: 13px; font-weight: 700; margin: 14px 0 8px }
+  .wall-panel::before { content: attr(data-label); display: block; font-family: var(--sans); font-size: var(--fs-sm); font-weight: 700; margin: 14px 0 8px }
   .shelf-why[hidden] { display: block }
 }
