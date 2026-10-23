@@ -55,3 +55,26 @@ test('a fridge is not asked about drilling; a pantry still is', async ({ page })
   await expect(page.locator('#constraints-block')).toBeVisible();
   await expect(page.locator('#constraint-chips .chip')).toHaveText(['Nothing drilled or mounted']);
 });
+
+/* The 3D view of the first real fridge plan (2026-10-23) said "12 zones,
+   one per zone", offered a slider counting twelve shelves, and captioned it
+   "Shown as your french door, drawn as Fridge". */
+test('a fridge in 3D is counted by its parts and named by its card', async ({ page }) => {
+  const { PLAN } = await import('../fixtures/fridge-1023.mjs');
+  await page.goto('/index.html');
+  await page.evaluate(async (raw) => {
+    const [{ state }, { normalizeAi }] = await Promise.all([import('/js/state.js'), import('/js/plan.js')]);
+    state.space = 'fridge'; state.setup = 'frenchdoor'; state.setupLabel = 'French door'; state.setupTouched = true;
+    state.styles = []; state.prefs = new Set();
+    state.dims = { w_in: 36, h_in: 69, d_in: 18 };
+    state.ai = normalizeAi(raw);
+    await window.openViewer3d();
+  }, PLAN);
+  await expect(page.locator('#v3d-canvas')).toHaveAttribute('data-layout', 'fridge', { timeout: 20_000 });
+  await expect(page.locator('#v3d-zones-h')).toHaveText('12 zones: 3 shelves, 3 drawers, 2 door bins, 4 in the freezer');
+  await expect(page.locator('#v3d-status')).toContainText('Shown as your French-door fridge.');
+  await page.locator('#v3d-tab-adjust').click();
+  await expect(page.locator('#v3d-shelf-controls')).toBeHidden();
+  await expect(page.locator('#v3d-heights-section')).toBeHidden();
+  await expect(page.locator('#v3d-w')).toBeAttached();
+});

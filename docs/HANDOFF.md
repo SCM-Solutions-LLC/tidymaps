@@ -13,11 +13,11 @@ trail `main`. When it and `git log --oneline -20` disagree, git is right
 
 ## What the 2026-10-23 session changed
 
-First real fridge run (French door, AI, 12 rows) worked; its report did not.
-One PR: step pictures match whole words, title first, clothes only in
-clothing spaces; door rows never make a unit a room, and a unit's sections
-head the map, hero and export; categories match whole words; "French" keeps
-its capital; drilling chip scoped by space; fridge tray is a clear bin.
+First real fridge run (French door, AI, 12 rows) worked; the report and 3D
+did not. #205: whole-word step pictures, door rows never make a room, unit
+sections head the map, whole-word categories, drilling chip scoped. PR 2: 3D
+fridge per card (`three/fridgePlan.js`), door rows on the door (cabinet too,
+`cabinetShelfGeometry`), one surface and label per row (`three-unit-parts`).
 
 ## Product state
 
@@ -248,9 +248,9 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
     calendar reminder, since nothing in the repo warns.
 14. **Fridge (10-16).** Real run done 10-23. Left: replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`; multipacks price per bin.
-15. **3D: a unit draws one board per row** (10-23 fridge: 12 shelves, doors
-    inside). Approved next PR: door rows on the door, boards = level rows,
-    fridge per card; then pictures (PR 3), type scale (PR 4).
+15. **A reach-in's door rack draws as a shelf** (10-23): `shelves` has no
+    door, and honesty turns AI door rows into shelf rows there. Next PRs:
+    step pictures that fit the area (PR 3), then a type scale (PR 4).
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** watch `analyze-space plan validation failed` for a rise
