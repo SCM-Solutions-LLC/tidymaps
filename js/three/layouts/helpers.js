@@ -119,3 +119,37 @@ export function makeHitbox(scene, w, h, d, x, y, z, userData){
   scene.add(hit);
   return hit;
 }
+
+/* A door swung open (js/three/doorBins.js openDoor), with its bins on the
+   inside: the slab, a liner, a grip near the free edge, and one clear tray
+   per bin. `hz` is the front plane the hinge stands on. */
+export function addOpenDoor(scene, d, hz, { shellMat, linerMat, binMat, handleMat }){
+  const rotY=Math.atan2(-d.run.z, d.run.x);
+  const at=(along, out)=>[d.hingeX+d.run.x*along+d.inward.x*out, hz+d.run.z*along+d.inward.z*out];
+  const half=d.width/2, slabT=1.6, midY=(d.y0+d.y1)/2;
+  const place=(mesh, along, out, y)=>{
+    const [x,z]=at(along, out);
+    mesh.position.set(x, y, z);
+    mesh.rotation.y=rotY;
+    return mesh;
+  };
+  place(addBox(scene, d.width-0.3, d.y1-d.y0-0.3, slabT, 0,0,0, shellMat), half, -slabT/2, midY);
+  place(addBox(scene, d.width-2.4, d.y1-d.y0-2.4, 0.3, 0,0,0, linerMat), half, 0.2, midY);
+  place(addBox(scene, 0.7, Math.min(18, (d.y1-d.y0)*0.4), 0.9, 0,0,0, handleMat), d.width-2, -(slabT+0.5), midY);
+  const len=d.width-4, binD=4, lip=Math.max(1.6, d.binH*0.45);
+  for(const by of d.binYs){
+    place(addBox(scene, len, 0.3, binD, 0,0,0, binMat), half, binD/2+1.2, by);
+    place(addBox(scene, len, lip, 0.3, 0,0,0, binMat), half, binD+1.2, by+lip/2);
+  }
+}
+
+/* The far corners of open doors, for the camera to keep in frame on a
+   narrow canvas (scene.js fitWidthInFrame). */
+export function doorFramePoints(doors, hz){
+  const out=[];
+  for(const d of doors){
+    const x=d.hingeX+d.run.x*d.width, z=hz+d.run.z*d.width;
+    out.push([x, d.y0, z], [x, d.y1, z]);
+  }
+  return out;
+}

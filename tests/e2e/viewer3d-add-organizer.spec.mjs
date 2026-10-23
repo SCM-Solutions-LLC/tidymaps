@@ -97,6 +97,27 @@ test('an added organizer is sized by the space over its row, the one the card ju
      key, so the two cannot drift apart again. */
   await openPlan(page);
   await openAdd(page);
+  await expectAddedSizesMatchTheCard(page);
+});
+
+/* The sample's door row is its last, so its shelf rows sit on boards of the
+   same number. A door row higher up moves every shelf row under it one
+   board up, and the size an organizer is given has to follow. */
+test('an added organizer follows its shelf onto the right board when a door row comes first', async ({ page }) => {
+  await openPlan(page);
+  await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const map = state.ai.map;
+    const door = map.findIndex((row) => row.surface === 'door');
+    const [row] = map.splice(door, 1);
+    map.splice(1, 0, row);
+    map.forEach((r, i) => { r.shelfIndex = i; });
+  });
+  await openAdd(page);
+  await expectAddedSizesMatchTheCard(page);
+});
+
+async function expectAddedSizesMatchTheCard(page) {
   const rows = await page.evaluate(async () => {
     const { activeMapV2 } = await import('/js/plan.js');
     return activeMapV2().map((row, i) => ({ i, lv: row.lv, surface: row.surface }))
@@ -112,7 +133,7 @@ test('an added organizer is sized by the space over its row, the one the card ju
   const checks = await page.evaluate(async () => {
     const { state } = await import('/js/state.js');
     const { activeMapV2 } = await import('/js/plan.js');
-    const { currentArchetype } = await import('/js/catalog.js');
+    const { currentArchetype, currentLayout } = await import('/js/catalog.js');
     const { rowHeadroomFor, arrangementGeometryFor } = await import('/js/three/roomBoards.js');
     const geometry = arrangementGeometryFor(state.arrangement, false) || state.ai.geometry;
     const map = activeMapV2();
@@ -121,7 +142,10 @@ test('an added organizer is sized by the space over its row, the one the card ju
       return {
         zone: need.targetZone,
         h: need.maxDims.h_in,
-        headroom: rowHeadroomFor(currentArchetype(), 'shelf', geometry, row.shelfIndex),
+        /* With the plan, as js/catalog.js headroomFor asks: the sample's
+           cabinet hangs a row on its door, so which board a shelf row sits
+           on is the plan's to say. */
+        headroom: rowHeadroomFor(currentArchetype(), 'shelf', geometry, row.shelfIndex, { map, layout: currentLayout() }),
       };
     });
   });
@@ -133,7 +157,7 @@ test('an added organizer is sized by the space over its row, the one the card ju
     expect(h, `${zone}: added at ${h} in. under ${headroom.toFixed(2)} in. of headroom`)
       .toBeGreaterThan(headroom - 1);
   }
-});
+}
 
 /* A room's floor is drawn by its own rule, not a board's: the walk-in's
    across the room, the L's along its back run, each with the space up to the

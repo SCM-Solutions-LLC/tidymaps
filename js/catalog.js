@@ -109,7 +109,7 @@ let liveLayoutOverride=null;
    capped by the drawn layout and judged by the saved one. The viewer tells
    this module what it is drawing (null when it restores or resets). */
 export function setLiveLayoutOverride(archetype){ liveLayoutOverride=archetype||null; }
-function currentLayout(){
+export function currentLayout(){
   return resolveLayout({
     ai: state.ai, setup: state.setup, setupTouched: state.setupTouched,
     aiFromPhotos: planFromPhotos(), scenarioKey: state.space,
