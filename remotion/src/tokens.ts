@@ -1,24 +1,30 @@
-/* Design tokens mirrored from ../../css/tokens.css (the one-accent world:
-   warm stone field, the drawings' own line, terracotta accent). The clips are baked
-   video, so the site's CSS variables can't reach them — these constants ARE
-   those variables, and a palette change in tokens.css means re-rendering.
+/* Design tokens mirrored from ../../css/tokens.css (The Warm Shelf: sand
+   field, the drawings' own line, terracotta accent, butter and sage as the
+   supporting fields). The clips are baked video, so the site's CSS variables
+   can't reach them: these constants ARE those variables, and a palette change
+   in tokens.css means re-rendering. Each one names the variable it copies,
+   and tests/remotion-palette.test.mjs fails when a value drifts from it. The
+   10-03 warm-up changed tokens.css and nothing here, so every clip played in
+   the old stone palette on the new sand band for three weeks.
    Chrome (Remotion's renderer) parses oklch() natively, so the values are
    copied verbatim rather than approximated in hex. */
 
 export const color = {
-  bg:        'oklch(0.95 0.014 65)',    // --tint: the .step-art band the clip sits on
-  surface3:  'oklch(0.93 0.032 45)',    // --tint-2: dust, recessed panels
-  ink:       'oklch(0.25 0.012 45)',    // --ink
-  ink2:      'oklch(0.25 0.012 45)',    // --ink-2
-  ink3:      'oklch(0.40 0.022 45)',    // --draw: the drawings' line, the main stroke
-  line:      'oklch(0.40 0.022 45)',    // structure prints in the drawing line too
-  line2:     'oklch(0.62 0.018 50)',    // the floor and the staging items: the drawing line, lighter
-  primary:   'oklch(0.56 0.13 36)',     // --spot: terracotta accent
-  primaryBg: 'oklch(0.93 0.032 45)',    // --tint-2
-  honey:     'oklch(0.93 0.032 45)',    // --honey is the accent tint now
-  honey2:    'oklch(0.49 0.125 36)',    // --honey-2 is the accent's small-text cut
-  sage:      'oklch(0.56 0.13 36)',     // --sage is the accent
-  sageBg:    'oklch(0.95 0.014 65)',    // --sage-bg is the field
+  bg:        'oklch(0.952 0.02 80)',   // --tint: the .step-art band the clip sits on
+  surface3:  'oklch(0.925 0.05 48)',   // --tint-2: dust, recessed panels
+  ink:       'oklch(0.27 0.02 40)',    // --ink
+  ink2:      'oklch(0.27 0.02 40)',    // --ink-2
+  ink3:      'oklch(0.46 0.03 42)',    // --draw: the drawings' line, the main stroke
+  line:      'oklch(0.46 0.03 42)',    // --draw: structure prints in the drawing line too
+  line2:     'oklch(0.62 0.035 58)',   // --field-line: the floor and the staging items
+  primary:   'oklch(0.56 0.13 36)',    // --spot: terracotta accent
+  /* --tint-2, not --primary-bg: on the site that is the band's own sand, so an
+     accent fill on it would vanish (the middle zone band, the wipe pad). */
+  primaryBg: 'oklch(0.925 0.05 48)',   // --tint-2
+  honey:     'oklch(0.955 0.06 92)',   // --honey: the butter field
+  honey2:    'oklch(0.64 0.12 82)',    // --honey-2: butter's edge
+  sage:      'oklch(0.58 0.09 150)',   // --sage
+  sageBg:    'oklch(0.94 0.038 150)',  // --sage-bg
 } as const;
 
 /* One loop length per action, matching the CSS animation durations of the
@@ -47,3 +53,6 @@ export const VIEW_W = 320;
 export const VIEW_H = 80;
 export const STROKE = 2.5;
 export const FLOOR_Y = 72;
+/* How far inside the frame every mark stays, in stage units (check-edges.mjs
+   measures it on the rendered clips). */
+export const STAGE_MARGIN = 3;

@@ -65,6 +65,10 @@ const COMPANIONS: Record<string, [string, string]> = {
   foldedclothes: ['towel', 'foldedclothes'],
   shoe: ['tote', 'shoe'],
   hanger: ['tote', 'shoe'],
+  carton: ['jar', 'leftovers'],
+  produce: ['carton', 'produce'],
+  leftovers: ['carton', 'jar'],
+  meat: ['leftovers', 'carton'],
 };
 const companionsFor = (glyph: string): [string, string] => {
   const pair = COMPANIONS[glyph] ?? [glyph, glyph];

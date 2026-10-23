@@ -18,6 +18,8 @@ did not. #205: whole-word step pictures, door rows never make a room, unit
 sections head the map, whole-word categories, drilling chip scoped. PR 2: 3D
 fridge per card (`three/fridgePlan.js`), door rows on the door (cabinet too,
 `cabinetShelfGeometry`), one surface and label per row (`three-unit-parts`).
+#208: 163 clips re-rendered (palette test-held, fridge/cabinet/vanity/drawer
+furniture, fridge glyphs, purge to floor bins, edge gate). #209: type scale.
 
 ## Product state
 
@@ -250,8 +252,8 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
 14. **Fridge (10-16).** Real run done 10-23. Left: replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`; multipacks price per bin.
 15. **A reach-in's door rack draws as a shelf** (10-23): `shelves` has no
-    door, and honesty turns AI door rows into shelf rows there. Next PRs:
-    step pictures that fit the area (PR 3), then a type scale (PR 4).
+    door, and honesty turns AI door rows into shelf rows there. Still open;
+    its sibling follow-ups shipped as #208 (pictures) and #209 (type).
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** watch `analyze-space plan validation failed` for a rise
@@ -263,9 +265,7 @@ Also open, unnumbered (from the dated sections):
   speedup; try effort `low` only after a day at `medium`; the lower spotted
   count (4 vs 6 to 8) is a question, not a regression.
 
-Closed (archive has the text): 2 canary; 3 preview button (#101); 4 step caps
-12/18; 5 3D ports (#112, #113); 9 heartbeat (#171, #178, #179); 10 the 33
-setups of 09-08 open clean; 11 token replaced 10-03.
+Closed (archive has the text): 2, 3, 4, 5, 9, 10, 11.
 
 ### Waiting on traffic
 

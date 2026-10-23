@@ -130,6 +130,20 @@ test('the same instruction is drawn differently in a different space', async ({ 
   expect(byItem, 'three different items in one space draw the same scene').toBe(3);
 });
 
+test('a fridge, a kitchen cabinet and a vanity each draw their own furniture', async ({ page }) => {
+  /* All three drew the pantry's open bookcase until 10-23, so a step naming
+     the same item came out as the same picture in all four spaces: a fridge
+     crisper step was a jar on a bookshelf. The scene's class names its motif
+     even when the drawing falls back, so the markup is compared without it. */
+  await page.goto('/index.html');
+  const scenes = await page.evaluate(async () => {
+    const { stepScene } = await import('/js/screens/results.js');
+    return ['pantry', 'fridge', 'cabinet', 'bathroom']
+      .map((s) => stepScene({ t: 'Line up the jars', w: '' }, s).replace(/class="sa [^"]*"/, ''));
+  });
+  expect(new Set(scenes).size, 'two of these spaces draw the same furniture').toBe(4);
+});
+
 test('a scene names its motif and its item where CSS and tests can see them', async ({ page }) => {
   await page.goto('/index.html');
   const cls = await page.evaluate(async () => {

@@ -22,8 +22,11 @@
    times, which is what "the animations are all the same" looks like from the
    outside. */
 export const ACTIONS = ['purge','unload','wipe','label','hang','fold','photo','contain','group','moveUp','moveDown','zones','stock','done'];
-export const MOTIFS = ['shelves','drawers','rail','bench'];
-export const GLYPHS = ['shoe','hanger','foldedclothes','towel','jar','can','bottle','utensil','tool','tote','plate','bag'];
+/* A fridge, a kitchen cabinet and a vanity were all drawn as an open
+   bookcase: a crisper step showed a jar on a shelf. Each now has its own
+   furniture, and the fridge its own items. */
+export const MOTIFS = ['shelves','drawers','rail','bench','fridge','cabinet','undersink'];
+export const GLYPHS = ['shoe','hanger','foldedclothes','towel','jar','can','bottle','utensil','tool','tote','plate','bag','produce','carton','leftovers','meat'];
 
 /* ---------- Classification (shared with the SVG fallback) ---------- */
 // Moved verbatim from results.js so the media key and the fallback scene can
@@ -75,7 +78,7 @@ const ART_RULES=[
    stays in the linen closet: a folded towel stack is what the scene draws. */
 const HANG_SPACES=new Set(['closet','walkin','dresser','kids','laundry']);
 const FOLD_SPACES=new Set([...HANG_SPACES,'linen']);
-function allowedAction(type, spaceId){
+export function allowedAction(type, spaceId){
   if(type==='hang' && spaceId && !HANG_SPACES.has(spaceId)) return 'stock';
   if(type==='fold' && spaceId && !FOLD_SPACES.has(spaceId)) return 'stock';
   return type;
@@ -105,6 +108,7 @@ const SPACE_MOTIF={
   drawers:'drawers', junk:'drawers', dresser:'drawers',
   closet:'rail', walkin:'rail',
   workbench:'bench',
+  fridge:'fridge', cabinet:'cabinet', bathroom:'undersink',
 };
 export function motifForSpace(spaceId){
   return SPACE_MOTIF[spaceId]||'shelves';
@@ -129,14 +133,21 @@ const GLYPH_RULES=[
      to the pantry's `can` made "Transfer dry goods into airtight containers"
      and "Set up can risers and stock canned goods" the same picture. */
   [/\bbags?\b|\bpackets?\b|\bsnacks?\b|\bpouch(?:es)?\b|\bdry goods\b|\bgrains?\b|\bflour\b|\brice\b|\bpasta\b|\bcereal\b/i,'bag'],
+  /* Fridge food, below everything above so "condiment jars" and "juice
+     bottles" keep the container they name. Meat first: "Sort freezer into
+     bins: meat, veg, meals" is about the raw meat. */
+  [/\bmeats?\b|\bchicken\b|\bfish\b|\bpoultry\b|\bseafood\b|\bdeli\b/i,'meat'],
+  [/\bproduce\b|\bfruits?\b|\bveg(?:gies|etables?)?\b|\bgreens\b|\bsalads?\b|\bherbs\b|\bberries\b/i,'produce'],
+  [/\bdairy\b|\bmilk\b|\bjuice\b|\beggs?\b|\byog(?:h)?urts?\b|\bcartons?\b|\bcheese\b/i,'carton'],
+  [/\bleftovers?\b|\bmeals?\b|\bmeal prep\b/i,'leftovers'],
 ];
 const SPACE_GLYPH={
   pantry:'can', cabinet:'plate', drawers:'utensil', junk:'utensil',
   closet:'hanger', walkin:'hanger', dresser:'foldedclothes', linen:'towel', bathroom:'bottle',
-  fridge:'jar', garage:'tote', workbench:'tool', attic:'tote', laundry:'bottle', kids:'tote',
+  fridge:'carton', garage:'tote', workbench:'tool', attic:'tote', laundry:'bottle', kids:'tote',
 };
 // Same rule as the actions: no hanger or folded shirt outside a clothes space.
-function glyphAllowed(glyph, spaceId){
+export function glyphAllowed(glyph, spaceId){
   if(!spaceId) return true;
   if(glyph==='hanger') return HANG_SPACES.has(spaceId);
   if(glyph==='foldedclothes') return FOLD_SPACES.has(spaceId);

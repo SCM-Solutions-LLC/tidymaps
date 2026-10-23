@@ -13,10 +13,7 @@ import { Crate, EASE_OUT_CSS, itemSpots } from './helpers';
 export const Scene: React.FC<SceneProps> = ({ motif, glyph }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames: dur } = useVideoConfig();
-  const { xs, y: spotY, geo } = itemSpots(motif, glyph);
-  // On the drawer bank items emerge from the top drawer, not the counter —
-  // rising 16 from the countertop would carry them clean off the stage.
-  const y = motif === 'drawers' ? geo.levels.high.y : spotY;
+  const { xs, y, geo } = itemSpots(motif, glyph);
 
   const stagger = 0.5 * fps;
   return (

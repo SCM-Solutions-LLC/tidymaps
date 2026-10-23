@@ -1258,6 +1258,11 @@ const GLYPH_ART={
   foldedclothes:`<rect x="-5" y="-4.5" width="10" height="4.5" rx="1.5"/><rect x="-5" y="-10" width="10" height="5" rx="1.5"/>`,
   shoe:`<path d="M-5.5 0v-2.5l3.5-1.5 2-3.5h1.6l.9 4 3 1.5V0z"/>`,
   hanger:`<path d="M0 -11.5v1.6"/><path d="M-5.5 -6l5.5-4.4 5.5 4.4z"/><rect x="-5" y="-5.5" width="10" height="5.5" rx="1.2"/>`,
+  // fridge food: dairy and juice, produce, leftovers and meals, meat
+  carton:`<path d="M-3.5 0v-6.5l1.7-2.5h3.6l1.7 2.5V0z"/><path d="M-3.5 -6.5h7M-1.2 -9v-1.5h2.4V-9"/>`,
+  produce:`<path d="M0 -7.2c-1.5-1.2-5-1.2-5 2.4 0 2.7 2 4.8 3.5 4.8.6 0 1-.3 1.5-.3s.9.3 1.5.3c1.5 0 3.5-2.1 3.5-4.8 0-3.6-3.5-3.6-5-2.4z"/><path d="M0 -7.2v-2.3M.4 -8.8c1-1.5 2.6-1.7 3.5-1.2-.8 1.4-2.3 1.7-3.5 1.2z"/>`,
+  leftovers:`<path d="M-5 -4.5l.6 3.4a1.3 1.3 0 0 0 1.3 1.1h6.2a1.3 1.3 0 0 0 1.3-1.1l.6-3.4"/><rect x="-6" y="-7" width="12" height="2.5" rx="1"/><path d="M-2 -8.5h4"/>`,
+  meat:`<path d="M-1.1 -1.9c-2.3 1.2-5.3.3-5.4-2.3-.1-2.7 2.6-4.5 5-3.4 1.6.7 2.2 2.2 1.9 3.6z"/><path d="M.4 -4l3 2.8"/><circle cx="4.3" cy="-1.9" r="1.1"/><circle cx="3.3" cy="-.3" r="1.1"/>`,
 };
 /* Position and animation are separate elements on purpose: a CSS `transform`
    in a keyframe REPLACES the transform attribute, so animating the same node
@@ -1272,9 +1277,16 @@ const GS=(glyph,x,y,scale)=>`<g transform="translate(${x} ${y}) scale(${scale})"
    surface it stands on — the one glyph whose anchor is its top. */
 const HANGER_DOWN=`<path d="M0 3v2.2"/><path class="hg-bar" d="M-6.5 10l6.5-4.8 6.5 4.8z"/><rect class="hg-body" x="-5" y="11.5" width="10" height="11" rx="1.5"/>`;
 
+/* A fridge, a kitchen cabinet and a vanity drew the open bookcase, and a
+   drawer step drew things standing in front of closed drawers. The drawer
+   bank's bottom drawer now stands open (its front is the line items stand
+   on), and the other three have furniture of their own. */
 const MOTIF_ART={
   shelves:`<g class="sa-fx"><path d="M5 41h38M5 22h38"/><path d="M7.5 41V12M40.5 41V12"/></g>`,
-  drawers:`<g class="sa-fx"><path d="M5 41h38"/><rect x="9" y="7" width="30" height="9" rx="2"/><rect x="9" y="19" width="30" height="9" rx="2"/><path d="M20 11.5h8M20 23.5h8"/></g>`,
+  drawers:`<g class="sa-fx"><path d="M3 4h42"/><rect x="8" y="7" width="32" height="8" rx="2"/><rect x="8" y="18" width="32" height="8" rx="2"/><path d="M20 11h8M20 22h8"/><path d="M9 33h30M9 33l-3.5 8M39 33l3.5 8"/><rect x="5" y="41" width="38" height="5.5" rx="1.5"/></g>`,
+  fridge:`<g class="sa-fx"><rect x="5" y="3" width="36" height="43" rx="5"/><path d="M5 22h36M5 41h36"/><path d="M41 6l4 2v31l-4 2"/><path d="M42.5 17h2M42.5 30h2"/></g>`,
+  cabinet:`<g class="sa-fx"><rect x="7" y="5" width="34" height="36" rx="2"/><path d="M7 22h34"/><rect x="2" y="5" width="3.5" height="36" rx="1"/><rect x="42.5" y="5" width="3.5" height="36" rx="1"/></g>`,
+  undersink:`<g class="sa-fx"><path d="M3 6h42"/><path d="M6 6v38M42 6v38M6 41h36"/><path d="M24 6v6a3 3 0 0 0 6 0v-2"/><rect x="1.5" y="8" width="3" height="33" rx="1"/><rect x="43.5" y="8" width="3" height="33" rx="1"/></g>`,
   rail:`<g class="sa-fx"><path d="M5 41h38"/><path d="M7 13h34"/><path d="M9 13V9.5M39 13V9.5"/></g>`,
   bench:`<g class="sa-fx"><path d="M5 41h38"/><path d="M9 41v5M39 41v5"/><rect x="11" y="7" width="26" height="12" rx="1.5"/><path d="M16 11h1M22 11h1M28 11h1M34 11h1M16 15.5h1M22 15.5h1M28 15.5h1M34 15.5h1"/></g>`,
 };
