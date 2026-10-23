@@ -139,3 +139,22 @@ test('an unknown archetype is a no-op rather than an exception', () => {
   assert.deepEqual(enforceArchetypeHonesty(workbenchPlan(), null), before);
   assert.equal(enforceArchetypeHonesty(null, 'shelves'), null);
 });
+
+/* 2026-10-23: the first real fridge plan asked for a drawer organizer as a
+   "Tray to contain raw meat". The catalog's drawer organizers are cutlery
+   trays; in a fridge the tray is a clear bin. */
+test('a fridge never shops for a drawer organizer', () => {
+  const plan = (level) => ({
+    map: [{ level, zone: 'Raw meat & fish (tray)', why: 'Coldest spot.', surface: 'drawer', shelfIndex: 0 }],
+    steps: [{ task: 'Put raw meat in a tray below', why: 'Lowest spot prevents drips.' }],
+    productNeeds: [
+      { type: 'drawer-organizer', qty: 1, purpose: 'Tray to contain raw meat', targetZone: level, maxDims: { w_in: 12, h_in: 3, d_in: 14 }, priority: 'high' },
+    ],
+  });
+  const out = enforceArchetypeHonesty(plan('Bottom deli drawer'), 'fridge');
+  assert.deepEqual(out.productNeeds.map(p => p.type), ['clear-bin']);
+  assert.equal(out.productNeeds[0].purpose, 'Tray to contain raw meat');
+  // A dresser's drawer organizer is still a drawer organizer.
+  const dresser = enforceArchetypeHonesty(plan('Top drawer'), 'drawer-bank');
+  assert.deepEqual(dresser.productNeeds.map(p => p.type), ['drawer-organizer']);
+});

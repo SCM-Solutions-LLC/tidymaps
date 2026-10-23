@@ -478,6 +478,9 @@ body[data-flow="1"] .site-footer{display:none}
 .ba .after .cab .cab-shelf{height:56px}
 .cab-wall{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:var(--tracking-label);margin:10px 0 6px}
 .cab-wall:first-child{margin-top:2px}
+/* A unit's part over its rows in "Where things go": a fridge's Doors, Freezer. */
+.map-part{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--ink-2);margin:18px 0 8px}
+.map-part:first-child{margin-top:4px}
 .ba .ba-h{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* stack the panes on phones (the base .ba rule used to override this) */
 @media(max-width:560px){
@@ -545,7 +548,10 @@ body[data-flow="1"] .site-footer{display:none}
 .sa .d1{animation:sa-drop 3.58s ease-in infinite}
 .sa .d2{animation:sa-drop 3.58s ease-in .45s infinite}
 .sa .d3{animation:sa-drop 3.58s ease-in .9s infinite}
-@keyframes sa-drop{0%,20%{transform:translateY(0);opacity:1}55%{transform:translateY(14px);opacity:1}72%,100%{transform:translateY(14px);opacity:0}}
+/* Items sit on the line at y=41 of a 48-unit frame; a 14px fall left the
+   frame half-way and the band cut them off. A short sink and fade reads as
+   gone without leaving the picture. */
+@keyframes sa-drop{0%,20%{transform:translateY(0);opacity:1}55%{transform:translateY(5px);opacity:.6}72%,100%{transform:translateY(5px);opacity:0}}
 .sa .s1{animation:sa-land 3.58s ease-out infinite}
 .sa .s2{animation:sa-land 3.58s ease-out .55s infinite}
 /* Lands and stays: the shelf ends the loop full, where sa-rise ends it empty. */

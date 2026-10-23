@@ -1239,14 +1239,42 @@ const catParts = (c) => {
 // capital goes, the way listOf does it for the engine's own steps.
 const spotStepTitle = (name) => `Find a spot for ${String(name).replace(/^[A-Z](?=[a-z])/, c => c.toLowerCase())}`;
 
-/* Where a thing with this name belongs: the first row whose zone, level or
-   item names carry its first word. Shared by the category edit and the
-   "Also in your photo" button so both put "Jars" on the same shelf. */
+/* Words a category goes by on a shelf map when its own name is not there.
+   A fridge's "Fresh produce" lives in rows the model calls vegetables, fruit
+   and greens, and with no word in common the chip went to the eye-level
+   leftovers shelf. */
+const CATEGORY_HINTS = [
+  [/\bproduce\b/i, /\b(?:vegetables?|veg|veggies|fruits?|greens|salad|crispers?)\b/i],
+];
+const hintsFor = (name) => CATEGORY_HINTS.filter(([re]) => re.test(String(name || ''))).map(([, hint]) => hint);
+const rowText = (m) => `${m.zone || ''} ${m.lv || ''} ${itemNames(m).join(' ')}`;
+
+/* Where a thing with this name belongs: the row that names the most of its
+   words, as whole words; a row naming the whole phrase beats any other. Only
+   when no row names any of them do its hints decide. The first word used to
+   be matched anywhere inside other words and the first hit taken, so "Raw
+   meat & fish" found the "raw" in "drawer" and went into the first crisper,
+   past the deli drawer whose zone said raw meat and fish. Shared by the
+   category edit and the "Also in your photo" button so both put "Jars" on
+   the same shelf. */
+const FIT_STOP = new Set(['and', 'the', 'for', 'with', 'goods', 'items', 'other', 'things']);
 function keywordFit(rows, name) {
-  const first = String(name || '').trim().split(/\s+/)[0];
-  if (!first) return null;
-  const re = new RegExp(esc(first), 'i');
-  return rows.find(m => re.test(`${m.zone || ''} ${m.lv || ''} ${itemNames(m).join(' ')}`)) || null;
+  const text = String(name || '').trim();
+  if (!text) return null;
+  const whole = catPhraseRe(text);
+  const words = [...new Set(text.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 3 && !FIT_STOP.has(w)))].map(catPhraseRe);
+  let best = null, bestScore = 0;
+  for (const m of rows) {
+    const t = rowText(m);
+    const score = (whole.test(t) ? 100 : 0) + words.filter(re => re.test(t)).length;
+    if (score > bestScore) { best = m; bestScore = score; }
+  }
+  if (best) return best;
+  for (const hint of hintsFor(text)) {
+    const hit = rows.find(m => hint.test(rowText(m)));
+    if (hit) return hit;
+  }
+  return null;
 }
 
 /* The row's place in the plan: its shelfIndex when normalized, its position

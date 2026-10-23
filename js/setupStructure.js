@@ -449,6 +449,11 @@ export function enforceArchetypeHonesty(plan, archetype) {
     .filter((p) => !mentionsMissingSurface(p.purpose, archetype))
     .filter((p) => !(p.type === 'door-rack' && !have.has('door')))
     .filter((p) => !(p.type === 'hook-rack' && !have.has('pegboard')))
+    /* A drawer organizer is a cutlery or divider tray. The first real fridge
+       plan asked for one as a "Tray to contain raw meat", and the catalog's
+       drawer organizers are a silverware tray and a utensil insert. Food in a
+       fridge goes in a clear bin. */
+    .map((p) => (archetype === 'fridge' && p.type === 'drawer-organizer' ? { ...p, type: 'clear-bin' } : p))
     .map((p) => ({ ...p, purpose: fix(p.purpose) }));
 
   alignTargetZones(draft);

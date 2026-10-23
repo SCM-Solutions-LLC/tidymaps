@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-16, main at 7204de5 (after #203), plus this session's PR.** History (dated
+**Last refreshed: 2026-10-23, main at 7c2aa6f (after #204), plus this session's PR.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,12 +11,13 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-10-16 session changed
+## What the 2026-10-23 session changed
 
-One PR (site, `get-shared-space`). **Fridge & freezer is the tenth space**:
-four cards on the existing `fridge` archetype, builder and demo (37 setups);
-"Inside depth" (`INSIDE_DEPTH`); demo raw meat lost `keep-high`; one product
-`spaces: ["fridge"]`; `SPACE_QUERY`; fridge words in `NOTE_COMMON`.
+First real fridge run (French door, AI, 12 rows) worked; its report did not.
+One PR: step pictures match whole words, title first, clothes only in
+clothing spaces; door rows never make a unit a room, and a unit's sections
+head the map, hero and export; categories match whole words; "French" keeps
+its capital; drilling chip scoped by space; fridge tray is a clear bin.
 
 ## Product state
 
@@ -245,12 +246,11 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
     calendar reminder, since nothing in the repo warns.
-
-14. **Fridge (10-16).** Before merge, open the Target listing for
-    `idesign-fridge-freezer-bin-14x8x4-2pk` and replace its `note`; after
-    deploy, run one real fridge analysis. Gaps: an AI "Door shelves" row draws
-    as an interior shelf (owner's call); multipacks price per bin (3 x a set
-    of 2 reads $81; the mDesign 2-pack too).
+14. **Fridge (10-16).** Real run done 10-23. Left: replace the `note` on
+    `idesign-fridge-freezer-bin-14x8x4-2pk`; multipacks price per bin.
+15. **3D: a unit draws one board per row** (10-23 fridge: 12 shelves, doors
+    inside). Approved next PR: door rows on the door, boards = level rows,
+    fridge per card; then pictures (PR 3), type scale (PR 4).
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** watch `analyze-space plan validation failed` for a rise

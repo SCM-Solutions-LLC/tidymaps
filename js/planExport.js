@@ -2,7 +2,7 @@ import { state, isMetric } from './state.js';
 import { activeMapV2, activeSafetyNotes, activeProductNeeds } from './plan.js';
 import { areaFor, fmtIn } from './wizard-data.js';
 import { toast } from './ui.js';
-import { placementFor, wallGroups } from './placement.js';
+import { placementFor, headingGroups } from './placement.js';
 import { resolveLayout } from './layout.js';
 import { planFromPhotos } from './planProvenance.js';
 
@@ -105,7 +105,7 @@ export function checklistText() {
       if (row.why) lines.push(`    ${row.why}`);
       if (row.safety && row.safety.why) lines.push(`    safety: ${row.safety.why}`);
     };
-    const groups = wallGroups(planPlacement(map));
+    const groups = headingGroups(planPlacement(map));
     if (groups) {
       /* A walk-in's rows printed as one flat list read as a single tall unit,
          the same confusion the report had, and a printed copy cannot be

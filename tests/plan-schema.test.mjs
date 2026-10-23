@@ -1404,3 +1404,26 @@ test('the prompt tells the model not to count shelves in prose', () => {
   const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
   assert.match(fn, /Never state how many shelves, levels, drawers or rods the space has, in summary, problems or opportunities\./);
 });
+
+/* 2026-10-23: the first real fridge plan put wall:left and wall:right on its
+   door rows, and the report drew the fridge as a room with two walls. A wall
+   on a single unit is dropped, never a rejection: the prompt asks for null,
+   and the validator is never stricter than the prompt. */
+test('a fridge plan keeps no walls, and is not rejected for having them', () => {
+  const map = [
+    { level: 'Top shelf', icon: 'up', zone: 'Dairy', why: 'Daily staples.', shelfIndex: 0, safety: { flag: null, why: null }, surface: 'shelf' },
+    { level: 'Left door', icon: 'door', zone: 'Creamers', why: 'Small bottles.', shelfIndex: 1, safety: { flag: null, why: null }, surface: 'door', wall: 'left', tier: 0 },
+    { level: 'Right door', icon: 'door', zone: 'Butter', why: 'Within reach.', shelfIndex: 2, safety: { flag: null, why: null }, surface: 'door', wall: 'right', tier: 0 },
+  ];
+  const plan = { ...basePlan({ map }), layout: { type: 'fridge', sections: [{ id: 'doors', rows: [1, 2], label: 'Doors', place: 'wall' }] } };
+  const result = validatePlan(plan, noKidsContext);
+  assert.equal(result.ok, true, result.errors.join('; '));
+  for (const row of result.value.map) {
+    assert.equal(row.wall, undefined, row.level);
+    assert.equal(row.tier, undefined, row.level);
+  }
+  // A walk-in keeps its walls.
+  const walk = { ...basePlan({ map }), layout: { type: 'walkin-u' } };
+  assert.equal(validatePlan(walk, noKidsContext).value.map[1].wall, 'left');
+});
+

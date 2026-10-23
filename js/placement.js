@@ -35,6 +35,7 @@
  * @typedef {object} Placement
  * @property {'room'|'unit'} kind
  * @property {{id: string, label: string, rows: number[]}[]} walls  non-empty groups, in wall order, rows top to bottom
+ * @property {{id: string, label: string, rows: number[]}[]} parts  a unit's named sections, in the plan's order; [] for a room
  * @property {Map<number, RowPlacement>} byRow  keyed by shelfIndex
  */
 
@@ -61,6 +62,12 @@ const ROOM_WALLS = new Set(['left', 'back', 'right', 'front']);
    came back as "Top shelf" is still a walk-in; the report should offer its
    walls and the builders should not fall back to a single tall unit. */
 const ROOM_ARCHETYPES = new Set(['walkin-u', 'l-run']);
+
+/* Archetypes that are one piece of furniture whatever the rows say. The
+   first real fridge plan (2026-10-23) put wall:left and wall:right on its two
+   door rows, and two walls made the fridge a room: the report headed its
+   shelves "Left wall" and drew the right door as a wall of its own. */
+const UNIT_ARCHETYPES = new Set(['fridge', 'drawer-bank', 'under-bed']);
 
 /* The layout's `place` vocabulary (PLACES in layout.js) is per archetype:
    the L-run calls its two runs run-a and run-b, which the 3D builder draws
@@ -220,10 +227,47 @@ export function placementFor(map, { layout, archetype } = {}) {
     }
   }
 
-  const knownWalls = new Set([...groups.keys()].filter(id => ROOM_WALLS.has(id)));
-  const kind = ROOM_ARCHETYPES.has(archetype) || knownWalls.size >= 2 ? 'room' : 'unit';
+  /* A door is part of the furniture, not a wall of the room: a cabinet with
+     a "Corner lazy susan" and a "Door rack" is one cabinet. Only rows that
+     are not doors count, and once the setup is known only the side and back
+     walls do, since a front row on a unit is its door by another name. */
+  const roomWalls = archetype ? new Set(['left', 'back', 'right']) : ROOM_WALLS;
+  const knownWalls = new Set();
+  for (const [id, entries] of groups) {
+    if (roomWalls.has(id) && entries.some(e => e.row.surface !== 'door')) knownWalls.add(id);
+  }
+  const kind = ROOM_ARCHETYPES.has(archetype) ? 'room'
+    : UNIT_ARCHETYPES.has(archetype) ? 'unit'
+    : knownWalls.size >= 2 ? 'room' : 'unit';
 
-  return { kind, walls, byRow };
+  return { kind, walls, parts: kind === 'unit' ? unitParts(rows, layout) : [], byRow };
+}
+
+/* A unit's own parts, named the way the plan named them: a fridge's
+   "Fridge shelves", "Drawers", "Doors" and "Freezer". Nothing used to read
+   these labels, so a twelve-row fridge printed as one undivided list. Rows no
+   section claims go last, under "Other". Fewer than two named parts is not a
+   division worth a heading, and returns none.
+   @param {any[]} rows @param {any} layout
+   @returns {{id: string, label: string, rows: number[]}[]} */
+function unitParts(rows, layout) {
+  const sections = layout && Array.isArray(layout.sections) ? layout.sections : [];
+  const indexOf = rows.map((row, i) => (Number.isInteger(row.shelfIndex) ? row.shelfIndex : i));
+  const known = new Set(indexOf);
+  const taken = new Set();
+  const parts = [];
+  for (const sec of sections) {
+    const label = sec && typeof sec.label === 'string' ? sec.label.trim() : '';
+    if (!label || !Array.isArray(sec.rows)) continue;
+    const own = sec.rows.filter(r => Number.isInteger(r) && known.has(r) && !taken.has(r));
+    if (!own.length) continue;
+    own.forEach(r => taken.add(r));
+    parts.push({ id: String(sec.id || label), label, rows: indexOf.filter(r => own.includes(r)) });
+  }
+  if (parts.length < 2) return [];
+  const rest = [...new Set(indexOf)].filter(r => !taken.has(r));
+  if (rest.length) parts.push({ id: 'other', label: 'Other', rows: rest });
+  return parts;
 }
 
 /* The level text without its wall. "Back wall: eye level" says two things,
@@ -298,6 +342,14 @@ export function whereFor(rows, map, placement) {
 export function wallGroups(placement){
   if(!placement||placement.kind!=='room'||!Array.isArray(placement.walls)) return null;
   return placement.walls.some(w=>w.id!=='other')?placement.walls:null;
+}
+
+/* The headings a list of zones goes under: a room's walls, or a unit's
+   parts when the plan named them, or none. */
+export function headingGroups(placement){
+  const walls=wallGroups(placement);
+  if(walls) return walls;
+  return placement&&Array.isArray(placement.parts)&&placement.parts.length?placement.parts:null;
 }
 
 /* How many of a plan's zones name a wall. The report can only offer wall

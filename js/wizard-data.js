@@ -434,10 +434,19 @@ export function prefsForStyles(styles) {
    the deterministic engine reads prefs, and buildAnalysisContext forwards them
    to the model. Lives here rather than in the screen so mergePrefs can tell
    them apart from the prefs it rebuilds. */
-/** @type {[string, string][]} */
+/* The third field is the spaces a limit means something in. Drilling is about
+   over-door racks, hooks, pegboard and wall racks; a fridge, a set of drawers
+   or a dresser has nothing to drill, and the first real fridge plan asked
+   anyway. Ticked on a fridge it would also have dropped the door-bin needs. */
+/** @type {[string, string, string[]][]} */
 export const HOME_CONSTRAINTS = [
-  ['Nothing drilled or mounted', 'No drilling or permanent installation'],
+  ['Nothing drilled or mounted', 'No drilling or permanent installation',
+    ['pantry', 'cabinet', 'closet', 'linen', 'bathroom', 'garage', 'workbench']],
 ];
+/** @returns {[string, string, string[]][]} the limits that apply to this space */
+export function constraintsFor(spaceId) {
+  return HOME_CONSTRAINTS.filter(([, , spaces]) => !spaces || !spaceId || spaces.includes(spaceId));
+}
 
 /* The one place state.prefs is assembled. Style prefs are derived from the
    style cards and the shopping constraint from the shopping answer, so both
@@ -497,6 +506,18 @@ export function fmtFt(ft, metric) {
 export function fmtIn(inches, metric) {
   if (metric) return Math.round(inches * 2.54) + ' cm';
   return Math.round(inches) + '″';
+}
+
+/* A name placed mid-sentence ("The ___, with a place for everything").
+   The whole string used to be lowercased, which wrote "The french door
+   fridge" and "l-shaped". Only an ordinary leading capital comes down: a
+   proper adjective, an acronym or a single letter ("L-shaped") stays. */
+const PROPER_LEADS = new Set(['french', 'dutch', 'english', 'swedish', 'danish', 'italian', 'japanese', 'european', 'american', 'murphy']);
+export function midSentence(text) {
+  const t = String(text || '').trim();
+  const first = t.split(/[\s-]/)[0];
+  if (!/^[A-Z][a-z]/.test(first) || PROPER_LEADS.has(first.toLowerCase())) return t;
+  return t.charAt(0).toLowerCase() + t.slice(1);
 }
 
 export function measureSummary(setupId, dims, metric) {

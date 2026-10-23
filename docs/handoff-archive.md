@@ -12,7 +12,7 @@ What is here, in order:
 - The pre-trim header (the 2026-09 and 2026-10 status story, the 08-27
   memory review, and the correction of the 08-05 refresh).
 - Every dated "What the ... session changed" section, newest first, from
-  2026-10-13 (moved here 10-16) and 2026-10-12 part 5 back to 2026-09-02.
+  2026-10-16 (moved here 10-23), 2026-10-13 (moved here 10-16) and 2026-10-12 part 5 back to 2026-09-02.
 - "Product state in one paragraph" and the scorecard of the original eight
   handoff items (including "#1 Plan engine", cited as `HANDOFF §#1` in
   `tests/plan-schema.test.mjs`).
@@ -321,6 +321,13 @@ Neither was visible from the tables the old entry told you to check, and the
 first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
+
+## What the 2026-10-16 session changed
+
+One PR (site, `get-shared-space`). **Fridge & freezer is the tenth space**:
+four cards on the existing `fridge` archetype, builder and demo (37 setups);
+"Inside depth" (`INSIDE_DEPTH`); demo raw meat lost `keep-high`; one product
+`spaces: ["fridge"]`; `SPACE_QUERY`; fridge words in `NOTE_COMMON`.
 
 ## What the 2026-10-13 session changed
 

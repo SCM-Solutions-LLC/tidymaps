@@ -30,16 +30,21 @@ export const GLYPHS = ['shoe','hanger','foldedclothes','towel','jar','can','bott
 // never disagree about what a step is showing.
 /* Order is load-bearing: first match wins, so the more specific rule goes
    above the more general one it would otherwise be swallowed by. */
+/* Every word is anchored at its start (\b). Unanchored, the rules matched
+   inside other words: "p-rod-uce" was a closet rod, so a fridge's "Move
+   produce into the crisper drawers" drew dresses on hangers; "c-hang-e" hung
+   things, "ca-bin-et" was a bin, "fold-er" folded clothes. */
 const ART_RULES=[
   // "expiration dates" is how a plan actually phrases this; /expired/ alone
   // missed it and sent the step to `done`.
-  [/expir(?:ed|ation|y)|duplicate|donate|toss|purge|trash|declutter|retire/i,'purge'],
-  [/empty|pull everything|dump|unload|take everything|one wall at a time|one zone at a time/i,'unload'],
-  [/wipe|clean|dust/i,'wipe'],
-  [/label/i,'label'],
-  [/hang|rod/i,'hang'],
-  [/fold/i,'fold'],
-  [/photo/i,'photo'],
+  [/\bexpir(?:ed|ation|y)|\bduplicates?\b|\bdonat|\btoss|\bpurge|\btrash|\bdeclutter|\bretire/i,'purge'],
+  [/\bempty|\bpull everything|\bdump|\bunload|\btake everything|\bone wall at a time|\bone zone at a time/i,'unload'],
+  // "cleaning supplies" is a category, not a wipe-down.
+  [/\bwipe|\bclean(?:\b|ing\b(?!\s+(?:supplies|products|sprays?|gear)))|\bdust\b/i,'wipe'],
+  [/\blabel/i,'label'],
+  [/\bhang(?:s|ing)?\b|\brods?\b/i,'hang'],
+  [/\bfold(?:s|ed|ing)?\b/i,'fold'],
+  [/\bphoto/i,'photo'],
   /* Above moveDown: "on the floor" is where bulk items GO, and /bulk/ used to
      win first, so "Arrange appliances and bulk items on floor" animated things
      travelling upward while the step said put them down. A clip that
@@ -47,32 +52,59 @@ const ART_RULES=[
   /* A bare \bfloor\b is safe here only because this rule now sits ABOVE
      moveUp: any step naming the floor is about floor level, whatever else it
      mentions. Matching "on the floor" alone missed "to the floor". */
-  [/heavy|lowest shelf|lower shelf|bottom|\bfloor\b|raw meat/i,'moveDown'],
-  [/top shelf|up high|overhead|bulk|backup|rarely|lift/i,'moveUp'],
+  [/\bheavy|\blowest shelf|\blower shelf|\bbottom\b|\bfloor\b|\braw meat/i,'moveDown'],
+  [/\btop shelf|\bup high|\boverhead|\bbulk\b|\bbackups?\b|\brarely|\blift/i,'moveUp'],
   /* A turntable, riser or airtight container is a thing you add to hold other
      things. `containers? with` only matched one phrasing, so "Transfer dry
      goods into airtight containers" was not recognised as containing. */
-  [/basket|bin|caddy|tray|corral|turntable|riser|lazy susan|airtight|file .*upright|containers?\b|stand tools/i,'contain'],
+  [/\bbaskets?\b|\bbins?\b|\bcadd(?:y|ies)\b|\btrays?\b|\bcorral|\bturntables?\b|\brisers?\b|\blazy susan|\bairtight|\bfile .*upright|\bcontainers?\b|\bstand tools/i,'contain'],
   /* Above `group`: "Assign each category to its wall zone" is a zoning step
      that happens to contain the word "category", and `group` was reading that
      word first. */
-  [/zone|assign|home|section|crisper|door rack/i,'zones'],
-  [/group|sort|similar|together|categor|match|split|separate/i,'group'],
+  [/\bzones?\b|\bassign|\bhomes?\b|\bsections?\b|\bcrispers?\b|\bdoor (?:racks?|shel(?:f|ves)|bins?)\b|\b(?:to|into|on) the doors?\b/i,'zones'],
+  [/\bgroup|\bsort|\bsimilar|\btogether|\bcategor|\bmatch|\bsplit|\bseparat/i,'group'],
   // Last before the fallback: the generic "put it away" verbs, so anything
   // more specific above has already claimed its steps.
-  [/load|stock|shelve|put (?:it |them )?away|restock|fill the/i,'stock'],
+  [/\bload|\bstock|\bshelve\b|\bput (?:it |them )?away|\brestock|\bfill the/i,'stock'],
 ];
-export function classifyAction(step){
-  const hay=(step.t||'')+' '+(step.w||'');
-  for(const [re,type] of ART_RULES){ if(re.test(hay)) return type; }
-  return 'done';
+
+/* Clothes are only ever drawn where clothes are kept. The hang scene always
+   draws a dress on a hanger and the fold scene a stack of shirts, whatever
+   the item, so "Hang hand tools on the pegboard" put dresses on a workbench.
+   Elsewhere those steps are about putting things in their place. Folding
+   stays in the linen closet: a folded towel stack is what the scene draws. */
+const HANG_SPACES=new Set(['closet','walkin','dresser','kids','laundry']);
+const FOLD_SPACES=new Set([...HANG_SPACES,'linen']);
+function allowedAction(type, spaceId){
+  if(type==='hang' && spaceId && !HANG_SPACES.has(spaceId)) return 'stock';
+  if(type==='fold' && spaceId && !FOLD_SPACES.has(spaceId)) return 'stock';
+  return type;
 }
 
-// The furniture the scene is staged on, from the chosen space.
+/* The title says what the step does; the why only explains it. Reading both
+   at once let a reason decide the picture: "Empty the vanity" became a purge
+   because its why mentioned expired products. The why is a tiebreak now,
+   used only when the title names nothing. */
+function firstMatch(rules, step, skip){
+  for(const text of [step.t||'', step.w||'']){
+    for(const [re,value] of rules){
+      if(skip && skip(value)) continue;
+      if(re.test(text)) return value;
+    }
+  }
+  return null;
+}
+export function classifyAction(step, spaceId){
+  const type=firstMatch(ART_RULES, step);
+  return type ? allowedAction(type, spaceId) : 'done';
+}
+
+// The furniture the scene is staged on, from the chosen space. Garage
+// shelving is a rack of shelves; the bench is the workbench's.
 const SPACE_MOTIF={
-  drawers:'drawers', junk:'drawers',
+  drawers:'drawers', junk:'drawers', dresser:'drawers',
   closet:'rail', walkin:'rail',
-  garage:'bench',
+  workbench:'bench',
 };
 export function motifForSpace(spaceId){
   return SPACE_MOTIF[spaceId]||'shelves';
@@ -81,35 +113,42 @@ export function motifForSpace(spaceId){
 // The item being moved in the scene: first match from the step's own text,
 // then the space's typical item as the default.
 const GLYPH_RULES=[
-  [/shoe|sneaker|boot/i,'shoe'],
-  [/hang|rod|shirt|coat|dress/i,'hanger'],
-  [/fold|sweater|jean|t-shirt|clothes/i,'foldedclothes'],
-  [/towel|linen|sheet/i,'towel'],
-  [/jar|sauce|spice/i,'jar'],
-  [/can(s|ned)? |cans$|canned/i,'can'],
-  [/bottle|detergent|spray|shampoo/i,'bottle'],
-  [/utensil|spatula|cutlery|silverware/i,'utensil'],
-  [/tool|drill|hammer|wrench|hardware/i,'tool'],
-  [/tote|storage box|overflow|bulk/i,'tote'],
-  [/plate|dish|bowl/i,'plate'],
+  [/\bshoes?\b|\bsneakers?\b|\bboots?\b/i,'shoe'],
+  [/\bhang|\brods?\b|\bshirts?\b|\bcoats?\b|\bdress(?:es)?\b/i,'hanger'],
+  [/\bfold|\bsweaters?\b|\bjeans?\b|\bt-shirts?\b|\bclothes\b/i,'foldedclothes'],
+  // A baking sheet is not linen.
+  [/\btowels?\b|\blinens?\b|(?<!baking )\bsheets?\b/i,'towel'],
+  [/\bjars?\b|\bsauces?\b|\bspices?\b|\bcondiments?\b/i,'jar'],
+  [/\bcans\b|\bcanned\b/i,'can'],
+  [/\bbottles?\b|\bdetergents?\b|\bsprays?\b|\bshampoos?\b/i,'bottle'],
+  [/\butensils?\b|\bspatulas?\b|\bcutlery\b|\bsilverware\b/i,'utensil'],
+  [/\btools?\b|\bdrills?\b|\bhammers?\b|\bwrench(?:es)?\b|\bhardware\b/i,'tool'],
+  [/\btotes?\b|\bstorage box(?:es)?\b|\boverflow\b|\bbulk\b/i,'tote'],
+  [/\bplates?\b|\bdish(?:es)?\b|\bbowls?\b/i,'plate'],
   /* Dry goods are what you decant: flour, rice, pasta, cereal. Defaulting them
      to the pantry's `can` made "Transfer dry goods into airtight containers"
      and "Set up can risers and stock canned goods" the same picture. */
-  [/bag|packet|snack|pouch|dry goods|grain|flour|rice|pasta|cereal/i,'bag'],
+  [/\bbags?\b|\bpackets?\b|\bsnacks?\b|\bpouch(?:es)?\b|\bdry goods\b|\bgrains?\b|\bflour\b|\brice\b|\bpasta\b|\bcereal\b/i,'bag'],
 ];
 const SPACE_GLYPH={
   pantry:'can', cabinet:'plate', drawers:'utensil', junk:'utensil',
-  closet:'hanger', walkin:'hanger', linen:'towel', bathroom:'bottle',
-  fridge:'jar', garage:'tool', attic:'tote', laundry:'bottle', kids:'tote',
+  closet:'hanger', walkin:'hanger', dresser:'foldedclothes', linen:'towel', bathroom:'bottle',
+  fridge:'jar', garage:'tote', workbench:'tool', attic:'tote', laundry:'bottle', kids:'tote',
 };
+// Same rule as the actions: no hanger or folded shirt outside a clothes space.
+function glyphAllowed(glyph, spaceId){
+  if(!spaceId) return true;
+  if(glyph==='hanger') return HANG_SPACES.has(spaceId);
+  if(glyph==='foldedclothes') return FOLD_SPACES.has(spaceId);
+  return true;
+}
 export function glyphForStep(step, spaceId){
-  const hay=(step.t||'')+' '+(step.w||'');
-  for(const [re,g] of GLYPH_RULES){ if(re.test(hay)) return g; }
-  return SPACE_GLYPH[spaceId]||'tote';
+  return firstMatch(GLYPH_RULES, step, g=>!glyphAllowed(g, spaceId))
+    || SPACE_GLYPH[spaceId] || 'tote';
 }
 
 export function mediaKeyFor(step, spaceId){
-  return `${classifyAction(step)}-${motifForSpace(spaceId)}-${glyphForStep(step, spaceId)}`;
+  return `${classifyAction(step, spaceId)}-${motifForSpace(spaceId)}-${glyphForStep(step, spaceId)}`;
 }
 
 // Parse + validate a manifest key back into its triple. Returns null when any
