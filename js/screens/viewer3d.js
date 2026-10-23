@@ -20,7 +20,7 @@ import {
 } from '../three/viewerOptions.js';
 import {
   isRoomLayout,roomPlanFor,roomBoardGeometry,roomRowRun,boardYsFor,
-  boardYsFromFracs,gapsAboveFor,doorRowsOf,shelfRowsOf,cabinetShelfGeometry,plainBoardClearance,arrangementGeometryFor,ARRANGEMENT_VERSION,
+  boardYsFromFracs,gapsAboveFor,doorRowsOf,shelfRowsOf,cabinetShelfGeometry,hangsDoorRows,plainBoardClearance,arrangementGeometryFor,ARRANGEMENT_VERSION,
 } from '../three/roomBoards.js';
 
 /* 3D screen wrapper. three.js (~680KB) loads only when this opens. */
@@ -167,9 +167,9 @@ function currentSceneInput(){
      handed, which is this one, and leaving the preview empty keeps a look at
      the walk-in from fixing the cabinet's shelf count when the reader
      switches back to compare. */
-  /* A cabinet with rows on its door counts its shelves without them, the
-     same once-only conversion (roomBoards.cabinetShelfGeometry). */
-  if(resolved.type==='cabinet'&&geometry.levelsAre!=='shelves'){
+  /* A cabinet or reach-in with rows on its door counts its shelves without
+     them, the same once-only conversion (roomBoards.cabinetShelfGeometry). */
+  if(hangsDoorRows(resolved)&&geometry.levelsAre!=='shelves'){
     const shelves=cabinetShelfGeometry(geometry,map,resolved);
     if(shelves.levelsAre==='shelves'){
       geometry=shelves;
@@ -525,10 +525,11 @@ function shelfMaxDims(geometry, levelIndex, archetype, layout=null){
     const run=roomRowRun({ type:archetype, geometry, map, layout:layout||currentLayout(map), index:idx });
     if(run) return size(run.length-1, run.gap);
   }
-  /* A cabinet's door rack rows are not boards (layouts/cabinet.js): a shelf
-     row sits on the board its place among the shelf rows gives it. */
-  if(archetype==='cabinet'){
-    const resolved=layout||currentLayout(map);
+  /* A cabinet's or reach-in's door rack rows are not boards (layouts/
+     cabinet.js, shelves.js): a shelf row sits on the board its place among
+     the shelf rows gives it. */
+  const resolved=layout||currentLayout(map);
+  if(hangsDoorRows({ ...resolved, type:archetype })){
     if(doorRowsOf(map, resolved).size){
       const c=cabinetShelfGeometry(geometry, map, resolved);
       const board=shelfRowsOf(map, resolved).indexOf(idx);
@@ -813,7 +814,7 @@ function populateZones(map, resolved=currentLayout(), geometry=null){
       const noun=singularLevel(nouns);
       /* A fridge's rows are not one kind of level, so it is counted by
          part. Every other "zones" noun said "12 zones, one per zone". */
-      const onDoor=drawn==='cabinet'?doorRowsOf(rows, resolved).size:0;
+      const onDoor=hangsDoorRows({ ...resolved, type:drawn })?doorRowsOf(rows, resolved).size:0;
       heading.textContent=drawn==='fridge'
         ? fridgeZoneHeading(rows, resolved)
         : onDoor

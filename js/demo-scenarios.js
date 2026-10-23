@@ -1952,7 +1952,7 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   applyHousehold(plan, household);
   // Sizing is held back until after the scrub below: it removes steps, and a
   // plan sized before that comes out under its own floor.
-  if (answers) applyAnswers(plan, answers, { deferSizing: true, archetype: finalArchetype });
+  if (answers) applyAnswers(plan, answers, { deferSizing: true, archetype: finalArchetype, setup: setupId });
   // Last: prefs and toggles add steps of their own, and the reach vocabulary
   // has to reach those too.
   rewriteMobilityLanguage(plan, household && household.mobility);
@@ -1972,14 +1972,14 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
      already matches its scenario's, so those setups were never scrubbed at
      all. A sideboard is the clearest case — same archetype as its scenario, so
      no projection, and it was still told its shelves were 18″ deep. */
-  if (finalArchetype) scrubSurfaceProse(plan, finalArchetype);
+  if (finalArchetype) scrubSurfaceProse(plan, finalArchetype, setupId);
 
   /* After the scrub, because the scrub is the last thing that can remove a
      step and sizing has to count the list the user will actually read. It is
      given the archetype so it can vet its own candidates as it goes: scrubbing
      again afterwards would put a step-removing pass back after sizing, which is
      the bug this ordering exists to fix. */
-  if (answers) sizeToEffort(plan, answers, { archetype: finalArchetype });
+  if (answers) sizeToEffort(plan, answers, { archetype: finalArchetype, setup: setupId });
 
   speakAsTypical(plan);
 

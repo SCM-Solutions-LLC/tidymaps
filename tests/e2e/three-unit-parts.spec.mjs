@@ -68,13 +68,13 @@ test('the 10-23 fridge is drawn as each card: three shelves, two door bins, ever
 test('every setup draws each row once, labels it, and hangs a door row on a door', async ({ page }) => {
   await page.goto('/index.html');
   const cases = await page.evaluate(async () => {
-    const [{ SETUP_TYPES, scenarioKeyFor }, { SETUP_ARCHETYPE }, { ARCHETYPE_SURFACES }] = await Promise.all([
+    const [{ SETUP_TYPES, scenarioKeyFor }, { SETUP_ARCHETYPE }, { surfacesFor }] = await Promise.all([
       import('/js/wizard-data.js'), import('/js/layout.js'), import('/js/setupStructure.js'),
     ]);
     const out = [];
     for (const [space, setups] of Object.entries(SETUP_TYPES)) {
       for (const setup of setups) {
-        const doors = (ARCHETYPE_SURFACES[SETUP_ARCHETYPE[setup.id]] || []).includes('door');
+        const doors = surfacesFor(SETUP_ARCHETYPE[setup.id], setup.id).includes('door');
         out.push({
           setup: setup.id, space, scenario: scenarioKeyFor(space, setup.id), doors,
           /* A door rack, where the setup has a door to hang one on. */
@@ -89,10 +89,11 @@ test('every setup draws each row once, labels it, and hangs a door row on a door
   });
   expect(cases).toHaveLength(37);
   const scenes = await build(page, cases);
-  /* Only a shape with a door can hang a row on one. A reach-in pantry is
-     drawn as open shelving, so its sample's "Door / side" row is a shelf
-     there, as an AI plan's is once enforceArchetypeHonesty has run (open
-     item in docs/HANDOFF.md). */
+  /* Only a setup with a door can hang a row on one, and every setup with a
+     door does. A reach-in pantry is drawn as shelves but stands behind a door
+     (setupStructure.SETUP_SURFACES), so its door rack hangs on it; until
+     10-23 it was one more board. Open shelving has no door, so its sample's
+     "Door / side" row stays a board, and no door is drawn there. */
   const hasDoor = new Map(cases.map((c) => [c.setup, c.doors]));
   const problems = [];
   for (const s of scenes) {
@@ -100,6 +101,7 @@ test('every setup draws each row once, labels it, and hangs a door row on a door
       const drawn = s.surfaces.filter((x) => x.index === row.index);
       if (drawn.length !== 1) problems.push(`${s.id}: "${row.lv}" drawn ${drawn.length} times`);
       else if (hasDoor.get(s.id) && row.surface === 'door' && drawn[0].kind !== 'door') problems.push(`${s.id}: "${row.lv}" is a door row drawn as a ${drawn[0].kind}`);
+      else if (!hasDoor.get(s.id) && drawn[0].kind === 'door') problems.push(`${s.id}: "${row.lv}" drawn on a door the setup does not have`);
       if (!s.labels.includes(row.index)) problems.push(`${s.id}: "${row.lv}" has no label`);
     }
   }

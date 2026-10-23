@@ -6,7 +6,7 @@ import {
   boardCountFor, boardCountForMap, roomPlanFor, runLength, roomShelfDepth, roomFloorRun,
   boardYsFor, boardYsFromFracs, arrangementGeometryFor,
   gapsAboveFor, plainBoardClearance, rowHeadroomFor, rodClosetDepth, CLOSET_SHELF_IN,
-  roomBoardGeometry, roomRowRun,
+  roomBoardGeometry, roomRowRun, hangsDoorRows, cabinetShelfGeometry,
 } from '../js/three/roomBoards.js';
 import { shelfDepthFor } from '../js/catalog.js';
 
@@ -473,4 +473,24 @@ test('the card judges a cabinet shelf by the board it is drawn on, not by its ro
   const byRow=rowHeadroomFor('cabinet', 'shelf', geometry, 3);
   assert.ok(withPlan > byRow + 3, `the lower shelf sits on the floor now, with more over it: ${withPlan} vs ${byRow}`);
   assert.equal(rowHeadroomFor('cabinet', 'door', geometry, 4, { map, layout }), null);
+});
+
+/* A reach-in pantry or linen closet is drawn as shelves and stands behind a
+   door, so its door rows hang on the door and are not boards, as a cabinet's
+   are. Open and wall shelving have no door: a door row there stays a board. */
+test('a reach-in hangs its door rows on its door; open shelving has none to hang them on', () => {
+  assert.equal(hangsDoorRows({ type: 'cabinet', setup: null }), true);
+  assert.equal(hangsDoorRows({ type: 'shelves', setup: 'reachin' }), true);
+  assert.equal(hangsDoorRows({ type: 'shelves', setup: 'reachinL' }), true);
+  for (const setup of ['openshelf', 'wallshelf', null]) {
+    assert.equal(hangsDoorRows({ type: 'shelves', setup }), false, String(setup));
+  }
+  assert.equal(hangsDoorRows({ type: 'walkin-u', setup: 'reachin' }), false);
+  assert.equal(hangsDoorRows(null), false);
+  // Five rows, one on the door: four boards, as the builder draws them.
+  const map = ['Top shelf', 'Eye level', 'Middle shelf', 'Lower shelf', 'Door rack']
+    .map((lv, i) => ({ lv, shelfIndex: i, surface: i === 4 ? 'door' : 'shelf' }));
+  const g = cabinetShelfGeometry({ width: 30, height: 84, depth: 16, shelfCount: 5 }, map, { type: 'shelves', setup: 'reachin' });
+  assert.equal(g.shelfCount, 4);
+  assert.equal(g.levelsAre, 'shelves');
 });

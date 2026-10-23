@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { enforceArchetypeHonesty, ARCHETYPE_SURFACES, mentionsMissingSurface } from '../js/setupStructure.js';
+import { enforceArchetypeHonesty, ARCHETYPE_SURFACES, mentionsMissingSurface, surfacesFor } from '../js/setupStructure.js';
 import { normalizeAi } from '../js/plan.js';
 
 /* The surface-honesty machinery was only ever reachable from getDemoScenario,
@@ -157,4 +157,50 @@ test('a fridge never shops for a drawer organizer', () => {
   // A dresser's drawer organizer is still a drawer organizer.
   const dresser = enforceArchetypeHonesty(plan('Top drawer'), 'drawer-bank');
   assert.deepEqual(dresser.productNeeds.map(p => p.type), ['drawer-organizer']);
+});
+
+/* A reach-in pantry is drawn as shelves, and `shelves` also draws open
+   shelving and wall shelves, which have no door. The honesty pass read the
+   archetype alone, so a reach-in's door rack came out as a "Front shelf", its
+   over-the-door step and door-rack product were deleted, and "the door" in the
+   summary became "the front edge". The setup decides now. */
+const reachInPlan = () => ({
+  summary: 'A reach-in pantry with deep shelves. The back of the door is unused.',
+  problems: [], opportunities: [], safetyNotes: [], existing: [],
+  steps: [
+    { task: 'Hang an over-the-door rack for spices', time: '10 min', why: 'Frees a whole shelf.' },
+    { task: 'Group snacks by type', time: '10 min', why: 'One place to look.' },
+  ],
+  productNeeds: [{ type: 'door-rack', qty: 1, purpose: 'Over-the-door rack for spices and packets.', targetZone: 'Door rack', priority: 'high' }],
+  map: [
+    { level: 'Top shelf', icon: 'up', surface: 'shelf', zone: 'Bulk', why: 'Rarely used.', eye: false, shelfIndex: 0, items: [], safety: { flag: null, why: null } },
+    { level: 'Door rack', icon: 'door', surface: 'door', zone: 'Spices · Packets', why: 'Door bins keep small things in view.', eye: false, shelfIndex: 1, items: [], safety: { flag: null, why: null } },
+  ],
+  geometry: { unit: 'in', width: 30, height: 84, depth: 16, shelfCount: 2 },
+  layout: { type: 'shelves' },
+});
+
+test('a reach-in keeps the door it stands behind; open shelving still has none', () => {
+  for (const setup of ['reachin', 'reachinL']) {
+    const plan = enforceArchetypeHonesty(reachInPlan(), 'shelves', setup);
+    assert.equal(plan.map[1].surface, 'door', `${setup}: door row`);
+    assert.equal(plan.map[1].level, 'Door rack', `${setup}: its name`);
+    assert.ok(plan.steps.some((s) => /over-the-door rack/.test(s.task)), `${setup}: the door step`);
+    assert.deepEqual(plan.productNeeds.map((p) => p.type), ['door-rack'], `${setup}: the door rack to buy`);
+    assert.match(plan.summary, /back of the door/, `${setup}: the summary's door`);
+  }
+  for (const setup of ['openshelf', 'wallshelf', null]) {
+    const plan = enforceArchetypeHonesty(reachInPlan(), 'shelves', setup);
+    assert.equal(plan.map[1].surface, 'shelf', `${setup}: no door to hang a row on`);
+    assert.equal(plan.productNeeds.length, 0, `${setup}: no door rack`);
+    assert.ok(!plan.steps.some((s) => /door/.test(s.task)), `${setup}: no door step`);
+  }
+});
+
+test("a setup's extra surfaces apply only to the shape it is drawn as", () => {
+  assert.ok(surfacesFor('shelves', 'reachin').includes('door'));
+  assert.ok(!surfacesFor('shelves', 'openshelf').includes('door'));
+  // A reach-in whose photos resolved to a walk-in gets the walk-in's surfaces.
+  assert.deepEqual(surfacesFor('walkin-u', 'reachin'), ARCHETYPE_SURFACES['walkin-u']);
+  assert.deepEqual(surfacesFor('shelves'), ARCHETYPE_SURFACES.shelves);
 });

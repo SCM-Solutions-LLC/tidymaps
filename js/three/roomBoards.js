@@ -24,6 +24,7 @@
 import { placementFor, placementFromSections } from '../placement.js';
 import { normalizeViewerGeometry, roomGeometryFor, resampleShelfFracs } from './viewerOptions.js';
 import { fridgeRowRun } from './fridgePlan.js';
+import { surfacesFor } from '../setupStructure.js';
 
 export const ROOM_TYPES = ['walkin-u', 'l-run'];
 
@@ -148,6 +149,17 @@ export function doorRowsOf(map, layout){
   return out;
 }
 
+/* Whether this unit hangs its door rows on a door, drawn swung open with a
+   rack on it: a cabinet, and the reach-in pantry and linen closet, which are
+   drawn as shelves but stand behind a door (setupStructure.SETUP_SURFACES).
+   Open and wall shelving have no door, so a door row there stays a board.
+   @param {any} [layout] */
+export function hangsDoorRows(layout){
+  if(!layout) return false;
+  if(layout.type==='cabinet') return true;
+  return layout.type==='shelves'&&surfacesFor('shelves', layout.setup).includes('door');
+}
+
 /* The shelf rows of a cabinet, in board order: every row not on its door,
    by shelfIndex. Board j carries the j-th of these.
    @param {any[]} map @param {any} [layout] @returns {number[]} */
@@ -168,7 +180,7 @@ export function shelfRowsOf(map, layout){
    as it came.
    @param {any} geometry @param {any[]} map @param {any} [layout] */
 export function cabinetShelfGeometry(geometry, map, layout){
-  const g=normalizeViewerGeometry(geometry, 'cabinet');
+  const g=normalizeViewerGeometry(geometry, (layout&&layout.type)||'cabinet');
   if(g.levelsAre==='shelves') return g;
   const skip=doorRowsOf(map, layout);
   const onDoor=[...skip].filter(i=>i<g.shelfCount).length;
