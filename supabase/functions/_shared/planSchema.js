@@ -608,6 +608,8 @@ function trimClosetShelfNeeds(plan, context) {
    the map does not have is dropped, lists are deduped and capped, and a field
    left with nothing in it is removed rather than left empty, which is the
    shape the client's normalizeAi expects (absent, not empty). */
+const UNIT_LAYOUTS = new Set(['fridge', 'drawer-bank', 'under-bed']);
+
 function repairOptionalFields(plan, context) {
   const count = plan.geometry.shelfCount;
   const validRow = (r) => Number.isInteger(r) && r >= 0 && r < count;
@@ -627,9 +629,15 @@ function repairOptionalFields(plan, context) {
     .slice(0, SPOTTED_MAX);
   if (spotted.length) plan.spotted = spotted; else delete plan.spotted;
   if (plan.seenLayout == null) delete plan.seenLayout;
+  /* A fridge, a drawer bank and under-bed drawers are one piece of furniture.
+     The first real fridge plan put wall:left and wall:right on its two door
+     rows, and the report read two walls as a room. The prompt says walls are
+     for multi-wall spaces; here a wall on a single unit is dropped, never a
+     rejection. */
+  const singleUnit = plan.layout && UNIT_LAYOUTS.has(plan.layout.type);
   for (const row of plan.map) {
-    if (row.wall == null) delete row.wall;
-    if (!Number.isInteger(row.tier) || row.tier < 0) delete row.tier;
+    if (row.wall == null || singleUnit) delete row.wall;
+    if (!Number.isInteger(row.tier) || row.tier < 0 || singleUnit) delete row.tier;
   }
   if (plan.layout && Array.isArray(plan.layout.sections)) {
     for (const sec of plan.layout.sections) if (sec.place === undefined) delete sec.place;

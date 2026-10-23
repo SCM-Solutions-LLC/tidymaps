@@ -1,5 +1,5 @@
 import { state, persistGuestDraft, isMetric } from '../state.js';
-import { fmtIn } from '../wizard-data.js';
+import { fmtIn, midSentence } from '../wizard-data.js';
 import { toast, escapeHtml } from '../ui.js';
 import { go } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
@@ -326,7 +326,7 @@ function provenance(){
 
 function updateHeading(){
   const kind=provenance();
-  const name=String((state.ai&&state.ai.spaceType)||state.space||'space').toLowerCase();
+  const name=midSentence((state.ai&&state.ai.spaceType)||state.space||'space');
   const title=document.getElementById('v3d-title');
   if(title) title.textContent = kind==='shared' ? `The ${name}, standing up`
     : kind==='sample' ? `The sample ${name}, standing up`
@@ -384,8 +384,8 @@ function updateStatus(geometry, resolved, sourceGeometry=geometry){
   const sameWord = chosen && state.setupLabel.toLowerCase()===String(label).toLowerCase();
   note += chosen
     ? (sameWord
-        ? ` Shown as your ${state.setupLabel.toLowerCase()}.`
-        : ` Shown as your ${state.setupLabel.toLowerCase()}, drawn as ${label}.`)
+        ? ` Shown as your ${midSentence(state.setupLabel)}.`
+        : ` Shown as your ${midSentence(state.setupLabel)}, drawn as ${label}.`)
     : ' Shown as '+label+': '+(sourceDesc[resolved.source]||sourceDesc.default);
   if(resolved.type==='under-sink') note+=sourceGeometry.height!==geometry.height
     ?` Vanity shown at ${geometry.height} inches so the fixture stays realistic.`

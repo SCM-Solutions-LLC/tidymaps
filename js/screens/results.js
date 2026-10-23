@@ -3,7 +3,7 @@ import { SVG, ICON, iconFor } from '../icons.js';
 import { state, persistGuestDraft, isMetric, currentPlanInstance, planInstanceIsCurrent, householdAnswered } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
-import { areaFor, fmtFt, fmtIn, optionsForHousehold, SPACE_CFG } from '../wizard-data.js';
+import { areaFor, fmtFt, fmtIn, optionsForHousehold, SPACE_CFG, midSentence } from '../wizard-data.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
 import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, fmtChecked, TYPE_LABEL } from '../catalog.js';
 import { productArt } from '../product-art.js';
@@ -16,7 +16,7 @@ import { updateSpacePatch, persistAnswers } from '../db.js';
 import { classifyAction, motifForSpace, glyphForStep, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { track } from '../telemetry.js';
 import { applyCategoryEdits, includeSpotted } from '../personalize.js';
-import { placementFor, levelLabel, whereFor, wallGroups } from '../placement.js';
+import { placementFor, levelLabel, whereFor, headingGroups } from '../placement.js';
 import { resolveLayout, eyeMarkFor } from '../layout.js';
 import { go } from '../router.js';
 import { runLoading } from './loading.js';
@@ -57,7 +57,7 @@ export function buildResults(){
   const mastSpace=document.getElementById('mast-space');
   if(mastSpace) mastSpace.textContent = spaceLabel;
   const resTitle=document.getElementById('res-title');
-  if(resTitle) resTitle.textContent = `The ${spaceLabel.toLowerCase()}, with a place for everything`;
+  if(resTitle) resTitle.textContent = `The ${midSentence(spaceLabel)}, with a place for everything`;
   /* Which wall each row is on, worked out once here and read by the hero,
      the map, the steps and the after drawing below, so the four agree. */
   const mapData=(A&&A.map.length)?A.map:MAP;
@@ -918,7 +918,14 @@ function renderMap(map, placement){
   const wrap=document.getElementById('res-map'); if(!wrap) return;
   const walls=placement.walls;
   const tabbed=placement.kind==='room'&&walls.length>=2;
-  if(!tabbed){
+  const parts=!tabbed&&placement.parts&&placement.parts.length?placement.parts:null;
+  if(parts){
+    // A unit the plan divided into parts (a fridge's shelves, drawers, doors
+    // and freezer) lists its rows under those names, in the plan's order.
+    const by=rowsByIndex(map);
+    wrap.innerHTML=parts.map(g=>`<h3 class="map-part">${escapeHtml(g.label)}</h3>`
+      +g.rows.flatMap(idx=>(by.get(idx)||[]).map(r=>shelfRow(r.m, r.i, idx, false))).join('')).join('');
+  }else if(!tabbed){
     wrap.innerHTML=map.map((m,i)=>shelfRow(m, i, Number.isInteger(m.shelfIndex)?m.shelfIndex:i, false)).join('');
   }else{
     const by=rowsByIndex(map);
@@ -1056,6 +1063,20 @@ const EL_GLYPHS={
 };
 const EL_SIZE={jar:[32,46],can:[28,36],box:[46,72],bottle:[24,64],bag:[44,52],bin:[116,54]};
 const EL_ROWS=[['bag','box','bottle','bag'],['jar','jar','can','can','bag','bottle'],['bin','jar','jar','bottle'],['bin','bin','bag'],['box','box','bag','can'],['bin','jar','bag']];
+/* What stands on the drawing's shelves, by space. Every space used to get the
+   pantry's bags and cans, so a fridge's freezer and a closet's shelf showed
+   flour sacks. A fridge holds cartons, bottles, jars and bins; spaces of
+   gear hold boxes and bins; a vanity holds bottles and jars. */
+const EL_ROWS_BY_SPACE={
+  fridge:[['box','bottle','jar','bottle'],['bin','jar','box'],['bottle','box','can','can'],['bin','bin'],['jar','jar','bottle','box'],['bin','box']],
+  bathroom:[['bottle','jar','bottle'],['bin','bottle','jar'],['jar','bottle','bottle','jar'],['bin','bin']],
+  closet:[['box','box','bin'],['bin','box'],['box','bin','box']],
+  dresser:[['box','box','bin'],['bin','box'],['box','bin','box']],
+  linen:[['box','box','bin'],['bin','box'],['box','bin','box']],
+  garage:[['box','bin','box'],['bin','bin'],['box','box','bin']],
+  workbench:[['box','jar','jar','box'],['bin','box'],['jar','box','bin']],
+  drawers:[['bin','bin'],['bin','box','bin'],['bin','bin']],
+};
 
 /* Words wrapped to a width in characters, at most two lines: a long zone
    gets a second line rather than an ellipsis. Angle brackets and ampersands
@@ -1075,9 +1096,9 @@ function zoneLines(text, max){
 }
 
 /* The glyphs standing on one shelf, left to right until the shelf is full. */
-function shelfGlyphs(rowI, x0, x1, base, scale){
+function shelfGlyphs(rowI, x0, x1, base, scale, sets=EL_ROWS){
   let out='', x=x0;
-  EL_ROWS[rowI%EL_ROWS.length].forEach(k=>{
+  sets[rowI%sets.length].forEach(k=>{
     const [w,h]=EL_SIZE[k]; const gw=w*scale, gh=h*scale;
     if(x+gw>x1) return;
     out+=`<g class="g" transform="translate(${x} ${base-gh-4}) scale(${scale})">${EL_GLYPHS[k]}</g>`;
@@ -1096,10 +1117,17 @@ function elevationStyle({ ink, spot }){
    said nothing about which wall a zone was on. */
 function planElevationSvg(map, placement){
   const P=plate();
+  P.items=EL_ROWS_BY_SPACE[state.space||state.sharedSpaceId]||EL_ROWS;
   const rows=map||[];
   const cases=(placement&&placement.kind==='room')
     ? placement.walls.filter(w=>w.id!=='floor'&&w.id!=='other') : [];
-  return cases.length ? roomElevation(rows, placement, cases, P) : unitElevation(rows, P);
+  if(cases.length) return roomElevation(rows, placement, cases, P);
+  /* A unit the plan divided into parts draws one case per part, so a
+     twelve-zone fridge shows every zone under Fridge shelves, Drawers, Doors
+     and Freezer instead of its first six in one tall cupboard. */
+  const parts=placement&&placement.kind==='unit'&&Array.isArray(placement.parts)?placement.parts.slice(0,4):[];
+  if(parts.length>=2) return roomElevation(rows, { walls:[] }, parts, P);
+  return unitElevation(rows, P);
 }
 
 function unitElevation(map, P){
@@ -1123,7 +1151,7 @@ function unitElevation(map, P){
     // is cut off; a long name gets a second line rather than an ellipsis.
     const lines=zoneLines(m.zone||m.lv, 52);
     const scale=Math.min(1.2,(shelfH-34-(lines.length>1?16:0))/72);
-    out+=shelfGlyphs(i, left+22, left+caseW-24, base, scale);
+    out+=shelfGlyphs(i, left+22, left+caseW-24, base, scale, P.items);
     lines.forEach((ln,li)=>{
       out+=`<text class="z${m.eye?' e':''}" x="${left+14}" y="${top+shelfH*i+24+li*18}">${ln}</text>`;
     });
@@ -1178,7 +1206,7 @@ function roomElevation(rows, placement, cases, P){
       const max=Math.min(cw>200?44:26, Math.floor((cw-28)/8.8));
       const lines=zoneLines(m.zone||m.lv, max);
       const scale=Math.min(1.2,(rowH-30-(lines.length>1?14:0))/72);
-      out+=shelfGlyphs(i, cx+16, cx+cw-16, base, scale);
+      out+=shelfGlyphs(i, cx+16, cx+cw-16, base, scale, P.items);
       lines.forEach((ln,li)=>{ out+=`<text class="z zs${m.eye?' e':''}" x="${cx+12}" y="${y0+20+li*17}">${ln}</text>`; });
     });
     out+=`<text class="cap" x="${cx+cw/2}" y="${captionY}" text-anchor="middle">${String(w.label).replace(/[<>&]/g,'')}</text>`;
@@ -1285,7 +1313,7 @@ const SCENES={
 
 /* The scene for one step: its action, staged on its space, holding its item. */
 export function stepScene(step, spaceId){
-  const action=classifyAction(step);
+  const action=classifyAction(step, spaceId);
   const motif=motifForSpace(spaceId);
   const glyph=glyphForStep(step, spaceId);
   const build=SCENES[action]||SCENES.done;
@@ -1498,11 +1526,13 @@ export function renderAfter(mode){
   };
   /* A room's rows sit under their wall, in the order the map's tabs use, so
      this drawing and that one tell the same story about where things go. */
-  const groups=wallGroups(currentPlacement(map));
+  const placement=currentPlacement(map);
+  const groups=headingGroups(placement);
   if(groups){
     const by=rowsByIndex(map);
+    const room=placement.kind==='room';
     cab.innerHTML=groups.map(w=>`<div class="cab-wall">${escapeHtml(w.label)}</div>`
-      +w.rows.flatMap(idx=>(by.get(idx)||[]).map(r=>shelf(r.m, r.i, true))).join('')).join('');
+      +w.rows.flatMap(idx=>(by.get(idx)||[]).map(r=>shelf(r.m, r.i, room))).join('')).join('');
   }else{
     cab.innerHTML=map.map((m,i)=>shelf(m, i, false)).join('');
   }

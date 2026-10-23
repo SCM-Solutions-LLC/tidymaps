@@ -39,3 +39,19 @@ test('a pantry still asks for plain depth', async ({ page }) => {
   await next(page);
   await expect(page.locator('#measure-fields .wm-name')).toHaveText(['Width', 'Depth', 'Height']);
 });
+
+test('a fridge is not asked about drilling; a pantry still is', async ({ page }) => {
+  const toHousehold = async (card, setup) => {
+    await pickSpace(page, card);
+    await page.locator('#setup-cards .wz-setup', { hasText: setup }).first().click();
+    await next(page);            // setup
+    await next(page);            // measure
+    await next(page);            // photos
+    await expect(page.locator('#screen-household')).toHaveClass(/active/);
+  };
+  await toHousehold('Fridge & freezer', 'French door');
+  await expect(page.locator('#constraints-block')).toBeHidden();
+  await toHousehold('Pantry', 'Cabinet');
+  await expect(page.locator('#constraints-block')).toBeVisible();
+  await expect(page.locator('#constraint-chips .chip')).toHaveText(['Nothing drilled or mounted']);
+});

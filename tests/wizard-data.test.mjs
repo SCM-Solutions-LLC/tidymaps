@@ -387,3 +387,23 @@ test('the spaces named in the plural say so', async () => {
     assert.equal(/s$/.test(area.short) && !/ss$/.test(area.short), !!area.plural, `${area.id}: "${area.short}"`);
   }
 });
+
+/* "The french door fridge with bottom freezer, with a place for everything":
+   the first real fridge plan's title. The whole name was lowercased. */
+test('a name placed mid-sentence keeps its proper words and single letters', async () => {
+  const { midSentence } = await import('../js/wizard-data.js');
+  assert.equal(midSentence('French door fridge with bottom freezer'), 'French door fridge with bottom freezer');
+  assert.equal(midSentence('French door'), 'French door');
+  assert.equal(midSentence('L-shaped pantry'), 'L-shaped pantry');
+  assert.equal(midSentence('Walk-in closet'), 'walk-in closet');
+  assert.equal(midSentence('Pantry'), 'pantry');
+  assert.equal(midSentence('Side-by-side'), 'side-by-side');
+});
+
+/* "Nothing drilled or mounted" was asked of a fridge. A limit is offered
+   only where there is something to drill: racks, hooks, pegboard. */
+test('the drilling limit is offered where drilling means something, and not for a fridge, drawers or a dresser', async () => {
+  const { constraintsFor } = await import('../js/wizard-data.js');
+  for (const space of ['fridge', 'drawers', 'dresser']) assert.deepEqual(constraintsFor(space), [], space);
+  for (const space of ['pantry', 'closet', 'garage', 'workbench', 'bathroom']) assert.equal(constraintsFor(space).length, 1, space);
+});

@@ -18,7 +18,7 @@ import {
   ROOMS, AREAS, SPACE_CFG, STYLESETS, SETUP_TYPES, SETUP_DIMS, ROOMY, INSIDE_DEPTH,
   KID_AGES, MOBILITY_NEEDS, PET_TYPES, EFFORT_OPTS, SHOPPING_OPTS,
   roomFor, areaFor, goalIdFor, mergePrefs, optionsForHousehold,
-  fmtFt, measureSummary, art, HOME_CONSTRAINTS,
+  fmtFt, measureSummary, art, HOME_CONSTRAINTS, constraintsFor,
 } from '../wizard-data.js';
 /* The constant moved to wizard-data.js so the pure merge can read it; the
    screen stays the import path everything else learned. */
@@ -583,7 +583,15 @@ function renderConstraints(){
   if(!wrap) return;
   if(!(state.prefs instanceof Set)) state.prefs = new Set(state.prefs || []);
   wrap.innerHTML = '';
-  for(const [label, pref] of HOME_CONSTRAINTS){
+  // A limit picked for another space goes with it; one that means nothing
+  // here is not asked.
+  const here = constraintsFor(state.space);
+  for(const [, pref] of HOME_CONSTRAINTS){
+    if(!here.some(([, p]) => p === pref)) state.prefs.delete(pref);
+  }
+  const block = document.getElementById('constraints-block');
+  if(block) block.classList.toggle('hide', !here.length);
+  for(const [label, pref] of here){
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'chip' + (state.prefs.has(pref) ? ' sel' : '');

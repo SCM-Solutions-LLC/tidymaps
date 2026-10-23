@@ -373,3 +373,39 @@ test('an untouched effort still trims to the target', () => {
   sizeToEffort(p, { effort: 'Quick refresh', effortTouched: false });
   assert.equal(p.steps.length, EFFORT_STEPS['Quick refresh'], 'trimming is about the ceiling, and the ceiling did not move');
 });
+
+/* 2026-10-23, the first real fridge plan. The model put raw meat in the deli
+   drawer and named it in the zone, with no item under it. The edit counted
+   the chip as missing, then matched its first word "Raw" inside "drawer" and
+   added it to the first crisper with the potatoes. "Fresh produce" matched
+   nothing and went to the leftovers shelf; "Drinks" was added to a row whose
+   zone already said Drinks. These are that plan's rows as the model wrote
+   them, before the edit. */
+function fridge1023() {
+  const r = (lv, zone, items, extra = {}) => ({ lv, zone, why: '', eye: false, items: items.map(name => ({ name, size: 'm', flags: [] })), ...extra });
+  const map = [
+    r('Top shelf', 'Dairy · Spreads · Bread', ['Greek yogurt', 'Peanut butter', 'Bread', 'Boxed items']),
+    r('Middle shelf', 'Leftovers bin · Ready to eat', ['Takeout containers', 'Sauce cups', 'Bagged leftovers'], { eye: true }),
+    r('Lower shelf', 'Drinks · Eggs', ['Modelo cans', 'Sparkling water box', 'Egg bin', 'Wine rack bottles']),
+    r('Left crisper drawer', 'Vegetables · Potatoes', ['Potatoes', 'Carrots']),
+    r('Right crisper drawer', 'Fruit · Salad greens', []),
+    r('Bottom deli drawer', 'Raw meat & fish (tray)', []),
+    r('Left door', 'Coffee creamers · Hot sauces', ['Creamers', 'Hot sauces', 'Pickled peppers']),
+    r('Right door', 'Butter · Jars · Ketchup', ['Butter', 'Salsa jars', 'Beer bottles']),
+    r('Freezer: top basket', 'Frozen meals', ['Steamer meals', 'Soup containers', 'Frozen meals']),
+    r('Freezer: middle basket', 'Raw meat · Bones', ['Chicken pack', 'Bone tray']),
+    r('Freezer: back and side', 'Frozen veg · Fruit · Gnocchi', ['Frozen berries', 'Gnocchi bags']),
+    r('Ice bin', 'Ice only', ['Ice']),
+  ].map((m, i) => ({ ...m, shelfIndex: i }));
+  return { map, steps: [{ t: 'Toss expired food', m: '10 min', w: '' }], productNeeds: [], problems: [], opportunities: [] };
+}
+const FRIDGE_TICKED = ['Leftovers', 'Fresh produce', 'Dairy & eggs', 'Condiments & sauces', 'Drinks', 'Raw meat & fish', 'Frozen meals', 'Frozen vegetables & fruit'];
+
+test('a ticked category goes where the plan already put it, never into a word inside another word', () => {
+  const plan = applyCategoryEdits(fridge1023(), FRIDGE_TICKED, { offered: SPACE_CFG.fridge.categories });
+  const where = (name) => plan.map.filter(m => m.items.some(i => i.name === name)).map(m => m.lv);
+  assert.deepEqual(where('Raw meat & fish'), ['Bottom deli drawer'], 'raw meat belongs in the drawer that names it, never the vegetable crisper');
+  assert.deepEqual(where('Fresh produce'), ['Left crisper drawer'], 'produce belongs in a crisper, not on the leftovers shelf');
+  assert.deepEqual(where('Frozen vegetables & fruit'), ['Freezer: back and side'], 'frozen fruit belongs in the freezer, not the fresh fruit crisper');
+  assert.deepEqual(where('Drinks'), ['Lower shelf']);
+});

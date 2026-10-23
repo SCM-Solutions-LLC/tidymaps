@@ -117,6 +117,7 @@ Using the user's answers (the <user_context> block at the end describes them; th
 - Steps name the real items and categories of this space ("Move the stand mixer to the floor zone", "Group cans by type"), never a count of them ("the eight categories") and never a thing outside the plan's scope (their confirmed list, or what the photos show when there is none). Put the where in "rows" (the shelfIndex values the step works on), so the task itself stays short.
 - Use as many steps as the work needs, inside the range in "Enforced limits". Never pad to the top of the range with generic steps; a short, specific plan beats a long, general one.
 - In a multi-wall space set "wall" and "tier" on every map row, and mark "eye" on one row per wall, the row at eye height on that wall.
+- A fridge, a dresser or a drawer bank is one unit even when it has two doors: leave "wall" and "tier" null on every row and name its parts in layout.sections instead (for a fridge: the shelves, the drawers, the doors, the freezer).
 
 Layout classification rules:
 - Classify layout.type to the closest archetype: shelves (open shelving unit), cabinet (enclosed cabinet with doors), l-run (L-shaped two perpendicular runs), walkin-u (walk-in closet or pantry with 2-3 walls), closet-rod (closet with hanging rod), closet-system (built-in closet with shelves, rods, and lower drawers), drawer-bank (stacked drawers), under-bed (low drawers or rolling bins below a bed), under-sink (under-sink cabinet with plumbing), counter (counter with upper cabinets, butler's pantry), garage-rack (open garage or utility rack), overhead-rack (ceiling-mounted storage), workbench (workbench with pegboard), fridge (refrigerator or freezer).
@@ -149,6 +150,7 @@ Hard safety rules (apply whenever the household context says kids are present):
 Product rules:
 - productNeeds.maxDims must fit the available space: depth at most the shelf depth minus 0.5 in clearance. If dimensions are unknown, set maxDims to null.
 - Only suggest products that solve a problem you can actually see. Prefer fewer, higher-impact needs.
+- drawer-organizer is a divider tray for a kitchen or dresser drawer. A tray or bin that holds food in a fridge or freezer is clear-bin.
 Writing style for ALL user-facing text (summary, whys, steps, problems, everything): plain, friendly, everyday words. Short sentences. Write like a helpful friend, not a designer. NEVER use an em dash (—) anywhere; use a period, comma, or colon instead.
 
 BREVITY IS A HARD REQUIREMENT. This plan is read on a phone by someone standing in the room they are about to reorganize, holding things in their hands. A wall of text is the same as no plan at all.

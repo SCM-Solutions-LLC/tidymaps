@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   WALLS, WALL_LABEL, wallFromPlace, wallFromLevel, placementFor, placementFromSections,
-  levelLabel, whereFor, wallGroups, wallsPlaced,
+  levelLabel, whereFor, wallGroups, wallsPlaced, headingGroups,
 } from '../js/placement.js';
 import { ARCHETYPE_LEVELS, ARCHETYPE_LEVELS_FOR_SOURCE } from '../js/setupStructure.js';
 
@@ -521,3 +521,61 @@ test('wallsPlaced counts the rows that resolved to a wall', () => {
   assert.equal(wallsPlaced({ map: [{ lv: 'Back wall: eye level', wall: 'back' }, null, 'not a row'] }), 1, 'junk rows neither count nor throw');
   assert.equal(wallsPlaced(null), 0);
 });
+
+/* ---------- 2026-10-23: the first real fridge plan ----------
+   Twelve rows as the model returned them (normalized: lv, surface), with
+   wall:left and wall:right on the two door rows and four named sections.
+   The report headed the fridge's shelves "Left wall", drew the right door as
+   a wall of its own, and printed the freezer as "Floor". */
+const fridgeRow = (lv, surface, extra = {}) => ({ lv, zone: 'z', surface, items: [], ...extra });
+const FRIDGE_1023 = [
+  fridgeRow('Top shelf', 'shelf'),
+  fridgeRow('Middle shelf', 'shelf', { eye: true }),
+  fridgeRow('Lower shelf', 'shelf'),
+  fridgeRow('Left crisper drawer', 'drawer'),
+  fridgeRow('Right crisper drawer', 'drawer'),
+  fridgeRow('Bottom deli drawer', 'drawer'),
+  fridgeRow('Left door', 'door', { wall: 'left', tier: 0 }),
+  fridgeRow('Right door', 'door', { wall: 'right', tier: 0 }),
+  fridgeRow('Freezer: top basket', 'drawer'),
+  fridgeRow('Freezer: middle basket', 'drawer'),
+  fridgeRow('Freezer: back and side', 'drawer'),
+  fridgeRow('Ice bin', 'drawer'),
+].map((r, i) => ({ ...r, shelfIndex: i }));
+const FRIDGE_1023_LAYOUT = {
+  type: 'fridge',
+  sections: [
+    { id: 'fresh', rows: [0, 1, 2], label: 'Fridge shelves', place: 'upper' },
+    { id: 'drawers', rows: [3, 4, 5], label: 'Drawers', place: 'lower' },
+    { id: 'doors', rows: [6, 7], label: 'Doors', place: 'wall' },
+    { id: 'freezer', rows: [8, 9, 10, 11], label: 'Freezer', place: 'floor' },
+  ],
+};
+
+test('a fridge is one unit, headed by its own parts, whatever its door rows say', () => {
+  const p = placementFor(FRIDGE_1023, { layout: FRIDGE_1023_LAYOUT, archetype: 'fridge' });
+  assert.equal(p.kind, 'unit');
+  assert.equal(wallGroups(p), null);
+  assert.deepEqual(headingGroups(p).map(g => [g.label, g.rows]), [
+    ['Fridge shelves', [0, 1, 2]],
+    ['Drawers', [3, 4, 5]],
+    ['Doors', [6, 7]],
+    ['Freezer', [8, 9, 10, 11]],
+  ]);
+  // The where-line names the row, not a wall it is not on.
+  assert.equal(whereFor([6, 7], FRIDGE_1023, p), 'Left door, Right door');
+});
+
+test('door rows never make a room, even when the setup is unknown', () => {
+  // Without the archetype the doors alone used to make two walls.
+  assert.equal(placementFor(FRIDGE_1023, { layout: FRIDGE_1023_LAYOUT }).kind, 'unit');
+  // A cabinet with a corner lazy susan and a door rack is one cabinet.
+  const cab = [row('Top shelf'), row('Corner lazy susan'), row('Door rack', { surface: 'door' })];
+  assert.equal(placementFor(cab, { archetype: 'cabinet' }).kind, 'unit');
+});
+
+test('a unit with fewer than two named parts gets no headings', () => {
+  const one = { type: 'fridge', sections: [{ id: 'all', rows: [0, 1, 2], label: 'Everything' }] };
+  assert.equal(headingGroups(placementFor(FRIDGE_1023.slice(0, 3), { layout: one, archetype: 'fridge' })), null);
+});
+
