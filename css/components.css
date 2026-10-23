@@ -656,7 +656,7 @@ body[data-flow="1"] .site-footer{display:none}
    them, so their targets do not meet. */
 .prod .pretail a{padding:14px 4px;margin:-14px -4px}
 .prod .pmore{margin-top:10px}
-.prod .pmore summary{font-size:var(--fs-xs);font-weight:600;color:var(--ink-3);cursor:pointer;list-style-position:inside;padding:12px 0;margin:-12px 0}
+.prod .pmore summary{font-size:var(--fs-xs);font-weight:600;color:var(--ink-3);cursor:pointer;list-style-position:inside;padding:12px 0;margin:-12px 0;min-height:44px;box-sizing:border-box}
 .prod .pmore summary:hover{color:var(--ink)}
 .prod .pmore .pmeta{margin-top:10px}
 @media(max-width:560px){

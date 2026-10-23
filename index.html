@@ -780,7 +780,10 @@
               <span style="font-weight:600">Estimated cost</span>
               <span style="font-weight:600;font-family:var(--serif);font-size:var(--fs-lg)" id="res-shop-total">$45-$85</span>
             </div>
-            <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
+            <!-- A 10px row gap: each small button's tap band reaches 5px past
+                 its box, and at 9px the bands of a wrapped row overlapped, so
+                 a tap just under "Download list" went to the button below. -->
+            <div style="display:flex;gap:10px 9px;flex-wrap:wrap;margin-top:16px">
               <button class="btn btn-ghost btn-sm" onclick="downloadShoppingList()">Download list</button>
               <button class="btn btn-ghost btn-sm" onclick="sendShoppingList()">Send list</button>
               <button class="btn btn-ghost btn-sm" onclick="uncheckAllUpgrades()">Remove all upgrades</button>

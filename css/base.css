@@ -240,8 +240,11 @@ main{padding:0 var(--pad,18px)}
 .btn-block{width:100%}
 .btn-sm{padding:11px 16px;font-size:var(--fs-sm);position:relative}
 /* A small button is 34 to 37px tall. The band above and below the box takes
-   the tap, so it is a 44px target drawn at the size the row was set for. */
-.btn-sm::before{content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px}
+   the tap, so it is a 44px target drawn at the size the row was set for. The
+   band is placed from the padding box, inside the 1px border: at -5px it
+   reached 4px past the button, and tap-targets.spec passed only while the
+   screen was still rising into place. -6px is 5px past the border. */
+.btn-sm::before{content:"";position:absolute;left:0;right:0;top:-6px;bottom:-6px}
 .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none !important}
 
 /* sticky footer nav for flow screens */
