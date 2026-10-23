@@ -213,13 +213,16 @@ export const ARCHETYPE_SURFACES = {
 
 /* Surfaces a setup has beyond its archetype's. `shelves` draws open shelving,
    wall shelves and the reach-in pantry and linen closet alike, and only the
-   reach-ins stand behind a door. Keyed by archetype as well, so a reach-in
-   whose photos resolved to a walk-in gets the walk-in's surfaces and nothing
-   borrowed from the card. Before this, a reach-in's door rack came out of the
-   honesty pass as a "Front shelf", its over-the-door step and door-rack
-   product deleted, and the 3D view drew it as one more board. */
+   reach-ins stand behind a door; `closet-rod` draws a wardrobe and a reach-in
+   closet, and the closet's door is the one an over-the-door shoe rack hangs
+   on. Keyed by archetype as well, so a reach-in whose photos resolved to a
+   walk-in gets the walk-in's surfaces and nothing borrowed from the card.
+   Before this, a reach-in's door rack came out of the honesty pass as a
+   "Front shelf", its over-the-door step and door-rack product deleted, and
+   the 3D view drew it as one more board. */
 export const SETUP_SURFACES = {
   'shelves': { reachin: ['door'], reachinL: ['door'] },
+  'closet-rod': { reachinC: ['door'] },
 };
 
 /** The surfaces a setup really has, drawn as `archetype`.

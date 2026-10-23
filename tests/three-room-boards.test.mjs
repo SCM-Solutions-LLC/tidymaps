@@ -9,6 +9,7 @@ import {
   roomBoardGeometry, roomRowRun, hangsDoorRows, cabinetShelfGeometry,
 } from '../js/three/roomBoards.js';
 import { shelfDepthFor } from '../js/catalog.js';
+import { normalizeViewerGeometry } from '../js/three/viewerOptions.js';
 
 /* The 12-row walk-in results-3d-entry.spec.mjs drives through the real
    flow: five rows on the left wall, five on the back, two in a "corner"
@@ -485,7 +486,10 @@ test('a reach-in hangs its door rows on its door; open shelving has none to hang
   for (const setup of ['openshelf', 'wallshelf', null]) {
     assert.equal(hangsDoorRows({ type: 'shelves', setup }), false, String(setup));
   }
+  assert.equal(hangsDoorRows({ type: 'closet-rod', setup: 'reachinC' }), true);
+  assert.equal(hangsDoorRows({ type: 'closet-rod', setup: 'wardrobe' }), false);
   assert.equal(hangsDoorRows({ type: 'walkin-u', setup: 'reachin' }), false);
+  assert.equal(hangsDoorRows({ type: 'fridge', setup: 'frenchdoor' }), false, 'a fridge draws its own doors');
   assert.equal(hangsDoorRows(null), false);
   // Five rows, one on the door: four boards, as the builder draws them.
   const map = ['Top shelf', 'Eye level', 'Middle shelf', 'Lower shelf', 'Door rack']
@@ -493,4 +497,27 @@ test('a reach-in hangs its door rows on its door; open shelving has none to hang
   const g = cabinetShelfGeometry({ width: 30, height: 84, depth: 16, shelfCount: 5 }, map, { type: 'shelves', setup: 'reachin' });
   assert.equal(g.shelfCount, 4);
   assert.equal(g.levelsAre, 'shelves');
+});
+
+/* A closet's rows are judged on boards (PLAIN_BOARD_LAYOUTS). With a row on
+   a reach-in closet's door, the floor row under it sits on the last board,
+   not on a board the door row used to take. */
+test("a reach-in closet's rows are judged on the boards left once the door row is out", () => {
+  const map = [
+    { lv: 'Top shelf', shelfIndex: 0, surface: 'shelf' },
+    { lv: 'Door rack', shelfIndex: 1, surface: 'door' },
+    { lv: 'Hanging rod', shelfIndex: 2, surface: 'rod' },
+    { lv: 'Floor', shelfIndex: 3, surface: 'floor' },
+  ];
+  const geometry = { width: 48, height: 96, depth: 24, shelfCount: 4 };
+  const layout = { type: 'closet-rod', setup: 'reachinC' };
+  const boards = cabinetShelfGeometry(geometry, map, layout);
+  assert.equal(boards.shelfCount, 3);
+  const floor = rowHeadroomFor('closet-rod', 'floor', geometry, 3, { map, layout });
+  const lastGap = gapsAboveFor(boardYsFromFracs(boards.shelfYFracs, boards.height), boards.height)[2];
+  assert.equal(floor, plainBoardClearance(lastGap));
+  // A wardrobe has no such door: its four rows are four boards, as before.
+  const g = normalizeViewerGeometry(geometry, 'closet-rod');
+  assert.equal(rowHeadroomFor('closet-rod', 'floor', geometry, 3, { map, layout: { type: 'closet-rod', setup: 'wardrobe' } }),
+    plainBoardClearance(gapsAboveFor(boardYsFromFracs(g.shelfYFracs, g.height), g.height)[3]));
 });

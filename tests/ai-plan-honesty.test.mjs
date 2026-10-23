@@ -189,6 +189,11 @@ test('a reach-in keeps the door it stands behind; open shelving still has none',
     assert.deepEqual(plan.productNeeds.map((p) => p.type), ['door-rack'], `${setup}: the door rack to buy`);
     assert.match(plan.summary, /back of the door/, `${setup}: the summary's door`);
   }
+  // A reach-in closet's door takes an over-the-door shoe rack the same way.
+  const closet = enforceArchetypeHonesty(reachInPlan(), 'closet-rod', 'reachinC');
+  assert.equal(closet.map[1].surface, 'door', 'reachinC: door row');
+  assert.deepEqual(closet.productNeeds.map((p) => p.type), ['door-rack'], 'reachinC: the door rack to buy');
+  assert.equal(enforceArchetypeHonesty(reachInPlan(), 'closet-rod', 'wardrobe').map[1].surface, 'shelf', 'wardrobe: no door here');
   for (const setup of ['openshelf', 'wallshelf', null]) {
     const plan = enforceArchetypeHonesty(reachInPlan(), 'shelves', setup);
     assert.equal(plan.map[1].surface, 'shelf', `${setup}: no door to hang a row on`);

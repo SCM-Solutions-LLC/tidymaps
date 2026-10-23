@@ -150,14 +150,16 @@ export function doorRowsOf(map, layout){
 }
 
 /* Whether this unit hangs its door rows on a door, drawn swung open with a
-   rack on it: a cabinet, and the reach-in pantry and linen closet, which are
-   drawn as shelves but stand behind a door (setupStructure.SETUP_SURFACES).
-   Open and wall shelving have no door, so a door row there stays a board.
+   rack on it: a cabinet, and the reach-ins, which are drawn as shelves or a
+   closet rod but stand behind a door (setupStructure.SETUP_SURFACES). Open
+   and wall shelving and a wardrobe have none, so a door row there stays a
+   board. Only the builders that draw such a door are listed; a fridge's
+   doors are its own (fridgePlan.js).
    @param {any} [layout] */
+const DOOR_ROW_BUILDERS=new Set(['cabinet', 'shelves', 'closet-rod']);
 export function hangsDoorRows(layout){
-  if(!layout) return false;
-  if(layout.type==='cabinet') return true;
-  return layout.type==='shelves'&&surfacesFor('shelves', layout.setup).includes('door');
+  if(!layout||!DOOR_ROW_BUILDERS.has(layout.type)) return false;
+  return surfacesFor(layout.type, layout.setup).includes('door');
 }
 
 /* The shelf rows of a cabinet, in board order: every row not on its door,
@@ -230,9 +232,10 @@ export function rowHeadroomFor(type, surface, geometry, index, plan){
   }
   if(!PLAIN_BOARD_LAYOUTS.has(type)) return null;
   const g=normalizeViewerGeometry(geometry, type);
-  /* A cabinet with rows on its door counts its boards without them, and a
-     row sits on the board its place among the shelf rows gives it. */
-  if(type==='cabinet'&&plan&&Array.isArray(plan.map)&&doorRowsOf(plan.map, plan.layout).size){
+  /* A cabinet or reach-in with rows on its door counts its boards without
+     them, and a row sits on the board its place among the shelf rows gives
+     it. */
+  if(plan&&Array.isArray(plan.map)&&hangsDoorRows({ ...(plan.layout||{}), type })&&doorRowsOf(plan.map, plan.layout).size){
     const c=cabinetShelfGeometry(g, plan.map, plan.layout);
     const board=shelfRowsOf(plan.map, plan.layout).indexOf(index);
     if(board<0||board>=c.shelfCount) return null;

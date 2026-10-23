@@ -63,3 +63,43 @@ test("a reach-in plan keeps its door rack in the report and hangs it on the door
   await page.locator('#v3d-canvas[data-layout="shelves"]').waitFor({ state: 'attached', timeout: 20_000 });
   await expect(page.locator('#v3d-zones-h')).toHaveText('4 zones: 3 shelves, 1 on the door');
 });
+
+/* A reach-in closet is drawn as a closet rod, and its door is where an
+   over-the-door shoe rack hangs. The rack was a shelf board over the clothes.
+   The heading counts the rest as "inside": a closet's zones are a shelf, a
+   rod and a floor, not shelves. A wardrobe has no such door here. */
+test("a reach-in closet's shoe rack hangs on its door; a wardrobe's stays inside", async ({ page }) => {
+  const headings = {};
+  for (const setup of ['reachinC', 'wardrobe']) {
+    // A fresh page each time: the second build would otherwise be read off
+    // the first one's canvas, which already says closet-rod.
+    await page.goto('/index.html');
+    await page.evaluate(async (setup) => {
+      const [{ state }, { normalizeAi }, { enforceArchetypeHonesty }] = await Promise.all([
+        import('/js/state.js'), import('/js/plan.js'), import('/js/setupStructure.js'),
+      ]);
+      const r = (shelfIndex, level, surface, zone) => ({
+        level, icon: 'middle', zone, why: 'Placed where it is reached.', eye: false, shelfIndex,
+        safety: { flag: null, why: null }, items: [{ name: zone, size: 'm', flags: [] }], surface,
+      });
+      const plan = {
+        spaceType: 'Reach-in closet', summary: 'A reach-in closet.', categories: ['Shoes'],
+        map: [r(0, 'Top shelf', 'shelf', 'Sweaters'), r(1, 'Hanging rod', 'rod', 'Shirts'),
+          r(2, 'Floor', 'floor', 'Boots'), r(3, 'Door rack', 'door', 'Shoes')],
+        geometry: { unit: 'in', width: 48, height: 96, depth: 24, shelfCount: 4 },
+        layout: { type: 'closet-rod' }, safetyNotes: [], productNeeds: [],
+        steps: [{ task: 'Hang a shoe rack on the door', time: '10 min', why: 'Frees the floor.' }],
+        time: '30 min', cost: '$0',
+      };
+      enforceArchetypeHonesty(plan, 'closet-rod', setup);
+      state.space = 'closet'; state.setup = setup; state.setupTouched = true;
+      state.styles = []; state.prefs = new Set(); state.dims = { w_in: 48, h_in: 96, d_in: 24 };
+      state.ai = normalizeAi(plan);
+      await window.openViewer3d();
+    }, setup);
+    await page.locator('#v3d-canvas[data-layout="closet-rod"]').waitFor({ state: 'attached', timeout: 20_000 });
+    headings[setup] = await page.locator('#v3d-zones-h').innerText();
+  }
+  expect(headings.reachinC).toBe('4 zones: 3 inside, 1 on the door');
+  expect(headings.wardrobe).not.toContain('on the door');
+});

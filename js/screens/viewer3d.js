@@ -818,7 +818,7 @@ function populateZones(map, resolved=currentLayout(), geometry=null){
       heading.textContent=drawn==='fridge'
         ? fridgeZoneHeading(rows, resolved)
         : onDoor
-          ? `${rows.length} zones: ${rows.length-onDoor} shel${rows.length-onDoor===1?'f':'ves'}, ${onDoor} on the door`
+          ? `${rows.length} zones: ${rows.length-onDoor} ${nouns==='shelves'?(rows.length-onDoor===1?'shelf':'shelves'):'inside'}, ${onDoor} on the door`
         : rows.length===1
           ? `1 zone: the ${noun.toLowerCase()}`
           : nouns==='zones'
