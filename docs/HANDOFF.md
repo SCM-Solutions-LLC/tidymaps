@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-23, main at 7c2aa6f (after #204), plus this session's PR.** History (dated
+**Last refreshed: 2026-10-24, main at 7f05053 (after #210).** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,17 +11,15 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-10-23 session changed
+## What the 2026-10-23 sessions changed
 
-First real fridge run (French door, AI, 12 rows) worked; the report and 3D
-did not. #205: whole-word step pictures, door rows never make a room, unit
-sections head the map, whole-word categories, drilling chip scoped. PR 2: 3D
-fridge per card (`three/fridgePlan.js`), door rows on the door (cabinet too,
-`cabinetShelfGeometry`), one surface and label per row (`three-unit-parts`).
-#208: 163 clips re-rendered (palette test-held, fridge/cabinet/vanity/drawer
-furniture, fridge glyphs, purge to floor bins, edge gate). #209: type scale.
-Reach-ins (pantry, linen, closet) keep their door: `SETUP_SURFACES`,
-`hangsDoorRows`; the door rack hangs on an open door in 3D (item 15 closed).
+The first real fridge run (French door, AI, 12 rows) planned well and drew
+badly. #205 fixed the report (whole-word pictures and categories, door rows
+never make a room, unit sections head the map). #207 drew each fridge card
+in 3D, door rows on the door. #208 re-rendered all 163 step clips on
+furniture that fits the space (fridge, cabinet, vanity, open drawer), in the
+current palette, with fridge food and nothing at the frame edge. #209 set
+every font size from one scale. #210 gave the reach-ins back their door.
 
 ## Product state
 
@@ -68,6 +66,9 @@ Only the owner has used it (Production health #9); first users: item 6.
 - **Persistence.** Signed in: `autoSaveSpace()` creates the row (no photos),
   `updateSpacePatch()` debounces at 800ms, explicit save/share uploads media.
   Signed out: `persistGuestDraft()`, no media ever.
+- **Step clips.** `remotion/` renders the 163 keys `enumerate-keys.mjs` lists
+  (others keep the inline SVG) in a test-held copy of `tokens.css`: a palette
+  change is a `--force` render (~20 min, `sheet.mjs` first, `check-edges.mjs`).
 - **Telemetry.** `js/telemetry.js` -> `track-events`, re-sanitized against
   `_shared/telemetryEvents.js` (the server copy is the boundary). Off for
   DNT, GPC, `navigator.webdriver`, no `document`, and the in-app opt-out
@@ -123,11 +124,9 @@ archive has the 08-27 text, where 4 and 5 were each used twice.
    behind an honest banner. Checks: the canary (open item 2) alerts; by hand,
    `plan_meta->>'source'` on recent `spaces` (`demo-fallback` = broken).
    `usage_events` has no status column and cannot tell you.
-4. Resolved, two entries: stored XSS through plan icons closed in #134
-   (09-14); the unit suite posting telemetry to production fixed in #98.
-5. **Deploy token:** dead 09-14, replaced 10-03, expires **2027-10-01**. A
-   dead token shows as a 401 at the deploy step and a red run. (The other #5,
-   "the numbers are a smoke test", is superseded by #9.)
+4. Resolved: XSS through plan icons (#134); the suite's telemetry (#98).
+5. **Deploy token:** expires **2027-10-01**; dead, it is a 401 at the deploy
+   step. (The other #5, "the numbers are a smoke test", is superseded by #9.)
 6. `render-after` works (fixed by 1568px input, #106). Proven re-staging on
    one corner pantry; object fidelity and other spaces unmeasured (item 1).
 7. Telemetry is off in the owner's Chrome profile (`off: Do Not Track`,
@@ -148,9 +147,9 @@ archive has the 08-27 text, where 4 and 5 were each used twice.
 ```
 npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
-npm test                  # 838 unit tests at 10-16
-export CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
-npx playwright test       # 344 e2e + 1 standing skip at 10-16
+npm test                  # 873 unit tests at 10-24
+export CHROMIUM_PATH=/opt/pw-browsers/chromium   # the sandbox's stable launcher
+npx playwright test       # 352 e2e + 1 standing skip at 10-24 (~17 min)
 npm run check:model-path  # the canary, by hand
 ```
 
@@ -211,17 +210,14 @@ npm run check:model-path  # the canary, by hand
 - **3D viewer:** keep it (`img2threejs` replacement settled no). Env map is
   per material, never `scene.environment` (it relights every surface).
   Packing jitter is a hash, never `Math.random`.
-- **Measured and not done:** the builder thunk map (54KB, lazy chunk); more
-  boot deferral (item 12); CSS concatenation (slower). `modulepreload`, twice:
-  09-14, and 10-13 (HTTP/2, 390px, median of 11): slow 4G boot 6.6 to 6.0s,
-  paint unchanged; fast link boot 1.16 to 1.0s but LCP (the H1's font swap)
-  about 0.2s later. Dropped by the owner 10-14: the early-click guard already
-  keeps clicks made before boot, so the gain left is 0.6s on slow 4G against
-  a later headline for most visitors and a 44-line list to maintain.
-  `tests/early-click-guard.test.mjs` fails if the links come back.
+- **Measured and not done:** the builder thunk map, more boot deferral (item
+  12), CSS concatenation, `modulepreload` (0.6s on slow 4G for a later
+  headline; dropped 10-14, `early-click-guard.test` holds it; archive).
 - **Advisor non-fixes** (`0009`): Production health #11, plus no captcha.
 - **One type scale** (`--fs-*` in `tokens.css`, 8 set sizes and 6 fluid).
   A raw font-size fails `tests/type-scale.test.mjs`; half pixels went down.
+- **A setup can add surfaces its archetype lacks** (`SETUP_SURFACES`): the
+  reach-ins have a door, open shelving and a wardrobe do not (#210).
 - **Not dead, do not remove:** household counts and `state.detected` (#170
   audit). `plan.features` was removed symmetrically from prompt and schema.
 - **Render:** 1568px input; parts order, `responseModalities` and the key are
@@ -253,6 +249,10 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
     calendar reminder, since nothing in the repo warns.
 14. **Fridge (10-16).** Real run done 10-23. Left: replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`; multipacks price per bin.
+
+16. **Open and wall shelving samples keep a "Door / side" row** (10-23),
+    drawn as a board but named for a door: no projection runs when the
+    setup and its scenario share an archetype, so the row is never refitted.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** watch `analyze-space plan validation failed` for a rise
