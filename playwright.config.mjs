@@ -5,8 +5,8 @@ import { defineConfig } from 'playwright/test';
    functions' CORS list already allows for local work).
 
    Locally, point CHROMIUM_PATH at a system Chromium if the Playwright-managed
-   download isn't present (e.g. CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/
-   chrome-linux/chrome). CI installs the matching browser instead. */
+   download isn't present (e.g. CHROMIUM_PATH=/opt/pw-browsers/chromium, the
+   sandbox's stable launcher). CI installs the matching browser instead. */
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 45_000,

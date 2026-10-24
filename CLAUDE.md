@@ -41,7 +41,8 @@ npx playwright test   # e2e
 ```
 
 The Playwright browser is not installed in the web sandbox; use
-`CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
+`CHROMIUM_PATH=/opt/pw-browsers/chromium` (a versioned path such as
+`chromium-1194/...` moves when the image updates; this launcher does not).
 
 ## Rules that came from being wrong
 
