@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { addBox, addShelfLabel, accentFor, makeHitbox } from './helpers.js';
-import { rodClosetDepth } from '../roomBoards.js';
+import { addBox, addShelfLabel, accentFor, makeHitbox, addOpenDoor, doorFramePoints } from './helpers.js';
+import { rodClosetDepth, doorRowsOf, shelfRowsOf, hangsDoorRows } from '../roomBoards.js';
+import { openDoor, doorSlot, binOf } from '../doorBins.js';
 
 export function build(ctx){
-  const { scene, geo, rowsByShelf, mats }=ctx;
+  const { scene, geo, rowsByShelf, mats, layout }=ctx;
   const { W, H, D, T, NSH, shelfYs, gapAbove }=geo;
 
   addBox(scene, W, H, T, 0, H/2, -D/2+T/2, mats.carcass);  // back
@@ -26,15 +27,56 @@ export function build(ctx){
   const boardD=shallow?shelfD:D-T;
   const boardZ=shallow?-D/2+T+shelfD/2:T/4;
 
-  shelfYs.forEach((y,i)=>{
+  /* A reach-in closet stands behind a door, and an over-the-door rack row
+     hangs on it: the door is drawn swung open with the rack's bins on its
+     inside, as a cabinet's is (layouts/cabinet.js). It used to be one more
+     shelf board over the clothes. A wardrobe has no such door here
+     (hangsDoorRows), and a closet with nothing on its door is drawn
+     open-fronted as before. */
+  const doorRows=hangsDoorRows(layout)?doorRowsOf(ctx.map, layout):new Set();
+  const rackRows=[...doorRows].sort((a,b)=>a-b);
+  const doorZ=D/2;
+  if(rackRows.length){
+    const rack=openDoor({ role:'reach-in', hinge:'right', x0:-W/2+T, x1:W/2-T, y0:T, y1:H-T, bins:Math.min(5, Math.max(3, rackRows.length)) });
+    const doorMat=new THREE.MeshStandardMaterial({ color:0xdcd5c8, roughness:0.7, transparent:true, opacity:0.35 });
+    addOpenDoor(scene, rack, doorZ, { shellMat:doorMat, linerMat:doorMat,
+      binMat:new THREE.MeshStandardMaterial({ color:0xcfc6b6, roughness:0.6 }),
+      handleMat:new THREE.MeshStandardMaterial({ color:0x888888, metalness:0.6, roughness:0.3 }) });
+    scene.userData.framePoints=doorFramePoints([rack], doorZ);
+    rackRows.forEach((i, t)=>{
+      const row=rowsByShelf.get(i)||null;
+      const slot=doorSlot(i, rack, binOf(t, rackRows.length, rack.bins), doorZ);
+      const normal=new THREE.Vector3(slot.normal.x, 0, slot.normal.z);
+      const uDir=new THREE.Vector3(slot.uDir.x, 0, slot.uDir.z);
+      const label=row?addShelfLabel(scene, row, slot.x, slot.y+Math.min(3.4, slot.gap*0.6), slot.z, { normal }):null;
+      if(label) label.position.set(slot.x+normal.x*3, slot.y+Math.min(3.4, slot.gap*0.6), slot.z+normal.z*3+0.6);
+      const hit=makeHitbox(scene, slot.length, Math.max(3, slot.gap*0.85), slot.depth,
+        slot.x, slot.y+Math.max(1.5, slot.gap*0.42), slot.z, { shelfIndex:i, shelfY:slot.y, row });
+      hit.rotation.y=Math.atan2(-uDir.z, uDir.x);
+      surfaces.push({
+        index:i, kind:'door', row, y:slot.y, hitbox:hit, uDir, normal,
+        length:slot.length, gap:slot.gap, depth:slot.depth, itemDepth:3,
+      });
+    });
+  }
+  /* Board j carries the j-th row not on the door (scene.js counted the boards
+     without them, roomBoards.cabinetShelfGeometry). The rod and floor
+     fallbacks for a row with no surface are positional, so they read the
+     board's place, not the row's. */
+  const shelfRows=rackRows.length?shelfRowsOf(ctx.map, layout):null;
+  const lastRow=Math.max(-1, ...(ctx.map||[]).map((row, k)=>(Number.isInteger(row&&row.shelfIndex)?row.shelfIndex:k)));
+  const boardRow=j=>!shelfRows?j:j<shelfRows.length?shelfRows[j]:lastRow+1+(j-shelfRows.length);
+
+  shelfYs.forEach((y,j)=>{
+    const i=boardRow(j);
     const row=rowsByShelf.get(i)||null;
     const surface=row&&row.surface;
-    const isFloor=surface==='floor'||(i>=NSH-1 && !surface);
-    const isRod=surface==='rod'||(i>0 && i<NSH-1 && !surface && !isFloor);
+    const isFloor=surface==='floor'||(j>=NSH-1 && !surface);
+    const isRod=surface==='rod'||(j>0 && j<NSH-1 && !surface && !isFloor);
     const isShelf=!isFloor && !isRod;
 
     if(isRod){
-      const rodY=y+gapAbove[i]*0.85;
+      const rodY=y+gapAbove[j]*0.85;
       const rod=new THREE.Mesh(
         new THREE.CylinderGeometry(0.35, 0.35, W-2*T, 12),
         rodMat);
@@ -59,15 +101,15 @@ export function build(ctx){
       if(row) addShelfLabel(scene, row, -W/2, rodY+2.5, D/2+0.6);
 
       const hit=makeHitbox(scene,
-        W-2*T, Math.max(6, gapAbove[i]*0.7), D,
-        0, rodY-gapAbove[i]*0.25, 0,
+        W-2*T, Math.max(6, gapAbove[j]*0.7), D,
+        0, rodY-gapAbove[j]*0.25, 0,
         { shelfIndex:i, shelfY:rodY, row });
 
       surfaces.push({
         index:i, kind:'rod', row, y:rodY, hitbox:hit,
         uDir: new THREE.Vector3(1,0,0),
         normal: new THREE.Vector3(0,0,1),
-        length:usable, gap:gapAbove[i]*0.7, itemDepth:Math.min(D*0.4, 6),
+        length:usable, gap:gapAbove[j]*0.7, itemDepth:Math.min(D*0.4, 6),
       });
     } else {
       if(isShelf && y<H-T*2 && y>T*1.6){
@@ -96,10 +138,11 @@ export function build(ctx){
         index:i, kind:isFloor?'floor':'shelf', row, y, hitbox:hit,
         uDir: new THREE.Vector3(1,0,0),
         normal: new THREE.Vector3(0,0,1),
-        length:usable, gap:gapAbove[i], depth:rowD, itemDepth:Math.min(rowD*0.55, 8),
+        length:usable, gap:gapAbove[j], depth:rowD, itemDepth:Math.min(rowD*0.55, 8),
       });
     }
   });
 
+  surfaces.sort((a,b)=>a.index-b.index);
   return { surfaces };
 }

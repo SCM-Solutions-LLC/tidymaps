@@ -8,7 +8,7 @@ import { semanticItemHeight, semanticItemKind } from './itemKinds.js';
 import { organizerSpecFor, needKeyFor, isVisualNeed, targetScore, visualTypeFor,
   surfaceAcceptsOrganizer, isMountedOrganizer } from './organizerKinds.js';
 import { evenShelfFracs } from './viewerOptions.js';
-import { roomPlanFor, boardYsFromFracs, gapsAboveFor, cabinetShelfGeometry } from './roomBoards.js';
+import { roomPlanFor, boardYsFromFracs, gapsAboveFor, cabinetShelfGeometry, hangsDoorRows } from './roomBoards.js';
 import { measuredCapacityProfile, naturalItemWidth, naturalOrganizerWidth, visualUnitCount } from './capacity.js';
 import { ITEM_NORMAL_OFFSET, depthRankStep, displayJitter, hashString, itemYForSurface, pointOnSurface, surfaceRotationY } from './surfaceMath.js';
 
@@ -387,11 +387,12 @@ export function createRenderer(canvas){
    so the per-canvas cache above never hits — where paying for a cubemap
    nothing will look at is the whole cost. The viewer itself never sets it. */
 export function buildScene({ geometry, map, placements, canvas, layout, organizerPlan={}, representativeItems=true, environment=true }){
-  /* A cabinet's door rows hang on its door, so its boards are its other
-     rows (roomBoards.cabinetShelfGeometry). The viewer converts before it
-     builds; a caller that hands over the plan's own geometry is converted
-     here, and a converted one passes through unchanged. */
-  if(layout&&layout.type==='cabinet') geometry=cabinetShelfGeometry(geometry, map, layout);
+  /* A cabinet's door rows hang on its door, and so do a reach-in's
+     (roomBoards.hangsDoorRows), so its boards are its other rows
+     (roomBoards.cabinetShelfGeometry). The viewer converts before it builds;
+     a caller that hands over the plan's own geometry is converted here, and
+     a converted one passes through unchanged. */
+  if(hangsDoorRows(layout)) geometry=cabinetShelfGeometry(geometry, map, layout);
   const W=Math.max(8, Number(geometry.width)||30);
   const rawH=Math.max(10, Number(geometry.height)||60);
   const H=layout&&layout.type==='under-sink'?Math.max(28,Math.min(42,rawH)):rawH;

@@ -240,7 +240,7 @@ export function runLoading({ setupConfirmed=false, fallback=null }={}){
         aiFromPhotos: true, scenarioKey: scenarioKeyFor(state.space, state.setup),
         map: plan && plan.map,
       });
-      enforceArchetypeHonesty(plan, drawn.type);
+      enforceArchetypeHonesty(plan, drawn.type, drawn.setup);
       /* The model names, per step, which of the user's goals it answers. That
          is a claim about the user, so it is checked against the goals they
          actually gave before it becomes a "You told us" on the step's face;

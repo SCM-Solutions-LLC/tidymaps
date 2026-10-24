@@ -211,6 +211,27 @@ export const ARCHETYPE_SURFACES = {
   'fridge':        ['shelf', 'drawer', 'door'],
 };
 
+/* Surfaces a setup has beyond its archetype's. `shelves` draws open shelving,
+   wall shelves and the reach-in pantry and linen closet alike, and only the
+   reach-ins stand behind a door; `closet-rod` draws a wardrobe and a reach-in
+   closet, and the closet's door is the one an over-the-door shoe rack hangs
+   on. Keyed by archetype as well, so a reach-in whose photos resolved to a
+   walk-in gets the walk-in's surfaces and nothing borrowed from the card.
+   Before this, a reach-in's door rack came out of the honesty pass as a
+   "Front shelf", its over-the-door step and door-rack product deleted, and
+   the 3D view drew it as one more board. */
+export const SETUP_SURFACES = {
+  'shelves': { reachin: ['door'], reachinL: ['door'] },
+  'closet-rod': { reachinC: ['door'] },
+};
+
+/** The surfaces a setup really has, drawn as `archetype`.
+    @param {string} archetype @param {string|null} [setupId] @returns {string[]} */
+export function surfacesFor(archetype, setupId) {
+  const extra = (SETUP_SURFACES[archetype] || {})[setupId || ''] || [];
+  return [...(ARCHETYPE_SURFACES[archetype] || []), ...extra];
+}
+
 /* Phrases that only make sense when a surface exists, and what to say when
    it does not. A null replacement means the whole sentence goes. */
 /* `{n}` / `{ns}` expand to the archetype's OWN primary surface noun. That
@@ -294,9 +315,9 @@ const SURFACE_ONLY_LINES = {
   shelf: /\b(?:upper|top|lower|middle) shelf\b/i,
 };
 
-export function rewriteForSurfaces(text, archetype) {
+export function rewriteForSurfaces(text, archetype, setupId) {
   if (!text) return text;
-  const have = new Set(ARCHETYPE_SURFACES[archetype] || []);
+  const have = new Set(surfacesFor(archetype, setupId));
   let out = String(text);
   for (const [surface, rules] of SURFACE_PHRASES) {
     if (have.has(surface)) continue;
@@ -334,10 +355,10 @@ export function rewriteForSurfaces(text, archetype) {
    As a named pass it can run last, over the finished plan, where nothing can
    get added behind it. Patching the four known injection sites would have held
    only until someone added a fifth. */
-export function scrubSurfaceProse(plan, archetype) {
+export function scrubSurfaceProse(plan, archetype, setupId) {
   if (!plan || !archetype) return plan;
-  const fix = (t) => rewriteForSurfaces(t, archetype);
-  const drop = (t) => mentionsMissingSurface(t, archetype);
+  const fix = (t) => rewriteForSurfaces(t, archetype, setupId);
+  const drop = (t) => mentionsMissingSurface(t, archetype, setupId);
 
   /* The summary is a paragraph, so it gets sentence-level treatment: the whole
      thing can't be dropped for one bad clause, and rewording alone was not
@@ -399,10 +420,10 @@ const primaryNoun = (archetype) => PRIMARY_NOUN[archetype] || 'shelf';
    a space the picture beside it does not show. Either way the two agree, which
    is the actual guarantee; picking a winner and applying it in one place only is
    how they came apart. */
-export function enforceArchetypeHonesty(plan, archetype) {
+export function enforceArchetypeHonesty(plan, archetype, setupId) {
   if (!plan || !archetype || !ARCHETYPE_SURFACES[archetype]) return plan;
-  const have = new Set(ARCHETYPE_SURFACES[archetype]);
-  const fix = (t) => rewriteForSurfaces(t, archetype);
+  const have = new Set(surfacesFor(archetype, setupId));
+  const fix = (t) => rewriteForSurfaces(t, archetype, setupId);
   const noun = primaryNoun(archetype);
   const fallbackWhy = ROLE_WHY[NOUN_ROLE[noun]] || ROLE_WHY.mid;
 
@@ -426,14 +447,14 @@ export function enforceArchetypeHonesty(plan, archetype) {
     return plan;
   };
 
-  scrubSurfaceProse(draft, archetype);
+  scrubSurfaceProse(draft, archetype, setupId);
 
   draft.map = (draft.map || []).map((row) => ({
     ...row,
     /* Never dropped, only reworded. A level the model saw is a level that
        exists; the sentence about it can be wrong without the shelf being. */
     zone: fix(row.zone),
-    why: mentionsMissingSurface(row.why, archetype) ? fallbackWhy : fix(row.why),
+    why: mentionsMissingSurface(row.why, archetype, setupId) ? fallbackWhy : fix(row.why),
     level: fix(row.level),
     /* A row's surface decides how its contents are drawn, so 'rod' left on a
        drawer bank hangs shirts inside a tool chest. Point it at the shape's own
@@ -446,7 +467,7 @@ export function enforceArchetypeHonesty(plan, archetype) {
   }));
 
   draft.productNeeds = (draft.productNeeds || [])
-    .filter((p) => !mentionsMissingSurface(p.purpose, archetype))
+    .filter((p) => !mentionsMissingSurface(p.purpose, archetype, setupId))
     .filter((p) => !(p.type === 'door-rack' && !have.has('door')))
     .filter((p) => !(p.type === 'hook-rack' && !have.has('pegboard')))
     /* A drawer organizer is a cutlery or divider tray. The first real fridge
@@ -461,9 +482,9 @@ export function enforceArchetypeHonesty(plan, archetype) {
 }
 
 /* True when the line is unsalvageable for this archetype. */
-export function mentionsMissingSurface(text, archetype) {
+export function mentionsMissingSurface(text, archetype, setupId) {
   if (!text) return false;
-  const have = new Set(ARCHETYPE_SURFACES[archetype] || []);
+  const have = new Set(surfacesFor(archetype, setupId));
   for (const [surface, re] of Object.entries(SURFACE_ONLY_LINES)) {
     if (!have.has(surface) && re.test(text)) return true;
   }
@@ -826,7 +847,7 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
   // The rows as the scenario wrote them: alignTargetZones reads each need's
   // target against these to learn what kind of level it was asking for.
   const sourceRows = plan.map.map(r => ({ ...r }));
-  const rewrite = (t) => rewriteForSurfaces(t, archetype);
+  const rewrite = (t) => rewriteForSurfaces(t, archetype, setupId);
   const slots = levelsFor(archetype, setupId, opts.sourceArchetype);
   const buckets = bucketRows(plan.map, slots);
   // How far down its wall each row sits, 0 being that wall's top shelf.
@@ -895,19 +916,20 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
   // Prose and product needs that name a surface this setup does not have.
   plan.summary = rewriteForSurfaces(rewriteOpening(plan.summary, describeSetup({
     archetype, setupId, dims: opts.dims, levelCount: plan.map.length, metric: opts.metric,
-  })), archetype);
-  scrubSurfaceProse(plan, archetype);
+  })), archetype, setupId);
+  scrubSurfaceProse(plan, archetype, setupId);
 
   // Order matters: the height-argument sweep would otherwise delete the very
   // note applyContentRules adds, since that note names a height on purpose.
   dropHeightArguments(plan, archetype);
   applyContentRules(plan, archetype);
 
+  const have = surfacesFor(archetype, setupId);
   plan.productNeeds = (plan.productNeeds || [])
-    .filter(p => !mentionsMissingSurface(p.purpose, archetype))
-    .filter(p => !(p.type === 'door-rack' && !(ARCHETYPE_SURFACES[archetype] || []).includes('door')))
-    .filter(p => !(p.type === 'hook-rack' && !(ARCHETYPE_SURFACES[archetype] || []).includes('pegboard')))
-    .map(p => ({ ...p, purpose: rewriteForSurfaces(p.purpose, archetype) }))
+    .filter(p => !mentionsMissingSurface(p.purpose, archetype, setupId))
+    .filter(p => !(p.type === 'door-rack' && !have.includes('door')))
+    .filter(p => !(p.type === 'hook-rack' && !have.includes('pegboard')))
+    .map(p => ({ ...p, purpose: rewriteForSurfaces(p.purpose, archetype, setupId) }))
     .map(p => fitNeedToSpace(p, opts.dims));
   alignTargetZones(plan, sourceRows);
 

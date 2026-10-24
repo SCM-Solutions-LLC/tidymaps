@@ -24,6 +24,7 @@
 import { placementFor, placementFromSections } from '../placement.js';
 import { normalizeViewerGeometry, roomGeometryFor, resampleShelfFracs } from './viewerOptions.js';
 import { fridgeRowRun } from './fridgePlan.js';
+import { surfacesFor } from '../setupStructure.js';
 
 export const ROOM_TYPES = ['walkin-u', 'l-run'];
 
@@ -148,6 +149,19 @@ export function doorRowsOf(map, layout){
   return out;
 }
 
+/* Whether this unit hangs its door rows on a door, drawn swung open with a
+   rack on it: a cabinet, and the reach-ins, which are drawn as shelves or a
+   closet rod but stand behind a door (setupStructure.SETUP_SURFACES). Open
+   and wall shelving and a wardrobe have none, so a door row there stays a
+   board. Only the builders that draw such a door are listed; a fridge's
+   doors are its own (fridgePlan.js).
+   @param {any} [layout] */
+const DOOR_ROW_BUILDERS=new Set(['cabinet', 'shelves', 'closet-rod']);
+export function hangsDoorRows(layout){
+  if(!layout||!DOOR_ROW_BUILDERS.has(layout.type)) return false;
+  return surfacesFor(layout.type, layout.setup).includes('door');
+}
+
 /* The shelf rows of a cabinet, in board order: every row not on its door,
    by shelfIndex. Board j carries the j-th of these.
    @param {any[]} map @param {any} [layout] @returns {number[]} */
@@ -168,7 +182,7 @@ export function shelfRowsOf(map, layout){
    as it came.
    @param {any} geometry @param {any[]} map @param {any} [layout] */
 export function cabinetShelfGeometry(geometry, map, layout){
-  const g=normalizeViewerGeometry(geometry, 'cabinet');
+  const g=normalizeViewerGeometry(geometry, (layout&&layout.type)||'cabinet');
   if(g.levelsAre==='shelves') return g;
   const skip=doorRowsOf(map, layout);
   const onDoor=[...skip].filter(i=>i<g.shelfCount).length;
@@ -218,9 +232,10 @@ export function rowHeadroomFor(type, surface, geometry, index, plan){
   }
   if(!PLAIN_BOARD_LAYOUTS.has(type)) return null;
   const g=normalizeViewerGeometry(geometry, type);
-  /* A cabinet with rows on its door counts its boards without them, and a
-     row sits on the board its place among the shelf rows gives it. */
-  if(type==='cabinet'&&plan&&Array.isArray(plan.map)&&doorRowsOf(plan.map, plan.layout).size){
+  /* A cabinet or reach-in with rows on its door counts its boards without
+     them, and a row sits on the board its place among the shelf rows gives
+     it. */
+  if(plan&&Array.isArray(plan.map)&&hangsDoorRows({ ...(plan.layout||{}), type })&&doorRowsOf(plan.map, plan.layout).size){
     const c=cabinetShelfGeometry(g, plan.map, plan.layout);
     const board=shelfRowsOf(plan.map, plan.layout).indexOf(index);
     if(board<0||board>=c.shelfCount) return null;

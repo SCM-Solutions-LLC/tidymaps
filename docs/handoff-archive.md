@@ -326,7 +326,10 @@ the data" before concluding anything about demand.
 
 2 canary; 3 preview button (#101); 4 step caps 12/18; 5 3D ports (#112,
 #113); 9 heartbeat (#171, #178, #179); 10 the 33 setups of 09-08 open clean;
-11 token replaced 10-03.
+11 token replaced 10-03; 15 (10-23) a reach-in's door rack drew as a shelf:
+`shelves` and `closet-rod` had no door, so honesty turned AI door rows into
+shelf rows and the builders drew them as boards. Closed by `SETUP_SURFACES`
+and `hangsDoorRows` (reach-in pantry, linen and closet).
 
 ## What the 2026-10-16 session changed
 

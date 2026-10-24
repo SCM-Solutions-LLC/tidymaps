@@ -149,6 +149,7 @@ const ADJECTIVAL = /\b\w+ed\s+(?:\w+\s+)?(?:bins?|containers?|boxes|totes?|jars?
    thing is worse than saying it once here; applyAnswers is synchronous and
    clears it on the way out. */
 let activeArchetype = null;
+let activeSetup = null;
 
 /* The card labels in force, for the same reason and by the same mechanism.
    Five spaces bridge to "Use baskets / hidden storage", but the user did not
@@ -184,7 +185,7 @@ function instructs(st, re) {
   const task = stepTask(st);
   if (!re.test(task)) return false;
   // Never cite a step the scrub is about to remove.
-  if (activeArchetype && mentionsMissingSurface(task, activeArchetype)) return false;
+  if (activeArchetype && mentionsMissingSurface(task, activeArchetype, activeSetup)) return false;
   // Re-test with adjectival phrases removed: if the only match lived inside
   // one, the step was describing its props rather than instructing the work.
   return re.test(task.replace(ADJECTIVAL, ' '));
@@ -978,7 +979,7 @@ const DEPTH_RULES = [
   },
 ];
 
-function applyEffort(plan, answers, archetype) {
+function applyEffort(plan, answers, archetype, setupId) {
   const target = EFFORT_STEPS[answers.effort];
   if (!target) return;
   /* The effort card arrives preselected on "Weekend reset", and the value
@@ -1011,7 +1012,7 @@ function applyEffort(plan, answers, archetype) {
      ordering was changed to close. Rejecting the candidate rather than scrubbing
      afterwards also means a rejected one does not consume the growth budget:
      scrubbing after the fact cannot give the budget back. */
-  const usable = (task) => !archetype || !mentionsMissingSurface(task, archetype);
+  const usable = (task) => !archetype || !mentionsMissingSurface(task, archetype, setupId);
 
   if (plan.steps.length > target) {
     // Trim template filler first, from the end; personalized/safety survive.
@@ -1100,7 +1101,7 @@ export function sizeToEffort(plan, answers, opts = {}) {
   if (!plan || !answers) return plan;
   plan.steps = plan.steps || [];
   plan.map = plan.map || [];
-  applyEffort(plan, answers, opts.archetype);
+  applyEffort(plan, answers, opts.archetype, opts.setup);
   /* The $0 vocabulary pass runs inside applyAnswers, so growth that happens
      after it would sail straight past — and it does name containers, because it
      names the row's own items: a walk-in closet's "Seasonal bins" became "group
@@ -1181,6 +1182,7 @@ export function applyAnswers(plan, answers, opts = {}) {
   plan.steps = plan.steps || [];
   plan.map = plan.map || [];
   activeArchetype = opts.archetype || null;
+  activeSetup = opts.setup || null;
   activeStyles = (answers.styles || []).filter(x => typeof x === 'string');
   try {
   applyBudget(plan, answers);
@@ -1196,9 +1198,9 @@ export function applyAnswers(plan, answers, opts = {}) {
      steps. Callers that finish the plan themselves pass deferSizing and call
      sizeToEffort once nothing else can add or remove a step. Default keeps the
      old behaviour, so a caller that does not know about ordering is unchanged. */
-  if (!opts.deferSizing) applyEffort(plan, answers, opts.archetype);
+  if (!opts.deferSizing) applyEffort(plan, answers, opts.archetype, opts.setup);
   return plan;
-  } finally { activeArchetype = null; activeStyles = []; }
+  } finally { activeArchetype = null; activeSetup = null; activeStyles = []; }
 }
 
 /* ---------- review-screen category edits (normalized plan, both paths) ----------
