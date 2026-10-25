@@ -27,7 +27,7 @@ test('the drawing is a named, focusable widget with its keys explained', async (
   const canvas = page.locator('#v3d-canvas');
   await expect(canvas).toHaveAttribute('role', 'application');
   await expect(canvas).toHaveAttribute('tabindex', '0');
-  await expect(canvas).toHaveAttribute('aria-label', 'Three-dimensional drawing of the sample pantry');
+  await expect(canvas).toHaveAttribute('aria-label', 'Three-dimensional drawing of the sample pantry cabinet');
   await expect(canvas).toHaveAttribute('aria-describedby', 'v3d-keys');
   await expect(canvas).toBeFocused();
 

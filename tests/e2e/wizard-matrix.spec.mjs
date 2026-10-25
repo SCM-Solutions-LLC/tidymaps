@@ -18,16 +18,18 @@ import { expandChapters } from './helpers.mjs';
    on demand. */
 
 // area id → [room heading on the space step, space card text, results masthead label]
+// The masthead names the setup the step preselects (each area's first card),
+// since a plan is named for its setup rather than its scenario.
 const MATRIX = {
-  pantry: ['Kitchen', 'Pantry', 'Pantry'],
-  cabinet: ['Kitchen', 'Cabinets', 'Kitchen cabinet'],
-  drawers: ['Kitchen', 'Drawers', 'Kitchen drawers'],
-  fridge: ['Kitchen', 'Fridge & freezer', 'Fridge & freezer'],
-  closet: ['Bedroom', 'Closet', 'Closet'],
+  pantry: ['Kitchen', 'Pantry', 'Pantry cabinet'],
+  cabinet: ['Kitchen', 'Cabinets', 'Counter and upper cabinets'],
+  drawers: ['Kitchen', 'Drawers', 'In-counter drawers'],
+  fridge: ['Kitchen', 'Fridge & freezer', 'Top-freezer fridge'],
+  closet: ['Bedroom', 'Closet', 'Wardrobe'],
   dresser: ['Bedroom', 'Dresser', 'Dresser'],
-  bathroom: ['Bathroom & hall', 'Vanity & under-sink', 'Bathroom vanity'],
-  linen: ['Bathroom & hall', 'Linen closet', 'Linen closet'],
-  garage: ['Garage', 'Shelving & storage', 'Garage shelf'],
+  bathroom: ['Bathroom & hall', 'Vanity & under-sink', 'Under-sink cabinet'],
+  linen: ['Bathroom & hall', 'Linen closet', 'Linen cabinet'],
+  garage: ['Garage', 'Shelving & storage', 'Utility shelving'],
   workbench: ['Garage', 'Workbench', 'Workbench'],
 };
 
