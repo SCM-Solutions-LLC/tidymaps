@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at b594a9a (after #218), plus #219.** History (dated
+**Last refreshed: 2026-10-25, main at 8adf6de (after #219), plus #220.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -19,6 +19,7 @@ pack, and the live funnel is proven (Production health #8). #217 closed item
 `shelves`, and demo plans are named for their setup (`SETUP_NOUN`: "Pantry" is
 now "Pantry cabinet" in every heading). #218 deals rows by depth, not position
 (`alignByDepth`); #219 hangs open and wall shelving on its wall in 3D.
+#220 keeps 3D zone labels inside a 390 frame (item 20, per frame in scene.js).
 
 ## Product state
 
@@ -230,7 +231,7 @@ npm run check:model-path  # the canary, by hand
 ## Open items / next actions
 
 The live work list; numbers are stable, full 10-13 text in the archive. Owner's
-queue (10-25): 20, then 21, then item 12's code residue as one PR, then stop.
+queue (10-25): 21, then item 12's code residue as one PR, then stop.
 
 ### Actionable now
 
@@ -251,7 +252,6 @@ queue (10-25): 20, then 21, then item 12's code residue as one PR, then stop.
 14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
     open the Target listing): replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`.
-20. **3D zone labels clip at 390** (10-25): "binet: top shelf" on long names.
 21. **A drawer bank's keep-high hazard** (10-25): the tool chest keeps paint in
     its top drawer flagged keep-high; no level is high, so it should latch.
 
@@ -264,7 +264,7 @@ Also open, unnumbered (from the dated sections):
   speedup; try effort `low` only after a day at `medium`; the lower spotted
   count (4 vs 6 to 8) is a question, not a regression.
 
-Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18 (#218), 19 (#219).
+Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18-20 (#218-#220).
 
 ### Waiting on traffic
 
