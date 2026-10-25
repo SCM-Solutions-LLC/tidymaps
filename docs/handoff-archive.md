@@ -322,6 +322,29 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-10-23 session changed (as the handoff read before its refresh)
+
+First real fridge run (French door, AI, 12 rows) worked; the report and 3D
+did not. #205: whole-word step pictures, door rows never make a room, unit
+sections head the map, whole-word categories, drilling chip scoped. PR 2: 3D
+fridge per card (`three/fridgePlan.js`), door rows on the door (cabinet too,
+`cabinetShelfGeometry`), one surface and label per row (`three-unit-parts`).
+#208: 163 clips re-rendered (palette test-held, fridge/cabinet/vanity/drawer
+furniture, fridge glyphs, purge to floor bins, edge gate). #209: type scale.
+Reach-ins (pantry, linen, closet) keep their door: `SETUP_SURFACES`,
+`hangsDoorRows`; the door rack hangs on an open door in 3D (item 15 closed).
+
+## Decisions: "Measured and not done", as the handoff read until 2026-10-23
+
+- **Measured and not done:** the builder thunk map (54KB, lazy chunk); more
+  boot deferral (item 12); CSS concatenation (slower). `modulepreload`, twice:
+  09-14, and 10-13 (HTTP/2, 390px, median of 11): slow 4G boot 6.6 to 6.0s,
+  paint unchanged; fast link boot 1.16 to 1.0s but LCP (the H1's font swap)
+  about 0.2s later. Dropped by the owner 10-14: the early-click guard already
+  keeps clicks made before boot, so the gain left is 0.6s on slow 4G against
+  a later headline for most visitors and a 44-line list to maintain.
+  `tests/early-click-guard.test.mjs` fails if the links come back.
+
 ## Closed open items, as listed in the handoff until 2026-10-23
 
 2 canary; 3 preview button (#101); 4 step caps 12/18; 5 3D ports (#112,
