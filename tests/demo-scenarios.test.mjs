@@ -209,6 +209,42 @@ test('a pet household keeps the latch it is told about', () => {
   }
 });
 
+/* A drawer or a door cannot be kept high. A young child's household already
+   traded that flag for a latch; every other household kept it, so a rolling
+   tool chest, with no high level at all, flagged the paint in its top drawer
+   "keep high". Every setup, every kind of household. */
+test('no drawer or door row is flagged keep-high, for any household', () => {
+  const households = {
+    none: { kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' },
+    toddler: { kids: { present: 'yes', ages: ['Toddler'] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' },
+    teen: { kids: { present: 'yes', ages: ['Teen'] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' },
+    cat: { kids: { present: 'no', ages: [] }, pets: { present: 'yes', types: ['Cat'] }, mobility: [], notes: '' },
+  };
+  const wrong = [];
+  for (const [space, types] of Object.entries(SETUP_TYPES)) {
+    for (const t of types) {
+      for (const [who, household] of Object.entries(households)) {
+        for (const row of getDemoScenario(space, 'find', household, {}, t.id).map || []) {
+          if (!['drawer', 'door'].includes(row.surface)) continue;
+          if (row.safety && row.safety.flag === 'keep-high') {
+            wrong.push(`${space}/${t.id} (${who}): "${row.level}" says keep high`);
+          } else if (row.safety && row.safety.flag === 'lock-or-latch' && /\bup high\b|\bstay up\b/i.test(row.safety.why || '')
+            && !/cannot be kept up high/.test(row.safety.why)) {
+            wrong.push(`${space}/${t.id} (${who}): "${row.level}" latches but still says "${row.safety.why}"`);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(wrong, [], wrong.join('\n'));
+  const chest = getDemoScenario('workbench', 'find', households.cat, {}, 'toolchest');
+  const top = chest.map.find(row => row.level === 'Top drawer');
+  assert.equal(top.safety.flag, 'lock-or-latch');
+  assert.match(top.safety.why, /Paint/);
+  assert.match(top.safety.why, /keep the cats out/, 'the pet pass names the animal');
+  assert.doesNotMatch(top.safety.why, /height is not what keeps this closed/, 'the cat caveat is for a height claim');
+});
+
 test('no-kid plans carry no kid-frequent item flags', () => {
   for (const space of REACHABLE_SPACES) {
     const plan = getDemoScenario(space, 'find', NO_KIDS_NO_PETS);
