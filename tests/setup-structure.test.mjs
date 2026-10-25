@@ -332,7 +332,7 @@ test('no level is emptied by the content rules', () => {
    All eight were live on main before being caught: the projection shipped
    with an adversarial review still running against it. */
 
-import { rewriteForSurfaces, rewriteOpening, describeSetup, SETUP_LEVEL_CAP } from '../js/setupStructure.js';
+import { rewriteForSurfaces, rewriteOpening, describeSetup, SETUP_LEVEL_CAP, surfacesFor } from '../js/setupStructure.js';
 
 test('L-shaped closets keep their hanging rods', () => {
   // l-run serves pantries AND clothes closets. Listing only 'shelf' for the
@@ -354,6 +354,9 @@ test('surface rewrites keep sentence capitalization and stay grammatical', () =>
   assert.equal(rewriteForSurfaces('Hang hooks on the door back for bags.', 'drawer-bank'),
     'Hang hooks on the wall beside it for bags.');
   assert.ok(!/the front edge back/i.test(rewriteForSurfaces('Hooks on the door back.', 'shelves')));
+  // A compound noun goes whole, before "the door" can take half of it.
+  assert.equal(rewriteForSurfaces('Skip the door-mounted spice rack.', 'shelves'), 'Skip the front-facing spice rack.');
+  assert.equal(rewriteForSurfaces('Set spices on the door rack.', 'shelves'), 'Set spices on the front shelf.');
   // "the cabinet floor" never matched the bare "the floor" rule
   assert.ok(!/cabinet floor/i.test(rewriteForSurfaces('Items sit on the cabinet floor.', 'shelves')));
 });
@@ -385,6 +388,9 @@ test('the opening sentence replaces a size claim but never a diagnosis', () => {
 test('describeSetup degrades cleanly without measurements and reads right at one level', () => {
   assert.match(describeSetup({ archetype: 'drawer-bank', setupId: 'toolchest', dims: null, levelCount: 4 }),
     /^Your rolling tool chest has four drawers/);
+  // The landing sample is nobody's, under a masthead that says so.
+  assert.match(describeSetup({ archetype: 'cabinet', setupId: 'cabinet', dims: null, levelCount: 5, sample: true }),
+    /^The sample pantry cabinet has five shelves/);
   assert.match(describeSetup({ archetype: 'shelves', setupId: 'cabinet', dims: { w_in: 36, h_in: 78, d_in: 18 }, levelCount: 1 }),
     /has one shelf to work with/);
 });
@@ -483,6 +489,29 @@ test('no projected plan names a fitting its setup does not have', () => {
         const hit = text.match(re);
         assert.ok(!hit, `${s.space}/${s.id} (${archetype}) names a ${noun}: "${hit && hit[0]}" in ${text.slice(Math.max(0, text.indexOf(hit ? hit[0] : '') - 50), 140)}`);
       }
+    }
+  }
+});
+
+test('a door or drawer line the setup lacks is dropped, not reworded into nonsense', () => {
+  /* Reworded, the pantry's "Skip the door-mounted spice rack ... the door may
+     not support the weight" told walk-in, L-shaped and butler's pantries that
+     "the front edge may not support the weight", open shelving's baking
+     sheets slid "when the front edge opens" beside an "Inside-door surface",
+     and wall shelves kept "Shallow drawers" and "Empty the vanity and
+     drawers". Every setup, projected or not, judged by the surfaces the setup
+     itself has. */
+  const DOOR = /front edge(?:-mounted| opens| may)|\bdoor-mounted\b|\binside[- ]door\b|\bdoors? opens?\b/i;
+  const DRAWER = /\b(?:and|or|shallow|deep) drawers\b/i;
+  for (const s of ALL_SETUPS) {
+    const have = new Set(surfacesFor(SETUP_ARCHETYPE[s.id], s.id));
+    const p = planFor(s);
+    const text = [p.summary, p.dontBuy, ...p.problems, ...p.opportunities, ...p.safetyNotes,
+      ...p.steps.flatMap(x => [x.t, x.w]), ...p.existing.flatMap(e => [e.ft, e.fd]),
+      ...p.productNeeds.map(x => x.purpose)].filter(Boolean).join(' | ');
+    for (const [surface, re] of [['door', DOOR], ['drawer', DRAWER]]) {
+      if (have.has(surface)) continue;
+      assert.ok(!re.test(text), `${s.space}/${s.id} has no ${surface} but says "${text.match(re)}"`);
     }
   }
 });

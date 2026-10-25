@@ -266,12 +266,15 @@ const SURFACE_PHRASES = [
     [/\bthe counter\b/gi, 'the {n}'],
   ]],
   ['door', [
+    // Compound nouns before any rule ending in "door": under the bare "the
+    // door" rule, "the door-mounted spice rack" became "the front
+    // edge-mounted spice rack" in four pantry samples.
+    [/\bdoor rack\b/gi, 'front {n}'],
+    [/\bdoor-mounted\b/gi, 'front-facing'],
     // Longest first: "the door back" must not become "the front edge back".
     [/\bthe (?:back of the door|door back)\b/gi, 'the wall beside it'],
     [/\bon the (?:back of the )?door\b/gi, 'on the wall beside it'],
     [/\bthe (?:inside of the )?door\b/gi, 'the front edge'],
-    [/\bdoor rack\b/gi, 'front {n}'],
-    [/\bdoor-mounted\b/gi, 'front-facing'],
   ]],
   ['floor', [
     // Qualified forms first — "the cabinet floor" never matched "the floor",
@@ -304,13 +307,18 @@ const SURFACE_PHRASES = [
 const SURFACE_ONLY_LINES = {
   pegboard: /pegboard/i,
   worktop: /\bbench\b|\bcountertop\b/i,
-  door: /\bdoor (?:rack|shelf|storage)\b|over-the-door/i,
+  // A door-mounted rack, the inside-door surface, a door that opens or may
+  // not hold the weight: reworded, they read "the front edge may not support
+  // the weight" and "slide when the front edge opens".
+  door: /\bdoor (?:rack|shelf|storage)\b|over-the-door|\bdoor-mounted\b|\binside[- ]door\b|\bdoors? (?:may|might|can(?:not|'t)?|won't|will|opens?|closes?|swings?)\b/i,
   rod: /\bhanging rod\b|\bhang(?:ing)? (?:clothes|shirts|items) on\b/i,
   // "Label every drawer" on a wall cabinet, "an under-sink cabinet" on open
   // wall shelves — the sentence is about a fitting the setup does not have,
   // and no wording makes it true. "Junk drawer" is idiomatic, so the
-  // patterns are anchored to determiners rather than the bare noun.
-  drawer: /\bdrawer (?:divider|organizer|liner)s?\b|\b(?:every|each) drawer\b|\bunder-sink\b/i,
+  // patterns are anchored to determiners rather than the bare noun, plus
+  // the two forms the wall-shelf sample used without one: "Shallow drawers"
+  // and "the vanity and drawers".
+  drawer: /\bdrawer (?:divider|organizer|liner)s?\b|\b(?:every|each) drawer\b|\bunder-sink\b|\b(?:and|or|shallow|deep) drawers\b/i,
   floor: /\bfloor (?:bin|zone|space|pile)\b/i,
   shelf: /\b(?:upper|top|lower|middle) shelf\b/i,
 };
@@ -366,13 +374,12 @@ export function scrubSurfaceProse(plan, archetype, setupId) {
      sentences after it come from the scenario and can describe another setup
      entirely — bathroom wall shelves were introduced correctly and then
      described as "an under-sink vanity cabinet plus two shallow drawers". */
-  if (plan.summary) {
-    const kept = String(plan.summary)
-      .split(/(?<=[.!?])\s+/)
-      .filter(sentence => !drop(sentence))
-      .map(fix);
-    plan.summary = kept.join(' ').replace(/\s{2,}/g, ' ').trim();
-  }
+  const bySentence = (t) => String(t || '')
+    .split(/(?<=[.!?])\s+/)
+    .filter(sentence => !drop(sentence))
+    .map(fix)
+    .join(' ').replace(/\s{2,}/g, ' ').trim();
+  if (plan.summary) plan.summary = bySentence(plan.summary);
   plan.problems = (plan.problems || []).filter(p => !drop(p)).map(fix);
   plan.opportunities = (plan.opportunities || []).filter(o => !drop(o)).map(fix);
   plan.safetyNotes = (plan.safetyNotes || []).filter(n => !drop(n)).map(fix);
@@ -389,7 +396,10 @@ export function scrubSurfaceProse(plan, archetype, setupId) {
      space-neutral line when the lede is empty and hides the callout when the
      don't-buy note is. */
   plan.existingLede = drop(plan.existingLede) ? '' : fix(plan.existingLede);
-  plan.dontBuy = drop(plan.dontBuy) ? '' : fix(plan.dontBuy);
+  /* By sentence, like the summary: a $0 budget appends its citation here
+     (personalize.js applyBudget), and dropping the whole note for the
+     scenario's door-mounted rack took "You set a $0 budget" with it. */
+  plan.dontBuy = bySentence(plan.dontBuy);
   // Product purposes name surfaces too ("sort screws into the drawer").
   plan.productNeeds = (plan.productNeeds || []).map(n => ({ ...n, purpose: fix(n.purpose) }));
   return plan;
@@ -561,18 +571,20 @@ export const SETUP_NOUN = {
   wallcabW: ['workshop wall cabinets', true],
 };
 
-export function describeSetup({ archetype, setupId, dims, levelCount, metric }) {
+export function describeSetup({ archetype, setupId, dims, levelCount, metric, sample = false }) {
   const entry = SETUP_NOUN[setupId];
   if (!entry) return '';
   const [name, plural] = entry;
   /* No measurements (a restored space that never had them, the landing
      sample). The hardcoded "A 48-inch-wide unit…" must still go — it is a
      claim about someone else's furniture either way — so describe the setup
-     without a size rather than leaving the false sentence in place. */
+     without a size rather than leaving the false sentence in place. The
+     sample is nobody's, and its masthead says so: "Your pantry cabinet"
+     under "Sample plan · not based on your space" contradicted it. */
   if (!dims || !dims.w_in || !dims.h_in) {
     const many = LEVEL_NOUN[archetype] || 'shelves';
     const n = levelCount === 1 ? (LEVEL_NOUN_ONE[many] || many) : many;
-    return `Your ${name} ${plural ? 'have' : 'has'} ${COUNT_WORDS[levelCount] || levelCount} ${n} to work with.`;
+    return `${sample ? 'The sample' : 'Your'} ${name} ${plural ? 'have' : 'has'} ${COUNT_WORDS[levelCount] || levelCount} ${n} to work with.`;
   }
   const many = LEVEL_NOUN[archetype] || 'shelves';
   const noun = levelCount === 1 ? (LEVEL_NOUN_ONE[many] || many) : many;
@@ -915,7 +927,7 @@ export function projectOntoArchetype(plan, archetype, setupId, opts = {}) {
 
   // Prose and product needs that name a surface this setup does not have.
   plan.summary = rewriteForSurfaces(rewriteOpening(plan.summary, describeSetup({
-    archetype, setupId, dims: opts.dims, levelCount: plan.map.length, metric: opts.metric,
+    archetype, setupId, dims: opts.dims, levelCount: plan.map.length, metric: opts.metric, sample: opts.sample,
   })), archetype, setupId);
   scrubSurfaceProse(plan, archetype, setupId);
 

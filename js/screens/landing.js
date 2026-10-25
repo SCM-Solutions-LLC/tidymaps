@@ -22,7 +22,11 @@ export async function runDemo(){
   const instance=currentPlanInstance();
   const { getDemoScenario } = await import('../demo-scenarios.js');
   if(!planInstanceIsCurrent(instance)) return;
-  const scenario = getDemoScenario('pantry', 'find', state.household);
+  /* Built for the setup it is drawn as. Without one the scenario was scrubbed
+     as door-less shelves while the 3D view drew the cabinet state.setup
+     starts as, door and all, and the report under it read "Skip the front
+     edge-mounted spice rack". */
+  const scenario = getDemoScenario('pantry', 'find', state.household, null, state.setup);
   state.ai = normalizeAi(scenario);
   state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
   buildResults();

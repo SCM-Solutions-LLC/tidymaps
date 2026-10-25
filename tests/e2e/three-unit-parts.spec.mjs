@@ -92,8 +92,8 @@ test('every setup draws each row once, labels it, and hangs a door row on a door
   /* Only a setup with a door can hang a row on one, and every setup with a
      door does. A reach-in pantry is drawn as shelves but stands behind a door
      (setupStructure.SETUP_SURFACES), so its door rack hangs on it; until
-     10-23 it was one more board. Open shelving has no door, so its sample's
-     "Door / side" row stays a board, and no door is drawn there. */
+     10-23 it was one more board. Open shelving has no door, so nothing is
+     drawn on one there, and its sample has no door row to hang. */
   const hasDoor = new Map(cases.map((c) => [c.setup, c.doors]));
   const problems = [];
   for (const s of scenes) {
