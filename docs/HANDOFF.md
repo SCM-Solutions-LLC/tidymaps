@@ -21,7 +21,7 @@ rows by depth (`alignByDepth`); #219 hangs open and wall shelving in 3D.
 #220 keeps 3D zone labels inside a 390 frame (item 20, per frame in scene.js).
 #221 latches a drawer's keep-high for every household (`latchEnclosedKeepHigh`).
 #222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
-#223 touch icon, adjust-screen draft race (#222); #224 favicon on `--spot`.
+#223 touch icon, adjust-screen draft race; #224 icons, theme-color on `--spot`.
 
 ## Product state
 
