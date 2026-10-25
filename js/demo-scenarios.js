@@ -1927,18 +1927,21 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
      get restructured. */
   const archetype = setupId && SETUP_ARCHETYPE[setupId];
   const scenarioArchetype = SCENARIO_ARCHETYPE[spaceType];
+  // No answers at all is the landing page's sample, which describes no one's space.
+  const sample = !answers;
   if (archetype && archetype !== scenarioArchetype) {
     projectOntoArchetype(plan, archetype, setupId, {
       dims: answers && answers.dims,
       metric: !!(answers && answers.metric),
       sourceArchetype: scenarioArchetype,
+      sample,
     });
   } else if (archetype) {
     // Shape already agrees; still replace the hardcoded opening claim about
     // the furniture's size with what the user actually measured.
     plan.summary = rewriteOpening(plan.summary, describeSetup({
       archetype, setupId, dims: answers && answers.dims, levelCount: plan.map.length,
-      metric: !!(answers && answers.metric),
+      metric: !!(answers && answers.metric), sample,
     }));
     // And size the products to it: the drawer scenario's 22-inch tray was
     // written for its own 24-inch bank, and an 18-inch tower was told to

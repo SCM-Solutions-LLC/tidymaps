@@ -64,6 +64,25 @@ test('a plan built from no photos does not call the answers a detection', async 
   await expect(kpi(page, 'Categories')).not.toContainText('listed');
 });
 
+test('the sample plan is written for the furniture it is drawn as', async ({ page }) => {
+  /* The sample was built with no setup, so its prose was scrubbed as door-less
+     shelves while the 3D view drew the cabinet the setup starts as, door open:
+     "Skip the front edge-mounted spice rack ... the front edge may not support
+     the weight". */
+  await openSamplePlan(page);
+  await expandChapters(page);
+  const { built, drawn } = await page.evaluate(async () => {
+    const [{ state }, { SETUP_ARCHETYPE }] = await Promise.all([import('/js/state.js'), import('/js/layout.js')]);
+    return { built: state.ai.layout && state.ai.layout.type, drawn: SETUP_ARCHETYPE[state.setup] };
+  });
+  expect(built).toBe(drawn);
+  // Described as the sample's cabinet, not the reader's.
+  await expect(page.locator('#res-summary')).toHaveText(/^The sample pantry cabinet/);
+  const text = await page.evaluate(() => document.body.innerText);
+  expect(text).not.toMatch(/front edge/i);
+  expect(text).toContain('Skip the door-mounted spice rack');
+});
+
 test('a number we cannot use is replaced visibly, not silently', async ({ page }) => {
   /* Typing 0 left the field reading 3 — the Cabinet default — with no notice,
      so a 14-inch cabinet was planned, dimensioned and product-fitted as a
