@@ -5,6 +5,7 @@ import { toast } from './ui.js';
 import { placementFor, headingGroups } from './placement.js';
 import { resolveLayout } from './layout.js';
 import { planFromPhotos } from './planProvenance.js';
+import { packsFor } from './catalog.js';
 
 /* Plain-text renderings of the plan.
 
@@ -153,7 +154,8 @@ export function shoppingListText() {
     if (sel && sel.checked === false) return null;
     const qty = Math.max(1, Number(sel && sel.qty) || Number(need.qty) || 1);
     return {
-      qty,
+      // Listings, not organizers: a "Set of 2" covers two bins (catalog.js packsFor).
+      qty: packsFor({ qty, pack: sel && sel.pack }),
       label: (sel && sel.name) || need.type,
       // The product the plan suggested is no longer sold, and reconcileSelection
       // has already made the label the bare type; say why there is no link.

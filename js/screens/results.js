@@ -5,7 +5,7 @@ import { escapeHtml, toast } from '../ui.js';
 import { activeSafetyNotes, activeProductNeeds, activeGeometry, renderZones, modelLabel } from '../plan.js';
 import { areaFor, fmtFt, fmtIn, optionsForHousehold, SPACE_CFG, midSentence } from '../wizard-data.js';
 import { planFromPhotos, planIsSample } from '../planProvenance.js';
-import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, fmtChecked, TYPE_LABEL } from '../catalog.js';
+import { loadCatalog, catalogFailed, catalogProducts, matchProducts, selectionFor, reconcileSelection, fitBadge, searchLinks, priceAsOf, fmtChecked, TYPE_LABEL, packsFor, lineCost } from '../catalog.js';
 import { productArt } from '../product-art.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { backendConfigured } from '../config.js';
@@ -653,7 +653,9 @@ export function renderUpgrades(){
     const checkedOn=sel.checkedOn?` <span class="pchecked">Listing checked ${escapeHtml(fmtChecked(sel.checkedOn))}</span>`:'';
     const main=sel.productId?`
       <a class="pname" href="${escapeHtml(withAffiliate(sel.url, sel.retailer))}" target="_blank" rel="${affiliateRel(sel.retailer)}">${escapeHtml(sel.name)}</a>
-      <div class="pretail">at ${escapeHtml(sel.retailer)}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}${checkedOn}</div>`:
+      <div class="pretail">at ${escapeHtml(sel.retailer)}${
+        /* Three bins from a "Set of 2" cost two sets; say how many. */
+        (sel.pack||1)>1&&packsFor(sel)>1?` · buy ${packsFor(sel)}`:''}${badge.txt?` <span class="tag ${badge.cls}">${escapeHtml(badge.txt)}</span>`:''}${checkedOn}</div>`:
       /* Status first, then the name: a catalog name is up to 80 characters
          of commas and inch marks, and "…, 2 Pack, Clear is no longer sold"
          lands the verb on the wrong noun. */
@@ -684,7 +686,7 @@ export function renderUpgrades(){
           ${sel.unavailable&&!options.length?'':`<div class="small muted" style="margin-top:10px">Search instead: ${links}</div>`}
         </details>
       </div>
-      <span class="cost">${sel.price_usd!=null?'$'+Math.round(sel.price_usd*sel.qty):'–'}</span>
+      <span class="cost">${sel.price_usd!=null?'$'+Math.round(lineCost(sel)):'–'}</span>
     </div>`;
   }).join('');
   renderShopping();
@@ -696,7 +698,7 @@ export function pickProduct(i, productId){
   if(!m) return;
   Object.assign(state.shopping[i],{
     type:need.type,
-    productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd,
+    productId:m.product.id, name:m.product.name, price_usd:m.product.price_usd, pack:m.product.pack||1,
     url:m.product.url, retailer:m.product.retailer, img:m.product.img||null,
     checkedOn:m.product.checked||null, fit:m.fit,
     dims_in:{...m.product.dims_in}, unavailable:false, formerName:null, formerProductId:null,
@@ -739,7 +741,7 @@ export function uncheckAllUpgrades(){
 export function costLabel(){
   const picked=(state.upgrades ? (state.shopping||[]) : []).filter(s=>s.checked);
   if(!picked.length) return '$0';
-  const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
+  const total=picked.reduce((sum,s)=>sum+(lineCost(s)||0),0);
   const unpriced=picked.some(s=>s.price_usd==null);
   // Both options stay visible: the plan works at $0, and this is what the
   // selected products add to it.
@@ -756,9 +758,10 @@ export function renderShopping(){
   const picked=(state.shopping||[]).filter(s=>s.checked);
   const list=document.getElementById('res-shopping');
   list.innerHTML=picked.length?picked.map(s=>
-    `<li><span>${s.qty>1?s.qty+' × ':''}${escapeHtml(s.name)}${s.unavailable?' <span class="muted">(no product yet)</span>':''}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(s.price_usd*s.qty):'–'}</span></li>`).join(''):
+    /* Listings to buy, not organizers: two bins from a "Set of 2" is one line. */
+    `<li><span>${packsFor(s)>1?packsFor(s)+' × ':''}${escapeHtml(s.name)}${s.unavailable?' <span class="muted">(no product yet)</span>':''}</span><span class="qcost">${s.price_usd!=null?'$'+Math.round(lineCost(s)):'–'}</span></li>`).join(''):
     '<li><span class="muted">No items selected. You\'re on the $0 plan.</span></li>';
-  const total=picked.reduce((sum,s)=>sum+(s.price_usd!=null?s.price_usd*s.qty:0),0);
+  const total=picked.reduce((sum,s)=>sum+(lineCost(s)||0),0);
   const unpriced=picked.some(s=>s.price_usd==null);
   document.getElementById('res-shop-total').textContent=(total?'$'+Math.round(total):'$0')+(unpriced?'+':'');
   const asOf=priceAsOf();

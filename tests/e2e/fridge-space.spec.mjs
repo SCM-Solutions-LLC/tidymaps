@@ -78,3 +78,31 @@ test('a fridge in 3D is counted by its parts and named by its card', async ({ pa
   await expect(page.locator('#v3d-heights-section')).toBeHidden();
   await expect(page.locator('#v3d-w')).toBeAttached();
 });
+
+test('a fridge plan buys its bins by the set, and the Cost tile agrees', async ({ page }) => {
+  /* Every fridge plan asks for three bins, and the only fridge bins in the
+     catalog come two to a set. The list multiplied the set's price by three:
+     "3 × iDesign ... Set of 2" for $81, six bins where four would do. */
+  await page.goto('/index.html');
+  await page.evaluate(async () => {
+    const [{ state }, { normalizeAi }, { getDemoScenario }, { buildResults }] = await Promise.all([
+      import('/js/state.js'), import('/js/plan.js'), import('/js/demo-scenarios.js'), import('/js/screens/results.js'),
+    ]);
+    state.space = 'fridge'; state.setup = 'frenchdoor'; state.setupLabel = 'French door'; state.setupTouched = true;
+    state.dims = null; state.upgrades = true; state.shopping = null;
+    const household = { adults: 0, kidCount: 0, petCount: 0, kids: { present: null, ages: [] }, pets: { present: null, types: [] }, mobility: [], notes: '' };
+    state.ai = normalizeAi(getDemoScenario('fridge', 'find', household, null, 'frenchdoor'));
+    state.planMeta = { model: 'demo', source: 'demo', analyzedAt: Date.now() };
+    buildResults();
+    window.go('results');
+  });
+  const line = page.locator('#res-shopping li', { hasText: 'Set of 2' });
+  await expect(line).toContainText('2 × iDesign');
+  await expect(line).toContainText('$54');
+  const card = page.locator('#res-upgrades .prod', { hasText: 'Set of 2' });
+  await expect(card.locator('.cost')).toHaveText('$54');
+  // "3 × Clear bin" over a Set of 2 at $54 says how many sets that is.
+  await expect(card.locator('.pretail').first()).toContainText('at Target · buy 2');
+  const total = await page.locator('#res-shop-total').textContent();
+  await expect(page.locator('#kpi-cost')).toHaveText(`$0 / ${total}`);
+});

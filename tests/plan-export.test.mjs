@@ -123,6 +123,30 @@ test('a product nobody can buy is not on the list to buy', async () => {
   state.shopping = null;
 });
 
+/* Three fridge bins from a "Set of 2" are two sets, the same count and total
+   the report prints, not three sets priced at $80.97. Built through
+   reconcileSelection, so the set size comes from the catalog. */
+test('a set is listed by the set, at what the sets cost', async () => {
+  const { reconcileSelection } = await import('../js/catalog.js');
+  const { readFileSync: read } = await import('node:fs');
+  const products = JSON.parse(read(new URL('../data/catalog.json', import.meta.url), 'utf8')).products;
+  state.space = 'fridge';
+  state.dims = null;
+  state.ai = normalizeAi(getDemoScenario('fridge', null, NO_KIDS));
+  const needs = activeProductNeeds();
+  const bins = needs.findIndex(n => n.type === 'clear-bin');
+  assert.equal(needs[bins].qty, 3);
+  const id = 'idesign-fridge-freezer-bin-14x8x4-2pk';
+  state.shopping = needs.map((n, i) => i === bins
+    ? reconcileSelection({ needIdx: i, checked: true, qty: n.qty, type: n.type, productId: id }, n, products, 'fridge')
+    : { needIdx: i, checked: false, qty: n.qty, type: n.type, productId: null });
+  const txt = shoppingListText();
+  assert.match(txt, /^2 x iDesign Plastic Refrigerator and Freezer Storage Bin, Set of 2/m);
+  assert.match(txt, /Estimated total: \$53\.98/);
+  state.shopping = null;
+  state.space = 'pantry';
+});
+
 test('with no plan at all, the demo needs still back the sample report', () => {
   state.ai = null;
   assert.ok(activeProductNeeds().length > 0);

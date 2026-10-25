@@ -246,6 +246,22 @@ export function matchProducts(need){
   return catalog ? rankProducts(catalog.products, need) : [];
 }
 
+/* How many listings a shopping-list entry buys. A need's qty counts
+   organizers, and five products are sold as a set (`pack` in the catalog:
+   "Set of 2", "8 Locks"). The list multiplied the set's price by the qty, so
+   every fridge plan's three bins came to three Set-of-2 listings, $80.97 for
+   six bins, where two sets cover them.
+   @param {{qty?: number, pack?: number}} sel */
+export function packsFor(sel){
+  const qty=Math.max(1, Number(sel&&sel.qty)||1);
+  return Math.ceil(qty/Math.max(1, Number(sel&&sel.pack)||1));
+}
+/* What an entry adds to the total, or null when it has no price.
+   @param {{qty?: number, pack?: number, price_usd?: number|null}} sel */
+export function lineCost(sel){
+  return sel&&sel.price_usd!=null ? sel.price_usd*packsFor(sel) : null;
+}
+
 /* One shopping-list entry for a need: the best product that is not a misfit,
    or the bare type when nothing fits. `checked` is the include checkbox and
    `checkedOn` the catalog's check date; the two are different things. */
@@ -257,6 +273,7 @@ export function selectionFor(need, needIdx){
     productId: top?top.product.id:null,
     name: top?top.product.name:TYPE_LABEL[need.type],
     price_usd: top?top.product.price_usd:null,
+    pack: top?(top.product.pack||1):1,
     url: top?top.product.url:null,
     retailer: top?top.product.retailer:null,
     img: top?(top.product.img||null):null,
@@ -291,7 +308,7 @@ export function reconcileSelection(selection, need, products, space=state.space)
     return {
       ...base,
       productId:null, name:TYPE_LABEL[need.type]||need.type, retailer:null,
-      price_usd:null, url:null, img:null, checkedOn:null, fit:'unknown', dims_in:null,
+      price_usd:null, pack:1, url:null, img:null, checkedOn:null, fit:'unknown', dims_in:null,
     };
   }
   if(product && product.available!==false){
@@ -299,7 +316,7 @@ export function reconcileSelection(selection, need, products, space=state.space)
     return {
       ...base,
       productId:product.id,
-      name:product.name, price_usd:product.price_usd, url:product.url, retailer:product.retailer,
+      name:product.name, price_usd:product.price_usd, pack:product.pack||1, url:product.url, retailer:product.retailer,
       img:product.img||null, checkedOn:product.checked||null,
       fit:fitFor(product, need), dims_in:{...product.dims_in},
     };
@@ -310,7 +327,7 @@ export function reconcileSelection(selection, need, products, space=state.space)
     productId:null, formerProductId:id, unavailable:true,
     formerName:selection.formerName||(selection.productId?selection.name:null)||null,
     name:TYPE_LABEL[need.type]||need.type, retailer:null,
-    price_usd:null, url:null, img:null, checkedOn:product?(product.checked||null):null,
+    price_usd:null, pack:1, url:null, img:null, checkedOn:product?(product.checked||null):null,
     fit:'unknown', dims_in:null,
   };
 }
