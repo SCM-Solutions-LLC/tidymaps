@@ -423,6 +423,12 @@ then the level's role) and are cut into one contiguous run per slot at least
 total distance, ties to the old positional split (a ceiling rack's equal decks
 otherwise lost its sports gear to the merge cap). A capped run's last level
 swaps "Middle shelf" for the template's own bottom. Its 3D half is item 19.
+19 (10-25) "The `shelves` builder stands its bottom row on the floor, wrong
+for wall-hung `openshelf` and `wallshelf`; right for a reach-in." The builder
+skipped a floor-level board because a freestanding unit's carcass base is
+that board, so wall-hung runs (no carcass) had none. Closed by #219: floating
+runs draw every board, the wall runs 18in below, and the builder's `floorY`
+moves the ground. Board heights unchanged, so card headroom is unchanged.
 
 ## What the 2026-10-16 session changed
 

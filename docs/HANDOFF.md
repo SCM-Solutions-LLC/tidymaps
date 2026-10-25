@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at 5244483 (after #217), plus #218.** History (dated
+**Last refreshed: 2026-10-25, main at b594a9a (after #218), plus #219.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -17,8 +17,8 @@ trail `main`. When it and `git log --oneline -20` disagree, git is right
 pack, and the live funnel is proven (Production health #8). #217 closed item
 17 at the scenario: kitchen and bathroom leave cabinet-only lines out on plain
 `shelves`, and demo plans are named for their setup (`SETUP_NOUN`: "Pantry" is
-now "Pantry cabinet" in every heading). #218 deals projected rows by depth,
-not position (`alignByDepth`): 6 setups had everyday rows off eye level.
+now "Pantry cabinet" in every heading). #218 deals rows by depth, not position
+(`alignByDepth`); #219 hangs open and wall shelving on its wall in 3D.
 
 ## Product state
 
@@ -147,7 +147,7 @@ npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
 npm test                  # 883 unit tests at 10-25
 export CHROMIUM_PATH=/opt/pw-browsers/chromium   # the sandbox's stable launcher
-npx playwright test       # 354 e2e + 1 standing skip at 10-25 (~15 min)
+npx playwright test       # 355 e2e + 1 standing skip at 10-25 (~15 min)
 npm run check:model-path  # the canary, by hand
 ```
 
@@ -229,8 +229,8 @@ npm run check:model-path  # the canary, by hand
 
 ## Open items / next actions
 
-The live work list. Numbers are stable (other files cite them); the full
-original text is in the archive, "Open items: full text as of 2026-10-13".
+The live work list; numbers are stable, full 10-13 text in the archive. Owner's
+queue (10-25): 20, then 21, then item 12's code residue as one PR, then stop.
 
 ### Actionable now
 
@@ -251,9 +251,9 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
 14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
     open the Target listing): replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`.
-19. **The `shelves` builder stands its bottom row on the floor** (10-25), wrong
-    for wall-hung `openshelf` and `wallshelf`; right for a reach-in. 3D only.
 20. **3D zone labels clip at 390** (10-25): "binet: top shelf" on long names.
+21. **A drawer bank's keep-high hazard** (10-25): the tool chest keeps paint in
+    its top drawer flagged keep-high; no level is high, so it should latch.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
@@ -264,7 +264,7 @@ Also open, unnumbered (from the dated sections):
   speedup; try effort `low` only after a day at `medium`; the lower spotted
   count (4 vs 6 to 8) is a question, not a regression.
 
-Closed (archive has the text): 2, 3, 4, 5, 9, 10, 11, 15, 16, 17 (#217), 18 (#218).
+Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18 (#218), 19 (#219).
 
 ### Waiting on traffic
 
