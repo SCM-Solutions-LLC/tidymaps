@@ -388,3 +388,49 @@ test('accessibility.html does not call the 3D view unusable while its canvas is 
     'accessibility.html should say what the 3D view does support',
   );
 });
+
+test('accessibility.html names every reachable screen the A/AA scan skips', () => {
+  /* The page used to say the scan covered "the whole reachable surface" and
+     then list what it covered. The list was right and the summary was not:
+     the progress screen, the 3D view and the dashboard are all reachable and
+     none of them is scanned in full. Rounding coverage up is the same bug as
+     the two shortfalls below it, pointed the other way.
+
+     So the gap is derived, not typed: the screens a visitor can reach come
+     from headings-skip-link.spec.mjs, the screens axe scans from
+     accessibility.spec.mjs, and anything in the first and not the second has
+     to be named on the page. viewer3d and dashboard are reached their own way
+     rather than through that list, so they sit in the map and are held by the
+     reverse check below. */
+  const UNSCANNED = {
+    loading: /progress screen shown while a plan is being written/,
+    viewer3d: /3D layout view/,
+    dashboard: /dashboard you see when signed in/,
+  };
+
+  const headings = read('tests/e2e/headings-skip-link.spec.mjs');
+  const axe = read('tests/e2e/accessibility.spec.mjs');
+
+  const list = (src, re) => [...((src.match(re) || [])[1] || '').matchAll(/'([a-z0-9]+)'/g)].map((m) => m[1]);
+  const reachable = list(headings, /const SCREENS = \[([\s\S]*?)\];/);
+  const scanned = new Set([
+    ...[...axe.matchAll(/^ {2}\['([a-z0-9]+)'/gm)].map((m) => m[1]),
+    ...list(axe, /for \(const screen of \[([^\]]+)\]/),
+  ]);
+  assert.ok(reachable.length >= 10 && scanned.size >= 10, 'one of the screen lists stopped parsing; re-derive before trusting this');
+
+  const page = source['accessibility.html'];
+  for (const screen of reachable.filter((s) => !scanned.has(s))) {
+    const prose = UNSCANNED[screen];
+    assert.ok(prose, `${screen} is reachable but not scanned, and accessibility.html does not account for it`);
+    assert.match(page, prose, `accessibility.html does not name ${screen} among the screens the scan skips`);
+  }
+
+  /* The other direction: a screen the page calls unscanned that the scan has
+     since picked up. The claim can be widened again, but only here. */
+  for (const screen of Object.keys(UNSCANNED)) {
+    assert.ok(!scanned.has(screen), `${screen} is scanned now; accessibility.html still lists it as a gap`);
+  }
+
+  assert.doesNotMatch(page, /whole reachable surface/i, 'accessibility.html claims the scan covers everything reachable');
+});
