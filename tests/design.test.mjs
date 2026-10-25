@@ -143,6 +143,12 @@ test('the plan hero placeholder is a decodable image, not a truncated one', () =
 // manual look read as clinical. Ambient gradients and glass stay out.
 test('terracotta buttons, soft corners, supporting colours, no ambient gradients', () => {
   assert.ok(tokens.includes('--spot:      oklch(0.56 0.13 36)'), 'the accent colour drifted');
+  /* The favicon, and the touch icon drawn from it, is --spot in sRGB as
+     Chromium converts it: an SVG cannot read a CSS token, so the hex is copied.
+     It sat on an older, lighter terracotta (#C4674A) until 2026-10-25. Change
+     the token and this hex together, then rerun scripts/render-touch-icon.mjs. */
+  assert.match(readFileSync(new URL('../assets/favicon.svg', import.meta.url), 'utf8'),
+    /<rect width="24" height="24"[^>]* fill="#b3543b"/i, 'the favicon is off --spot');
   assert.ok(tokens.includes('--brass:     var(--spot)'), 'a second accent is carrying the figure label');
   assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at terracotta');
   assert.match(tokens, /--radius: 1[2-8]px;/, 'cards lost their soft corners');
@@ -155,6 +161,38 @@ test('terracotta buttons, soft corners, supporting colours, no ambient gradients
   for (const css of [landingCss, baseCss, tokens]) {
     assert.ok(!css.includes('radial-gradient'), 'ambient gradient present');
     assert.ok(!css.includes('backdrop-filter'), 'glass surface present');
+  }
+});
+
+/* results.js draws the elevation plate as an <img>, reading each colour from
+   the tokens at draw time with a hex fallback. All seven fallbacks were still
+   the palette before the Warm Shelf until 2026-10-25: a palette change has no
+   reason to open results.js. So each token is converted here, OKLCH to sRGB
+   and clipped, which gives the same hex as Chromium for every one of them. */
+test('the plate\'s colour fallbacks are the tokens they stand in for', () => {
+  const toHex = (L, C, H) => {
+    const a = C * Math.cos(H * Math.PI / 180), b = C * Math.sin(H * Math.PI / 180);
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+    const rgb = [
+      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
+    ];
+    return '#' + rgb.map((x) => {
+      const c = Math.min(1, Math.max(0, x));
+      const v = c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+      return Math.round(v * 255).toString(16).padStart(2, '0');
+    }).join('');
+  };
+  const results = readFileSync(new URL('../js/screens/results.js', import.meta.url), 'utf8');
+  const fallbacks = [...results.matchAll(/v\('(--[a-z0-9-]+)','(#[0-9a-f]{6})'\)/g)];
+  assert.ok(fallbacks.length >= 7, `found only ${fallbacks.length} plate fallbacks`);
+  for (const [, name, fallback] of fallbacks) {
+    const token = new RegExp(`\\s${name}:\\s*oklch\\(([\\d.]+) ([\\d.]+) ([\\d.]+)\\)`).exec(tokens);
+    assert.ok(token, `${name} is not an oklch() token`);
+    assert.equal(fallback, toHex(+token[1], +token[2], +token[3]), `results.js falls back to a stale ${name}`);
   }
 });
 

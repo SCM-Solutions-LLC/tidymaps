@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at 57132d2 (after #222), plus #223.** History (dated
+**Last refreshed: 2026-10-25, main at 1043644 (after #223), plus #224.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -21,7 +21,7 @@ rows by depth (`alignByDepth`); #219 hangs open and wall shelving in 3D.
 #220 keeps 3D zone labels inside a 390 frame (item 20, per frame in scene.js).
 #221 latches a drawer's keep-high for every household (`latchEnclosedKeepHigh`).
 #222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
-#223: `apple-touch-icon` from the favicon; adjust-screen's draft race (#222).
+#223 touch icon, adjust-screen draft race; #224 every copied hex = its token.
 
 ## Product state
 
@@ -133,7 +133,7 @@ Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
    read 10-10), left off by decision.
 8. **The live funnel works** (10-25): `?ref=selftest` on the deployed site,
    DNT off in that tab only, wrote a `screen_viewed` row per screen (ids 172
-   to 175, delete if still there). No row since 08-04 is #7, not a break.
+   to 175, deleted 10-25). No row since 08-04 is #7, not a break.
 9. **No one but the owner has used the app** in the 30 days `usage_events`
    keeps (10-06, again 10-25): anonymous rows are the canary.
 10. **The canary fires 44 minutes to 11 hours late** (GitHub cron is best
@@ -246,7 +246,7 @@ queue (10-25): 20, 21 and item 12's code residue, all shipped (#220 to #222).
 12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped).
     Left: live-site headers and hosted auth config (sandbox cannot see them),
     the unreviewed "Last reviewed" dates on `cookies.html`/`accessibility.html`.
-    JSON-LD, title, eager JS: #222. Touch icon: #223 (favicon off `--spot`).
+    JSON-LD, title, eager JS: #222. Touch icon: #223, on `--spot` in #224.
 13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
