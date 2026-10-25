@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at 0f2083d (after #220), plus #221.** History (dated
+**Last refreshed: 2026-10-25, main at 66e2faa (after #221), plus #222.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -21,6 +21,7 @@ now "Pantry cabinet" in every heading). #218 deals rows by depth, not position
 (`alignByDepth`); #219 hangs open and wall shelving on its wall in 3D.
 #220 keeps 3D zone labels inside a 390 frame (item 20, per frame in scene.js).
 #221 latches a drawer's keep-high for every household (`latchEnclosedKeepHigh`).
+#222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
 
 ## Product state
 
@@ -208,9 +209,11 @@ npm run check:model-path  # the canary, by hand
 - **3D viewer:** keep it (`img2threejs` replacement settled no). Env map is
   per material, never `scene.environment` (it relights every surface).
   Packing jitter is a hash, never `Math.random`.
-- **Measured and not done:** the builder thunk map, more boot deferral (item
-  12), CSS concatenation, `modulepreload` (0.6s on slow 4G for a later
-  headline; dropped 10-14, `early-click-guard.test` holds it; archive).
+- **Boot** is 32 modules, 134KB gzipped (#222, from 46 and 265): the report,
+  analysis, Adjust and export load through `js/planScreens.js`, and a static
+  import of one from the boot path fails `plan-screens.test`. Measured and not
+  done: the builder thunk map, CSS concatenation, `modulepreload` (0.6s on
+  slow 4G for a later headline; dropped 10-14, `early-click-guard.test`).
 - **Advisor non-fixes** (`0009`): Production health #11, plus no captcha.
 - **One type scale** (`--fs-*` in `tokens.css`, 8 set sizes and 6 fluid).
   A raw font-size fails `tests/type-scale.test.mjs`; half pixels went down.
@@ -232,7 +235,7 @@ npm run check:model-path  # the canary, by hand
 ## Open items / next actions
 
 The live work list; numbers are stable, full 10-13 text in the archive. Owner's
-queue (10-25): item 12's code residue as one PR, then stop.
+queue (10-25): 20, 21 and item 12's code residue, all shipped (#220 to #222).
 
 ### Actionable now
 
@@ -241,11 +244,9 @@ queue (10-25): item 12's code residue as one PR, then stop.
    the input (the model once multiplied a container). Needs the owner's
    browser (~20 min); a failed render no longer costs quota (#109).
 12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped).
-    Left: JSON-LD, `apple-touch-icon` (needs a PNG), the 72-character title,
-    live-site headers and hosted auth config (sandbox cannot see them), the
-    unreviewed "Last reviewed" dates on `cookies.html`/`accessibility.html`.
-    Eager JS (41 boot modules) needs `landing.js`, `router.js`, `save.js`,
-    `customize.js` and `wizard-data.js` untangled; walk the import graph first.
+    Left: `apple-touch-icon` (needs a PNG), live-site headers and hosted auth
+    config (sandbox cannot see them), the unreviewed "Last reviewed" dates on
+    `cookies.html`/`accessibility.html`. JSON-LD, title, eager JS: #222.
 13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
