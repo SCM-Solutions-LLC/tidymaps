@@ -99,6 +99,9 @@ export function addShelfLabel(scene, row, leftEdge, y, z, { normal=null }={}){
   label.userData.labelText=text;
   label.userData.faceNormal=normal?normal.clone():new THREE.Vector3(0,0,1);
   label.userData.baseScale=label.scale.clone();
+  /* Where the builder put it. The label pass in scene.js slides a label
+     sideways to keep it in a narrow frame and starts from here each time. */
+  label.userData.basePosition=label.position.clone();
   scene.add(label);
   return label;
 }
