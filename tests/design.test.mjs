@@ -143,6 +143,12 @@ test('the plan hero placeholder is a decodable image, not a truncated one', () =
 // manual look read as clinical. Ambient gradients and glass stay out.
 test('terracotta buttons, soft corners, supporting colours, no ambient gradients', () => {
   assert.ok(tokens.includes('--spot:      oklch(0.56 0.13 36)'), 'the accent colour drifted');
+  /* The favicon, and the touch icon drawn from it, is --spot in sRGB as
+     Chromium converts it: an SVG cannot read a CSS token, so the hex is copied.
+     It sat on an older, lighter terracotta (#C4674A) until 2026-10-25. Change
+     the token and this hex together, then rerun scripts/render-touch-icon.mjs. */
+  assert.match(readFileSync(new URL('../assets/favicon.svg', import.meta.url), 'utf8'),
+    /<rect width="24" height="24"[^>]* fill="#b3543b"/i, 'the favicon is off --spot');
   assert.ok(tokens.includes('--brass:     var(--spot)'), 'a second accent is carrying the figure label');
   assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at terracotta');
   assert.match(tokens, /--radius: 1[2-8]px;/, 'cards lost their soft corners');
