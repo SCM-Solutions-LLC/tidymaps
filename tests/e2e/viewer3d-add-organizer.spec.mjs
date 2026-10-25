@@ -13,6 +13,11 @@ async function openPlan(page) {
   await page.goto('/index.html');
   await page.getByRole('button', { name: 'View a sample plan' }).click();
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  /* The shopping list is a skeleton until the catalog lands, and the screen is
+     active before that. A row count read in between was 0, so the list "grew"
+     by every row the sample has: red about 1 run in 15. The rows render in
+     one pass, so the first one means all of them. */
+  await expect(page.locator('#res-upgrades .prod').first()).toBeAttached({ timeout: 15_000 });
 }
 
 /* The add control is a change to the plan, so it lives under the Adjust tab
