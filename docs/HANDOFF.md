@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at cadddb8 (after #224), plus #225 and #226.** History (dated
+**Last refreshed: 2026-10-25, main at cadddb8 (after #224), plus #225 to #227.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -21,6 +21,7 @@ frame, `latchEnclosedKeepHigh`): detail in the archive.
 #225 read the three dated legal pages against the code: cookies.html omitted
 `tidymap_optout_v1` (its own toggle writes it), both accessibility.html
 shortfalls undersold the app, #226 narrowed its scan claim. Times: health #2.
+The Sonnet 5.5 spotted-count question closed from the saved plans (#227).
 
 ## Product state
 
@@ -121,6 +122,7 @@ Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
    Measured 10-25, each saved AI plan from its `usage_events` row to its
    `plan_meta.analyzedAt`: 5.5 n=10, 11.2 / 17.7 / 30.1s; 4.6 n=2, 66.7 and
    75.5s. End to end, 12 of the 13 real calls. `TOTAL_BUDGET_MS` is 100s.
+   No latency case for effort `low`: it stays `medium` unless cost says so.
 3. **The model key can expire and nothing in the product shows it.** It did
    08-04 to 08-19 and again ~09-19; the client falls back to a demo plan
    behind an honest banner. Checks: the canary (open item 2) alerts; by hand,
@@ -260,11 +262,9 @@ Also open, unnumbered (from the dated sections):
   `maxDims.d_in` <=13.5 untrimmed, floor needs name the floor row, card and
   3D agree); reopen run 4c's plan, expect no fit note. The 10-18 failure
   watch closed unmeasured: edge logs keep 24h, `plan_meta` has no retry flag.
-- **Sonnet 5.5:** timed (health #2); at a 17.7s median against a 100s budget
-  there is no latency case for effort `low`, so leave it at `medium` unless
-  cost says otherwise. Open: the lower spotted count (4 vs 6 to 8).
 
-Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18-21 (#218-#221).
+Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18-21 (#218-#221);
+Sonnet 5.5's lower spotted count (4 vs 8) was 4.6 padding (archive, 10-06).
 
 ### Waiting on traffic
 
