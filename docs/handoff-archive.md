@@ -1089,6 +1089,22 @@ spotted count is the one number that moved the wrong way; `SPOTTED_MAX` caps
 it, nothing sets a floor, so read it as a question for the report (did 5.5 miss
 items in the photo, or did 4.6 pad the list?) rather than a regression.
 
+**Settled 2026-10-25: 4.6 padded the list.** Both runs are saved (`spaces`
+`90fe9815`, 4.6 01:44, 8 spotted; `c829c16b`, 5.5 02:27, 4 spotted) under the
+same `spotted` rule (80614fc, 10-03; #187 changed only the model and tuning).
+Their inputs differed, which the table above hides: the 4.6 run had
+Appliances ticked and three dogs, the 5.5 run neither. Read against each run's
+own list, at least five of 4.6's eight were in scope, and the prompt says only
+things the list leaves out go in `spotted`: tuna cans (Canned goods), pancake
+mix (Breakfast), iodized salt and burger seasoning (Spices & oils), and a
+Nespresso machine with Appliances ticked. Peanut butter is arguable; only the
+collagen and the condiment jars were clearly outside. All four of 5.5's were
+outside its list (air fryer and appliances, cling wrap and foil, a pet food
+bin, cookware), and 4.6 named none of them. Neither space kept its photos, so
+whether both runs saw the same set is unknown. The other nine saved 5.5 plans
+spot 0 to 5 each. No floor is needed; the one bad name among them, "Red item
+bottom right" (10-10), is what `SPOTTED_FILLER` now drops.
+
 What this does not settle:
 
 - **One run is not a latency baseline.** 4.6 did a simpler room in 33.6s on
