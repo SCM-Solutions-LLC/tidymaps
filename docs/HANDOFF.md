@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-24, main at 7f05053 (after #210).** History (dated
+**Last refreshed: 2026-10-25, main at f11d139 (after #213).** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,15 +11,12 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-10-23 sessions changed
+## What the 2026-10-25 sessions changed
 
-The first real fridge run (French door, AI, 12 rows) planned well and drew
-badly. #205 fixed the report (whole-word pictures and categories, door rows
-never make a room, unit sections head the map). #207 drew each fridge card
-in 3D, door rows on the door. #208 re-rendered all 163 step clips on
-furniture that fits the space (fridge, cabinet, vanity, open drawer), in the
-current palette, with fridge food and nothing at the frame edge. #209 set
-every font size from one scale. #210 gave the reach-ins back their door.
+#212: the surface scrub drops door and drawer lines a setup lacks instead of
+rewording them ("the front edge may not support the weight", open shelving's
+"Inside-door surface"), and the landing sample is built for its drawing.
+#213 priced multipacks by the pack (#214 duplicated it and was closed).
 
 ## Product state
 
@@ -58,7 +55,7 @@ Only the owner has used it (Production health #9); first users: item 6.
   the builders. Equality tests hold them together; change all or none.
 - **State.** `js/state.js`. Draft `tidymap_draft_v2` never holds media;
   `state.shareView` blocks the draft writer and autosave. `prepareDemoPlanState`
-  resets to wizard defaults (`adults = 2`); a share view blanks what it shows.
+  resets with no household (`adults = 0`); a share view blanks what it shows.
 - **Async ownership.** A monotonic plan instance moves in `resetPlanRecord()`.
   Any async writer captures `currentPlanInstance()` and its inputs before the
   first await and writes nothing if `planInstanceIsCurrent()` is false.
@@ -113,8 +110,7 @@ Only the owner has used it (Production health #9); first users: item 6.
 
 ## Production health
 
-Current as of 2026-10-13. Numbers are stable (other files cite them); the
-archive has the 08-27 text, where 4 and 5 were each used twice.
+Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
 
 1. Resolved: zero saved spaces (fixed 07-28).
 2. Analysis time: within budget. `TOTAL_BUDGET_MS` 100s; Sonnet 5.5 ran a
@@ -125,8 +121,7 @@ archive has the 08-27 text, where 4 and 5 were each used twice.
    `plan_meta->>'source'` on recent `spaces` (`demo-fallback` = broken).
    `usage_events` has no status column and cannot tell you.
 4. Resolved: XSS through plan icons (#134); the suite's telemetry (#98).
-5. **Deploy token:** expires **2027-10-01**; dead, it is a 401 at the deploy
-   step. (The other #5, "the numbers are a smoke test", is superseded by #9.)
+5. **Deploy token:** expires **2027-10-01**; dead, it is a 401 at deploy.
 6. `render-after` works (fixed by 1568px input, #106). Proven re-staging on
    one corner pantry; object fidelity and other spaces unmeasured (item 1).
 7. Telemetry is off in the owner's Chrome profile (`off: Do Not Track`,
@@ -147,9 +142,9 @@ archive has the 08-27 text, where 4 and 5 were each used twice.
 ```
 npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
-npm test                  # 873 unit tests at 10-24
+npm test                  # 878 unit tests at 10-25
 export CHROMIUM_PATH=/opt/pw-browsers/chromium   # the sandbox's stable launcher
-npx playwright test       # 352 e2e + 1 standing skip at 10-24 (~17 min)
+npx playwright test       # 354 e2e + 1 standing skip at 10-25 (~15 min)
 npm run check:model-path  # the canary, by hand
 ```
 
@@ -161,12 +156,9 @@ npm run check:model-path  # the canary, by hand
 - **Fresh-session traps:** the sandbox cannot reach `supabase.co` (use MCP)
   or the live site; renders need the owner's browser; repo photos are
   <=1000px, so `assets/product/plan-shopping.png` is the render fixture.
-- **Prove a new test fails without its fix.** Break the specific behaviour
-  the test claims to guard, in a copy of the tree (`git archive HEAD | tar -x
-  -C <dir>`), confirm red, and diff the tree afterwards. Never `git checkout`
-  a file to undo a neuter (it reverts every change in it). Stashing only
-  proves the test needs the file. Examples of tests that passed against
-  unfixed code are in the archive (#109's is the classic).
+- **Prove a new test fails without its fix** (CLAUDE.md), in a copy of the
+  tree; never `git checkout` a file to undo a neuter (it reverts every change
+  in it). Tests that passed against unfixed code: archive (#109's classic).
 
 ## Decisions that look arbitrary (still load-bearing)
 
@@ -217,7 +209,8 @@ npm run check:model-path  # the canary, by hand
 - **One type scale** (`--fs-*` in `tokens.css`, 8 set sizes and 6 fluid).
   A raw font-size fails `tests/type-scale.test.mjs`; half pixels went down.
 - **A setup can add surfaces its archetype lacks** (`SETUP_SURFACES`): the
-  reach-ins have a door, open shelving and a wardrobe do not (#210).
+  reach-ins have a door, open shelving and a wardrobe do not (#210). A line
+  about a fitting the setup lacks is dropped, not reworded (#212).
 - **A multipack is bought by the pack** (`pack` in `catalog.json`, 10-25):
   the card, list, totals and export count packs, not units. Ranking still
   compares listing prices: per-need cost swapped ~50 sample picks to save
@@ -254,18 +247,24 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
 14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
     open the Target listing): replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`.
+17. **Open and wall shelves are named for other furniture** (10-25): "Empty
+    the cabinet completely", "Cabinet height ... beside the plumbing", "Your
+    bathroom vanity" in 3D. Furniture nouns; the surface scrub never reads them.
 
 Also open, unnumbered (from the dated sections):
-- **After #192:** watch `analyze-space plan validation failed` for a rise
-  through 10-18 (`09b1271`, merged 10-10); `seenLayout` cannot reject a plan,
-  so a rise is #192's. Run a real reach-in or wardrobe with products on
-  (shelf `maxDims.d_in` <=13.5 untrimmed, floor needs name the floor row,
-  card and 3D agree); reopen run 4c's plan, expect no fit note. Not done yet.
+- **After #192:** watch `analyze-space plan validation failed` (10-10 to
+  10-18, `09b1271`) for a rise; `seenLayout` cannot reject a plan, so a
+  rise is #192's. Run a real reach-in or wardrobe with products on (shelf
+  `maxDims.d_in` <=13.5 untrimmed, floor needs name the floor row, card and
+  3D agree); reopen run 4c's plan, expect no fit note. Not done yet.
 - **Sonnet 5.5:** read several `analyze-space` times before quoting a
   speedup; try effort `low` only after a day at `medium`; the lower spotted
   count (4 vs 6 to 8) is a question, not a regression.
 
-Closed (archive has the text): 2, 3, 4, 5, 9, 10, 11, 15.
+- **Found 10-25:** the fridge Turntable purpose lacks a period ("digging Your
+  shelves"); `viewer3d-add-organizer` races its row count (red 1 in 15).
+
+Closed (archive has the text): 2, 3, 4, 5, 9, 10, 11, 15, 16.
 
 ### Waiting on traffic
 
@@ -295,6 +294,6 @@ Closed (archive has the text): 2, 3, 4, 5, 9, 10, 11, 15.
 ## Session conventions
 
 Develop on the session's own `claude/*` branch, reset from `origin/main` after
-each merge (never stack on merged history); open draft PRs, subscribe to PR
-activity, re-check until merged. Each session refreshes the header and fills
-its dated section; the previous one moves to the archive. Stay under 300 lines.
+each merge; open draft PRs, subscribe, re-check until merged. Run one session
+on the open items at a time (10-25: item 14 was fixed twice). Each session
+refreshes the header and dated section, old one to the archive; under 300 lines.
