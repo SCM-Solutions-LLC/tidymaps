@@ -1013,11 +1013,23 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
                 down with distance past a threshold keeps them attached to what
                 they name.
 
-     `zoneLabelsOn` is the user's switch and wins over both. */
+     A third keeps each one whole. A label is as wide as its name and starts
+     at the unit's left edge, and the field of view is fixed vertically, so a
+     phone's canvas (352 pixels across at 390) sees far less width than a
+     desktop's at the same label size. Long names ran off the side: "binet:
+     top shelf", and a drawer bank's names past the right edge; 16 of the 37
+     setups cut at least one. A label wider than the frame is shrunk to fit
+     it, and one hanging off either side slides back in along the camera's
+     right. Its height, which is what ties it to its shelf, never moves.
+
+     `zoneLabelsOn` is the user's switch and wins over all three. */
   const zoneLabels=[];
   scene.traverse(node=>{ if(node.userData && node.userData.isZoneLabel) zoneLabels.push(node); });
   let zoneLabelsOn=true;
   const camDir=new THREE.Vector3();
+  const camRight=new THREE.Vector3();
+  const inView=new THREE.Vector3();
+  const LABEL_SIDE_LIMIT=0.96;
 
   function setZoneLabels(on){
     zoneLabelsOn=!!on;
@@ -1028,6 +1040,9 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   function updateZoneLabels(){
     if(!zoneLabelsOn || !zoneLabels.length) return;
     camera.getWorldDirection(camDir);
+    camera.updateMatrixWorld();
+    camRight.setFromMatrixColumn(camera.matrixWorld, 0);
+    const halfTanH=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect;
     const dist=camera.position.distanceTo(controls.target);
     /* Below the reference distance labels stay their authored size; past it
        they shrink in proportion, with a floor so they never vanish entirely. */
@@ -1039,6 +1054,22 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
       label.visible=!n || n.dot(camDir) < -0.12;
       const base=label.userData.baseScale;
       if(base) label.scale.set(base.x*k, base.y*k, 1);
+      const anchor=label.userData.basePosition;
+      if(!anchor || !label.visible) continue;
+      /* A sprite is drawn flat to the camera, so in view space its width is
+         its x scale and the frame's half width at its depth is
+         depth · tan(fov/2) · aspect. */
+      inView.copy(anchor).applyMatrix4(camera.matrixWorldInverse);
+      const depth=-inView.z;
+      if(depth<=0){ label.position.copy(anchor); continue; }
+      const half=LABEL_SIDE_LIMIT*depth*halfTanH;
+      if(label.scale.x>2*half){
+        const fit=2*half/label.scale.x;
+        label.scale.set(label.scale.x*fit, label.scale.y*fit, 1);
+      }
+      const room=half-label.scale.x/2;
+      const x=Math.min(room, Math.max(-room, inView.x));
+      label.position.copy(anchor).addScaledVector(camRight, x-inView.x);
     }
   }
 
