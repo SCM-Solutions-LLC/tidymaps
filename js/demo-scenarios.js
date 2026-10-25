@@ -1485,6 +1485,28 @@ function enforceHazardZones(plan, household) {
   });
 }
 
+/* The same mismatch without a young child in the house. enforceHazardZones
+   only runs for one, so every other household kept `keep-high` on a drawer:
+   a rolling tool chest, which has no high level at all, showed "keep high"
+   on the paint in its top drawer, and the kitchen drawers on their sharp
+   tools. Runs after the household pass, so a young child's row keeps the
+   wording that pass gave it, and before the pet pass, so "pets" becomes the
+   animal and the cat caveat, written for a height claim, stays off a latch. */
+function latchEnclosedKeepHigh(plan, household) {
+  const petsPresent = isPresent(household && household.pets && household.pets.present);
+  (plan.map || []).forEach(row => {
+    if (!row.safety || row.safety.flag !== 'keep-high') return;
+    if (row.surface !== 'drawer' && row.surface !== 'door') return;
+    const hazards = hazardNames(row);
+    const what = hazards.length ? listNames(hazards) : 'These items';
+    const [where, noun] = row.surface === 'drawer' ? ['in this drawer', 'A drawer'] : ['on this door', 'A door'];
+    row.safety = {
+      flag: 'lock-or-latch',
+      why: `${what} live ${where}. ${noun} cannot be kept up high, so latch it ${petsPresent ? 'to keep the pets out' : 'instead'}.`,
+    };
+  });
+}
+
 const KID_WORDS = /kid|child|little hands|small hands/i;
 
 /* Kid-phrase rewrites, applied before the sentence-level scrub. Deleting
@@ -1973,6 +1995,7 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   const finalArchetype = archetype || scenarioArchetype;
   applyGoal(plan, goal);
   applyHousehold(plan, household);
+  latchEnclosedKeepHigh(plan, household);
   // Sizing is held back until after the scrub below: it removes steps, and a
   // plan sized before that comes out under its own floor.
   if (answers) applyAnswers(plan, answers, { deferSizing: true, archetype: finalArchetype, setup: setupId });
