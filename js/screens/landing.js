@@ -2,7 +2,7 @@ import { prepareDemoPlanState, currentPlanInstance, planInstanceIsCurrent } from
 import { state } from '../state.js';
 import { toast, scrollIntoViewSafely, closeSiteNav } from '../ui.js';
 import { go } from '../router.js';
-import { buildResults } from './results.js';
+import { loadResults } from '../planScreens.js';
 import { normalizeAi } from '../plan.js';
 import { submitInviteRequest } from '../db.js';
 import { submitFormErrorMessage } from '../api.js';
@@ -20,7 +20,7 @@ export async function runDemo(){
      The reset above claims the plan instance first; if another plan is opened
      while the module is in flight, this one writes nothing. */
   const instance=currentPlanInstance();
-  const { getDemoScenario } = await import('../demo-scenarios.js');
+  const [{ getDemoScenario }, { buildResults }] = await Promise.all([import('../demo-scenarios.js'), loadResults()]);
   if(!planInstanceIsCurrent(instance)) return;
   /* Built for the setup it is drawn as. Without one the scenario was scrubbed
      as door-less shelves while the 3D view drew the cabinet state.setup

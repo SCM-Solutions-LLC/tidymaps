@@ -213,3 +213,54 @@ test('a mid-wizard reload with no photos to lose says only that the answers are 
   assert.deepEqual(await initializeRoute(h.deps), { status:'restored-answers' });
   assert.deepEqual(h.calls, [['toast','Your answers are still here. Pick up where you left off.']]);
 });
+
+/* ---------- the report loads on first use ----------
+   js/planScreens.js: the report is no longer part of the boot, so startup
+   waits for it, and that wait is one more await the restore can be raced
+   across. The share payload is applied only after it, and a draft that is
+   restored but cannot be shown stays on disk. */
+
+test('does not apply a shared plan when the visitor moves on while the report loads', async()=>{
+  const gate=deferred();
+  const h=harness({
+    search:'?share=abc-123',
+    loadSharedPlan:async()=>({ name:'someone else’s pantry' }),
+    applySharedPlan:()=>h.calls.push('applyShared'),
+    prepareResults:()=>gate.promise,
+  });
+  const initializing=initializeRoute(h.deps);
+  await new Promise((resolve)=>setImmediate(resolve));
+
+  h.setScreen('goals');
+  gate.resolve();
+
+  assert.deepEqual(await initializing, { status:'skipped-navigation' });
+  assert.deepEqual(h.calls, [], 'the shared payload was applied across the report load');
+});
+
+test('a draft whose report cannot load is kept, and the visitor is told', async()=>{
+  const h=harness({
+    restoreGuestDraft:()=>({ restored:true, planReady:true }),
+    prepareResults:async()=>{ throw new Error('Failed to fetch dynamically imported module'); },
+  });
+
+  // Resolves rather than rejects: main.js clears a draft whose restore throws.
+  assert.deepEqual(await initializeRoute(h.deps), { status:'results-unavailable' });
+  assert.deepEqual(h.calls, [['toast','We could not reopen your last plan just now. Reload the page to try again.']]);
+});
+
+test('a restored draft does not open the report once the visitor has moved on', async()=>{
+  const gate=deferred();
+  const h=harness({
+    restoreGuestDraft:()=>({ restored:true, planReady:true }),
+    prepareResults:()=>gate.promise,
+  });
+  const initializing=initializeRoute(h.deps);
+  await new Promise((resolve)=>setImmediate(resolve));
+
+  h.setScreen('space');
+  gate.resolve();
+
+  assert.deepEqual(await initializing, { status:'skipped-navigation' });
+  assert.deepEqual(h.calls, []);
+});

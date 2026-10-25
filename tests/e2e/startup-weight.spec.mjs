@@ -58,11 +58,33 @@ test('the plan engine arrives with the first plan, not with the page', async ({ 
   await expect(page.locator('#res-steps .task').first()).toBeVisible();
 });
 
+/* The report, the analysis, Adjust and the export, with the modules only
+   they reach, were 15 of the landing page's 46 modules and half its script
+   bytes (js/planScreens.js). They arrive with the first plan, or while the
+   wizard is being answered, and once the report is here its handlers are the
+   real functions again, not the stand-ins: other specs call them and read
+   the page in the same breath. */
+const PLAN_SCREENS = /\/js\/(screens\/(results|loading|customize)|planExport|personalize|setupStructure|catalog)\.js/;
+
+test('the plan screens arrive with the first plan, not with the page', async ({ page }) => {
+  const urls = await loadLanding(page);
+  expect(urls.filter((u) => PLAN_SCREENS.test(u)), 'fetched before any plan was asked for').toEqual([]);
+  await page.getByRole('button', { name: 'View a sample plan' }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  await expect(page.locator('#res-steps .task').first()).toBeVisible();
+  expect(urls.some((u) => /screens\/results\.js/.test(u))).toBe(true);
+  expect(await page.evaluate(() => window.toggleStep.constructor.name), 'still the async stand-in').toBe('Function');
+});
+
+test('the wizard fetches the plan screens while it is being answered', async ({ page }) => {
+  const urls = await loadLanding(page);
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await expect(page.locator('#screen-space')).toHaveClass(/active/);
+  await expect.poll(() => urls.some((u) => /screens\/results\.js/.test(u)), { timeout: 10_000 }).toBe(true);
+});
+
 /* main.js used to statically import viewer3d.js and products.js just to hand
-   their functions to window — nothing else on the boot path reaches either
-   module, unlike results.js/db.js/plan.js/account.js/dashboard.js, which
-   landing.js, router.js and buildAll()'s own screens already force eager
-   regardless of what main.js imports. These two are a real, checked win. */
+   their functions to window; nothing else on the boot path reaches either. */
 test('the 3D viewer arrives when it is opened, not with the page', async ({ page }) => {
   const urls = await loadLanding(page);
   expect(urls.some((u) => /screens\/viewer3d\.js/.test(u)), 'viewer3d.js fetched before it was opened').toBe(false);

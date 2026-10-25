@@ -12,23 +12,19 @@ import { fetchSpace, applyLoadedSpace } from './db.js';
 import { buildAll } from './screens/index.js';
 import { runDemo, requestInvite, initLanding, navHome } from './screens/landing.js';
 import { handleFiles } from './screens/capture.js';
-import { toggleUpgrade, uncheckAllUpgrades, setUpgrades, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, buildResults, applySavedProgress, pickProduct, generateAfter, retryAnalysis } from './screens/results.js';
-import { useZeroPlan } from './screens/customize.js';
 import { submitFeedback, sendRate } from './screens/feedback.js';
-import { downloadShoppingList, sendShoppingList } from './planExport.js';
+import { loadResults, planScreenGlobals } from './planScreens.js';
 import { setupAccount, openAuth, closeAuth, sendAuthCode, verifyAuthCode } from './screens/account.js';
 import { dashSignOut } from './screens/dashboard.js';
 import { initializeRoute } from './startup.js';
 
 /* screens/products.js and screens/viewer3d.js (three.js-backed, the single
-   biggest chunk in the app) are the only two modules nothing else on the
-   boot path reaches: every other screen main.js used to import eagerly —
-   results.js, db.js, plan.js, account.js, dashboard.js, planExport.js — is
-   already forced in by landing.js, router.js or buildAll()'s own screens
-   regardless of what main.js does, so importing them here again cost
-   nothing to defer and would have bought nothing either. These two are a
-   real, checked win: dynamic-imported on first use, same pattern router.js
-   already uses to dispose the 3D view on exit. */
+   biggest chunk in the app) are dynamic-imported on first use, same pattern
+   router.js already uses to dispose the 3D view on exit. The report, Adjust
+   and the export load the same way through js/planScreens.js, which every
+   module that used to import them statically now goes through: deferring
+   them here alone would have bought nothing while landing.js, router.js and
+   buildAll() still pulled them in. */
 async function openViewer3d(...args){
   const m = await import('./screens/viewer3d.js');
   return m.openViewer3d(...args);
@@ -50,11 +46,12 @@ async function openProducts(...args){
    (in index.html and in injected template strings) */
 Object.assign(window, {
   go, goBack, goNext, restart,
-  toast, toggleSiteNav, uncheckAllUpgrades, setUpgrades, useZeroPlan,
+  toast, toggleSiteNav,
   runDemo, requestInvite, submitFeedback, sendRate, navHome, openProducts,
-  downloadShoppingList, sendShoppingList,
   handleFiles,
-  toggleUpgrade, toggleStep, skipStep, toggleStepTip, setStepsView, focusNav, focusDone, pickProduct, generateAfter, retryAnalysis,
+  // The report's, Adjust's and the export's handlers: stand-ins until their
+  // module loads (js/planScreens.js).
+  ...planScreenGlobals(),
   openAuth, closeAuth, sendAuthCode, verifyAuthCode, dashSignOut,
   openViewer3d, saveArrangement, resetArrangement,
   // Answers "is telemetry actually running?" from the console. See
@@ -102,7 +99,11 @@ if(typeof releaseClicks === 'function') releaseClicks();
 
 // Session restore + deep links, then guest-draft recovery as the fallback.
 // Route restoration is guarded so delayed account setup cannot interrupt a
-// person who has already opened the wizard, results, or 3D viewer.
+// person who has already opened the wizard, results, or 3D viewer. The report
+// loads on first use (js/planScreens.js); startup waits for it before it
+// applies anything, so a restore is still all or nothing.
+/** @type {any} */
+let resultsScreen=null;
 initializeRoute({
   setupAccount,
   getSession,
@@ -111,8 +112,9 @@ initializeRoute({
   fetchSpace,
   applyLoadedSpace,
   restoreGuestDraft,
-  buildResults,
-  applySavedProgress,
+  prepareResults:async()=>{ resultsScreen=await loadResults(); },
+  buildResults:()=>resultsScreen.buildResults(),
+  applySavedProgress:(steps)=>resultsScreen.applySavedProgress(steps),
   getStepDone:()=>state.stepDone,
   go,
   toast,

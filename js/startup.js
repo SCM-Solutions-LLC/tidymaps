@@ -9,7 +9,11 @@ import { currentPlanInstance, planInstanceIsCurrent } from './state.js';
    the restore itself can be raced by another plan being opened, without the
    screen changing. Both are checked before anything is applied, and for the
    same reason — a restore is one more asynchronous writer that must not land
-   on a plan it does not own. */
+   on a plan it does not own.
+
+   `prepareResults` loads the report, which is no longer part of the boot
+   (js/planScreens.js). It is one more await, so it comes before anything is
+   applied and the route is checked after it, like the fetches. */
 export async function initializeRoute({
   setupAccount,
   getSession,
@@ -18,6 +22,7 @@ export async function initializeRoute({
   fetchSpace,
   applyLoadedSpace,
   restoreGuestDraft,
+  prepareResults=async()=>{},
   buildResults,
   applySavedProgress,
   getStepDone,
@@ -45,7 +50,7 @@ export async function initializeRoute({
          plan while it was in flight had their answers replaced when it landed.
          The navigation was correctly skipped; the damage was already done.
          loadSharedPlan must not touch state — applySharedPlan does that. */
-      const payload=await loadSharedPlan(shareId);
+      const [payload]=await Promise.all([loadSharedPlan(shareId), prepareResults()]);
       if(!owned()) return { status:'skipped-navigation' };
       if(applySharedPlan) applySharedPlan(payload);
       buildResults();
@@ -62,7 +67,7 @@ export async function initializeRoute({
   const spaceId=params.get('space');
   if(spaceId && getSession()){
     try{
-      const loaded=await fetchSpace(spaceId);
+      const [loaded]=await Promise.all([fetchSpace(spaceId), prepareResults()]);
       if(!owned()) return { status:'skipped-navigation' };
       const data=applyLoadedSpace(loaded);
       buildResults();
@@ -79,6 +84,19 @@ export async function initializeRoute({
     const res=restoreGuestDraft();
     if(res && res.planReady){
       const savedSteps=[...(getStepDone()||[])];
+      /* The draft is applied already (restoring it is how we learn there is
+         a plan), so a visitor who moves on while the report loads keeps their
+         answers and stays where they went. A report that cannot load leaves
+         the draft on disk: main.js clears a draft that fails to restore, and
+         a dropped connection is not a broken plan. */
+      try{
+        await prepareResults();
+      }catch(_){
+        if(!owned()) return { status:'skipped-navigation' };
+        toast('We could not reopen your last plan just now. Reload the page to try again.');
+        return { status:'results-unavailable' };
+      }
+      if(!owned()) return { status:'skipped-navigation' };
       buildResults();
       applySavedProgress(savedSteps);
       go('results');

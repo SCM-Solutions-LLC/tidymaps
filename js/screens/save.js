@@ -1,6 +1,6 @@
 import { SAVE_OPTS } from '../data.js';
 import { toast, scrollIntoViewSafely } from '../ui.js';
-import { downloadChecklist, sendShoppingList } from '../planExport.js';
+import { loadPlanExport } from '../planScreens.js';
 import { go, restart } from '../router.js';
 import { backendConfigured } from '../config.js';
 import { getSession } from '../auth.js';
@@ -73,8 +73,9 @@ export function buildSave(){
       if(t==='Compare before &amp; after'){ go('results'); setTimeout(()=>scrollIntoViewSafely(document.getElementById('after-tabs')),200); return; }
       /* These two answered "coming soon" for a plan already sitting complete
          in memory. Everything either one needs is on the client. */
-      if(t==='Download checklist'){ downloadChecklist(); return; }
-      if(t==='Send shopping list'){ sendShoppingList(); return; }
+      // Fetched with the report, so these wait on nothing (js/planScreens.js).
+      if(t==='Download checklist'){ loadPlanExport().then(m=>m.downloadChecklist()); return; }
+      if(t==='Send shopping list'){ loadPlanExport().then(m=>m.sendShoppingList()); return; }
       toast(t.replace('&amp;','&')+' is coming soon');
     };
     wrap.appendChild(b);
