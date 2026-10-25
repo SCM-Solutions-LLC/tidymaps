@@ -16,7 +16,8 @@ trail `main`. When it and `git log --oneline -20` disagree, git is right
 #212: the surface scrub drops door and drawer lines a setup lacks instead of
 rewording them ("the front edge may not support the weight", open shelving's
 "Inside-door surface"), and the landing sample is built for its drawing.
-#213 priced multipacks by the pack (#214 duplicated it and was closed).
+#213 priced multipacks by the pack (#214 duplicated it and was closed). The
+live funnel is proven (Production health #8): item 6 waits only on recruiting.
 
 ## Product state
 
@@ -126,10 +127,11 @@ Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
    one corner pantry; object fidelity and other spaces unmeasured (item 1).
 7. Telemetry is off in the owner's Chrome profile (`off: Do Not Track`,
    read 10-10), left off by decision.
-8. The funnel is not broken: a clean browser sends (10-06). The 08-27 CORS
-   argument was wrong; its conclusion held on the 10-06 edge logs.
+8. **The live funnel works** (10-25): `?ref=selftest` on the deployed site,
+   DNT off in that tab only, wrote a `screen_viewed` row per screen (ids 172
+   to 175, delete if still there). No row since 08-04 is #7, not a break.
 9. **No one but the owner has used the app** in the 30 days `usage_events`
-   keeps (10-06): anonymous rows are the canary, signed-in rows the owner.
+   keeps (10-06, again 10-25): anonymous rows are the canary.
 10. **The canary fires 44 minutes to 11 hours late** (GitHub cron is best
     effort). A same-day absence means nothing; the heartbeat allows 36h.
 11. **Advisors:** eight notices, each a decision (four
@@ -252,15 +254,13 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
     bathroom vanity" in 3D. Furniture nouns; the surface scrub never reads them.
 
 Also open, unnumbered (from the dated sections):
-- **After #192:** watch `analyze-space plan validation failed` (10-10 to
-  10-18, `09b1271`) for a rise; `seenLayout` cannot reject a plan, so a
-  rise is #192's. Run a real reach-in or wardrobe with products on (shelf
+- **After #192:** run a real reach-in or wardrobe with products on (shelf
   `maxDims.d_in` <=13.5 untrimmed, floor needs name the floor row, card and
-  3D agree); reopen run 4c's plan, expect no fit note. Not done yet.
+  3D agree); reopen run 4c's plan, expect no fit note. The 10-18 failure
+  watch closed unmeasured: edge logs keep 24h, `plan_meta` has no retry flag.
 - **Sonnet 5.5:** read several `analyze-space` times before quoting a
   speedup; try effort `low` only after a day at `medium`; the lower spotted
   count (4 vs 6 to 8) is a question, not a regression.
-
 - **Found 10-25:** the fridge Turntable purpose lacks a period ("digging Your
   shelves"); `viewer3d-add-organizer` races its row count (red 1 in 15).
 
