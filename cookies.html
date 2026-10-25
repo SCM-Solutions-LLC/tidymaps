@@ -29,7 +29,7 @@
 <main class="legal" id="main" tabindex="-1">
   <a class="back" href="index.html">&larr; Back to TidyMap</a>
   <h1>Cookies and local storage</h1>
-  <p class="updated">Last reviewed August 14, 2026 &middot; TidyMap is built by SCM Solutions LLC</p>
+  <p class="updated">Last reviewed October 25, 2026 &middot; TidyMap is built by SCM Solutions LLC</p>
 
   <nav aria-label="Legal documents">
     <ul class="legal-nav">
@@ -53,6 +53,7 @@
     <li><strong><code>tidymap_draft_v2</code></strong>: your work in progress: the space you are planning, your answers, and the plan once it exists. This is what lets you refresh the page, or come back later, without starting over. If you are not signed in, this is the <em>only</em> place your plan lives. Cleared by &ldquo;Start over.&rdquo;</li>
     <li><strong><code>tidymap_units</code></strong>: whether you measure in inches or centimeters, so the app does not ask twice.</li>
     <li><strong><code>tidymap_anon_v1</code></strong>: a random identifier for anonymous usage counts, so we can tell one visit from another without knowing who you are. It is not linked to your name, email, photos, or IP address, and it is never sent to a third party. <strong>This is the only non-essential item on the list</strong>, and it is never created at all if your browser sends Do Not Track or Global Privacy Control.</li>
+    <li><strong><code>tidymap_optout_v1</code></strong>: written only if you use the toggle further down this page to turn the counter off. The setting is its presence: turning the counter back on deletes this key rather than storing an &ldquo;on&rdquo; value, so a browser that never touched the toggle and one that was switched back on look the same.</li>
     <li><strong><code>tidymap_invite_email</code></strong>: the email address you typed into the early-access form, kept so the form remembers you asked. Only written if you use that form.</li>
     <li><strong><code>sb-&hellip;-auth-token</code></strong>: your sign-in session, written by Supabase's authentication library. This is what keeps you signed in between visits. It only exists if you sign in, and signing out removes it.</li>
   </ul>
@@ -78,7 +79,7 @@
     <button class="btn btn-ghost btn-sm" id="optout-btn" type="button" hidden></button>
     <noscript><p>The one-tap opt-out needs JavaScript. Turn on Global Privacy Control or Do Not Track in your browser instead, and TidyMap will stop collecting usage events entirely on this device.</p></noscript>
   </div>
-  <p>Turning it off clears the anonymous identifier for this browser (<code>tidymap_anon_v1</code>, above). Turning it back on starts a fresh one, so nothing that was collected before crosses that gap.</p>
+  <p>Turning it off writes the setting (<code>tidymap_optout_v1</code>, above) and clears the anonymous identifier (<code>tidymap_anon_v1</code>) in the same step. Turning it back on removes the setting and starts a fresh identifier, so nothing that was collected before crosses that gap.</p>
   <p>If you prefer a browser-level setting, turn on Do Not Track or Global Privacy Control. TidyMap honors either wherever that browser goes, with no in-app change. Brave, DuckDuckGo and Firefox send Global Privacy Control by default, and the toggle above will tell you when it sees one.</p>
 
   <h2>Clearing all of it</h2>

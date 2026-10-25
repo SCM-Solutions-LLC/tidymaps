@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 
 /* The legal documents only work as a set.
 
@@ -286,4 +286,105 @@ test('every provider the security page depends on is named in the privacy policy
   for (const provider of m[1].split(',').map((p) => p.trim())) {
     assert.ok(source['privacy.html'].includes(provider), `privacy.html does not name ${provider}`);
   }
+});
+
+/* ---------- the cookies page lists the browser keys that exist ----------
+   The page prints its list and then says "that is the complete list. If you
+   find a key in your browser under this site that is not named here, we want
+   to know." It shipped missing tidymap_optout_v1, which the toggle on that
+   same page writes: the one key a reader could produce by following the
+   page's own instructions was the one it did not name. Deriving the list from
+   the code is the only version of this check that cannot rot. */
+
+function jsFiles(dir = 'js/') {
+  const out = [];
+  for (const entry of readdirSync(new URL(dir, root), { withFileTypes: true })) {
+    if (entry.isDirectory()) out.push(...jsFiles(`${dir}${entry.name}/`));
+    else if (entry.name.endsWith('.js')) out.push(`${dir}${entry.name}`);
+  }
+  return out;
+}
+
+test('cookies.html names every browser key the app writes', () => {
+  const sources = jsFiles().map((f) => read(f));
+
+  // Every key the app writes goes through a `const NAME = 'tidymap_…'`, so
+  // resolve the constants first and then look for what is written through one.
+  const named = new Map();
+  for (const src of sources) {
+    for (const m of src.matchAll(/const\s+([A-Z_]+)\s*=\s*'(tidymap_[a-z0-9_]+)'/g)) named.set(m[1], m[2]);
+  }
+  assert.ok(named.size >= 4, 'found almost no key constants; the keys moved and this check is reading nothing');
+
+  /* Written, not merely read. js/main.js scrubs two prototype-era keys
+     (tidymap_key, tidymap_model) on load and never writes them, and the page
+     covers that removal in prose rather than listing them as current. So the
+     rule is the one a reader cares about: a key this app can put in your
+     browser is a key the page has to name. */
+  const written = new Set();
+  for (const src of sources) {
+    for (const m of src.matchAll(/setItem\(\s*([A-Z_]+)/g)) {
+      if (named.has(m[1])) written.add(named.get(m[1]));
+    }
+    for (const m of src.matchAll(/setItem\(\s*'(tidymap_[a-z0-9_]+)'/g)) written.add(m[1]);
+  }
+  assert.ok(written.size >= 4, 'found almost no key writes; setItem moved behind a helper and this check is reading nothing');
+
+  for (const key of [...written].sort()) {
+    assert.ok(
+      source['cookies.html'].includes(`<code>${key}</code>`),
+      `cookies.html does not name ${key}, and the page calls its list complete`,
+    );
+  }
+});
+
+/* ---------- the accessibility statement describes the app that exists ----------
+   Both shortfalls below were written when they were true and left standing
+   after the code moved. An accessibility statement that understates what works
+   is not a harmless conservatism: it is read by the people with the least
+   ability to go and check, and it tells them not to bother. */
+
+test('accessibility.html does not deny a photoless route while the wizard offers one', () => {
+  /* goNext() settles on 'demo' when neither photos nor a video were added, and
+     js/screens/loading.js builds a scenario plan from the answers on that
+     branch. The capture step says so in as many words ("Photos are
+     optional"), while the statement said getting a plan requires photographs
+     and no route exists without them. */
+  const router = read('js/router.js');
+  const photoless = /state\.capture\s*=\s*state\.uploadedFiles\.length\s*\?\s*'photos'/.test(router)
+    && /:\s*\(state\.uploadedVideo\s*\?\s*'video'\s*:\s*'demo'\)/.test(router);
+  if (!photoless) return; // the wizard requires media again; the blunter wording is true
+
+  const page = source['accessibility.html'];
+  assert.doesNotMatch(
+    page, /we have not built a route through that does not/i,
+    'accessibility.html denies a photoless route that js/router.js provides',
+  );
+  assert.match(
+    page, /without uploading anything/i,
+    'accessibility.html should say the planner can be finished without photos',
+  );
+});
+
+test('accessibility.html does not call the 3D view unusable while its canvas is a keyboard widget', () => {
+  /* The canvas is role="application" with tabindex="0", js/three/interact.js
+     carries an item on the arrow keys, and #v3d-live announces each move. The
+     drawing itself is still unreadable, which is the shortfall worth stating;
+     "not usable with a screen reader" is a different and larger claim. */
+  const index = read('index.html');
+  const canvas = (index.match(/<canvas id="v3d-canvas"[^>]*>/) || [''])[0];
+  const operable = /role="application"/.test(canvas)
+    && /tabindex="0"/.test(canvas)
+    && /id="v3d-live"[^>]*aria-live="polite"/.test(index);
+  if (!operable) return; // the view stopped being operable; the blunter wording is true again
+
+  const page = source['accessibility.html'];
+  assert.doesNotMatch(
+    page, /is not usable with a screen reader/i,
+    'accessibility.html calls the 3D view unusable; it is keyboard-operable and announces each move',
+  );
+  assert.match(
+    page, /announced through a live region/i,
+    'accessibility.html should say what the 3D view does support',
+  );
 });
