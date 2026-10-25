@@ -352,7 +352,11 @@ Reach-ins (pantry, linen, closet) keep their door: `SETUP_SURFACES`,
 11 token replaced 10-03; 15 (10-23) a reach-in's door rack drew as a shelf:
 `shelves` and `closet-rod` had no door, so honesty turned AI door rows into
 shelf rows and the builders drew them as boards. Closed by `SETUP_SURFACES`
-and `hangsDoorRows` (reach-in pantry, linen and closet).
+and `hangsDoorRows` (reach-in pantry, linen and closet). 16 (10-23) "open and
+wall shelving samples keep a Door / side row": not a bug. The probe paired
+`openshelf`, a cabinet setup, with the pantry scenario; across every real
+setup and goal, no sample keeps a door row its setup lacks (wardrobe's
+"Floor / door" is a floor row). 14's multipack half closed 10-25 (`pack`).
 
 ## What the 2026-10-16 session changed
 

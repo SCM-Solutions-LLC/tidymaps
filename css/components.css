@@ -646,6 +646,8 @@ body[data-flow="1"] .site-footer{display:none}
 .prod .pic .pic-ico svg .case{stroke-width:2.2}
 .prod .pic .pic-ico svg .lbl{stroke-width:1.9}
 .prod .pchecked{display:inline-block;font-size:var(--fs-xs);color:var(--ink-3)}
+/* "2 packs of 2, 1 spare": it explains the cost, so one step darker than the check date. */
+.prod .ppack{color:var(--ink-2)}
 /* Plain text, not the flex row: a flex gap would open up between the name and its full stop. */
 .prod .pretail.punavailable{display:block;color:var(--warn-ink);font-weight:600}
 .prod .pname{display:inline-block;font-weight:600;font-size:var(--fs-md);line-height:1.45;text-decoration:underline;text-underline-offset:3px;color:var(--primary-2);margin-top:6px}

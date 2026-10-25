@@ -218,6 +218,10 @@ npm run check:model-path  # the canary, by hand
   A raw font-size fails `tests/type-scale.test.mjs`; half pixels went down.
 - **A setup can add surfaces its archetype lacks** (`SETUP_SURFACES`): the
   reach-ins have a door, open shelving and a wardrobe do not (#210).
+- **A multipack is bought by the pack** (`pack` in `catalog.json`, 10-25):
+  the card, list, totals and export count packs, not units. Ranking still
+  compares listing prices: per-need cost swapped ~50 sample picks to save
+  $0.97 each. `catalog-packs.test` fails a "2 Pack" name with no `pack`.
 - **Not dead, do not remove:** household counts and `state.detected` (#170
   audit). `plan.features` was removed symmetrically from prompt and schema.
 - **Render:** 1568px input; parts order, `responseModalities` and the key are
@@ -247,12 +251,9 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
     calendar reminder, since nothing in the repo warns.
-14. **Fridge (10-16).** Real run done 10-23. Left: replace the `note` on
-    `idesign-fridge-freezer-bin-14x8x4-2pk`; multipacks price per bin.
-
-16. **Open and wall shelving samples keep a "Door / side" row** (10-23),
-    drawn as a board but named for a door: no projection runs when the
-    setup and its scenario share an archetype, so the row is never refitted.
+14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
+    open the Target listing): replace the `note` on
+    `idesign-fridge-freezer-bin-14x8x4-2pk`.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** watch `analyze-space plan validation failed` for a rise
