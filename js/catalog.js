@@ -232,6 +232,28 @@ export function inSpace(product, space){
   return !Array.isArray(product.spaces) || !space || product.spaces.includes(space);
 }
 
+/* One listing can hold more than one of what a need counts: the fridge bins
+   are a set of 2, the Munchkin latches a 2 pack. `pack` in the catalog is how
+   many come in one purchase (1 when absent), so a need for 3 bins is 2 sets
+   at the set's price, not 3: the sample fridge plan's freezer bins cost $81
+   on its list and $54 at the till. */
+export function packsFor(qty, pack){
+  return Math.ceil(Math.max(1, Number(qty)||1) / Math.max(1, Number(pack)||1));
+}
+/* What a shopping row costs: the listing's price once per pack bought. Null
+   when the row has no product, which is no price, not a price of $0. */
+export function lineCost(sel){
+  return sel.price_usd==null ? null : sel.price_usd*packsFor(sel.qty, sel.pack);
+}
+/* "2 packs of 2, 1 spare", for a row whose listing is a multipack; '' for a
+   single. The card and the export both say it, so neither total surprises. */
+export function packNote(sel){
+  const pack=Math.max(1, Number(sel.pack)||1);
+  if(pack===1) return '';
+  const qty=Math.max(1, Number(sel.qty)||1), packs=packsFor(qty, pack), spare=packs*pack-qty;
+  return `${packs} pack${packs>1?'s':''} of ${pack}${spare?`, ${spare} spare`:''}`;
+}
+
 /* Products of the need's type that can still be bought in this space, best
    fit first and cheapest within a fit. Pure, so the test suite can hand it a
    catalog. */
@@ -257,6 +279,7 @@ export function selectionFor(need, needIdx){
     productId: top?top.product.id:null,
     name: top?top.product.name:TYPE_LABEL[need.type],
     price_usd: top?top.product.price_usd:null,
+    pack: top?(top.product.pack||1):1,
     url: top?top.product.url:null,
     retailer: top?top.product.retailer:null,
     img: top?(top.product.img||null):null,
@@ -291,7 +314,7 @@ export function reconcileSelection(selection, need, products, space=state.space)
     return {
       ...base,
       productId:null, name:TYPE_LABEL[need.type]||need.type, retailer:null,
-      price_usd:null, url:null, img:null, checkedOn:null, fit:'unknown', dims_in:null,
+      price_usd:null, pack:1, url:null, img:null, checkedOn:null, fit:'unknown', dims_in:null,
     };
   }
   if(product && product.available!==false){
@@ -299,7 +322,7 @@ export function reconcileSelection(selection, need, products, space=state.space)
     return {
       ...base,
       productId:product.id,
-      name:product.name, price_usd:product.price_usd, url:product.url, retailer:product.retailer,
+      name:product.name, price_usd:product.price_usd, pack:product.pack||1, url:product.url, retailer:product.retailer,
       img:product.img||null, checkedOn:product.checked||null,
       fit:fitFor(product, need), dims_in:{...product.dims_in},
     };
@@ -310,7 +333,7 @@ export function reconcileSelection(selection, need, products, space=state.space)
     productId:null, formerProductId:id, unavailable:true,
     formerName:selection.formerName||(selection.productId?selection.name:null)||null,
     name:TYPE_LABEL[need.type]||need.type, retailer:null,
-    price_usd:null, url:null, img:null, checkedOn:product?(product.checked||null):null,
+    price_usd:null, pack:1, url:null, img:null, checkedOn:product?(product.checked||null):null,
     fit:'unknown', dims_in:null,
   };
 }

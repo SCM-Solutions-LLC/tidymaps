@@ -1,4 +1,5 @@
 import { state, isMetric } from './state.js';
+import { packsFor, packNote } from './catalog.js';
 import { activeMapV2, activeSafetyNotes, activeProductNeeds } from './plan.js';
 import { areaFor, fmtIn } from './wizard-data.js';
 import { toast } from './ui.js';
@@ -159,6 +160,7 @@ export function shoppingListText() {
       // has already made the label the bare type; say why there is no link.
       unavailable: !!(sel && sel.unavailable),
       price: sel && sel.price_usd,
+      pack: (sel && sel.pack) || 1,
       retailer: sel && sel.retailer,
       url: sel && sel.url,
       purpose: need.purpose,
@@ -179,8 +181,11 @@ export function shoppingListText() {
   rows.forEach((row) => {
     // A row with no product has no price, not a price of $0.00.
     const price = row.price == null ? NaN : Number(row.price);
-    if (Number.isFinite(price)) total += price * row.qty;
-    lines.push(`${row.qty} x ${row.label}${Number.isFinite(price) ? `  ($${price.toFixed(2)} each)` : ''}`);
+    // The count is what to buy: a need for 3 met by a set of 2 is 2 sets.
+    const buy = packsFor(row.qty, row.pack);
+    if (Number.isFinite(price)) total += price * buy;
+    lines.push(`${buy} x ${row.label}${Number.isFinite(price) ? `  ($${price.toFixed(2)} each)` : ''}`);
+    if (row.pack > 1) lines.push(`    ${packNote(row)}`);
     if (row.unavailable) lines.push('    no product picked yet: the one we suggested is no longer sold');
     if (row.zone) lines.push(`    for: ${row.zone}`);
     if (row.purpose) lines.push(`    ${row.purpose}`);
