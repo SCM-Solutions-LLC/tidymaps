@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at 1043644 (after #223), plus #224.** History (dated
+**Last refreshed: 2026-10-25, main at cadddb8 (after #224), plus #225.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -13,15 +13,14 @@ trail `main`. When it and `git log --oneline -20` disagree, git is right
 
 ## What the 2026-10-25 sessions changed
 
-#212 drops door and drawer lines a setup lacks, #213 prices multipacks by the
-pack, and the live funnel is proven (Production health #8). #217 closed item
-17 at the scenario: kitchen and bathroom leave cabinet-only lines out on plain
-`shelves`, and demo plans are named for their setup (`SETUP_NOUN`). #218 deals
-rows by depth (`alignByDepth`); #219 hangs open and wall shelving in 3D.
-#220 keeps 3D zone labels inside a 390 frame (item 20, per frame in scene.js).
-#221 latches a drawer's keep-high for every household (`latchEnclosedKeepHigh`).
+#212 to #221 (setup-aware lines, pack pricing, the proven live funnel,
+`SETUP_NOUN`, `alignByDepth`, 3D open and wall shelving, labels in a 390
+frame, `latchEnclosedKeepHigh`): detail in the archive.
 #222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
 #223 touch icon, adjust-screen draft race; #224 every copied hex = its token.
+#225 read the three dated legal pages against the code: cookies.html omitted
+`tidymap_optout_v1` (its own toggle writes it) and both accessibility.html
+shortfalls had gone stale toward underselling the app. Times: health #2.
 
 ## Product state
 
@@ -118,8 +117,10 @@ Only the owner has used it (Production health #9); first users: item 6.
 Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
 
 1. Resolved: zero saved spaces (fixed 07-28).
-2. Analysis time: within budget. `TOTAL_BUDGET_MS` 100s; Sonnet 5.5 ran a
-   walk-in in 30.6s (one run, 10-06), owner runs on 10-10 in 12 to 22s.
+2. **Analysis time: 5.5's median is 17.7s; 30.6s was its slowest run.**
+   Measured 10-25, each saved AI plan from its `usage_events` row to its
+   `plan_meta.analyzedAt`: 5.5 n=10, 11.2 / 17.7 / 30.1s; 4.6 n=2, 66.7 and
+   75.5s. End to end, 12 of the 13 real calls. `TOTAL_BUDGET_MS` is 100s.
 3. **The model key can expire and nothing in the product shows it.** It did
    08-04 to 08-19 and again ~09-19; the client falls back to a demo plan
    behind an honest banner. Checks: the canary (open item 2) alerts; by hand,
@@ -234,8 +235,7 @@ npm run check:model-path  # the canary, by hand
 
 ## Open items / next actions
 
-The live work list; numbers are stable, full 10-13 text in the archive. Owner's
-queue (10-25): 20, 21 and item 12's code residue, all shipped (#220 to #222).
+The live work list; numbers are stable, full 10-13 text in the archive.
 
 ### Actionable now
 
@@ -243,10 +243,10 @@ queue (10-25): 20, 21 and item 12's code residue, all shipped (#220 to #222).
    pantry only. Run garages, closets, workbenches; compare object count with
    the input (the model once multiplied a container). Needs the owner's
    browser (~20 min); a failed render no longer costs quota (#109).
-12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped).
-    Left: live-site headers and hosted auth config (sandbox cannot see them),
-    the unreviewed "Last reviewed" dates on `cookies.html`/`accessibility.html`.
-    JSON-LD, title, eager JS: #222. Touch icon: #223, on `--spot` in #224.
+12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped). Left:
+    live-site headers and hosted auth config, which the sandbox cannot see (a
+    `curl` to `scmsolutions.org` is a 403 at the proxy), so they need the
+    owner's browser. #222 JSON-LD/title/JS; #223-#224 icons; #225 legal pages.
 13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
@@ -260,9 +260,9 @@ Also open, unnumbered (from the dated sections):
   `maxDims.d_in` <=13.5 untrimmed, floor needs name the floor row, card and
   3D agree); reopen run 4c's plan, expect no fit note. The 10-18 failure
   watch closed unmeasured: edge logs keep 24h, `plan_meta` has no retry flag.
-- **Sonnet 5.5:** read several `analyze-space` times before quoting a
-  speedup; try effort `low` only after a day at `medium`; the lower spotted
-  count (4 vs 6 to 8) is a question, not a regression.
+- **Sonnet 5.5:** timed (health #2); at a 17.7s median against a 100s budget
+  there is no latency case for effort `low`, so leave it at `medium` unless
+  cost says otherwise. Open: the lower spotted count (4 vs 6 to 8).
 
 Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18-21 (#218-#221).
 

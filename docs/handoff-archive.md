@@ -324,6 +324,21 @@ the data" before concluding anything about demand.
 
 ## Condensed or retired 2026-10-25, as the handoff read until then
 
+The dated section's #212 to #221 run, condensed to a pointer when #225
+refreshed the doc: "#212 drops door and drawer lines a setup lacks, #213
+prices multipacks by the pack, and the live funnel is proven (Production
+health #8). #217 closed item 17 at the scenario: kitchen and bathroom leave
+cabinet-only lines out on plain `shelves`, and demo plans are named for their
+setup (`SETUP_NOUN`). #218 deals rows by depth (`alignByDepth`); #219 hangs
+open and wall shelving in 3D. #220 keeps 3D zone labels inside a 390 frame
+(item 20, per frame in scene.js). #221 latches a drawer's keep-high for every
+household (`latchEnclosedKeepHigh`)."
+
+Production health #2, as it read before #225 measured it: "Analysis time:
+within budget. `TOTAL_BUDGET_MS` 100s; Sonnet 5.5 ran a walk-in in 30.6s (one
+run, 10-06), owner runs on 10-10 in 12 to 22s." The 30.6s figure turned out to
+be the slowest 5.5 run on record, not a typical one.
+
 The dated section, as #215 wrote it: "#212: the surface scrub drops door and
 drawer lines a setup lacks instead of rewording them ("the front edge may not
 support the weight", open shelving's "Inside-door surface"), and the landing
