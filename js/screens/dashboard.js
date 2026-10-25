@@ -4,7 +4,7 @@ import { startPlanInstance } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { go, restart } from '../router.js';
 import { areaFor } from '../wizard-data.js';
-import { buildResults, applySavedProgress } from './results.js';
+import { loadResults } from '../planScreens.js';
 
 // The card chip names the area the same way the wizard did. areaFor() is the
 // single source of truth, so adding an area never leaves a card reading "Space".
@@ -64,10 +64,14 @@ export async function buildDashboard(){
       const instance=startPlanInstance();
       try{
         toast('Opening '+sp.name+'…');
+        /* The report first (js/planScreens.js; usually here already, fetched
+           when the dashboard opened), so nothing can land between the row
+           being applied and the report being built from it. */
+        const results=await loadResults();
         const data=await openSavedSpace(sp.id, instance);
         if(!data) return;   // another card was opened while this one loaded
-        buildResults();
-        applySavedProgress((data.progress&&data.progress.stepsDone)||[]);
+        results.buildResults();
+        results.applySavedProgress((data.progress&&data.progress.stepsDone)||[]);
         go('results');
       }catch(e){ toast(e.message); }
     };

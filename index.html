@@ -3,24 +3,44 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>TidyMap: A practical plan for the space that keeps getting away from you</title>
+<title>TidyMap: An organizing plan from photos of your space</title>
 <meta name="description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own. No tidying up first." />
 <link rel="canonical" href="https://scmsolutions.org/tidymaps/" />
 <meta name="theme-color" content="#b5522f" />
 <meta name="color-scheme" content="light dark" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="TidyMap" />
-<meta property="og:title" content="TidyMap: A practical plan for the space that keeps getting away from you" />
+<meta property="og:title" content="TidyMap: An organizing plan from photos of your space" />
 <meta property="og:description" content="Send a few honest photos of one space. Get a clear plan built around your shelves, routines, budget, and what you already own. Free to use." />
 <meta property="og:url" content="https://scmsolutions.org/tidymaps/" />
 <meta property="og:image" content="https://scmsolutions.org/tidymaps/assets/og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="TidyMap: A practical plan for the space that keeps getting away from you" />
+<meta name="twitter:title" content="TidyMap: An organizing plan from photos of your space" />
 <meta name="twitter:description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own." />
 <meta name="twitter:image" content="https://scmsolutions.org/tidymaps/assets/og.png" />
 <link rel="icon" href="assets/favicon.svg" />
+<!-- Structured data: what the page is, for search. Every value here is said
+     elsewhere on the site: the description is the meta description above,
+     "free" is the early-access line on this page and in terms.html, and the
+     publisher is the LLC the legal pages name. No rating: there is none. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "TidyMap",
+  "url": "https://scmsolutions.org/tidymaps/",
+  "description": "Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own. No tidying up first.",
+  "image": "https://scmsolutions.org/tidymaps/assets/og.png",
+  "applicationCategory": "LifestyleApplication",
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript.",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "SCM Solutions LLC", "url": "https://scmsolutions.org/" }
+}
+</script>
 <!-- Early-click guard. The header and landing buttons are plain HTML, so they
      can be seen and clicked before js/main.js and its module graph have run,
      and each one calls a global that main.js has not defined yet: on a cold

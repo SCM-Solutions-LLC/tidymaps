@@ -49,7 +49,7 @@ test('the checklist and shopping list are built client-side, from the plan alrea
    and faked both: "Save shopping list" toasted a save it never performed and
    "Send list" toasted a send. That is the defect PR #46 removed from the save
    screen, still live one screen earlier. */
-test('the report shopping card does the thing its buttons claim', () => {
+test('the report shopping card does the thing its buttons claim', async () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const card = html.slice(html.indexOf('id="res-shopping"'), html.indexOf('</section>', html.indexOf('id="res-shopping"')));
   assert.doesNotMatch(card, /toast\('Shopping list saved'\)/);
@@ -57,9 +57,14 @@ test('the report shopping card does the thing its buttons claim', () => {
   assert.match(card, /onclick="downloadShoppingList\(\)"/);
   assert.match(card, /onclick="sendShoppingList\(\)"/);
 
-  // Both actions have to be reachable from an inline handler.
+  // Both actions have to be reachable from an inline handler: main.js puts
+  // the export's stand-ins on window until its module loads.
   const main = readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
-  assert.match(main, /downloadShoppingList, sendShoppingList/);
+  assert.match(main, /\.\.\.planScreenGlobals\(\)/);
+  const { planScreenGlobals } = await import('../js/planScreens.js');
+  const globals = planScreenGlobals();
+  assert.equal(typeof globals.downloadShoppingList, 'function');
+  assert.equal(typeof globals.sendShoppingList, 'function');
 });
 
 /* ---------- the exporter runs on the NORMALIZED plan ----------

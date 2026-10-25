@@ -1,9 +1,9 @@
 import { state, persistGuestDraft, clearGuestDraft, clearGuestMedia, resetPlanRecord, resetWizardAnswers } from './state.js';
 import { track, arrivalRef } from './telemetry.js';
-import { scrollToTop, closeSiteNav } from './ui.js';
+import { scrollToTop, closeSiteNav, toast } from './ui.js';
 import { getSession } from './auth.js';
-import { buildAll, buildCustomize } from './screens/index.js';
-import { runLoading, cancelAnalysis } from './screens/loading.js';
+import { buildAll } from './screens/index.js';
+import { loadResults, loadLoading, loadCustomize, cancelAnalysis } from './planScreens.js';
 import { buildDashboard } from './screens/dashboard.js';
 import { buildFeedback } from './screens/feedback.js';
 import { setArea, renderWizardScreen, wizardContextString, stepNumFor, WIZARD_STEPS } from './screens/wizard.js';
@@ -184,9 +184,13 @@ export function go(id, opts={}){
   }
   // per-space screens re-render on entry so they always reflect the answers
   renderWizardScreen(id);
-  // the Adjust options depend on the household answer, which comes long after
-  // buildAll() ran at startup
-  if(id==='customize') buildCustomize();
+  // Every screen past the site pages ends at a plan: fetch its modules while
+  // the visitor answers questions, not after they press Build.
+  if(!SITE_SCREENS.has(id)) loadResults().catch(()=>{});
+  // the Adjust options depend on the household answer, so they are built on
+  // every entry; the module loads with the report (js/planScreens.js)
+  if(id==='customize') loadCustomize().then(m=>{ if(current==='customize') m.buildCustomize(); },
+    ()=>toast('Could not load these options. Check your connection and try again.'));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('screen-'+id);
   el.classList.add('active');
@@ -256,6 +260,18 @@ export function go(id, opts={}){
   }
   scrollToTop();
 }
+/* The analysis loads with the report (js/planScreens.js), warmed from the
+   first wizard step, so it is usually here already. Leaving the loading
+   screen before it arrives abandons a run that never began, so it does not
+   begin; a dropped connection goes back to Review rather than leaving a
+   spinner running over nothing. */
+function startAnalysis(){
+  loadLoading().then(m=>{ if(current==='loading') m.runLoading(); }, ()=>{
+    if(current!=='loading') return;
+    toast('Could not start the analysis. Check your connection and try again.');
+    go('review');
+  });
+}
 export function goNext(){
   const cfg=FLOW_SCREENS[current];
   if(!cfg)return;
@@ -264,7 +280,7 @@ export function goNext(){
     state.capture = state.uploadedFiles.length ? 'photos'
       : (state.uploadedVideo ? 'video' : 'demo');
   }
-  if(current==='review'){ state.returnToReview=false; go('loading'); runLoading(); return; }
+  if(current==='review'){ state.returnToReview=false; go('loading'); startAnalysis(); return; }
   // Came here from a Review "Edit" link? Go straight back rather than marching
   // the user through every remaining step to reach the button they came from.
   if(state.returnToReview){ state.returnToReview=false; go('review'); return; }
