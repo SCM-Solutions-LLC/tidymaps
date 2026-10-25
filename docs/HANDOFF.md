@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at f11d139 (after #213).** History (dated
+**Last refreshed: 2026-10-25, main at f5ded27 (after #216), plus #217.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -13,11 +13,11 @@ trail `main`. When it and `git log --oneline -20` disagree, git is right
 
 ## What the 2026-10-25 sessions changed
 
-#212: the surface scrub drops door and drawer lines a setup lacks instead of
-rewording them ("the front edge may not support the weight", open shelving's
-"Inside-door surface"), and the landing sample is built for its drawing.
-#213 priced multipacks by the pack (#214 duplicated it and was closed). The
-live funnel is proven (Production health #8): item 6 waits only on recruiting.
+#212 drops door and drawer lines a setup lacks, #213 prices multipacks by the
+pack, and the live funnel is proven (Production health #8). #217 closed item
+17 at the scenario: kitchen and bathroom leave cabinet-only lines out on plain
+`shelves`, and demo plans are named for their setup (`SETUP_NOUN`: "Pantry" is
+now "Pantry cabinet" in every heading). It fixed both 10-25 finds; item 18.
 
 ## Product state
 
@@ -144,7 +144,7 @@ Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
 ```
 npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
-npm test                  # 878 unit tests at 10-25
+npm test                  # 881 unit tests at 10-25
 export CHROMIUM_PATH=/opt/pw-browsers/chromium   # the sandbox's stable launcher
 npx playwright test       # 354 e2e + 1 standing skip at 10-25 (~15 min)
 npm run check:model-path  # the canary, by hand
@@ -155,6 +155,7 @@ npm run check:model-path  # the canary, by hand
   `--disable-blink-features=AutomationControlled` (webdriver suppresses it).
 - Browser-test every user-facing change at 390 and 1280. Long specs:
   `demo-fit` and `three-setup-matrix` walk all 37 setups (~4 min).
+- Run `--shard` halves in turn; together, the first to exit kills the server.
 - **Fresh-session traps:** the sandbox cannot reach `supabase.co` (use MCP)
   or the live site; renders need the owner's browser; repo photos are
   <=1000px, so `assets/product/plan-shopping.png` is the render fixture.
@@ -249,9 +250,10 @@ original text is in the archive, "Open items: full text as of 2026-10-13".
 14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
     open the Target listing): replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`.
-17. **Open and wall shelves are named for other furniture** (10-25): "Empty
-    the cabinet completely", "Cabinet height ... beside the plumbing", "Your
-    bathroom vanity" in 3D. Furniture nouns; the surface scrub never reads them.
+18. **Wall shelves get the bathroom's rows out of order** (10-25, in 3D): the
+    morning routine on the top shelf under "long-cycle storage", the chemical
+    caddy on "Eye level" saying "up high", the lowest shelf named "Middle
+    shelf". The `shelves` builder stands its bottom row on the floor too.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
@@ -261,10 +263,8 @@ Also open, unnumbered (from the dated sections):
 - **Sonnet 5.5:** read several `analyze-space` times before quoting a
   speedup; try effort `low` only after a day at `medium`; the lower spotted
   count (4 vs 6 to 8) is a question, not a regression.
-- **Found 10-25:** the fridge Turntable purpose lacks a period ("digging Your
-  shelves"); `viewer3d-add-organizer` races its row count (red 1 in 15).
 
-Closed (archive has the text): 2, 3, 4, 5, 9, 10, 11, 15, 16.
+Closed (archive has the text): 2, 3, 4, 5, 9, 10, 11, 15, 16, 17 (#217).
 
 ### Waiting on traffic
 
