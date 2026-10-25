@@ -486,13 +486,15 @@ export function buildScene({ geometry, map, placements, canvas, layout, organize
   const mats=createMaterials();
   const layoutType=(layout&&layout.type)||'shelves';
   const builder=LAYOUT_BUILDERS[layoutType]||LAYOUT_BUILDERS.shelves;
-  const { surfaces }=builder({
+  const { surfaces, floorY }=builder({
     scene,
     geo:{ W, H, D, T, NSH, shelfYs, gapAbove, fracs:shelfFracs },
     map, rowsByShelf, mats,
     layout: layout||{ type:'shelves' },
     room,
   });
+  // A wall-hung run says where the floor is, some way below its lowest board.
+  if(Number.isFinite(floorY)) ground.position.y=floorY-0.18;
 
   const items=[];
   const organizers=[];
