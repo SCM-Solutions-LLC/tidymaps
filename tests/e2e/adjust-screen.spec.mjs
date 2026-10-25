@@ -13,12 +13,18 @@ import { test, expect } from 'playwright/test';
       revision, so opening Adjust and changing your mind meant leaving the
       plan by the browser's back button or not at all. */
 
+/* Each pass starts from nothing: applying a revision writes a guest draft, and
+   the landing resumes it instead of offering the sample. The draft goes before
+   any page script runs. Cleared after load, it came back: the page restores the
+   draft, awaits the report's modules, then writes the draft again from memory,
+   so a clear inside that await was undone and the reload resumed the plan.
+   Once #222 made the report load on first use, that was about half the runs. */
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.clear(); } catch (_) { /* private mode */ } });
+});
+
 async function openSample(page) {
   await page.goto('/index.html');
-  // each pass starts from nothing: applying a revision writes a guest draft,
-  // and the landing offers to resume it instead of the sample
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
   await page.getByRole('button', { name: 'View a sample plan' }).click();
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
 }

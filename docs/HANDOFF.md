@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at 66e2faa (after #221), plus #222.** History (dated
+**Last refreshed: 2026-10-25, main at 57132d2 (after #222), plus #223.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -16,12 +16,12 @@ trail `main`. When it and `git log --oneline -20` disagree, git is right
 #212 drops door and drawer lines a setup lacks, #213 prices multipacks by the
 pack, and the live funnel is proven (Production health #8). #217 closed item
 17 at the scenario: kitchen and bathroom leave cabinet-only lines out on plain
-`shelves`, and demo plans are named for their setup (`SETUP_NOUN`: "Pantry" is
-now "Pantry cabinet" in every heading). #218 deals rows by depth, not position
-(`alignByDepth`); #219 hangs open and wall shelving on its wall in 3D.
+`shelves`, and demo plans are named for their setup (`SETUP_NOUN`). #218 deals
+rows by depth (`alignByDepth`); #219 hangs open and wall shelving in 3D.
 #220 keeps 3D zone labels inside a 390 frame (item 20, per frame in scene.js).
 #221 latches a drawer's keep-high for every household (`latchEnclosedKeepHigh`).
 #222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
+#223: `apple-touch-icon` from the favicon; adjust-screen's draft race (#222).
 
 ## Product state
 
@@ -148,7 +148,7 @@ Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
 ```
 npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
-npm test                  # 883 unit tests at 10-25
+npm test                  # 892 unit tests at 10-25
 export CHROMIUM_PATH=/opt/pw-browsers/chromium   # the sandbox's stable launcher
 npx playwright test       # 355 e2e + 1 standing skip at 10-25 (~15 min)
 npm run check:model-path  # the canary, by hand
@@ -244,9 +244,9 @@ queue (10-25): 20, 21 and item 12's code residue, all shipped (#220 to #222).
    the input (the model once multiplied a container). Needs the owner's
    browser (~20 min); a failed render no longer costs quota (#109).
 12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped).
-    Left: `apple-touch-icon` (needs a PNG), live-site headers and hosted auth
-    config (sandbox cannot see them), the unreviewed "Last reviewed" dates on
-    `cookies.html`/`accessibility.html`. JSON-LD, title, eager JS: #222.
+    Left: live-site headers and hosted auth config (sandbox cannot see them),
+    the unreviewed "Last reviewed" dates on `cookies.html`/`accessibility.html`.
+    JSON-LD, title, eager JS: #222. Touch icon: #223 (favicon off `--spot`).
 13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
