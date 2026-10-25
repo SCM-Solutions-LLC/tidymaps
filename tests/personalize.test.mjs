@@ -157,6 +157,18 @@ test('deep and narrow measurements produce cited advice', () => {
   assert.ok((narrow.opportunities || []).some(o => /20″ wide/.test(o)), 'narrow-space advice missing');
 });
 
+test('the depth citation on a turntable starts a new sentence', () => {
+  // A need's purpose is a fragment with no full stop, and the citation was
+  // appended straight onto it: the fridge read "Spin sauces into view instead
+  // of digging Your shelves measure 18″ deep".
+  for (const space of ['pantry', 'cabinet', 'laundry', 'bathroom', 'fridge']) {
+    const plan = freshPlan(space, 'find', { dims: { w_in: 36, h_in: 72, d_in: 18 } });
+    const tt = (plan.productNeeds || []).find(p => p.type === 'turntable');
+    assert.ok(tt && /18″ deep/.test(tt.purpose), `${space}: no cited turntable`);
+    assert.match(tt.purpose, /[.!?] Your \w+ measure 18″ deep/, `${space}: ${tt.purpose}`);
+  }
+});
+
 /* ---------- differentiation: no two profiles get the same plan ---------- */
 
 test('two different answer sets for the same space produce materially different plans', () => {
