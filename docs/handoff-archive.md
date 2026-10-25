@@ -413,6 +413,16 @@ plans for their setup. Also closed in #217, unnumbered: the turntable depth
 citation ran on from a purpose with no full stop (every space, not only the
 fridge), and `viewer3d-add-organizer` counted shopping rows while the list
 was still a skeleton (proved by delaying `data/catalog.json` 2s: 0 then 7).
+18 (10-25) "Wall shelves get the bathroom's rows out of order: the morning
+routine on the top shelf under 'long-cycle storage', the chemical caddy on
+'Eye level' saying 'up high', the lowest shelf named 'Middle shelf'." The cause
+was positional bucketing in `bucketRows`, and it misplaced rows on six setups
+(wall shelves, the three L-runs, garage and workshop wall cabinets). Closed by
+#218: rows sort by depth (`ROLE_DEPTH`: keep-high top, eye row at reach,
+then the level's role) and are cut into one contiguous run per slot at least
+total distance, ties to the old positional split (a ceiling rack's equal decks
+otherwise lost its sports gear to the merge cap). A capped run's last level
+swaps "Middle shelf" for the template's own bottom. Its 3D half is item 19.
 
 ## What the 2026-10-16 session changed
 

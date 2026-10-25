@@ -5,7 +5,7 @@ import { normalizeAi, buildAnalysisContext } from '../js/plan.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
 import { scenarioKeyFor, SETUP_TYPES, SETUP_DIMS, midSentence } from '../js/wizard-data.js';
 import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from '../js/layout.js';
-import { ARCHETYPE_LEVELS, ARCHETYPE_LEVELS_FOR_SOURCE, ARCHETYPE_SURFACES, SETUP_NOUN } from '../js/setupStructure.js';
+import { ARCHETYPE_LEVELS, ARCHETYPE_LEVELS_FOR_SOURCE, ARCHETYPE_SURFACES, SETUP_NOUN, levelRole, alignTargetZones } from '../js/setupStructure.js';
 
 /* Two archetypes serve both shelved spaces and clothes closets and pick
    their level list from the source scenario, so a valid level for a setup is
@@ -110,6 +110,12 @@ test('an overhead rack is not described as a floor-to-ceiling shelf unit', () =>
   const levels = p.map.map(m => m.lv).join(' | ');
   assert.ok(!/floor|eye level/i.test(levels), `overhead rack still has: ${levels}`);
   assert.ok(p.map.every(m => m.surface === 'shelf'));
+  // Its two decks are the same height, so nothing about depth splits the
+  // garage's rows between them. Split the wrong way, the merge cap dropped the
+  // bulky gear a ceiling rack is for and stored hardware and tape overhead.
+  const zones = p.map.map(m => m.zone).join(' | ');
+  assert.match(zones, /Sports gear/, zones);
+  assert.doesNotMatch(zones, /Hardware|Tape/, zones);
 });
 
 test('a rolling tool chest is drawers, not a bench with a pegboard', () => {
@@ -290,6 +296,50 @@ test('no zone is left empty and no category is dropped when levels are merged', 
       assert.ok(m.zone && m.zone.trim(), `${s.space}/${s.id}: zone "${m.lv}" has no contents`);
       assert.ok(m.why && m.why.trim(), `${s.space}/${s.id}: zone "${m.lv}" has no rationale`);
     }
+  }
+});
+
+test('a projected row lands on the kind of level it was written for', () => {
+  /* Rows used to be dealt onto the setup's levels by position, which is only
+     right when both run top to bottom in the same steps. A vanity's top drawer
+     is its most reachable level and a wall shelf's top board its least, so the
+     bathroom's morning routine went to the top wall shelf and its chemical
+     caddy to eye level; an L-shaped pantry put "Rarely used items" at eye
+     level and its heavy items on an upper shelf. */
+  const H = { adults: 2, kids: { present: 'no', ages: [] }, pets: { present: 'no', types: [] }, mobility: [], notes: '' };
+  const first = (row) => String(row.zone).split(' · ')[0];
+  for (const s of ALL_SETUPS) {
+    const key = scenarioKeyFor(s.space, s.id);
+    if (SETUP_ARCHETYPE[s.id] === SCENARIO_ARCHETYPE[key]) continue;
+    const source = getDemoScenario(key, null, H, null).map;
+    const out = getDemoScenario(key, null, H, null, s.id).map;
+    const landed = (row) => out.find(r => String(r.zone).split(' · ').includes(first(row)));
+    const where = (row) => `${s.space}/${s.id}: "${first(row)}" is on ${landed(row) && landed(row).level}`;
+    const hasHigh = out.some(r => ['high', 'deck'].includes(r.role));
+    for (const row of source) {
+      const to = landed(row);
+      if (!to) continue;   // a content rule took it off this shape (a ceiling rack's chemicals)
+      if (row.eye) assert.ok(to.eye, `everyday row off eye level, ${where(row)}`);
+      if (row.safety && row.safety.flag === 'keep-high' && hasHigh) {
+        assert.ok(['high', 'deck'].includes(to.role), `keep-high row not at the top, ${where(row)}`);
+      }
+      if (['low', 'floor'].includes(levelRole(row.level))) {
+        assert.ok(to.role !== 'high', `low or floor row on an upper level, ${where(row)}`);
+      }
+    }
+  }
+});
+
+test('a run cut short is named down to its bottom, and "up high" is the top', () => {
+  // Three shelves of a five-shelf template ended on "Middle shelf", the lowest
+  // board of the unit, and its chemical zone said "up high" from eye level.
+  for (const s of ALL_SETUPS) {
+    const p = planFor(s, { household: KIDS });
+    const single = p.map.filter(m => !m.wall);
+    if (single.length) assert.doesNotMatch(single[single.length - 1].lv, /\bmiddle\b/i, `${s.space}/${s.id} ends on ${single[single.length - 1].lv}`);
+    p.map.forEach((m, i) => {
+      if (/\bup high\b/i.test(m.zone)) assert.ok(i === 0 || /\btop\b|\bupper\b|\bhigh\b/i.test(m.lv), `${s.space}/${s.id}: "${m.zone}" on ${m.lv}`);
+    });
   }
 });
 
@@ -519,7 +569,7 @@ test('no projected plan names a fitting its setup does not have', () => {
       for (const [surface, noun] of Object.entries(NOUN_FOR)) {
         if (have.has(surface)) continue;
         // "junk drawer" is an idiom, not a claim about the furniture.
-        const re = new RegExp(`\\b(?:the|a|an|every|each|upper|top|lower|middle|your)\\s+${noun}s?\\b`, 'i');
+        const re = new RegExp(`\\b(?:the|a|an|every|each|first|upper|top|lower|middle|your)\\s+${noun}s?\\b`, 'i');
         const hit = text.match(re);
         assert.ok(!hit, `${s.space}/${s.id} (${archetype}) names a ${noun}: "${hit && hit[0]}" in ${text.slice(Math.max(0, text.indexOf(hit ? hit[0] : '') - 50), 140)}`);
       }
@@ -1086,7 +1136,15 @@ test('a projected need keeps the kind of level it was written for', () => {
   const wallcab = planFor({ space: 'garage', id: 'wallcab' });
   const garage = Object.fromEntries(wallcab.productNeeds.map(n => [n.type, n.targetZone]));
   assert.equal(garage['clear-bin'], 'Eye level');
-  assert.equal(garage['basket'], 'Middle shelf', 'a lower shelf with no lower level goes to the nearest one down, not up');
+  // The cut-short cabinet ends on its own "Lower shelf" now, so the lower-shelf
+  // basket lands on the unit's bottom board.
+  assert.equal(garage['basket'], 'Lower shelf');
+  // With no lower level at all, it falls to the nearest one down, not up.
+  const noLow = alignTargetZones({
+    map: [{ level: 'Top shelf', role: 'high' }, { level: 'Eye level', role: 'reach', eye: true }, { level: 'Middle shelf', role: 'mid' }],
+    productNeeds: [{ type: 'basket', targetZone: 'Lower shelf' }],
+  });
+  assert.equal(noLow.productNeeds[0].targetZone, 'Middle shelf', 'a lower shelf with no lower level goes to the nearest one down, not up');
 
   // A drawer is a drawer: the dresser's three drawers map onto two bays in
   // order, and the third clamps to the last bay instead of the first.
