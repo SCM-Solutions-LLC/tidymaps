@@ -1051,12 +1051,13 @@ export function includeSpottedItem(i){
    from the stylesheet. */
 /* The plate's colours, read from the stylesheet at draw time so a change to
    css/tokens.css reaches this drawing too. The fallbacks only matter if the
-   tokens are missing, which the design tests do not allow. */
+   tokens are missing, which the design tests do not allow; those tests also
+   hold each fallback to its token's sRGB hex. */
 function plate(){
   const cs=getComputedStyle(document.documentElement);
   const v=(name,fb)=>(cs.getPropertyValue(name)||'').trim()||fb;
-  return { ink:v('--draw','#5a524b'), spot:v('--spot','#b5522f'), tint:v('--tint','#f3f2f0'), tint2:v('--tint-2','#f4e3dc'),
-    fields:[v('--sky-f','#dbeaf5'),v('--butter-f','#f8efc6'),v('--sage-f','#dcefdc'),v('--tint','#f3f2f0')] };
+  return { ink:v('--draw','#67534b'), spot:v('--spot','#b3543b'), tint:v('--tint','#f6eee1'), tint2:v('--tint-2','#ffddca'),
+    fields:[v('--sky-f','#daeffc'),v('--butter-f','#fef0c3'),v('--sage-f','#daf3de'),v('--tint','#f6eee1')] };
 }
 const EL_GLYPHS={
   jar:'<path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="l"/>',
