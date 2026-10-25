@@ -830,7 +830,7 @@ function bathroomScenario(setupId) {
     ],
     map: [
       {level: 'Top drawer', icon: 'up', zone: 'Morning routine · Daily skincare',
-        why: 'The first drawer you open should run your whole morning.',
+        why: cabinet ? 'The first drawer you open should run your whole morning.' : 'The shelf you reach first should run your whole morning.',
         eye: true, shelfIndex: 0,
         safety: {flag: null, why: null},
         items: [{name: 'Daily skincare', size: 's', flags: []}, {name: 'Makeup', size: 's', flags: []}], surface: 'drawer'},

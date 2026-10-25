@@ -724,6 +724,15 @@ function levelsFor(archetype, setupId, sourceArchetype) {
   // "Built-in + drawers" closet keeps its drawer bank, and a shallow wall
   // cabinet stops filing large items on a door rack it may not have.
   const slots = template.slice(0, n).map(l => ({ ...l }));
+  /* A run cut short still has a bottom. The first three of the five shelves
+     ended on "Middle shelf", the lowest board of a three-shelf wall unit, so a
+     cut that leaves a middle level last swaps in the template's own lowest
+     level of that surface ("Bottom shelf", a cabinet's "Lower shelf"). */
+  const last = slots[slots.length - 1];
+  if (n < template.length && last.role === 'mid') {
+    const bottom = [...template].reverse().find(l => l.surface === last.surface);
+    if (bottom) slots[slots.length - 1] = { ...bottom };
+  }
   // The plan contract wants at least one eye-level row per plan and at most
   // one per wall (a walk-in marks one on each wall it shelves; rows with no
   // wall count as one). The templates satisfy the per-wall half themselves;
@@ -741,7 +750,6 @@ function levelsFor(archetype, setupId, sourceArchetype) {
 /* Returns [{ slot, rows }] for the slots that ended up with content, so the
    slot a bucket belongs to can never drift from its index. */
 function bucketRows(rows, slots) {
-  const n = slots.length;
   const pair = (buckets) => buckets
     .map((b, i) => ({ slot: slots[i], rows: b }))
     .filter(x => x.rows && x.rows.length);
@@ -752,14 +760,69 @@ function bucketRows(rows, slots) {
   const sourceSurfaces = new Set(rows.map(r => r.surface).filter(Boolean));
   const targetSurfaces = new Set(slots.map(s => s.surface));
   if (sourceSurfaces.size > 1 && targetSurfaces.size > 1) return pair(alignBySurface(rows, slots));
+  return pair(alignByDepth(rows, slots));
+}
 
-  if (rows.length === n) return pair(rows.map(r => [r]));
-  if (rows.length > n) {
-    const buckets = Array.from({ length: n }, () => []);
-    rows.forEach((row, i) => buckets[Math.floor(i * n / rows.length)].push(row));
-    return pair(buckets);
+/* How far down its unit a level sits, 0 the top and 1 the floor, read from
+   what the level is for rather than where it came in the list. Position was
+   the old rule, and it holds only when the scenario and the setup run top to
+   bottom in the same steps: a vanity's top drawer is its most reachable level
+   and a wall shelf's top board its least, so dealing rows out in order put
+   the bathroom's morning routine on the top wall shelf and its chemical caddy
+   at eye level. A keep-high hazard and the everyday row say where they belong
+   outright; every other row goes by its level's name. */
+const ROLE_DEPTH = {
+  high: 0, deck: 0, reach: 0.3, rod: 0.3, pegboard: 0.3, surface: 0.45,
+  mid: 0.5, door: 0.5, drawer: 0.6, bay: 0.6, low: 0.8, floor: 1,
+};
+function rowDepth(row) {
+  if (row.safety && row.safety.flag === 'keep-high') return ROLE_DEPTH.high;
+  if (row.eye) return ROLE_DEPTH.reach;
+  return ROLE_DEPTH[levelRole(row.level) || ''] ?? ROLE_DEPTH.mid;
+}
+const slotDepth = (slot) => ROLE_DEPTH[slot.role] ?? ROLE_DEPTH.mid;
+
+/* Rows and slots each sorted by depth, then cut into one contiguous run of
+   rows per slot at the least total distance between where a row belongs and
+   where it lands. Contiguous keeps the unit's order (nothing jumps over a
+   shelf to land above what was above it), and every slot gets a row when
+   there are enough to go round. The small size term splits ties evenly, so
+   two equal bays share a dresser instead of one taking all of it, and an
+   exact tie goes to the larger earlier run, the split the old positional rule
+   made: a ceiling rack's two decks are the same depth, and splitting its five
+   rows the other way let the merge cap drop the sports gear for hardware. */
+function alignByDepth(rows, slots) {
+  const n = slots.length;
+  const src = rows.length < n ? splitRows(rows, n) : rows;
+  const sorted = (xs, depth) => xs.map((x, i) => ({ x, i, d: depth(x) }))
+    .sort((a, b) => a.d - b.d || a.i - b.i);
+  const R = sorted(src, rowDepth), S = sorted(slots, slotDepth);
+  const m = R.length, fill = m >= n;
+  const cost = (j, a, b) => {
+    let c = 1e-3 * (b - a) * (b - a);
+    for (let t = a; t < b; t++) c += Math.abs(R[t].d - S[j].d);
+    return c;
+  };
+  // best[j][k]: least cost of the first k rows on the first j slots.
+  const best = Array.from({ length: n + 1 }, () => Array(m + 1).fill(Infinity));
+  const cut = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  best[0][0] = 0;
+  for (let j = 0; j < n; j++) {
+    for (let b = 0; b <= m; b++) {
+      for (let a = 0; a <= b; a++) {
+        if (fill && a === b) continue;
+        const c = best[j][a] + cost(j, a, b);
+        if (c <= best[j + 1][b] + 1e-9) { best[j + 1][b] = c; cut[j + 1][b] = a; }
+      }
+    }
   }
-  return pair(splitRows(rows, n).map(r => [r]));
+  const buckets = slots.map(() => []);
+  for (let j = n, b = m; j > 0; j--) {
+    const a = cut[j][b];
+    buckets[S[j - 1].i] = R.slice(a, b).sort((x, y) => x.i - y.i).map(r => r.x);
+    b = a;
+  }
+  return buckets;
 }
 
 /* Greedy surface-first assignment, preserving source order within a surface. */
