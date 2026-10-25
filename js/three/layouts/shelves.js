@@ -8,8 +8,15 @@ export function build(ctx){
   const { W, H, D, T, NSH, shelfYs, gapAbove }=geo;
   const floating=['openshelf','wallshelf'].includes(layout&&layout.setup);
   const placement=floating&&(layout&&layout.shelfPlacement)||'center';
+  /* Open and wall shelving hang on a wall, and were drawn from the floor up
+     like a freestanding unit: with no base board to stand on (that is the
+     carcass's), the bottom row had no board at all and its bins sat on the
+     ground. Here the wall runs on below the run and the floor drops away,
+     and every row gets its board. The boards stay where they were, so the
+     headroom drawn is still the headroom the card judges a pick by. */
+  const hang=floating?18:0;
 
-  addBox(scene, W, H, floating?T*0.45:T, 0, H/2, -D/2+T/2, mats.carcass);  // wall/back
+  addBox(scene, W, H+hang, floating?T*0.45:T, 0, (H-hang)/2, -D/2+T/2, mats.carcass);  // wall/back
   if(!floating){
     addBox(scene, T, H, D, -W/2+T/2, H/2, 0, mats.carcass);
     addBox(scene, T, H, D,  W/2-T/2, H/2, 0, mats.carcass);
@@ -64,8 +71,8 @@ export function build(ctx){
 
   shelfYs.forEach((y,j)=>{
     const i=boardRow(j);
-    if(y<H-T*2 && y>T*1.6){
-      addBox(scene, usable, T, D-T, shelfX, y-T/2, T/4, mats.shelf);
+    if(y<H-T*2 && (floating || y>T*1.6)){
+      addBox(scene, usable, T, D-T, shelfX, y-T/2, T/4, mats.shelf).userData.isShelfBoard=true;
       if(floating){
         for(const x of [-usable*0.32,usable*0.32]){
           addBox(scene,T*0.45,Math.min(4,D*0.35),T*0.45,shelfX+x,y-Math.min(2,D*0.175),-D/2+T,bracketMat);
@@ -98,5 +105,5 @@ export function build(ctx){
   });
 
   surfaces.sort((a,b)=>a.index-b.index);
-  return { surfaces };
+  return { surfaces, floorY:-hang };
 }
