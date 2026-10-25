@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at cadddb8 (after #224), plus #225.** History (dated
+**Last refreshed: 2026-10-25, main at cadddb8 (after #224), plus #225 and #226.** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -19,8 +19,8 @@ frame, `latchEnclosedKeepHigh`): detail in the archive.
 #222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
 #223 touch icon, adjust-screen draft race; #224 every copied hex = its token.
 #225 read the three dated legal pages against the code: cookies.html omitted
-`tidymap_optout_v1` (its own toggle writes it) and both accessibility.html
-shortfalls had gone stale toward underselling the app. Times: health #2.
+`tidymap_optout_v1` (its own toggle writes it), both accessibility.html
+shortfalls undersold the app, #226 narrowed its scan claim. Times: health #2.
 
 ## Product state
 
@@ -246,7 +246,7 @@ The live work list; numbers are stable, full 10-13 text in the archive.
 12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped). Left:
     live-site headers and hosted auth config, which the sandbox cannot see (a
     `curl` to `scmsolutions.org` is a 403 at the proxy), so they need the
-    owner's browser. #222 JSON-LD/title/JS; #223-#224 icons; #225 legal pages.
+    owner's browser. #222 JSON-LD/title/JS; #223-#224 icons; #225-#226 legal pages.
 13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a

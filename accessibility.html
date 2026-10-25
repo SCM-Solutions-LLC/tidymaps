@@ -44,7 +44,8 @@
   <p class="legal-lede">TidyMap aims to meet <strong>WCAG 2.1 Level AA</strong>. This page says how we hold ourselves to that, and names the places we currently fall short.</p>
 
   <h2>What we check on every change</h2>
-  <p>Accessibility here is a test that fails the build, not a promise in a document. Every change to TidyMap runs an automated WCAG 2.0 and 2.1 A/AA scan across the whole reachable surface: every step of the planner, the finished report, the screens past it, the sign-in dialog, and these legal pages. <strong>That scan currently reports zero violations, and a change that introduces one does not ship.</strong></p>
+  <p>Accessibility here is a test that fails the build, not a promise in a document. Every change to TidyMap runs an automated WCAG 2.0 and 2.1 A/AA scan across most of what you can reach: the landing page, every step of the planner, the finished report, the screens past it, the sign-in dialog, and these legal pages. <strong>That scan currently reports zero violations, and a change that introduces one does not ship.</strong></p>
+  <p>Three screens sit outside that scan, and we would rather name them than round up. The progress screen shown while a plan is being written and the 3D layout view are checked for their heading structure but not scanned in full. The dashboard you see when signed in is not scanned at all, because the scan runs without an account.</p>
   <p>Automated scanning catches perhaps a third of real accessibility problems, so a few things a scanner cannot see are tested separately: that every confirmation and error is announced through a live region rather than appearing silently, and that a selected card reports its state to a screen reader instead of only looking chosen.</p>
 
   <h2>What that means in practice</h2>
