@@ -264,7 +264,7 @@ Also open, unnumbered (from the dated sections):
   watch closed unmeasured: edge logs keep 24h, `plan_meta` has no retry flag.
 
 Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18-21 (#218-#221);
-Sonnet 5.5's lower spotted count (4 vs 8) was 4.6 padding (archive, 10-06).
+Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (archive, 10-06).
 
 ### Waiting on traffic
 
