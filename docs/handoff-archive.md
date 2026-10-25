@@ -324,7 +324,14 @@ the data" before concluding anything about demand.
 
 ## Condensed or retired 2026-10-25, as the handoff read until then
 
-The dated section:
+The dated section, as #215 wrote it: "#212: the surface scrub drops door and
+drawer lines a setup lacks instead of rewording them ("the front edge may not
+support the weight", open shelving's "Inside-door surface"), and the landing
+sample is built for its drawing. #213 priced multipacks by the pack (#214
+duplicated it and was closed). The live funnel is proven (Production health
+#8): item 6 waits only on recruiting."
+
+The dated section before that:
 
 > The first real fridge run (French door, AI, 12 rows) planned well and drew
 > badly. #205 fixed the report (whole-word pictures and categories, door rows
@@ -398,6 +405,14 @@ wall shelving samples keep a Door / side row": not a bug. The probe paired
 `openshelf`, a cabinet setup, with the pantry scenario; across every real
 setup and goal, no sample keeps a door row its setup lacks (wardrobe's
 "Floor / door" is a floor row). 14's multipack half closed 10-25 (`pack`).
+17 (10-25) "Open and wall shelves are named for other furniture: 'Empty the
+cabinet completely', 'Cabinet height ... beside the plumbing', 'Your bathroom
+vanity' in 3D. Furniture nouns; the surface scrub never reads them." Closed by
+#217 at the scenario (`isCabinet` in `demo-scenarios.js`) and by naming demo
+plans for their setup. Also closed in #217, unnumbered: the turntable depth
+citation ran on from a purpose with no full stop (every space, not only the
+fridge), and `viewer3d-add-organizer` counted shopping rows while the list
+was still a skeleton (proved by delaying `data/catalog.json` 2s: 0 then 7).
 
 ## What the 2026-10-16 session changed
 

@@ -858,7 +858,9 @@ function applyDims(plan, answers) {
     // If the scenario already recommends a turntable, cite the measurement on
     // it; otherwise surface the depth advice as an opportunity.
     const tt = (plan.productNeeds || []).find(p => p.type === 'turntable');
-    if (tt) tt.purpose += ` Your ${levelNoun(plan, true)} measure ${measure(d.d_in)} deep, so items at the back are otherwise out of reach.`;
+    // A purpose is a fragment with no full stop, so the citation needs one
+    // ahead of it: "instead of digging Your shelves measure 18″ deep".
+    if (tt) tt.purpose = `${tt.purpose.replace(/(?<![.!?])$/, '.')} Your ${levelNoun(plan, true)} measure ${measure(d.d_in)} deep, so items at the back are otherwise out of reach.`;
     else plan.opportunities.push(`Your ${levelNoun(plan, true)} are ${measure(d.d_in)} deep. A turntable or pull-out tray stops things from vanishing at the back.`);
   }
   if (d.w_in && d.w_in <= 24) {

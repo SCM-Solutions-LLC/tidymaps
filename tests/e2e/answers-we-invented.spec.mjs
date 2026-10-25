@@ -393,7 +393,7 @@ test('the sample plan in 3D says it is the sample, not your space or your photos
   await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
   await open3d(page);
 
-  await expect(page.locator('#v3d-title')).toHaveText('The sample pantry, standing up');
+  await expect(page.locator('#v3d-title')).toHaveText('The sample pantry cabinet, standing up');
   await expect(page.locator('#v3d-intro')).toContainText('not your space');
   const status = page.locator('#v3d-status');
   await expect(status).toContainText('not yours');
