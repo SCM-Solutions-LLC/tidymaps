@@ -322,6 +322,47 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## Condensed or retired 2026-10-25, as the handoff read until then
+
+The dated section:
+
+> The first real fridge run (French door, AI, 12 rows) planned well and drew
+> badly. #205 fixed the report (whole-word pictures and categories, door rows
+> never make a room, unit sections head the map). #207 drew each fridge card
+> in 3D, door rows on the door. #208 re-rendered all 163 step clips on
+> furniture that fits the space (fridge, cabinet, vanity, open drawer), in the
+> current palette, with fridge food and nothing at the frame edge. #209 set
+> every font size from one scale. #210 gave the reach-ins back their door.
+
+Testing: "**Prove a new test fails without its fix.** Break the specific
+behaviour the test claims to guard, in a copy of the tree (`git archive HEAD
+| tar -x -C <dir>`), confirm red, and diff the tree afterwards. Never `git
+checkout` a file to undo a neuter (it reverts every change in it). Stashing
+only proves the test needs the file. Examples of tests that passed against
+unfixed code are in the archive (#109's is the classic)."
+
+Production health: "Current as of 2026-10-13. Numbers are stable (other files
+cite them); the archive has the 08-27 text, where 4 and 5 were each used
+twice." and "5. **Deploy token:** expires **2027-10-01**; dead, it is a 401 at
+the deploy step. (The other #5, "the numbers are a smoke test", is superseded
+by #9.)"
+
+Crib sheet: "`prepareDemoPlanState` resets to wizard defaults (`adults = 2`)"
+was wrong; it sets `adults: 0` so the sample shows no household chip.
+
+Session conventions: "Develop on the session's own `claude/*` branch, reset
+from `origin/main` after each merge (never stack on merged history); open
+draft PRs, subscribe to PR activity, re-check until merged."
+
+Item 16, more fully than the closed-items entry below: no sample keeps a
+"Door / side" row, but the same samples did carry door and drawer prose
+their setups lack. Open shelving had an "Inside-door surface" card and
+baking sheets that "slide when the front edge opens"; wall shelves had
+"Shallow drawers" and "Empty the vanity and drawers". The walk-in, L-shaped
+and butler's pantry samples, and the landing sample (built with no setup,
+drawn as a cabinet), read "Skip the front edge-mounted spice rack ... the
+front edge may not support the weight". #212 fixed all of it.
+
 ## What the 2026-10-23 session changed (as the handoff read before its refresh)
 
 First real fridge run (French door, AI, 12 rows) worked; the report and 3D
