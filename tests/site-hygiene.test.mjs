@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { inflateSync } from 'node:zlib';
 
 /* Whole-site checks that no single feature owns.
 
@@ -93,6 +94,42 @@ test('the year script rewrites every slot from the clock', async () => {
   new Function('document', src)(document);
   const now = String(new Date().getFullYear());
   assert.deepEqual(slots.map((s) => s.textContent), [now, now]);
+});
+
+/* ---------- the home-screen icon ---------- */
+
+test('every page names a home-screen icon iOS can use, drawn from the favicon', () => {
+  /* Without the link iOS asks the domain root for /apple-touch-icon.png, and
+     the root is not this site (it lives under /tidymaps/), so a home-screen
+     shortcut got a screenshot of the page. scripts/render-touch-icon.mjs
+     makes the PNG from the favicon. */
+  for (const page of PAGES) {
+    assert.ok(
+      read(page).includes('<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />'),
+      `${page}: no apple-touch-icon`,
+    );
+  }
+
+  const png = readFileSync(new URL('assets/apple-touch-icon.png', root));
+  const chunks = [];
+  for (let o = 8; o < png.length; o += 12 + png.readUInt32BE(o)) {
+    chunks.push({ type: png.toString('ascii', o + 4, o + 8), data: png.subarray(o + 8, o + 8 + png.readUInt32BE(o)) });
+  }
+  const ihdr = chunks[0].data;
+  assert.deepEqual([ihdr.readUInt32BE(0), ihdr.readUInt32BE(4)], [180, 180], 'not 180x180');
+  // iOS paints a transparent pixel black: color type 2 is RGB with no alpha.
+  assert.equal(ihdr[9], 2, 'the icon has an alpha channel or a palette');
+  assert.ok(!chunks.some((c) => c.type === 'tRNS'), 'the icon declares a transparent color');
+
+  /* The background is still the favicon's fill. The first pixel of the first
+     row reads the same under every PNG filter (all its neighbors are zero), so
+     it is the raw bytes after the row's filter byte. */
+  const raw = inflateSync(Buffer.concat(chunks.filter((c) => c.type === 'IDAT').map((c) => c.data)));
+  const fill = /<rect width="24" height="24"[^>]* fill="(#[0-9a-f]{6})"/i.exec(read('assets/favicon.svg'))[1];
+  assert.equal(
+    `#${raw.subarray(1, 4).toString('hex')}`, fill.toLowerCase(),
+    'the touch icon no longer matches the favicon: run node scripts/render-touch-icon.mjs',
+  );
 });
 
 /* ---------- the 404 ---------- */
