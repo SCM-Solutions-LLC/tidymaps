@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { state } from '../js/state.js';
 import { normalizeAi, buildAnalysisContext } from '../js/plan.js';
 import { getDemoScenario } from '../js/demo-scenarios.js';
-import { scenarioKeyFor, SETUP_TYPES, SETUP_DIMS } from '../js/wizard-data.js';
+import { scenarioKeyFor, SETUP_TYPES, SETUP_DIMS, midSentence } from '../js/wizard-data.js';
 import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from '../js/layout.js';
 import { ARCHETYPE_LEVELS, ARCHETYPE_LEVELS_FOR_SOURCE, ARCHETYPE_SURFACES, SETUP_NOUN } from '../js/setupStructure.js';
 
@@ -122,6 +122,40 @@ test('bathroom wall shelves have no drawers and no cabinet floor', () => {
   const p = planFor({ space: 'bathroom', id: 'wallshelf' });
   assert.ok(p.map.every(m => m.surface === 'shelf'), `zones: ${p.map.map(m => m.lv + ':' + m.surface).join(', ')}`);
   assert.ok(!/drawer|cabinet/i.test(p.map.map(m => m.lv).join(' ')));
+});
+
+test('open and wall shelves are not described as the cabinet their scenario was written for', () => {
+  /* The kitchen and bathroom scenarios describe a cabinet, and both spaces also
+     offer open shelving. A cabinet's own fittings are not surfaces, so the
+     surface scrub let every one through: open kitchen shelving was told to
+     "Empty the cabinet completely" beside a lazy-susan cutout and shelf pins,
+     and bathroom wall shelves stacked bins "beside the plumbing" under a 3D
+     heading of "Your bathroom vanity". Every setup drawn as plain shelves. */
+  const CABINET = /\bcabinets?\b|\bvanity\b|\bplumbing\b|lazy[- ]susan (?:cutout|space)|corner lazy[- ]susan|shelf pins|divider slots|\bdeep corner\b/i;
+  for (const s of ALL_SETUPS.filter(x => SETUP_ARCHETYPE[x.id] === 'shelves')) {
+    for (const household of [NO_KIDS, KIDS]) {
+      const p = planFor(s, { household });
+      const text = [p.spaceType, p.summary, p.dontBuy, ...p.problems, ...p.opportunities,
+        ...p.safetyNotes, ...p.steps.flatMap(x => [x.t, x.w]), ...p.map.flatMap(m => [m.lv, m.zone, m.why]),
+        ...p.existing.flatMap(e => [e.ft, e.fd]), ...p.productNeeds.map(x => x.purpose)].filter(Boolean);
+      const hit = text.find(t => CABINET.test(t));
+      assert.ok(!hit, `${s.space}/${s.id} describes a cabinet: "${hit}"`);
+    }
+  }
+  // Dropping the cabinet's lines must not drop the step that starts the job:
+  // the wall shelves lost "Empty the vanity and drawers" and got nothing back.
+  for (const id of ['openshelf', 'wallshelf']) {
+    const s = ALL_SETUPS.find(x => x.id === id);
+    assert.match(planFor(s).steps[0].t, /^Empty the shelves/, `${id} opens with: ${planFor(s).steps[0].t}`);
+  }
+});
+
+test('every plan is named for the setup the user picked, not for its scenario', () => {
+  // The report title, the 3D heading, the export and the saved space all read
+  // the name, so it has to agree with the opening sentence describeSetup writes.
+  for (const s of ALL_SETUPS) {
+    assert.equal(midSentence(planFor(s).spaceType), SETUP_NOUN[s.id][0], `${s.space}/${s.id}`);
+  }
 });
 
 test('a built-in closet keeps the drawer bank its own card advertises', () => {

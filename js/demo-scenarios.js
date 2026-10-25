@@ -7,9 +7,18 @@
    ============================================================ */
 import { applyAnswers, sizeToEffort, lowestUnflaggedZone } from './personalize.js';
 import { SETUP_ARCHETYPE, SCENARIO_ARCHETYPE } from './layout.js';
-import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones, scrubSurfaceProse, fitNeedsToSpace } from './setupStructure.js';
+import { projectOntoArchetype, describeSetup, rewriteOpening, alignTargetZones, scrubSurfaceProse, fitNeedsToSpace, SETUP_NOUN } from './setupStructure.js';
 
 /* ---------- Base scenarios keyed by space id ---------- */
+
+/* The kitchen and bathroom scenarios describe a cabinet, and both spaces also
+   offer open shelving, which the setup card draws as plain `shelves`. The
+   cabinet's own fittings (a lazy-susan cutout, shelf pins, the plumbing under a
+   basin) are not surfaces, so the surface scrub cannot see them and they rode
+   through onto open kitchen shelves and bathroom wall shelves. The scenario
+   knows which of its lines describe the cabinet, so it leaves them out itself.
+   No setup at all is the scenario as written. */
+const isCabinet = (setupId) => SETUP_ARCHETYPE[setupId || ''] !== 'shelves';
 
 function pantryScenario() {
   return {
@@ -108,24 +117,27 @@ function pantryScenario() {
   };
 }
 
-function cabinetScenario() {
+function cabinetScenario(setupId) {
+  const cabinet = isCabinet(setupId);
   return {
     spaceType: 'Kitchen cabinet',
-    summary: 'A 30-inch-wide kitchen cabinet with three adjustable shelves. Plates are stacked too high, mugs crowd the front blocking access to glasses behind them, and baking sheets lean at odd angles taking up floor space. A lazy-susan cutout sits empty in the corner. Food storage containers and their lids are mismatched across two shelves.',
+    summary: cabinet
+      ? 'A 30-inch-wide kitchen cabinet with three adjustable shelves. Plates are stacked too high, mugs crowd the front blocking access to glasses behind them, and baking sheets lean at odd angles taking up floor space. A lazy-susan cutout sits empty in the corner. Food storage containers and their lids are mismatched across two shelves.'
+      : 'Open kitchen shelves, 30 inches wide. Plates are stacked too high, mugs crowd the front blocking access to glasses behind them, and baking sheets lean at odd angles across a whole shelf. Food storage containers and their lids are mismatched across two shelves.',
     categories: ['Plates', 'Bowls', 'Mugs', 'Glasses', 'Cookware', 'Baking sheets', 'Food storage containers', 'Lids', 'Serving dishes'],
     problems: [
       'Plates stacked 12+ high risk chipping and are hard to grab from the bottom',
       'Mugs in front block access to glasses behind them',
       'Baking sheets lean against the side wall and slide when the door opens',
       'Food storage containers and lids are scattered across two shelves',
-      'The lazy-susan cutout is completely unused'
+      ...(cabinet ? ['The lazy-susan cutout is completely unused'] : []),
     ],
     opportunities: [
-      'Adjustable shelves let you dial in the exact height each category needs',
+      ...(cabinet ? ['Adjustable shelves let you dial in the exact height each category needs'] : []),
       'Vertical dividers can hold baking sheets and cutting boards upright',
       'A small shelf riser would double the mug zone without stacking',
       'Nesting food containers with matched lids saves half the space they currently use',
-      'The corner lazy susan is perfect for small items like spice jars or oils'
+      ...(cabinet ? ['The corner lazy susan is perfect for small items like spice jars or oils'] : []),
     ],
     map: [
       {level: 'Top shelf', icon: 'up', zone: 'Serving dishes · Rarely used glassware',
@@ -153,22 +165,24 @@ function cabinetScenario() {
     productNeeds: [
       {type: 'shelf-riser', qty: 2, purpose: 'Create a second tier for mugs and bowls without stacking', targetZone: 'Eye level', maxDims: {w_in: 13, h_in: 6, d_in: 11}, priority: 'high'},
       {type: 'drawer-organizer', qty: 1, purpose: 'Corral food storage lids in one visible tray', targetZone: 'Lower shelf', maxDims: {w_in: 12, h_in: 3, d_in: 11}, priority: 'high'},
-      {type: 'turntable', qty: 1, purpose: 'Make the corner lazy-susan space useful for oils or spices', targetZone: 'Lower shelf', maxDims: {w_in: 11, h_in: 4, d_in: 11}, priority: 'nice'},
+      {type: 'turntable', qty: 1, purpose: cabinet ? 'Make the corner lazy-susan space useful for oils or spices' : 'Gather oils and spices on one tray that spins', targetZone: 'Lower shelf', maxDims: {w_in: 11, h_in: 4, d_in: 11}, priority: 'nice'},
       {type: 'door-rack', qty: 1, purpose: 'Mount a small rack for pot lids or foil and wrap', targetZone: 'Inside door', maxDims: {w_in: 12, h_in: 18, d_in: 3}, priority: 'nice'},
       {type: 'label-set', qty: 1, purpose: 'Label shelf zones so everyone puts things back correctly', targetZone: 'Every zone', maxDims: null, priority: 'nice'}
     ],
     existingLede: 'The adjustable shelves and built-in vertical slots give you a head start. No purchases needed to start.',
-    existing: [
+    // Every one of these is a fitting of the cabinet. Open shelving gets none
+    // rather than a list about furniture it is not; the report hides the grid.
+    existing: cabinet ? [
       {icon: 'layers', title: 'Adjustable shelf pins', detail: 'Move shelves to match the tallest items in each zone.'},
       {icon: 'vertical', title: 'Vertical divider slots', detail: 'Use for baking sheets and cutting boards standing upright.'},
       {icon: 'horizontal', title: 'Corner lazy-susan space', detail: 'Place a small turntable or group oils here.'},
       {icon: 'door', title: 'Inside-door surface', detail: 'Hang a small hook strip for pot holders or measuring cups.'}
-    ],
+    ] : [],
     dontBuy: 'Skip plate-stacking racks. They often create more problems than they solve. Just limit stack height instead.',
     steps: [
-      {task: 'Empty the cabinet completely', time: '5 min', why: 'You need to see every item to sort and reassign properly.'},
+      {task: cabinet ? 'Empty the cabinet completely' : 'Empty the shelves completely', time: '5 min', why: 'You need to see every item to sort and reassign properly.'},
       {task: 'Match every food storage container with its lid', time: '10 min', why: 'Orphaned lids and lidless containers waste space.'},
-      {task: 'Adjust shelf heights to match your tallest items per zone', time: '5 min', why: 'Wasted vertical gaps between shelves are lost capacity.'},
+      ...(cabinet ? [{task: 'Adjust shelf heights to match your tallest items per zone', time: '5 min', why: 'Wasted vertical gaps between shelves are lost capacity.'}] : []),
       {task: 'Place daily plates and bowls at eye level', time: '5 min', why: 'Most-used items need the most accessible position.'},
       {task: 'Stand baking sheets upright using vertical dividers', time: '5 min', why: 'Upright storage prevents the leaning and sliding problem.'},
       {task: 'Group mugs on the lower shelf with a riser if available', time: '5 min', why: 'A riser doubles visible space without stacking mugs.'},
@@ -793,21 +807,24 @@ function junkScenario() {
   };
 }
 
-function bathroomScenario() {
+function bathroomScenario(setupId) {
+  const cabinet = isCabinet(setupId);
   return {
     spaceType: 'Bathroom vanity',
-    summary: 'An under-sink vanity cabinet plus two shallow drawers. Skincare, hair tools, cleaning sprays, and backstock all share the cabinet floor around the plumbing, so everything gets knocked over reaching past it. The drawers hold a mix of daily items and expired products.',
+    summary: cabinet
+      ? 'An under-sink vanity cabinet plus two shallow drawers. Skincare, hair tools, cleaning sprays, and backstock all share the cabinet floor around the plumbing, so everything gets knocked over reaching past it. The drawers hold a mix of daily items and expired products.'
+      : 'Open wall shelves, 30 inches wide. Skincare, hair tools, cleaning sprays, and backstock all crowd the same few shelves, so everything gets knocked over reaching past it. The shelves hold a mix of daily items and expired products.',
     categories: ['Daily skincare', 'Hair tools & products', 'Cleaning supplies', 'Backstock (soap, paper)', 'First aid', 'Travel & samples', 'Makeup', 'Expired products'],
     problems: [
       'Cleaning chemicals sit within easy reach next to skincare',
-      'Everything stacks on the cabinet floor, so back items are invisible',
+      cabinet ? 'Everything stacks on the cabinet floor, so back items are invisible' : 'Everything stacks two deep, so back items are invisible',
       'Expired products crowd out the ones in daily rotation',
       'Hair tools tangle with their own cords',
       'Backstock is scattered, so duplicates keep getting bought'
     ],
     opportunities: [
-      'Stacking bins around the plumbing double the cabinet capacity',
-      'A turntable makes corner skincare visible in one spin',
+      cabinet ? 'Stacking bins around the plumbing double the cabinet capacity' : 'Stacking bins double what each shelf holds',
+      cabinet ? 'A turntable makes corner skincare visible in one spin' : 'A turntable brings skincare at the back into view in one spin',
       'The drawers can hold complete morning and evening routines',
       'A five-minute expiry purge frees a third of the space'
     ],
@@ -840,20 +857,23 @@ function bathroomScenario() {
       'Nothing breakable sits above the toilet-paper reach zone.'
     ],
     productNeeds: [
-      {type: 'clear-bin', qty: 2, purpose: 'Stackable bins that work around the plumbing', targetZone: 'Cabinet: floor', maxDims: {w_in: 12, h_in: 8, d_in: 18}, priority: 'high'},
-      {type: 'turntable', qty: 1, purpose: 'Spin skincare into view in the deep corner', targetZone: 'Cabinet: floor', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
+      {type: 'clear-bin', qty: 2, purpose: cabinet ? 'Stackable bins that work around the plumbing' : 'Stackable bins that double what a shelf holds', targetZone: 'Cabinet: floor', maxDims: {w_in: 12, h_in: 8, d_in: 18}, priority: 'high'},
+      {type: 'turntable', qty: 1, purpose: cabinet ? 'Spin skincare into view in the deep corner' : 'Spin skincare into view from the back of the shelf', targetZone: 'Cabinet: floor', maxDims: {w_in: 10, h_in: 5, d_in: 10}, priority: 'nice'},
       {type: 'drawer-organizer', qty: 2, purpose: 'Slot the routines so they stay separated', targetZone: 'Top drawer', maxDims: {w_in: 18, h_in: 2.5, d_in: 17}, priority: 'nice'},
       {type: 'safety-latch', qty: 1, purpose: 'Latch the chemical zone away from small children', targetZone: 'Cabinet: upper zone', maxDims: null, priority: 'high'}
     ],
     existingLede: 'The cabinet has more height than floor. Use what you own to build up, not out.',
     existing: [
       {icon: 'bin', title: 'Reuse: shoe-box bins', detail: 'Sturdy boxes become free backstock bins.'},
-      {icon: 'vertical', title: 'Cabinet height', detail: 'Stack bins two-high beside the plumbing.'},
+      cabinet ? {icon: 'vertical', title: 'Cabinet height', detail: 'Stack bins two-high beside the plumbing.'}
+        : {icon: 'vertical', title: 'Shelf height', detail: 'Stack bins two-high where the gap between shelves allows.'},
       {icon: 'drawer', title: 'Two shallow drawers', detail: 'Dedicate one per routine. Morning and evening.'}
     ],
-    dontBuy: 'Skip vanity-specific organizers sized for magazine bathrooms. Standard stacking bins fit better around real plumbing.',
+    dontBuy: cabinet
+      ? 'Skip vanity-specific organizers sized for magazine bathrooms. Standard stacking bins fit better around real plumbing.'
+      : 'Skip decorative organizers sized for magazine bathrooms. Standard stacking bins fit real shelves better.',
     steps: [
-      {task: 'Empty the vanity and drawers completely', time: '10 min', why: 'Bathroom clutter hides expired products at every layer.'},
+      {task: cabinet ? 'Empty the vanity and drawers completely' : 'Empty the shelves completely', time: '10 min', why: 'Bathroom clutter hides expired products at every layer.'},
       {task: 'Toss expired and empty products', time: '10 min', why: 'Usually a third of the volume goes straight to the bin.'},
       {task: 'Group: daily, weekly, backstock, cleaning', time: '10 min', why: 'Frequency decides who gets the drawers.'},
       {task: 'Load the drawers with daily routines only', time: '5 min', why: 'Prime spots are for everyday items, not someday items.'},
@@ -1913,7 +1933,7 @@ function rewriteMobilityLanguage(plan, mobility) {
  */
 export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   const fn = SCENARIO_FNS[spaceType] || SCENARIO_FNS.other;
-  const plan = fn();
+  const plan = fn(setupId);
 
   // Structure first: goal/household/answers all reason about the zone list
   // (kid-safe placement, per-zone effort padding, category edits), so they
@@ -1985,6 +2005,15 @@ export function getDemoScenario(spaceType, goal, household, answers, setupId) {
   if (answers) sizeToEffort(plan, answers, { archetype: finalArchetype, setup: setupId });
 
   speakAsTypical(plan);
+
+  /* Named for the setup, not for the space. A scenario's name is a piece of
+     furniture ("Kitchen cabinet", "Bathroom vanity"), and the report title, the
+     3D heading, the export and the saved space all read it, so wall shelves
+     were headed "Your bathroom vanity" over a summary that opened "Your
+     bathroom wall shelves". Down here, after applyHousehold, which matches the
+     space's own name to decide where a pet note belongs. */
+  const named = setupId && SETUP_NOUN[setupId];
+  if (named) plan.spaceType = named[0].charAt(0).toUpperCase() + named[0].slice(1);
 
   return plan;
 }
