@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-25, main at cadddb8 (after #224), plus #225 to #227.** History (dated
+**Last refreshed: 2026-10-26, main at 10e89c6 (after #228).** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,17 +11,13 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-10-25 sessions changed
+## What the 2026-10-26 session changed
 
-#212 to #221 (setup-aware lines, pack pricing, the proven live funnel,
-`SETUP_NOUN`, `alignByDepth`, 3D open and wall shelving, labels in a 390
-frame, `latchEnclosedKeepHigh`): detail in the archive.
-#222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
-#223 touch icon, adjust-screen draft race; #224 every copied hex = its token.
-#225 read the three dated legal pages against the code: cookies.html omitted
-`tidymap_optout_v1` (its own toggle writes it), both accessibility.html
-shortfalls undersold the app, #226 narrowed its scan claim. Times: health #2.
-The Sonnet 5.5 spotted-count question closed from the saved plans (#227).
+Nothing shipped in code. A browser agent read what this sandbox cannot,
+closing item 12's audit. The hosted sign-in code is **8 digits**, which is
+what `index.html` already says; expiry 3600s, no CAPTCHA, not a finding
+(`get_advisors` 10-26: the same eight as health #11, no `auth_otp_long_expiry`).
+Repo URLs match the deployment. The live site sends no security headers (item 22).
 
 ## Product state
 
@@ -187,6 +183,10 @@ npm run check:model-path  # the canary, by hand
   browser stays opted out (10-06); the owner never opens a tagged `?ref=`
   link; watched sessions use `?ref=watched`; only `source='ai'` plans and
   `useful='Very useful'` count toward the first-users bar (#195, item 6).
+- **No meta CSP, deliberately** (10-26). `index.html` has 93 inline `on*=`
+  handlers and 116 inline `style=` attributes, so a CSP that does not break
+  the app needs `'unsafe-inline'` for both, giving away the point. A real one
+  means removing the handlers first; the rest need item 22's proxy, not a tag.
 - **No em dashes in user-facing copy, US spelling.**
   `tests/copy-conventions.test.mjs` enforces both (09-02, #156).
 - **Share links:** an allowlist (new fields excluded by default) plus a
@@ -245,10 +245,6 @@ The live work list; numbers are stable, full 10-13 text in the archive.
    pantry only. Run garages, closets, workbenches; compare object count with
    the input (the model once multiplied a container). Needs the owner's
    browser (~20 min); a failed render no longer costs quota (#109).
-12. **The 2026-09-14 site review: residue only** (#134 to #174 shipped). Left:
-    live-site headers and hosted auth config, which the sandbox cannot see (a
-    `curl` to `scmsolutions.org` is a 403 at the proxy), so they need the
-    owner's browser. #222 JSON-LD/title/JS; #223-#224 icons; #225-#226 legal pages.
 13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
     09-29; enable an Anthropic billing alert (the only check for a leaking
     key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
@@ -256,6 +252,10 @@ The live work list; numbers are stable, full 10-13 text in the archive.
 14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
     open the Target listing): replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`.
+22. **No security headers on the live site** (read 10-26: F, nothing set).
+    Pages cannot send them, so no repo edit fixes it: it needs a proxy in
+    front (Cloudflare Transform Rules) for HSTS, X-Frame-Options,
+    X-Content-Type-Options and Referrer-Policy. Before item 6 recruits.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
@@ -263,7 +263,7 @@ Also open, unnumbered (from the dated sections):
   3D agree); reopen run 4c's plan, expect no fit note. The 10-18 failure
   watch closed unmeasured: edge logs keep 24h, `plan_meta` has no retry flag.
 
-Closed (archive has the text): 2-5, 9-11, 15-17 (#217), 18-21 (#218-#221);
+Closed (archive has the text): 2-5, 9-12, 15-17 (#217), 18-21 (#218-#221);
 Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (archive, 10-06).
 
 ### Waiting on traffic

@@ -12,7 +12,7 @@ What is here, in order:
 - The pre-trim header (the 2026-09 and 2026-10 status story, the 08-27
   memory review, and the correction of the 08-05 refresh).
 - Every dated "What the ... session changed" section, newest first, from
-  2026-10-16 (moved here 10-23), 2026-10-13 (moved here 10-16) and 2026-10-12 part 5 back to 2026-09-02.
+  2026-10-25 (moved here 10-26) and 2026-10-23 back to 2026-09-02.
 - "Product state in one paragraph" and the scorecard of the original eight
   handoff items (including "#1 Plan engine", cited as `HANDOFF §#1` in
   `tests/plan-schema.test.mjs`).
@@ -384,6 +384,18 @@ baking sheets that "slide when the front edge opens"; wall shelves had
 and butler's pantry samples, and the landing sample (built with no setup,
 drawn as a cabinet), read "Skip the front edge-mounted spice rack ... the
 front edge may not support the weight". #212 fixed all of it.
+
+## What the 2026-10-25 sessions changed
+
+#212 to #221 (setup-aware lines, pack pricing, the proven live funnel,
+`SETUP_NOUN`, `alignByDepth`, 3D open and wall shelving, labels in a 390
+frame, `latchEnclosedKeepHigh`): detail in the archive.
+#222 (item 12): plan screens load on first use, a 53-character title, JSON-LD.
+#223 touch icon, adjust-screen draft race; #224 every copied hex = its token.
+#225 read the three dated legal pages against the code: cookies.html omitted
+`tidymap_optout_v1` (its own toggle writes it), both accessibility.html
+shortfalls undersold the app, #226 narrowed its scan claim. Times: health #2.
+The Sonnet 5.5 spotted-count question closed from the saved plans (#227).
 
 ## What the 2026-10-23 session changed (as the handoff read before its refresh)
 
