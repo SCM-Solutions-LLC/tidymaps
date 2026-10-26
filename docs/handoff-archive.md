@@ -1089,7 +1089,8 @@ spotted count is the one number that moved the wrong way; `SPOTTED_MAX` caps
 it, nothing sets a floor, so read it as a question for the report (did 5.5 miss
 items in the photo, or did 4.6 pad the list?) rather than a regression.
 
-**Settled 2026-10-25: 4.6 padded the list.** Both runs are saved (`spaces`
+**Settled 2026-10-25: 4.6 padded the list; 5.5's recall is untested.**
+Both runs are saved (`spaces`
 `90fe9815`, 4.6 01:44, 8 spotted; `c829c16b`, 5.5 02:27, 4 spotted) under the
 same `spotted` rule (80614fc, 10-03; #187 changed only the model and tuning).
 Their inputs differed, which the table above hides: the 4.6 run had
