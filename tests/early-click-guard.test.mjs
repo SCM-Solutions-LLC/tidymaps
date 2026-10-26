@@ -26,6 +26,6 @@ test('the early-click guard is in <head> and main.js releases it before the rout
 test('the startup module graph is not modulepreloaded', () => {
   /* Measured twice, 09-14 and 10-13: a faster boot on slow 4G but a later
      headline on a fast link, and the guard already keeps early clicks. See
-     docs/HANDOFF.md, Decisions, "Measured and not done". */
+     docs/handoff-archive.md, Decisions, "Measured and not done". */
   assert.doesNotMatch(html, /rel="modulepreload"/);
 });

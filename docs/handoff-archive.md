@@ -12,7 +12,7 @@ What is here, in order:
 - The pre-trim header (the 2026-09 and 2026-10 status story, the 08-27
   memory review, and the correction of the 08-05 refresh).
 - Every dated "What the ... session changed" section, newest first, from
-  2026-10-25 (moved here 10-26) and 2026-10-23 back to 2026-09-02.
+  2026-10-26 and 2026-10-25 (both written here 10-26) back to 2026-09-02.
 - "Product state in one paragraph" and the scorecard of the original eight
   handoff items (including "#1 Plan engine", cited as `HANDOFF §#1` in
   `tests/plan-schema.test.mjs`).
@@ -384,6 +384,77 @@ baking sheets that "slide when the front edge opens"; wall shelves had
 and butler's pantry samples, and the landing sample (built with no setup,
 drawn as a cabinet), read "Skip the front edge-mounted spice rack ... the
 front edge may not support the weight". #212 fixed all of it.
+
+## What the 2026-10-26 sessions changed
+
+No code shipped across three sessions.
+
+**#229 (item 12 closed).** A browser agent read what this sandbox cannot. The
+hosted sign-in code is 8 digits, which is what `index.html` already says
+(`maxlength="8"`, placeholder `12345678`), and `js/auth.js` hands the token to
+`verifyOtp` with no length check of its own, so nothing in the repo can drift
+from the dashboard value. OTP expiry is 3600s with no CAPTCHA, and that is not
+a finding: `get_advisors` pulled 10-26 returns the same eight notices as
+Production health #11, with no `auth_otp_long_expiry`, so 3600 sits at the
+threshold rather than over it. Every URL in the repo matches the deployment:
+`canonical`, `og:url`, `og:image`, the JSON-LD `url`, `sitemap.xml` and
+`robots.txt` all read `https://scmsolutions.org/tidymaps/`, and
+`scm-solutions-llc.github.io/tidymaps` redirects there. The live site sends no
+security headers (F at securityheaders.com; the `access-control-allow-origin:
+*` and `cache-control: max-age=600` it does send are Pages defaults).
+
+**#230.** Moved this doc's refresh stamp from `10e89c6`, which was #229's
+base, onto `e784faf`, the tree whose content it actually describes. The stamp
+is provenance, not a liveness claim, and it trails `main` by one merge again
+the moment it lands, which is what the **Git wins** paragraph exists to cover.
+Closing that gap properly would mean dropping the SHA or generating the line at
+build time, and neither earns its keep.
+
+**Item 22 re-scoped off the recruiting path.** The premise first recorded on
+10-26, that an unframed sign-in flow is clickjackable and so the headers are
+wanted before strangers arrive, does not survive reading the code:
+
+- Sign-in is magic-code OTP (`js/auth.js`, `verifyOtp`). A framing attacker
+  cannot read the code, because it is cross-origin, so framing the form gains
+  nothing.
+- Clickjacking pays against one-click destructive actions. There is exactly
+  one, delete a space (`js/screens/dashboard.js`), and it sits behind a native
+  `confirm()`, which renders at browser-chrome level outside the frame, where a
+  framing attacker cannot hide, move or spoof it.
+- Nothing in the app uses an iframe, so there is also nothing to break by
+  setting the header.
+
+Of the four headers only HSTS buys something real: it closes the window where
+a first visit over `http://` could be intercepted before Pages redirects.
+`nosniff` is free and modest, and `strict-origin-when-cross-origin` is already
+every modern browser's default, so that header is close to a no-op.
+
+The cost moved the other way once the domain was traced. `scmsolutions.org` is
+not TidyMap's domain: the CNAME lives in `SCM-Solutions-LLC.github.io`, so the
+org site at `/`, plus `/tidymaps/`, `/steadiday/` and `/ASL/`, all publish
+under one zone, and `www.scmsolutions.org` is a live hostname (it is in
+`_shared/cors.ts`). DNS is on Porkbun, so putting a proxy in front means a
+nameserver migration of the domain serving all of them, carrying the
+`contact@scmsolutions.org` MX records with it. Cloudflare's partial (CNAME)
+onboarding, which would cover one hostname only, is not on the free plan, and
+moving TidyMap alone to a header-capable host would put it on a subdomain and
+invalidate every canonical URL, `og:url`, the sitemap, the CORS allowlist and
+the `?ref=` links item 6 is about to hand to strangers.
+
+Deferred to the next time DNS moves for another reason. The configuration for
+that day, as Cloudflare Transform Rules (Modify Response Header, all four set
+static): `Strict-Transport-Security: max-age=300`, raised to `31536000` after
+a day with nothing broken, with **no `preload`** (de-listing takes months and
+this is a company domain) and **no `includeSubDomains`** until every subdomain
+is confirmed serving HTTPS; `X-Content-Type-Options: nosniff`;
+`Referrer-Policy: strict-origin-when-cross-origin`; and `X-Frame-Options:
+SAMEORIGIN` rather than `DENY`, because the rule is zone-wide and whether
+anything under `/steadiday/` or `/ASL/` is meant to be embedded was never
+checked. Cloudflare SSL must be set to Full, not Flexible, or GitHub Pages
+redirect-loops. Edge functions are unaffected either way: `_shared/cors.ts`
+keys on the browser's `Origin`, which a proxy does not change. The one free
+lever meanwhile is confirming that "Enforce HTTPS" is ticked in the
+`SCM-Solutions-LLC.github.io` Pages settings.
 
 ## What the 2026-10-25 sessions changed
 

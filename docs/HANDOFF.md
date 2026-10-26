@@ -11,13 +11,11 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-10-26 session changed
+## What the 2026-10-26 sessions changed
 
-Nothing shipped in code. A browser agent read what this sandbox cannot,
-closing item 12's audit. The hosted sign-in code is **8 digits**, which is
-what `index.html` already says; expiry 3600s, no CAPTCHA, not a finding
-(`get_advisors` 10-26: the same eight as health #11, no `auth_otp_long_expiry`).
-Repo URLs match the deployment. The live site sends no security headers (item 22).
+No code shipped. #229 closed item 12's audit, #230 put this doc's stamp on the
+tree it describes, and item 22 left the recruiting path (its entry says why).
+The archive has all three in full, with the Cloudflare config for the DNS move.
 
 ## Product state
 
@@ -252,10 +250,12 @@ The live work list; numbers are stable, full 10-13 text in the archive.
 14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
     open the Target listing): replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`.
-22. **No security headers on the live site** (read 10-26: F, nothing set).
-    Pages cannot send them, so no repo edit fixes it: it needs a proxy in
-    front (Cloudflare Transform Rules) for HSTS, X-Frame-Options,
-    X-Content-Type-Options and Referrer-Policy. Before item 6 recruits.
+22. **No security headers on the live site** (F, read 10-26). Pages cannot
+    send them, and a proxy means moving DNS off Porkbun for a zone that also
+    serves the org site, `/steadiday/`, `/ASL/` and `contact@` mail. **Not
+    before item 6** (10-26): framing an OTP form reads no code and the one
+    destructive action sits behind a native `confirm()`, so only HSTS buys
+    anything real. Do it when DNS next moves; config and reasoning in archive.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
