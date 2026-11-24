@@ -253,9 +253,9 @@ The live work list; numbers are stable, full 10-13 text in the archive.
     off Porkbun; not before item 6, only HSTS buys much. Archive has it all.
 
 23. **Availability check:** fails only when two runs in a row flag a
-    product (Amazon flickered, 11-24). Confirm KUBBIS, OXO POP medium and the
-    SimpleHouseware door organizer by hand; flagged, never confirmed.
-24. **Fridge prompt lines (11-24):** unverified live; check the next one.
+    product (Amazon flickered, 11-24). Confirm by hand: KUBBIS, OXO POP medium,
+    SimpleHouseware door organizer; Walmart 404s (11-24 deploy) on the Home
+    Edit XL bin and pantry labels.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
@@ -263,7 +263,7 @@ Also open, unnumbered (from the dated sections):
   3D agree); reopen run 4c's plan, expect no fit note. The 10-18 failure
   watch closed unmeasured: edge logs keep 24h, `plan_meta` has no retry flag.
 
-Closed (archive has the text): 2-5, 9-12, 15-17 (#217), 18-21 (#218-#221);
+Closed: 2-5, 9-12, 15-17 (#217), 18-21 (#218-#221), 24 (live 11-24);
 Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (archive, 10-06).
 
 ### Waiting on traffic
