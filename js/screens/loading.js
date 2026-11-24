@@ -252,7 +252,8 @@ export function runLoading({ setupConfirmed=false, fallback=null }={}){
       run.result = { ai: normalizeAi(plan), meta:{ model, source:'ai', analyzedAt: Date.now() },
         // What the photos show, read off the raw plan: normalizeAi does not
         // carry it, and it is a question for the user, not part of the plan.
-        seenLayout: typeof plan.seenLayout==='string' ? plan.seenLayout : null };
+        seenLayout: typeof plan.seenLayout==='string' ? plan.seenLayout : null,
+        seenSetup: typeof plan.seenSetup==='string' ? plan.seenSetup : null };
     })().catch(e=>{
       if(!isCurrent()) return;
       run.result = { error: readableError(e), failure: failureOf(e) };
@@ -404,7 +405,7 @@ export function finishLoading(aiPromise, isCurrent=()=>true, run={ result:null }
       }, 1400);
     }else{
       if(fin) fin.classList.replace('doing','done');
-      const mismatch=!run.setupConfirmed && setupMismatch({ space:state.space, setup:state.setup, setupTouched:state.setupTouched, seenLayout:result.seenLayout });
+      const mismatch=!run.setupConfirmed && setupMismatch({ space:state.space, setup:state.setup, setupTouched:state.setupTouched, seenLayout:result.seenLayout, seenSetup:result.seenSetup });
       if(mismatch){ askSetupCheck(mismatch, result, ()=>enterResults(result), isCurrent); return; }
       setTimeout(()=>enterResults(result), 550);
     }

@@ -33,20 +33,42 @@ const SEEN_PHRASE = {
   'fridge': 'fridge',
 };
 
+/* Every fridge is the one 'fridge' archetype, so seenLayout cannot tell a
+   side-by-side from a French door; a real run (11-24) picked side-by-side for
+   French-door photos and got a side-by-side drawing of them, unasked.
+   seenSetup is the door layout the photos show, named by card id. */
+const SEEN_SETUP_PHRASE = {
+  topfreezer: 'top-freezer fridge',
+  bottomfreezer: 'bottom-freezer fridge',
+  sidebyside: 'side-by-side fridge',
+  frenchdoor: 'French-door fridge',
+};
+
 const article = (phrase) => (/^(?:[aeiou]|L-)/i.test(phrase) ? 'an' : 'a');
 // "Reach-in" reads as "Keep reach-in"; "L-shaped" keeps its capital.
-const inline = (label) => (/^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label);
+const inline = (label) => (/^[A-Z][a-z]/.test(label) && !/^French\b/.test(label) ? label[0].toLowerCase() + label.slice(1) : label);
 
 /**
  * The prompt to show, or null when there is nothing to ask.
- * @param {{space:string|null, setup:string|null, setupTouched:boolean, seenLayout:string|null|undefined}} a
+ * @param {{space:string|null, setup:string|null, setupTouched:boolean, seenLayout:string|null|undefined, seenSetup?:string|null}} a
  * @returns {null | {fromId:string, toId:string, question:string, switchLabel:string, keepLabel:string}}
  */
-export function setupMismatch({ space, setup, setupTouched, seenLayout }) {
-  if (!setupTouched || !setup || !seenLayout || !SEEN_PHRASE[seenLayout]) return null;
+export function setupMismatch({ space, setup, setupTouched, seenLayout, seenSetup }) {
+  if (!setupTouched || !setup) return null;
   const cards = SETUP_TYPES[space] || [];
   const chosen = cards.find((c) => c.id === setup);
-  if (!chosen || SETUP_ARCHETYPE[setup] === seenLayout) return null;
+  if (!chosen) return null;
+  if (seenSetup && seenSetup !== setup && SEEN_SETUP_PHRASE[seenSetup] && cards.some((c) => c.id === seenSetup)) {
+    const phrase = SEEN_SETUP_PHRASE[seenSetup];
+    return {
+      fromId: chosen.id,
+      toId: seenSetup,
+      question: `Your photos look like ${article(phrase)} ${phrase}. Switch?`,
+      switchLabel: 'Switch',
+      keepLabel: `Keep ${inline(chosen.label)}`,
+    };
+  }
+  if (!seenLayout || !SEEN_PHRASE[seenLayout] || SETUP_ARCHETYPE[setup] === seenLayout) return null;
   // Only a card this space offers can be switched to; a fridge seen in a
   // closet plan is not a setup the closet step could have picked.
   const target = cards.find((c) => SETUP_ARCHETYPE[c.id] === seenLayout);

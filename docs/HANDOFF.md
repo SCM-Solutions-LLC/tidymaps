@@ -269,9 +269,9 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
 ### Waiting on traffic
 
 6. **First users.** Only the owner has used the app. Plan (10-11): pantry
-   first; five watched sessions on `?ref=watched`, then 20 to 30 strangers,
-   one `?ref=<slug>` per channel (`reddit-<sub>`, `nextdoor`, `fof-a`...;
-   `parseRef` silently drops a slug outside `[a-z0-9-]{1,24}`). Bar, set
+   first; five watched sessions on `?ref=watched` (`docs/watched-sessions.md`),
+   then 20 to 30 strangers, one `?ref=<slug>` per channel (`reddit-<sub>`,
+   `nextdoor`, `fof-a`...; `parseRef` silently drops a slug outside `[a-z0-9-]{1,24}`). Bar, set
    first: of the first 10 strangers, 6 get an AI plan, 4 tap "Very useful",
    2 check off 3+ steps within a week; a miss means stop recruiting. Hold
    Google Ads until then. Join `screen_viewed` `props->>'ref'` to
