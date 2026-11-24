@@ -180,7 +180,8 @@ test('ink buttons, soft corners, an olive accent, no ambient gradients', () => {
 /* results.js draws the elevation plate as an <img>, reading each colour from
    the tokens at draw time with a hex fallback. All seven fallbacks were still
    the palette before the Warm Shelf until 2026-10-25: a palette change has no
-   reason to open results.js. So each token is converted here, OKLCH to sRGB
+   reason to open results.js. (Five since stage 3 took the pastel fields out.)
+   So each token is converted here, OKLCH to sRGB
    and clipped, which gives the same hex as Chromium for every one of them. */
 test('the plate\'s colour fallbacks are the tokens they stand in for', () => {
   const toHex = (L, C, H) => {
@@ -201,7 +202,7 @@ test('the plate\'s colour fallbacks are the tokens they stand in for', () => {
   };
   const results = readFileSync(new URL('../js/screens/results.js', import.meta.url), 'utf8');
   const fallbacks = [...results.matchAll(/v\('(--[a-z0-9-]+)','(#[0-9a-f]{6})'\)/g)];
-  assert.ok(fallbacks.length >= 7, `found only ${fallbacks.length} plate fallbacks`);
+  assert.ok(fallbacks.length >= 5, `found only ${fallbacks.length} plate fallbacks`);
   for (const [, name, fallback] of fallbacks) {
     const token = new RegExp(`\\s${name}:\\s*oklch\\(([\\d.]+) ([\\d.]+) ([\\d.]+)\\)`).exec(tokens);
     assert.ok(token, `${name} is not an oklch() token`);
@@ -338,4 +339,39 @@ test('wizard controls are not pills and its art stages are not tinted', () => {
   for (const sel of ['.wz-detected', '.wz-prefilled', '.wz-effort .we-ico']) {
     assert.ok(!/sage|butter|sky/.test(rule(sel)), `${sel} is a pastel field again`);
   }
+});
+
+/* Stage 3 of the redesign (2026-11-24): the plan report. Its tags, time
+   chips, task buttons and tabs take a soft corner, not a pill; its callouts
+   and the elevation plate's shelves are the plain sheet, not a pastel field
+   (the eye-level shelf alone keeps the faint olive). The clips were re-rendered
+   in the new palette, so the frozen --clip-* tokens are gone. */
+test('the report has no pills and no pastel fields', () => {
+  const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+  const components = strip(readFileSync(new URL('../css/components.css', import.meta.url), 'utf8'));
+  const report = strip(readFileSync(new URL('../css/report.css', import.meta.url), 'utf8'));
+  const rule = (css, sel) => {
+    const m = new RegExp(`(?:^|\\})\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\{([^}]*)\\}`).exec(css);
+    assert.ok(m, `no rule for ${sel}`);
+    return m[1];
+  };
+  for (const sel of ['.tag', '.eye-mark', '.wall-tabs [role=tab]', '.task .time', '.task .acts button', '.after-tab', '.cab-tag', '.prod .pmeta span']) {
+    assert.ok(!rule(components, sel).includes('radius-pill'), `${sel} is a pill again`);
+  }
+  for (const sel of ['.plan-chip', '.plan-3d-badge', '.ch-flag', '.map-items .mi']) {
+    assert.ok(!rule(report, sel).includes('radius-pill'), `${sel} is a pill again`);
+  }
+  for (const [css, sel] of [[report, '.safety-note'], [report, '.plan-rate'], [components, '.step-tip'], [components, '.callout.warn'], [components, '.callout.info']]) {
+    assert.ok(!/sage|butter|sky|warn-bg|teal-bg/.test(rule(css, sel)), `${sel} is a pastel field again`);
+  }
+  // A pale selected tab must not keep the white label of the old ink fill.
+  assert.ok(!rule(components, '.after-tab.sel').includes('color:var(--stock)'), 'a selected after-tab sets white text on a pale fill');
+  const report_ = html.slice(html.indexOf('id="ch-reuse"'), html.indexOf('id="ch-shop"'));
+  assert.ok(!/style="[^"]*(sage|butter|sky)-/.test(report_), 'the reuse chapter is a pastel card again');
+
+  const results = readFileSync(new URL('../js/screens/results.js', import.meta.url), 'utf8');
+  assert.ok(!/v\('--(sky|butter|sage)-f'/.test(results), 'the elevation plate paints its shelves in pastel fields again');
+  assert.match(results, /fill="\$\{m\.eye\?EL_TINT2:EL_SHEET\}"/, 'the plate\'s shelves are not the plain sheet');
+  assert.ok(!tokens.includes('--clip-'), 'the frozen clip palette is back in tokens.css');
+  assert.ok(!components.includes('--clip-'), 'the step band reads the frozen clip palette again');
 });

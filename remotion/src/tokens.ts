@@ -1,30 +1,33 @@
-/* Design tokens mirrored from ../../css/tokens.css (The Warm Shelf: sand
-   field, the drawings' own line, terracotta accent, butter and sage as the
-   supporting fields). The clips are baked video, so the site's CSS variables
-   can't reach them: these constants ARE those variables, and a palette change
-   in tokens.css means re-rendering. Each one names the variable it copies,
-   and tests/remotion-palette.test.mjs fails when a value drifts from it. The
+/* Design tokens mirrored from ../../css/tokens.css (The Marked-up Shelf:
+   the band is the darker paper, items are the sheet, structure is the
+   drawings' line, olive is the one accent ink, and a label is a plain paper
+   tag). The clips are baked video, so the site's CSS variables can't reach
+   them: these constants ARE those variables, and a palette change in
+   tokens.css means re-rendering. Each one names the variable it copies, and
+   tests/remotion-palette.test.mjs fails when a value drifts from it. The
    10-03 warm-up changed tokens.css and nothing here, so every clip played in
    the old stone palette on the new sand band for three weeks.
    Chrome (Remotion's renderer) parses oklch() natively, so the values are
    copied verbatim rather than approximated in hex. */
 
 export const color = {
-  bg:        'oklch(0.952 0.02 80)',   // --clip-bg: the .step-art band the clip sits on
-  surface3:  'oklch(0.925 0.05 48)',   // --clip-dust: dust, recessed panels
-  ink:       'oklch(0.27 0.02 40)',    // --clip-ink
-  ink2:      'oklch(0.27 0.02 40)',    // --clip-ink
-  ink3:      'oklch(0.46 0.03 42)',    // --clip-draw: the drawings' line, the main stroke
-  line:      'oklch(0.46 0.03 42)',    // --clip-draw: structure prints in the drawing line too
-  line2:     'oklch(0.62 0.035 58)',   // --clip-floor: the floor and the staging items
-  primary:   'oklch(0.56 0.13 36)',    // --clip-accent: terracotta accent
-  /* --tint-2, not --primary-bg: on the site that is the band's own sand, so an
-     accent fill on it would vanish (the middle zone band, the wipe pad). */
-  primaryBg: 'oklch(0.925 0.05 48)',   // --clip-dust
-  honey:     'oklch(0.955 0.06 92)',   // --clip-honey: the butter field
-  honey2:    'oklch(0.64 0.12 82)',    // --clip-honey-2: butter's edge
-  sage:      'oklch(0.58 0.09 150)',   // --clip-sage
-  sageBg:    'oklch(0.94 0.038 150)',  // --clip-sage-bg
+  bg:        'oklch(0.925 0.016 80)',  // --tint: the .step-art band the clip sits on
+  surface3:  'oklch(0.858 0.023 81)',  // --line: dust, recessed panels
+  ink:       'oklch(0.245 0.009 75)',  // --ink
+  ink2:      'oklch(0.245 0.009 75)',  // --ink
+  ink3:      'oklch(0.40 0.015 75)',   // --draw: the drawings' line, the main stroke
+  line:      'oklch(0.40 0.015 75)',   // --draw: structure prints in the drawing line too
+  line2:     'oklch(0.60 0.025 75)',   // --field-line: the floor and the staging items
+  primary:   'oklch(0.39 0.052 124)',  // --spot-ink: olive, the one accent ink
+  /* Olive screened, not --primary-bg: on the site that is the band's own
+     paper, so an accent fill on it would vanish (the middle zone band, the
+     wipe pad). */
+  primaryBg: 'oklch(0.925 0.03 118)',  // --tint-2
+  /* A label is a plain paper tag with a drawn edge, not a butter field. */
+  honey:     'oklch(0.983 0.006 85)',  // --stock
+  honey2:    'oklch(0.40 0.015 75)',   // --draw
+  sage:      'oklch(0.56 0.07 140)',   // --sage
+  sageBg:    'oklch(0.93 0.026 140)',  // --sage-f
 } as const;
 
 /* One loop length per action, matching the CSS animation durations of the

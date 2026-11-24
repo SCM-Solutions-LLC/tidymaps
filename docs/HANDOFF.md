@@ -39,6 +39,13 @@ with pen notes and the before print, spaces as an index, plan sheet with
 margin notes; Figure 1 and "What we promise" removed). The wizard and report
 inherit tokens but keep Warm Shelf shapes: item 25.
 
+Later, **redesign stages 2 and 3**: the wizard (#238) and then the report
+went to plain paper. Stage 3: the elevation plate's shelves are the sheet
+(eye level alone in `tint-2`), tags, time chips, task buttons and tabs take
+soft corners, the report's sage/butter/sky boxes are plain sheets, and all
+163 step clips were `--force` re-rendered in the new palette
+(`remotion/src/tokens.ts`), so the `--clip-*` tokens are gone. Item 25 closed.
+
 ## Product state
 
 Static ES-module site (no build step) on GitHub Pages at
@@ -49,7 +56,7 @@ BYOK is gone). An 11-step wizard over ten spaces and 37 setups (`js/router.js FL
 steps with where-lines, "Also in your photo", a shopping list from a
 31-product catalog) and a 3D viewer with a builder per layout. Also: a
 homepage, product library, dashboard, read-only share links, and an AI photo
-preview (`render-after`, Gemini). Design: "The Marked-up Shelf" (`DESIGN.md`), stage 1 of 3.
+preview (`render-after`, Gemini). Design: "The Marked-up Shelf" (`DESIGN.md`), all three stages landed.
 Only the owner has used it (Production health #9); first users: item 6.
 
 ## Architecture crib sheet
@@ -281,11 +288,11 @@ The live work list; numbers are stable, full 10-13 text in the archive.
     flipping; flipping both latches empties that category. Still to confirm:
     OXO POP medium, SimpleHouseware door organizer.
 
-25. **Redesign stage 3** (owner-approved direction, 11-24; stage 2, the
-    wizard, landed 11-24: ink art stages, 10px chips, no pastel boxes). Stage 3: the report (pastel zone fields, the
-    elevation plate) and a `--force` clip render (`remotion/`, ~20 min), then
-    delete the `--clip-*` tokens. `DESIGN.md` "Migration status" lists what
-    is stale. Also unmade: the Dymo-label wordmark from the mock.
+25. **Redesign follow-ups** (stages 1-3 landed 11-24). Unmade: the
+    Dymo-label wordmark from the mock. `DESIGN.md` Layout, Elevation, Shapes
+    and Components still describe Warm Shelf shapes in places ("terracotta",
+    "pill"); rewrite them from the live CSS. Small pills left on purpose:
+    toast, progress tracks, `.cab-item` chips in the after drawing.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf

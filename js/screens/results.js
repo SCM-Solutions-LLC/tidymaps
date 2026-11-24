@@ -865,7 +865,7 @@ const SAFETY_LABEL={'kid-safe':'kid safe','keep-high':'keep high','lock-or-latch
 /* One row of the map. The head is the tap target: icon, level, zone and the
    safety badge, with the reasons folded beneath it, because six rows of
    "why" prose made the chapter a wall of text. The eye row says "Eye level"
-   in a pill: it used to be the one peach label field on the page, and a
+   as a tag: it used to be the one peach label field on the page, and a
    colour with no word beside it told nobody what it marked. `i` is the row's
    position, which keeps the fold ids unique across wall panels; `idx` is its
    shelf index, the number a step's `rows` points at. */
@@ -1082,7 +1082,7 @@ function plate(){
   const cs=getComputedStyle(document.documentElement);
   const v=(name,fb)=>(cs.getPropertyValue(name)||'').trim()||fb;
   return { ink:v('--draw','#4d473f'), spot:v('--spot','#23201c'), tint:v('--tint','#ece5db'), tint2:v('--tint-2','#e4e9d3'),
-    fields:[v('--sky-f','#deeaf3'),v('--butter-f','#f7eccf'),v('--sage-f','#dfecdc'),v('--tint','#ece5db')] };
+    sheet:v('--stock','#fbf9f5') };
 }
 const EL_GLYPHS={
   jar:'<path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="l"/>',
@@ -1140,8 +1140,8 @@ function shelfGlyphs(rowI, x0, x1, base, scale, sets=EL_ROWS){
   return out;
 }
 
-function elevationStyle({ ink, spot }){
-  return `<style>.c{fill:none;stroke:${ink};stroke-width:2.5;stroke-linejoin:round}.o{stroke-width:3}.g{fill:#fff;stroke:${ink};stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.g .l{stroke:${spot};stroke-width:2.6}`
+function elevationStyle({ ink, spot, sheet }){
+  return `<style>.c{fill:none;stroke:${ink};stroke-width:2.5;stroke-linejoin:round}.o{stroke-width:3}.g{fill:${sheet};stroke:${ink};stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.g .l{stroke:${spot};stroke-width:2.6}`
     +`.z{font:700 18px Archivo,Helvetica,Arial,sans-serif;letter-spacing:0;fill:${ink}}.zs{font-size:16px}.cap{font:600 13px Archivo,Helvetica,Arial,sans-serif;fill:${ink}}.e{fill:${spot}}</style>`;
 }
 
@@ -1164,7 +1164,7 @@ function planElevationSvg(map, placement){
 }
 
 function unitElevation(map, P){
-  const { tint2:EL_TINT2, fields:EL_FIELDS }=P;
+  const { tint2:EL_TINT2, sheet:EL_SHEET }=P;
   /* Every zone is drawn: a seven-shelf reach-in pantry lost its floor here
      when the drawing stopped at six. Past seven the plate grows taller
      instead of the shelves growing too thin to name. */
@@ -1172,12 +1172,11 @@ function unitElevation(map, P){
   const W=760, top=24, left=30, caseW=700, shelfH=Math.max(60,Math.round(440/n)), H=top+shelfH*n+26;
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one shelf per zone">`
     +elevationStyle(P);
-  // Each shelf is a soft colour field clipped to the rounded case; the
-  // eye-level shelf keeps the accent's peach, the others cycle the supporting
-  // colours so the zones read as separate places before any label is read.
+  // Each shelf is the plain sheet clipped to the rounded case, and only the
+  // eye-level shelf takes the faint olive; the shelf lines and zone names
+  // separate the rest (pastel fields per shelf went with stage 3, 11-24).
   out+=`<defs><clipPath id="cx"><rect x="${left+1}" y="${top+1}" width="${caseW-2}" height="${shelfH*n-2}" rx="19"/></clipPath></defs><g clip-path="url(#cx)">`;
-  let fi=0;
-  rows.forEach((m,i)=>{ out+=`<rect x="${left}" y="${top+shelfH*i}" width="${caseW}" height="${shelfH}" fill="${m.eye?EL_TINT2:EL_FIELDS[fi++%EL_FIELDS.length]}"/>`; });
+  rows.forEach((m,i)=>{ out+=`<rect x="${left}" y="${top+shelfH*i}" width="${caseW}" height="${shelfH}" fill="${m.eye?EL_TINT2:EL_SHEET}"/>`; });
   out+='</g>';
   out+=`<rect class="c o" x="${left}" y="${top}" width="${caseW}" height="${shelfH*n}" rx="20"/>`;
   rows.forEach((m,i)=>{
@@ -1202,7 +1201,7 @@ function unitElevation(map, P){
    the placement could not put on a wall are drawn in the back case after its
    own, since a row with no wall still has to be somewhere. */
 function roomElevation(rows, placement, cases, P){
-  const { tint:EL_TINT, tint2:EL_TINT2, fields:EL_FIELDS }=P;
+  const { tint:EL_TINT, tint2:EL_TINT2, sheet:EL_SHEET }=P;
   const by=rowsByIndex(rows);
   const rowFor=idx=>(by.get(idx)||[]).map(r=>r.m)[0];
   const host=cases.find(w=>w.id==='back')||cases[0];
@@ -1228,11 +1227,11 @@ function roomElevation(rows, placement, cases, P){
   const H=(floorRow?floorY+34:captionY)+22;
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one case per wall">`
     +elevationStyle(P);
-  let fi=0, cx=left;
+  let cx=left;
   cases.forEach((w,k)=>{
     const cw=widths[k], rs=perCase[k], rowH=caseH/rs.length;
     out+=`<defs><clipPath id="cx${k}"><rect x="${cx+1}" y="${top+1}" width="${cw-2}" height="${caseH-2}" rx="19"/></clipPath></defs><g clip-path="url(#cx${k})">`;
-    rs.forEach((m,i)=>{ out+=`<rect x="${cx}" y="${top+rowH*i}" width="${cw}" height="${rowH}" fill="${m.eye?EL_TINT2:EL_FIELDS[fi++%EL_FIELDS.length]}"/>`; });
+    rs.forEach((m,i)=>{ out+=`<rect x="${cx}" y="${top+rowH*i}" width="${cw}" height="${rowH}" fill="${m.eye?EL_TINT2:EL_SHEET}"/>`; });
     out+='</g>';
     out+=`<rect class="c o" x="${cx}" y="${top}" width="${cw}" height="${caseH}" rx="20"/>`;
     rs.forEach((m,i)=>{

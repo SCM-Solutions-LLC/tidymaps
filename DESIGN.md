@@ -180,9 +180,9 @@ This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, p
 - Warm paper with a faint fibre (`--paper-grain`), near-white sheets with a low warm shadow, hairline rules between rows. Sections are separated by space and hairlines, not boxes.
 - Real photographs of real spaces carry the page. A photo is a print: a paper mat, a strip of tape, a low shadow.
 - The pen: blue-black handwriting on small paper slips pinned to a photo, or as the margin note under a plan zone. Short notes only, never a sentence the reader must parse.
-- Ink buttons (white label, 10px corners); ghost buttons are an ink outline on the sheet. Chips and tags stay pills.
+- Ink buttons (white label, 10px corners); ghost buttons are an ink outline on the sheet. Chips, tabs and tags take soft corners too (10px, 6px on a small tag); only the toast, progress tracks and round marks stay round.
 - Olive (`spot-ink`) for links, a phrase in a heading, check marks and numerals. Never a field larger than the faint `tint-2` / `sel-bg`.
-- Sage, butter and sky survive, desaturated, as quiet fields for zones and callouts in the wizard and report.
+- Sage, butter and sky survive only as small marks that carry a word: a safety tag, a warning icon. Zones, callouts and notes are the plain sheet with a hairline.
 
 ## Colors
 
@@ -201,10 +201,10 @@ This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, p
 - **Pen** (`pen`): handwritten notes only.
 
 ### Supporting fields
-Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), now desaturated to sit on warm paper. Sage is success and safety, butter is warnings and notes, sky is information. They never carry a button.
+Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), desaturated to sit on warm paper. Sage is success and safety, butter is warnings, sky is information. They colour a small tag or an icon beside a word, never a card, a callout or a zone, and never a button.
 
-### The step clips' frozen palette
-The checklist clips are baked video (`remotion/`). Until they are re-rendered, `.step-art` keeps the old Warm Shelf colours through the `--clip-*` tokens so a clip and its inline stand-in scene still match. Delete that block after the `--force` render.
+### The step clips' palette
+The checklist clips are baked video (`remotion/`), coloured from `remotion/src/tokens.ts`, a test-held copy of these tokens: the band is `tint`, items are `stock`, structure is `draw`, the accent is olive (`spot-ink` over `tint-2`), and a label is a paper tag with a drawn edge. `.step-art` points the inline stand-in scenes at the same tokens. A change to any of them is a `--force` re-render.
 
 ### Named Rules
 **The Ink-Button Rule.** A button, a selected thing or a progress mark is the ink. Olive is never a control fill.
@@ -239,7 +239,7 @@ Every font-size is a token from `css/tokens.css`; `tests/type-scale.test.mjs` re
 
 ## Migration status
 
-Stage 1 (2026-11-24) restyled the tokens, fonts and buttons sitewide and rebuilt the landing page. Stage 2 (2026-11-24) restyled the wizard: the art stages on space, setup and product cards are ink on the plain sheet (no per-card tint), chips and segmented controls take the button's 10px corner, and the wizard's sage and butter boxes are plain sheets with a `line` border. The plan report (stage 3) still keeps its Warm Shelf shapes: colour-filled zones, the elevation plate, pills on tags, time chips and task buttons. The Layout, Shapes and Components sections below still describe those shapes where they say "card", "pill" or "terracotta"; read terracotta there as the ink. Rewrite each section as its stage lands.
+Stage 1 (2026-11-24) restyled the tokens, fonts and buttons sitewide and rebuilt the landing page. Stage 2 (2026-11-24) restyled the wizard: the art stages on space, setup and product cards are ink on the plain sheet (no per-card tint), chips and segmented controls take the button's 10px corner, and the wizard's sage and butter boxes are plain sheets with a `line` border. Stage 3 (2026-11-24) restyled the plan report: the elevation plate's shelves are the plain sheet with only the eye-level shelf in `tint-2`; tags, time chips, task buttons, wall and after tabs take soft corners; the safety note, feedback ask, step tip, callouts and reuse card are plain sheets; and the step clips were re-rendered in the new palette, which retired the `--clip-*` tokens. The Layout, Elevation, Shapes and Components sections below were written for the Warm Shelf and still say "terracotta" and "pill" in places: read terracotta as the ink, and the Overview and this section win where they disagree. Not yet made: the Dymo-label wordmark from the mock.
 
 ## Layout
 
@@ -305,7 +305,7 @@ A pill with a sentence-case label. The primary one is terracotta; the ghost is t
 ### Figures (signature)
 An inked cupboard elevation: a 2.6px case with 18px corners, 1.8px shelves, items drawn white-filled with 1.9px round-capped strokes and a 2.2px terracotta label stroke on each, zones as soft colour fields clipped to the rounded case (sky, peach for eye level, butter, sage), and a legend beneath as four colour-matched cards, each heading in that family's deep ink over 14px notes. Figure 1 on the landing page is the interactive version: items begin displaced and rotated and travel to their zone over 1.15s on the exponential ease-out, staggered 55ms per item; zones screen in after 1.1s. It plays once. There is no replay: the sort always ends on the same plan, so a button would only repeat it. Under reduced motion the finished figure is shown.
 
-The same vocabulary scales down to the card elevations (`EL_ART`, `SETUP_ART`, `productArt`): a 96 by 72 viewBox, 0.9px items, 1.3px case, 1.1px accent label stroke, fills re-inked from the stylesheet to stock and paper, so the drawing's zones are the sheet itself. Each card carries one ambient storage motion (a drawer pulling, a door opening, a bin sliding, a shirt swaying, a jar lifting) looping at 4.1 to 5.4s, quickening on hover. The plan report's hero (`planElevationSvg`) draws one shelf per zone from the same glyphs in a rounded case, the eye-level shelf in peach and the others cycling sky, butter, sage and sand, reading its colours from the tokens at render time. The report's "Where things go" rows still carry a peach label field on the eye-level row; the per-wall report replaces that with an icon and the word.
+The same vocabulary scales down to the card elevations (`EL_ART`, `SETUP_ART`, `productArt`): a 96 by 72 viewBox, 0.9px items, 1.3px case, 1.1px accent label stroke, fills re-inked from the stylesheet to stock and paper, so the drawing's zones are the sheet itself. Each card carries one ambient storage motion (a drawer pulling, a door opening, a bin sliding, a shirt swaying, a jar lifting) looping at 4.1 to 5.4s, quickening on hover. The plan report's hero (`planElevationSvg`) draws one shelf per zone from the same glyphs in a rounded case on the plain sheet, only the eye-level shelf screened in `tint-2`, reading its colours from the tokens at render time. The report's "Where things go" rows still carry a peach label field on the eye-level row; the per-wall report replaces that with an icon and the word.
 
 ### Stage marks (signature)
 Progress is a mark, never a colour alone: an 18px `field-line` circle that is empty (to do), half-filled with the accent (in progress), or filled with the accent (done), with done rows struck through and their text in `spot-ink`. Task checks in the report are 44px circles carrying the step number until done, when the number gives way to a white check on terracotta. Progress bars are a 10px pill track with the accent advancing.

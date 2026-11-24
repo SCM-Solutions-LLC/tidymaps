@@ -134,7 +134,7 @@ textarea{resize:vertical;min-height:84px}
 
 .taglist{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 0}
 /* a pill that breaks across lines reads as broken — wrap around it, never inside it */
-.tag{font-size:var(--fs-sm);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-pill);padding:5px 11px;color:var(--ink-2);white-space:nowrap}
+.tag{font-size:var(--fs-sm);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:5px 11px;color:var(--ink-2);white-space:nowrap}
 /* ---- Skeletons -----------------------------------------------------------
    A placeholder that reserves the real content's box, so nothing jumps when it
    lands. The gradient is the one already used by .frame and .dash-cover, made
@@ -191,7 +191,7 @@ textarea{resize:vertical;min-height:84px}
 /* organization map: one card per row. The card's head is the tap target,
    icon, level and zone on one line with the reasons folded beneath, because
    six rows of "why" prose read as a wall of text. The eye row carries the
-   word "Eye level" in a pill and nothing else marks it: its label used to be
+   word "Eye level" in a tag and nothing else marks it: its label used to be
    the one peach field on the page, and a colour with no word beside it told
    nobody what it meant. The head's background is the same on every row. */
 .shelf{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;background:var(--surface)}
@@ -203,7 +203,7 @@ textarea{resize:vertical;min-height:84px}
 .shelf-titles{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
 .shelf .lv{font-family:var(--sans);font-size:var(--fs-xs);font-weight:700;letter-spacing:0;text-transform:none;line-height:1.3;color:var(--ink-2)}
 .shelf .zone{font-weight:600;font-size:var(--fs-ui);line-height:1.35;color:var(--ink)}
-.eye-mark{flex:none;display:inline-flex;align-items:center;gap:4px;font-family:var(--sans);font-size:var(--fs-xs);font-weight:600;line-height:1.3;color:var(--primary-2);border:1px solid var(--primary-line);border-radius:var(--radius-pill);padding:2px 8px;white-space:nowrap}
+.eye-mark{flex:none;display:inline-flex;align-items:center;gap:4px;font-family:var(--sans);font-size:var(--fs-xs);font-weight:600;line-height:1.3;color:var(--primary-2);border:1px solid var(--primary-line);border-radius:var(--radius);padding:2px 8px;white-space:nowrap}
 .eye-mark svg{width:14px;height:14px}
 .shelf-titles .eye-mark{align-self:flex-start;color:var(--primary-2)}
 /* The chevron is the fold's only hint, so it turns when the fold is open. */
@@ -220,7 +220,7 @@ textarea{resize:vertical;min-height:84px}
    the floor rect lights when the floor is. */
 .wall-nav{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .wall-tabs{display:flex;flex-wrap:wrap;gap:8px}
-.wall-tabs [role=tab]{min-height:44px;padding:10px 16px;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-pill);font-family:var(--sans);font-size:var(--fs-md);font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .16s,background-color .16s,color .16s}
+.wall-tabs [role=tab]{min-height:44px;padding:10px 16px;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-btn);font-family:var(--sans);font-size:var(--fs-md);font-weight:600;color:var(--ink);cursor:pointer;transition:border-color .16s,background-color .16s,color .16s}
 .wall-tabs [role=tab]:hover{background:var(--tint)}
 .wall-tabs [role=tab][aria-selected="true"]{background:var(--sel-bg);border-color:var(--primary-line);color:var(--primary-2)}
 .wall-tabs [role=tab]:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
@@ -286,11 +286,11 @@ textarea{resize:vertical;min-height:84px}
 .task .tname{font-weight:600;font-size:var(--fs-ui);margin:2px 0 0}
 .task.done .tname{text-decoration:line-through;color:var(--ink-3)}
 .task .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center}
-.task .time{font-variant-numeric:tabular-nums;font-size:var(--fs-2xs);color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-pill);padding:3px 8px;display:inline-flex;align-items:center;gap:5px}
+.task .time{font-variant-numeric:tabular-nums;font-size:var(--fs-2xs);color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:3px 8px;display:inline-flex;align-items:center;gap:5px}
 .task .time svg{width:12px;height:12px}
 .task .why2{font-size:var(--fs-sm);color:var(--ink-3);margin-top:8px;line-height:1.45}
 .task .acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.task .acts button{min-width:45px;min-height:45px;font-size:var(--fs-xs);font-weight:500;border-radius:var(--radius-pill);padding:9px 12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);transition:.14s}
+.task .acts button{min-width:45px;min-height:45px;font-size:var(--fs-xs);font-weight:500;border-radius:var(--radius-btn);padding:9px 12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);transition:.14s}
 .task .acts button:hover{border-color:var(--ink-3);color:var(--ink)}
 .task .acts .mark{border-color:var(--primary);color:var(--primary-ink);background:var(--primary-bg)}
 .task.done .acts .mark{background:var(--primary);color:var(--stock);border-color:var(--primary)}
@@ -303,8 +303,8 @@ textarea{resize:vertical;min-height:84px}
 
 /* after preview */
 .after-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
-.after-tab{font-size:var(--fs-sm);font-weight:500;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-pill);padding:8px 16px;color:var(--ink-2);transition:.14s}
-.after-tab.sel{background:var(--spot);border-color:var(--spot);color:var(--stock)}
+.after-tab{font-size:var(--fs-sm);font-weight:500;border:1.5px solid var(--line-2);background:var(--stock);border-radius:var(--radius-btn);padding:8px 16px;color:var(--ink-2);transition:.14s}
+.after-tab.sel{background:var(--sel-bg);border-color:var(--spot);box-shadow:inset 0 0 0 1px var(--spot);color:var(--ink)}
 .after-stage{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
 /* illustrated "after" cabinet */
 .ba .after{background:var(--surface)}
@@ -315,7 +315,7 @@ textarea{resize:vertical;min-height:84px}
 .cab-lv{font-size:var(--fs-2xs);font-weight:600;color:var(--ink-3);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
 /* line-height keeps the pill inside a plain level line: a taller tag squeezed
    the chips on a fixed-height after-drawing shelf and clipped them. */
-.cab-tag{font-size:var(--fs-2xs);font-weight:600;line-height:1.2;border-radius:var(--radius-pill);padding:1px 5px;flex:none}
+.cab-tag{font-size:var(--fs-2xs);font-weight:600;line-height:1.2;border-radius:var(--radius);padding:1px 5px;flex:none}
 .cab-tag.eyet{color:var(--primary-2);background:var(--primary-bg);border:1px solid var(--primary-line)}
 .cab-tag.kidt{color:var(--good);background:color-mix(in oklch,var(--good) 12%,transparent);border:1px solid color-mix(in oklch,var(--good) 35%,transparent)}
 .cab-row{display:flex;flex-wrap:wrap;gap:5px}
@@ -323,7 +323,7 @@ textarea{resize:vertical;min-height:84px}
 .cab-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px}
 .cab-item.bin{background:var(--primary-bg);border-color:var(--primary-line);color:var(--primary-2)}
 .cab-item svg{width:11px;height:11px;flex:none;opacity:.7}
-.cab-item .lbl{font-size:var(--fs-2xs);font-weight:600;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:var(--radius-pill);padding:0 3px;margin-left:2px}
+.cab-item .lbl{font-size:var(--fs-2xs);font-weight:600;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:var(--radius);padding:0 3px;margin-left:2px}
 /* One pane. The second held a generic "before" sketch that described no
    actual space — see the note in index.html — so the plan now gets the full
    width instead of half of it, which is also the half that had something to
@@ -363,7 +363,7 @@ textarea{resize:vertical;min-height:84px}
 .prod .pchoice{margin-top:8px;font-size:var(--fs-sm);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
 .prod .pchoice a{font-weight:600;text-decoration:underline;overflow-wrap:anywhere}
 .prod .pmeta{font-size:var(--fs-xs);color:var(--ink-3);margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
-.prod .pmeta span{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-pill);padding:3px 8px;display:inline-flex;align-items:center;gap:4px}
+.prod .pmeta span{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:3px 8px;display:inline-flex;align-items:center;gap:4px}
 .prod .pmeta span svg{width:12px;height:12px}
 .prod .cost{font-weight:600;font-family:var(--sans);font-size:var(--fs-lg);white-space:nowrap}
 
@@ -374,10 +374,10 @@ textarea{resize:vertical;min-height:84px}
 
 .callout{border-radius:var(--radius);padding:14px 16px;font-size:var(--fs-sm);line-height:1.5;display:flex;gap:10px;align-items:flex-start}
 .callout svg{width:18px;height:18px;flex:none;margin-top:1px}
-.callout.warn{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--ink)}
+.callout.warn{background:var(--stock);border:1px solid var(--line);color:var(--ink)}
 .callout.warn svg{color:var(--warn)}
-.callout.info{background:var(--teal-bg);border:1px solid var(--teal-line);color:var(--teal-ink)}
-.callout.info svg{color:var(--teal-ink)}
+.callout.info{background:var(--stock);border:1px solid var(--line);color:var(--ink)}
+.callout.info svg{color:var(--spot-ink)}
 
 /* Over the running head, not the page. At the bottom it cleared the wizard's
    footer by a variable the router maintained, and on the report (no footer) it
@@ -456,8 +456,8 @@ body[data-flow="1"] .site-footer{display:none}
 /* real per-step tips */
 /* Now holds the why as well as the how, so it stacks instead of sitting on one
    row. .tip-how keeps the original icon-beside-text layout for the hint. */
-.step-tip{background:var(--sage-bg);border:1px solid var(--sage-line);border-radius:var(--radius-sm);padding:11px 13px;margin-top:10px;font-size:var(--fs-sm);color:var(--sage-ink);line-height:1.5}
-.step-tip .why2{margin:0 0 9px;font-size:var(--fs-sm);color:var(--sage-ink)}
+.step-tip{background:var(--stock);border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 13px;margin-top:10px;font-size:var(--fs-sm);color:var(--ink);line-height:1.5}
+.step-tip .why2{margin:0 0 9px;font-size:var(--fs-sm);color:var(--ink)}
 .step-tip .why2:only-child{margin-bottom:0}
 .tip-how{display:flex;gap:9px;align-items:flex-start}
 .step-tip svg{width:16px;height:16px;flex:none;margin-top:1px}
@@ -504,11 +504,10 @@ body[data-flow="1"] .site-footer{display:none}
    is the column, on a desktop a full-width band left the clip floating in a
    letterbox of tint on either side. */
 .step-art{display:grid;place-items:center;width:min(100%,392px);height:98px;margin:11px 0 3px;
-  /* the clips' frozen palette (tokens.css): the inline scenes draw in it too */
-  --draw:var(--clip-draw);--surface:var(--clip-stock);--surface-2:var(--clip-bg);
-  --primary:var(--clip-accent);--primary-bg:var(--clip-bg);--honey:var(--clip-honey);--honey-2:var(--clip-honey-2);
-  --sage:var(--clip-sage);--sage-bg:var(--clip-sage-bg);
-  background:var(--clip-bg);color:var(--draw);border-radius:var(--radius);
+  /* The clips' palette (remotion/src/tokens.ts): the inline scenes draw in
+     it too. Olive is the accent, a label is a paper tag with a drawn edge. */
+  --primary:var(--spot-ink);--primary-bg:var(--tint-2);--honey:var(--stock);--honey-2:var(--draw);--surface-3:var(--line);
+  background:var(--tint);color:var(--draw);border-radius:var(--radius);
   pointer-events:none;overflow:hidden}
 /* The scenes carry furniture and item detail now, so they are drawn to be read
    rather than glanced at — and at the size and weight of the produced clips,
