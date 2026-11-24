@@ -272,8 +272,8 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
 
 6. **First users.** Only the owner has used it (re-checked 11-24: 30 days of
    rows are the canary). Pantry first; five watched sessions on
-   `?ref=watched`, then 20 to 30 strangers, one `?ref=<slug>` per channel
-   (`[a-z0-9-]{1,24}`). Bar: of the first 10, 6 get an AI plan, 4 tap "Very
+   `?ref=watched` (`docs/watched-sessions.md`), then 20 to 30 strangers,
+   one `?ref=<slug>` per channel (`[a-z0-9-]{1,24}`). Bar: of the first 10, 6 get an AI plan, 4 tap "Very
    useful", 2 check 3+ steps in a week; a miss stops recruiting. Archive has
    the full plan and the join. Blocked on: owner recruiting.
 

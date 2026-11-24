@@ -8,6 +8,9 @@ import { z } from 'zod';
 export const PRODUCT_TYPES = ['clear-bin', 'basket', 'turntable', 'can-riser', 'shelf-riser', 'door-rack', 'airtight-container', 'drawer-organizer', 'hook-rack', 'label-set', 'safety-latch'];
 export const SAFETY_FLAGS = ['kid-safe', 'keep-high', 'lock-or-latch'];
 export const ITEM_SIZES = ['s', 'm', 'l'];
+// A fridge's door layout, the fridge setup cards' ids (js/wizard-data.js).
+// Every fridge is one archetype, so seenLayout cannot tell them apart.
+export const FRIDGE_SETUPS = ['topfreezer','bottomfreezer','sidebyside','frenchdoor'];
 export const ARCHETYPES = ['shelves','cabinet','l-run','walkin-u','closet-rod','drawer-bank','closet-system','under-bed','under-sink','counter','garage-rack','overhead-rack','workbench','fridge'];
 export const SURFACES = ['shelf','rod','drawer','floor','door','pegboard','worktop'];
 export const PLACES = ['left','back','right','front','upper','lower','run-a','run-b','floor','bench','wall'];
@@ -220,6 +223,8 @@ export const planSchema = z.object({
   // (#3). Optional and soft: an unknown archetype is dropped, never a reason
   // to reject a plan the user waited a minute for.
   seenLayout: z.enum(ARCHETYPES).nullable().optional().catch(undefined),
+  // The same question for a fridge's doors, soft for the same reason.
+  seenSetup: z.enum(FRIDGE_SETUPS).nullable().optional().catch(undefined),
   spotted: spottedSchema,
   time: text().optional(),
   cost: text().optional(),
@@ -629,6 +634,7 @@ function repairOptionalFields(plan, context) {
     .slice(0, SPOTTED_MAX);
   if (spotted.length) plan.spotted = spotted; else delete plan.spotted;
   if (plan.seenLayout == null) delete plan.seenLayout;
+  if (plan.seenSetup == null) delete plan.seenSetup;
   /* A fridge, a drawer bank and under-bed drawers are one piece of furniture.
      The first real fridge plan put wall:left and wall:right on its two door
      rows, and the report read two walls as a room. The prompt says walls are

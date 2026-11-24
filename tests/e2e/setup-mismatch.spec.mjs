@@ -133,3 +133,35 @@ test('a Switch whose rebuild fails opens the plan already built, with the setup 
   });
   expect(st).toEqual({ setup: 'reachin', source: 'ai', aiError: null });
 });
+
+/* Every fridge is one archetype, so seenLayout cannot tell a side-by-side from
+   a French door; seenSetup names the doors the photos show. A real run (11-24)
+   picked side-by-side for French-door photos and was never asked. */
+test('a fridge whose photos show other doors asks, and Switch builds for those doors', async ({ page }) => {
+  const calls = [];
+  await page.route('**/functions/v1/analyze-space', async (route) => {
+    calls.push(JSON.parse(route.request().postData() || '{}'));
+    const p = { ...plan('fridge', `Build ${calls.length}.`), spaceType: 'Fridge', ...(calls.length === 1 ? { seenSetup: 'frenchdoor' } : {}) };
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: p, model: 'test-model', requestId: 't' }) });
+  });
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Fridge' }).first().click();
+  await page.locator('#flow-next').click();
+  await page.locator('#setup-cards .wz-setup', { hasText: 'Side-by-side' }).click();
+  await page.locator('#flow-next').click();          // setup → measure
+  await page.locator('#flow-next').click();          // measure → photos
+  await page.setInputFiles('#photo-input', PHOTO);
+  await page.locator('#photo-tiles .wz-photo').first().waitFor();
+  for (let i = 0; i < 2; i++) await page.locator('#flow-next').click();   // photos, household
+  await page.locator('#flow-next').click();          // contents
+  await page.locator('#goal-list .wz-goal').first().click();
+  for (let i = 0; i < 5; i++) await page.locator('#flow-next').click();   // goals, style, effort, shopping, review → build
+
+  const check = page.locator('#setup-check');
+  await expect(check.locator('#setup-check-q')).toHaveText('Your photos look like a French-door fridge. Switch?', { timeout: 30_000 });
+  await check.getByRole('button', { name: 'Switch', exact: true }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 30_000 });
+  expect(calls).toHaveLength(2);
+  expect(calls[1].context.setup).toMatchObject({ id: 'frenchdoor', archetype: 'fridge', touched: true });
+});
