@@ -104,6 +104,9 @@ function normalizeGeometry(g, mapLen){
   return geo;
 }
 
+// "Beer cans" and "beer can" name one thing.
+const itemKey = (n) => String(n||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/s$/,'');
+
 function normalizeItems(arr){
   return (Array.isArray(arr)?arr:[]).slice(0,10).map(it=>({
     name: s(it&&it.name)||'Items',
@@ -143,8 +146,14 @@ export function normalizeAi(j){
      `included` is whether it still has a place in the plan. Capped like the
      other lists, and absent rather than empty for the reason `rows` gives on
      the steps below. */
+  /* The model sometimes lists a thing in `spotted` that it also put on a
+     shelf (a real fridge run, 11-24: "Bread" on the middle shelf and "+ Bread,
+     tap to give it a place"). Placed wins: it already has a place. An entry
+     the user included stays, since including is what put it on the map. */
+  const placed = new Set(rawMap.flatMap(m=>normalizeItems(m && m.items)).map(it=>itemKey(it.name)));
   const spotted = (Array.isArray(j.spotted)?j.spotted:[])
     .filter(e=>e && typeof e.name==='string' && e.name.trim())
+    .filter(e=>e.included===true || !placed.has(itemKey(e.name)))
     .slice(0,SPOTTED_MAX)
     .map(e=>{
       const r = intOrNone(e.row);

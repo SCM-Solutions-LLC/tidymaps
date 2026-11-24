@@ -202,6 +202,24 @@ test('spotted keeps what the model saw: a name, a row or null, a source, include
   ]);
 });
 
+/* A real fridge run (11-24) put "Bread" on the middle shelf and also offered
+   "+ Bread" under "Also in your photo", which says the list left it out. A
+   thing with a place is not missing; a thing the user included keeps its
+   entry, since including it is what gave it the place. */
+test('spotted drops what the map already places, but keeps what the user included', () => {
+  const shelf = { ...row('Middle', 1), items: [{ name: 'Bread' }, { name: 'Beer cans' }] };
+  const out = normalizeAi({
+    ...planWith([row('Top', 0), shelf, row('Low', 2)]),
+    spotted: [
+      { name: 'bread', row: 1 },
+      { name: 'Beer can', row: 1 },
+      { name: 'Stand mixer', row: 2 },
+      { name: 'Beer cans', row: 1, source: 'scope', included: true },
+    ],
+  });
+  assert.deepEqual(out.spotted.map(e => e.name), ['Stand mixer', 'Beer cans']);
+});
+
 test('spotted drops nameless entries, caps at eight, and is absent when empty', () => {
   const many = Array.from({ length: 12 }, (_, i) => ({ name: `Thing ${i}` }));
   const capped = normalizeAi({ ...planWith([row('Top', 0)]), spotted: many });

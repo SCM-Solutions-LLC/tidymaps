@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { setupMismatch } from '../js/setupMismatch.js';
-import { validatePlan, ARCHETYPES } from '../supabase/functions/_shared/planSchema.js';
+import { validatePlan, ARCHETYPES, FRIDGE_SETUPS } from '../supabase/functions/_shared/planSchema.js';
 import { SETUP_TYPES } from '../js/wizard-data.js';
 import { SETUP_ARCHETYPE } from '../js/layout.js';
 
@@ -75,4 +75,57 @@ test('the prompt asks for seenLayout from the photos alone and calls it optional
   assert.match(fn, /judged from the photos alone/);
   assert.match(fn, /- optional fields: [^\n]*"seenLayout"[^\n]* are optional/);
   assert.match(fn, /set seenLayout to the archetype the photos show/, 'the picked-setup rule must not tell the model to hide what it sees');
+});
+
+/* Every fridge is the one 'fridge' archetype, so seenLayout never differs
+   between them. A real run (11-24) picked side-by-side for French-door photos:
+   no question, a side-by-side drawing, and a summary saying French door. */
+const fridge = (o) => setupMismatch({ space: 'fridge', setup: 'sidebyside', setupTouched: true, seenLayout: 'fridge', seenSetup: 'frenchdoor', ...o });
+
+test('a fridge asks when the photos show different doors from the card picked', () => {
+  const m = fridge();
+  assert.equal(m.question, 'Your photos look like a French-door fridge. Switch?');
+  assert.equal(m.toId, 'frenchdoor');
+  assert.equal(m.keepLabel, 'Keep side-by-side');
+  assert.equal(fridge({ setup: 'frenchdoor', seenSetup: 'topfreezer' }).keepLabel, 'Keep French door', 'French keeps its capital');
+  assert.equal(fridge({ seenSetup: 'sidebyside' }), null, 'the photos agree with the card');
+  assert.equal(fridge({ seenSetup: null }), null, 'the photos did not show enough');
+  assert.equal(fridge({ seenSetup: undefined }), null, 'an older function version sends no seenSetup');
+  assert.equal(fridge({ setupTouched: false }), null, 'an untouched preselection is not questioned');
+  assert.equal(setupMismatch({ space: 'pantry', setup: 'cabinet', setupTouched: true, seenSetup: 'frenchdoor' }), null, 'only a card this space offers');
+});
+
+test('every fridge card the validator allows is a fridge card the wizard offers', () => {
+  assert.deepEqual(FRIDGE_SETUPS, SETUP_TYPES.fridge.map((c) => c.id));
+  for (const from of FRIDGE_SETUPS) for (const seen of FRIDGE_SETUPS) {
+    const m = fridge({ setup: from, seenSetup: seen });
+    if (from === seen) { assert.equal(m, null); continue; }
+    assert.match(m.question, /^Your photos look like (a|an) [a-zA-Z][^.]*\. Switch\?$/, m.question);
+    assert.doesNotMatch(m.question + m.keepLabel, /—/, 'no em dash in copy');
+  }
+});
+
+test('seenSetup passes the validator when valid and is dropped, never rejected, when not', () => {
+  const base = () => ({
+    spaceType: 'Fridge', summary: 'A fridge.',
+    map: [{ level: 'Top shelf', icon: 'up', zone: 'Dairy', why: 'Handy.', shelfIndex: 0, safety: { flag: null, why: null } }],
+    geometry: { unit: 'in', width: 36, height: 70, depth: 18, shelfCount: 1, shelfYFracs: [0], estimated: true },
+    steps: Array.from({ length: 7 }, (_, i) => ({ task: `Do step ${i + 1}`, time: '5 min', why: 'It helps.' })),
+    productNeeds: [],
+  });
+  const ctx = { effort: 'Weekend project', household: { kids: { present: false, ages: [] } } };
+  const good = validatePlan({ ...base(), seenSetup: 'frenchdoor' }, ctx);
+  assert.equal(good.ok, true, good.errors && good.errors.join('; '));
+  assert.equal(good.value.seenSetup, 'frenchdoor');
+  for (const bad of ['french door', 7, null, '']) {
+    const v = validatePlan({ ...base(), seenSetup: bad }, ctx);
+    assert.equal(v.ok, true, `seenSetup ${JSON.stringify(bad)} rejected the plan`);
+    assert.equal('seenSetup' in v.value, false, `seenSetup ${JSON.stringify(bad)} survived`);
+  }
+});
+
+test('the prompt asks for seenSetup from the validator\'s own list and calls it optional', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /"seenSetup": \$\{FRIDGE_SETUPS\.map/, 'the JSON shape does not list seenSetup from FRIDGE_SETUPS');
+  assert.match(fn, /- optional fields: [^\n]*"seenSetup"[^\n]* are optional/);
 });
