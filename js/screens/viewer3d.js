@@ -355,7 +355,7 @@ function updateHeading(){
   if(canvas) canvas.setAttribute('aria-label', 'Three-dimensional drawing of '
     + (kind==='shared' ? `the ${name}` : kind==='sample' ? `the sample ${name}` : `your ${name}`));
   const intro=document.getElementById('v3d-intro');
-  if(intro) intro.textContent = 'Drag to spin it around, scroll to zoom. ' + {
+  if(intro) intro.textContent = `Drag to spin it around, ${noHover()?'pinch':'scroll'} to zoom. ` + {
     shared: 'The model follows this plan\'s layout and size.',
     photos: 'The model follows your photos and your answers.',
     sample: `This is our sample ${name}, not your space. Plan your own to see it drawn at your layout and size.`,
@@ -691,6 +691,12 @@ function populateOrganizers(){
   }
 }
 
+/* A phone has no hover and no scroll wheel: telling a watched user on their
+   own phone to "hover a zone" names a gesture they cannot make. A tap fires
+   the same mouseenter there, so only the words change. */
+const noHover=()=>typeof matchMedia==='function' && matchMedia('(hover: none)').matches;
+const spotlightHint=()=>noHover()?'Tap a zone to spotlight it.':'Hover a zone to spotlight it.';
+
 /* Zone labels are on by default now, so hover can no longer be the thing that
    decides whether one is visible — leaving a row would switch off a label the
    user had asked to see. Hover spotlights instead: the item labels on that
@@ -793,7 +799,7 @@ function roomSubLine(groups){
   if(groups.some(g=>g.id==='other')) notes.push('The plan did not say which wall the zones under Other are on, so the drawing spreads them.');
   const front=groups.find(g=>g.id==='front');
   if(front) notes.push(`The ${front.label.toLowerCase()} is not drawn, so its zones sit where there is room.`);
-  return ['Grouped by wall.',...notes,'Hover a zone to spotlight it.'].join(' ');
+  return ['Grouped by wall.',...notes,spotlightHint()].join(' ');
 }
 
 function populateZones(map, resolved=currentLayout(), geometry=null){
@@ -844,12 +850,12 @@ function populateZones(map, resolved=currentLayout(), geometry=null){
     sub.textContent=groups
       ?roomSubLine(groups)
       :room
-        ?'The plan does not say which wall each zone is on, so the drawing spreads them. Hover a zone to spotlight it.'
+        ?'The plan does not say which wall each zone is on, so the drawing spreads them. '+spotlightHint()
         :drawn==='fridge'
-          ?'What each shelf, drawer and door bin is for. Hover a zone to spotlight it.'
+          ?'What each shelf, drawer and door bin is for. '+spotlightHint()
           :nouns==='zones'
-            ?'What each zone is for. Hover a zone to spotlight it.'
-            :`One per ${singularLevel(nouns)}: what that ${singularLevel(nouns)} is for. Hover a zone to spotlight it.`;
+            ?'What each zone is for. '+spotlightHint()
+            :`One per ${singularLevel(nouns)}: what that ${singularLevel(nouns)} is for. ${spotlightHint()}`;
   }
   if(!groups){
     rows.forEach((row,i)=>list.appendChild(zoneItem(row,i,{ room })));

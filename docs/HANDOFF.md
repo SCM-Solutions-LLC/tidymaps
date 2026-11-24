@@ -19,6 +19,15 @@ fixed; Back onto 3D rebuilds; homepage and Product Library confirm before
 clearing; `analyze-space` refunds unbilled first-call failures; Enter signs
 in; "under 30 seconds"; oldest price check; RISATORP, VARIERA gone.
 
+Later (pantry first-run walk, phone and desktop, a real 09-08 reach-in plan
+replayed as the `analyze-space` answer): the hero drawing now draws every
+zone (it stopped at six, so a seven-shelf pantry lost its floor); the
+after-drawing's "eye level"/"kid reach" tag no longer clips that shelf's
+chips; chapter chevrons point the way shelf-row chevrons do (down = folded);
+the 3D view says "pinch" and "Tap a zone" on a touch screen. Seen, not
+changed: a scoped-out category also trims the zone name ("Bulk overflow ·
+Baskets" reads "Baskets"); "Step 0 of 9 complete" wording.
+
 ## Product state
 
 Static ES-module site (no build step) on GitHub Pages at

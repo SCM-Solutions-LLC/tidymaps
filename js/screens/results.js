@@ -1129,6 +1129,8 @@ function zoneLines(text, max){
 /* The glyphs standing on one shelf, left to right until the shelf is full. */
 function shelfGlyphs(rowI, x0, x1, base, scale, sets=EL_ROWS){
   let out='', x=x0;
+  // A shelf too short for a legible glyph keeps its zone name and nothing else.
+  if(scale<0.3) return out;
   sets[rowI%sets.length].forEach(k=>{
     const [w,h]=EL_SIZE[k]; const gw=w*scale, gh=h*scale;
     if(x+gw>x1) return;
@@ -1163,8 +1165,11 @@ function planElevationSvg(map, placement){
 
 function unitElevation(map, P){
   const { tint2:EL_TINT2, fields:EL_FIELDS }=P;
-  const rows=(map||[]).slice(0,6); const n=Math.max(rows.length,2);
-  const W=760, top=24, left=30, caseW=700, shelfH=Math.round(440/n), H=top+shelfH*n+26;
+  /* Every zone is drawn: a seven-shelf reach-in pantry lost its floor here
+     when the drawing stopped at six. Past seven the plate grows taller
+     instead of the shelves growing too thin to name. */
+  const rows=(map||[]).slice(0,12); const n=Math.max(rows.length,2);
+  const W=760, top=24, left=30, caseW=700, shelfH=Math.max(60,Math.round(440/n)), H=top+shelfH*n+26;
   let out=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="An elevation of the plan: one shelf per zone">`
     +elevationStyle(P);
   // Each shelf is a soft colour field clipped to the rounded case; the
@@ -1204,10 +1209,10 @@ function roomElevation(rows, placement, cases, P){
   const other=placement.walls.find(w=>w.id==='other');
   const perCase=cases.map(w=>{
     const idxs=(w===host&&other)?w.rows.concat(other.rows):w.rows;
-    return idxs.map(rowFor).filter(Boolean).slice(0,6);
+    return idxs.map(rowFor).filter(Boolean);
   });
   const maxRows=Math.max(1, ...perCase.map(r=>r.length));
-  const shelfH=Math.round(400/maxRows), caseH=shelfH*maxRows;
+  const shelfH=Math.max(50,Math.round(400/maxRows)), caseH=shelfH*maxRows;
   const W=760, top=24, left=30, bandW=700, gap=15;
   const n=cases.length;
   const backAt=cases.findIndex(w=>w.id==='back');

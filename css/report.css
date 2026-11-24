@@ -218,8 +218,9 @@
 
 /* Collapsible chapters: tap the heading to fold a section away */
 .chapter .ch-head{cursor:pointer;position:relative;user-select:none;padding-right:28px}
-.chapter .ch-head::after{content:"";position:absolute;right:6px;top:50%;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:translateY(-70%) rotate(45deg);transition:transform .18s}
-.chapter.collapsed .ch-head::after{transform:translateY(-30%) rotate(-135deg)}
+/* Same meaning as a shelf row's chevron: down while folded, up while open. */
+.chapter .ch-head::after{content:"";position:absolute;right:6px;top:50%;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:translateY(-30%) rotate(-135deg);transition:transform .18s}
+.chapter.collapsed .ch-head::after{transform:translateY(-70%) rotate(45deg)}
 .chapter.collapsed > *:not(.ch-head){display:none}
 /* The shopping chapter keeps its head inside #res-upgrades-wrap (the element
    that shows/hides the whole section), so the rule above would fold the wrapper
