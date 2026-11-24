@@ -116,25 +116,6 @@
   --sky-l:     oklch(0.79 0.04 240);   /* sky edge */
   --sky-d:     oklch(0.38 0.07 250);   /* sky text */
 
-  /* ---- The step clips' frozen palette ------------------------------------
-     The 163 checklist clips are baked video (remotion/), coloured from a copy
-     of these values, and re-rendering them takes a --force render. Until they
-     are re-rendered for this palette, .step-art keeps the clips' own colours
-     so a clip and the inline scene that stands in for it still match.
-     shortcut: the checklist band stays in the old palette; re-render the
-     clips and delete this block when the plan screens are restyled. */
-  --clip-bg:     oklch(0.952 0.02 80);
-  --clip-stock:  oklch(0.999 0.004 82);
-  --clip-dust:   oklch(0.925 0.05 48);
-  --clip-ink:    oklch(0.27 0.02 40);
-  --clip-draw:   oklch(0.46 0.03 42);
-  --clip-floor:  oklch(0.62 0.035 58);
-  --clip-accent: oklch(0.56 0.13 36);
-  --clip-honey:  oklch(0.955 0.06 92);
-  --clip-honey-2: oklch(0.64 0.12 82);
-  --clip-sage:   oklch(0.58 0.09 150);
-  --clip-sage-bg: oklch(0.94 0.038 150);
-
   /* ---- Names the stylesheets already speak ------------------------------
      Kept so the wizard, report, viewer and library resolve without a rename
      sweep. Every one lands on the stock, the tint, an ink, or the plate. */
