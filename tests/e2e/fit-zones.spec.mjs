@@ -144,7 +144,8 @@ test('the shelf over the rod is drawn 14 inches deep at the back wall, and its c
 test('the report badges a floor pick against the floor and a shelf pick against the shelf', async ({ page }) => {
   await page.goto('/index.html');
   await seed(page, [
-    { type: 'basket', qty: 2, purpose: 'Corral folded knits on the shelf', targetZone: 'Upper shelf', maxDims: { w_in: 16, h_in: 10, d_in: 13 }, priority: 'high' },
+    // A clear bin, not a basket: the one basket under 13" deep (RISATORP) was discontinued 11-24.
+    { type: 'clear-bin', qty: 2, purpose: 'Corral folded knits on the shelf', targetZone: 'Upper shelf', maxDims: { w_in: 16, h_in: 10, d_in: 13 }, priority: 'high' },
     { type: 'clear-bin', qty: 2, purpose: 'Hold folded overflow on the floor', targetZone: 'Closet floor', maxDims: { w_in: 18, h_in: 12, d_in: 25 }, priority: 'nice' },
   ]);
   await page.evaluate(async () => {
