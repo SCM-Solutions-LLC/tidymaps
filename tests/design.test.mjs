@@ -330,6 +330,8 @@ test('wizard controls are not pills and its art stages are not tinted', () => {
     assert.ok(!rule(sel).includes('radius-pill'), `${sel} is a pill again`);
   }
   assert.match(rule('.chip.sel::before'), /border-width:0 2px 2px 0/, 'a selected chip lost its drawn tick');
+  // The ink-filled chip set its label in stock; on sel-bg that is white on near-white.
+  assert.ok(!/\.chip\.sel\{[^}]*color:var\(--stock\)/.test(css), 'a selected chip is setting its label in white again');
   const stage = rule('.card-visual');
   assert.match(stage, /background:var\(--stock\)/, 'the art stage is not the plain sheet');
   assert.ok(!/tone-\d/.test(css), 'a per-card tint is back on the art stage');
