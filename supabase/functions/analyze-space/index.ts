@@ -2,6 +2,7 @@ import { preflight, json } from '../_shared/cors.ts';
 import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
+import { refundUsage, analyzeFailureRefundable } from '../_shared/usageRefund.js';
 import { validatePlan, stepRangeFor, effortUntouched, listConfirmed as hasConfirmedList, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, usableShelfDepth, ARCHETYPES,
          KID_REACH_IN, YOUNG_KID_MAX_AGE, STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS,
          PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../_shared/planSchema.js';
@@ -504,6 +505,7 @@ Deno.serve(async (req) => {
              same reason render-after's own error responses carry no detail
              field either. Returning it added nothing a client uses and
              exposed whatever the upstream response happened to say. */
+          if (analyzeFailureRefundable(result.error, attempt)) await refundUsage(admin, 'analyze-space', caller);
           return json(req, result.status, { error: result.error });
         }
         messages = [

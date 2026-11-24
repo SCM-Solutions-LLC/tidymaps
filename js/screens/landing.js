@@ -10,7 +10,7 @@ import { affiliatesConfigured } from '../affiliates.js';
 import { hydrateImages } from '../images.js';
 import { ROOMS, AREAS, art } from '../wizard-data.js';
 import { productArt } from '../product-art.js';
-import { setArea } from './wizard.js';
+import { setArea, confirmAreaChange } from './wizard.js';
 
 /* ---------- Sample plan shortcut ---------- */
 export async function runDemo(){
@@ -113,6 +113,7 @@ function renderSpaces(){
   wrap.addEventListener('click', e => {
     const card = e.target.closest('.room-card');
     if(!card) return;
+    if(!confirmAreaChange(card.querySelector('h3').textContent)) return;
     setArea(card.dataset.room, card.dataset.area);
     go('setup');
   });

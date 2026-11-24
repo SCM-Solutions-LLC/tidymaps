@@ -117,15 +117,15 @@ test('a catalog that fails to load says so, and is fetched again next time', asy
 
     globalThis.fetch = async () => ({
       ok: true,
-      // The newest check of all is the one that found a product gone; it
-      // confirms nothing about the prices still on offer.
-      json: async () => ({ version: 1, priceAsOf: '2026-07', products: [bin({ checked: '2026-07' }), bin({ id: 'b', checked: '2026-09-15' }), bin({ id: 'gone', available: false, checked: '2026-10-03' })] }),
+      // A gone product's check confirms nothing about the prices still on
+      // offer, and the note speaks for every price: the oldest check wins.
+      json: async () => ({ version: 1, priceAsOf: '2026-07', products: [bin({ id: 'b', checked: '2026-09-15' }), bin({ checked: '2026-08' }), bin({ id: 'gone', available: false, checked: '2026-06-03' })] }),
     });
     const again = await loadCatalog();
     assert.equal(catalogFailed(), false, 'a failed load was cached as if it had succeeded');
     assert.equal(again.products.length, 3);
     assert.equal(catalogProducts().length, 3);
-    assert.equal(priceAsOf(), '2026-09', 'the as-of date is the newest check among products still sold, as a month');
+    assert.equal(priceAsOf(), '2026-08', 'the as-of date is the oldest check among products still sold, as a month');
   } finally {
     globalThis.fetch = realFetch;
   }

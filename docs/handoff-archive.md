@@ -322,6 +322,30 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## Condensed 2026-11-24, as the handoff read until then
+
+22. **No security headers on the live site** (F, read 10-26). Pages cannot
+    send them, and a proxy means moving DNS off Porkbun for a zone that also
+    serves the org site, `/steadiday/`, `/ASL/` and `contact@` mail. **Not
+    before item 6** (10-26): framing an OTP form reads no code and the one
+    destructive action sits behind a native `confirm()`, so only HSTS buys
+    anything real. Do it when DNS next moves; config and reasoning in archive.
+
+
+1. **Confirm the render holds across space types.** Proven on one corner
+   pantry only. Run garages, closets, workbenches; compare object count with
+   the input (the model once multiplied a container). Needs the owner's
+   browser (~20 min); a failed render no longer costs quota (#109).
+
+6. **First users.** Only the owner has used the app. Plan (10-11): pantry
+   first; five watched sessions on `?ref=watched`, then 20 to 30 strangers,
+   one `?ref=<slug>` per channel (`reddit-<sub>`, `nextdoor`, `fof-a`...;
+   `parseRef` silently drops a slug outside `[a-z0-9-]{1,24}`). Bar, set
+   first: of the first 10 strangers, 6 get an AI plan, 4 tap "Very useful",
+   2 check off 3+ steps within a week; a miss means stop recruiting. Hold
+   Google Ads until then. Join `screen_viewed` `props->>'ref'` to
+   `plan_rated`/`step_checked` on `anon_id`. Blocked on: owner recruiting.
+
 ## Condensed or retired 2026-10-25, as the handoff read until then
 
 The dated section's #212 to #221 run, condensed to a pointer when #225

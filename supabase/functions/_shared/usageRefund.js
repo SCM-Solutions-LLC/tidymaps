@@ -77,3 +77,20 @@ export async function refundUsage(admin, fn, caller) {
     return false;
   }
 }
+
+/* analyze-space gives an allowance back only for a failure the model provider
+   did not bill: it answered with an HTTP error (an expired key, an overload)
+   or could not be reached, on the request's FIRST call. An expired key once
+   failed every analysis for two weeks, and each failure still cost an
+   anonymous caller one of three an hour, so "Retry analysis" locked them out.
+   Everything else is left charged on purpose: a refusal, bad JSON or a plan
+   that failed validation is a billed call the photos or the context can steer,
+   and refunding it would let one caller buy unlimited model calls; a timeout
+   is a billed call too; and a provider error on the retry follows a first call
+   that was billed. */
+const UNBILLED_ANALYZE_ERRORS = new Set(['upstream', 'upstream_unreachable']);
+
+/** @param {string} error @param {number} attempt */
+export function analyzeFailureRefundable(error, attempt) {
+  return attempt === 0 && UNBILLED_ANALYZE_ERRORS.has(error);
+}

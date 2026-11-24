@@ -111,3 +111,25 @@ test('a client that throws outright is swallowed', async () => {
   const admin = { from() { throw new Error('connection reset'); } };
   assert.equal(await refundUsage(admin, 'render-after', SIGNED_IN), false);
 });
+
+/* analyze-space refunded nothing: while the model key was expired every
+   analysis failed, and each failure still cost an anonymous caller one of
+   three an hour, so "Retry analysis" locked them out. Only failures the
+   provider did not bill go back; a billed call the input can steer stays
+   charged, or one caller could buy unlimited model calls. */
+import { analyzeFailureRefundable } from '../supabase/functions/_shared/usageRefund.js';
+import { readFileSync } from 'node:fs';
+
+test('analyze-space refunds only an unbilled first-call failure', () => {
+  assert.equal(analyzeFailureRefundable('upstream', 0), true, 'an HTTP error from the provider (expired key, overload) is not billed');
+  assert.equal(analyzeFailureRefundable('upstream_unreachable', 0), true);
+  for (const billed of ['refused', 'truncated', 'no_json_in_response', 'unparseable_json', 'upstream_timeout', 'validation_failed']) {
+    assert.equal(analyzeFailureRefundable(billed, 0), false, `${billed} is a billed call and stays charged`);
+  }
+  assert.equal(analyzeFailureRefundable('upstream', 1), false, 'a provider error on the retry follows a billed first call');
+});
+
+test('analyze-space calls the refund on its model-failure exit', () => {
+  const src = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(src, /if \(analyzeFailureRefundable\(result\.error, attempt\)\) await refundUsage\(admin, 'analyze-space', caller\);\s*\n\s*return json\(req, result\.status, \{ error: result\.error \}\);/);
+});

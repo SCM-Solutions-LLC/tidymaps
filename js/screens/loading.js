@@ -183,7 +183,7 @@ export function runLoading({ setupConfirmed=false, fallback=null }={}){
   const fin=document.createElement('div');
   fin.className='load-step'; fin.id='ls-final';
   fin.innerHTML=`<span class="dot">${ICON.check}</span><span>${
-    wantsReal ? 'Writing the plan from your photos (usually one to two minutes)' : 'Finalizing your plan'
+    wantsReal ? 'Writing the plan from your photos (usually under 30 seconds)' : 'Finalizing your plan'
   }</span>`;
   wrap.appendChild(fin);
 
@@ -191,7 +191,7 @@ export function runLoading({ setupConfirmed=false, fallback=null }={}){
   if(wantsReal){
     /* An analysis runs 70 to 90 seconds. Nothing on this screen used to say
        so, and a spinner with no horizon is where people give up. */
-    document.getElementById('load-sub').textContent='Reading your photos and writing the plan. This usually takes one to two minutes, so keep this page open.';
+    document.getElementById('load-sub').textContent='Reading your photos and writing the plan. This usually takes under 30 seconds, so keep this page open.';
     aiPromise = (async ()=>{
       let images;
       if(state.capture==='video'){
@@ -423,7 +423,7 @@ function askSetupCheck(m, result, keep, isCurrent){
   const box=document.getElementById('setup-check');
   if(!box){ keep(); return; }
   box.innerHTML=`<p class="setup-check-q" id="setup-check-q">${escapeHtml(m.question)}</p>`+
-    `<p class="muted small setup-check-note" id="setup-check-note">Switching builds your plan again, which takes one to two minutes.</p>`+
+    `<p class="muted small setup-check-note" id="setup-check-note">Switching builds your plan again, which usually takes under 30 seconds.</p>`+
     `<div class="setup-check-actions">`+
     `<button type="button" class="btn btn-primary" id="setup-check-switch">${escapeHtml(m.switchLabel)}</button>`+
     `<button type="button" class="btn btn-ghost" id="setup-check-keep">${escapeHtml(m.keepLabel)}</button>`+

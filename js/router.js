@@ -189,6 +189,11 @@ export function go(id, opts={}){
   if(!SITE_SCREENS.has(id)) loadResults().catch(()=>{});
   // the Adjust options depend on the household answer, so they are built on
   // every entry; the module loads with the report (js/planScreens.js)
+  /* Back or Forward onto the 3D screen. Its scene was disposed when it was
+     left, and openViewer3d (the only way in) was never called again, so the
+     screen came back frozen on its last frame with nothing listening. It calls
+     go('viewer3d') itself; that lands on the current entry and pushes none. */
+  if(id==='viewer3d' && popping && from!=='viewer3d') import('./screens/viewer3d.js').then(m=>m.openViewer3d());
   if(id==='customize') loadCustomize().then(m=>{ if(current==='customize') m.buildCustomize(); },
     ()=>toast('Could not load these options. Check your connection and try again.'));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -303,9 +308,9 @@ export function updateGate(){
   btn.disabled=!ok;
 }
 
-export function restart(){
+export function restart({ ask=true }={}){
   const hasProgress = current!=='landing' && (state.ai || state.uploadedFiles.length || WIZARD_STEPS.indexOf(current)>0);
-  if(hasProgress && !confirm('Start over? Your current answers will be cleared.')) return;
+  if(ask && hasProgress && !confirm('Start over? Your current answers will be cleared.')) return;
   /* Every wizard answer, from one list (js/state.js) — including the "did they
      actually say this?" flags, which belong to the answers they qualify.
      Without those, Start over left the two defaults pre-ticked and Review went

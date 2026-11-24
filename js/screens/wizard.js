@@ -27,6 +27,7 @@ import { state, resetPlanRecord, clearGuestMedia, isMetric, setUnits, UNITS, hou
 import { escapeHtml } from '../ui.js';
 import { updateGate } from '../router.js';
 import { renderPhotoTiles } from './capture.js';
+import { planIsSample } from '../planProvenance.js';
 
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
 
@@ -312,13 +313,20 @@ function renderSpace(){
    Note state.dimsFt is always populated — every setup seeds it with defaults —
    so "did they measure?" has to mean "does it differ from the default", not
    "is it set". Otherwise this asks on every single area change. */
-function confirmAreaChange(nextLabel){
+/* Shared by every way of picking a space: this step's cards, the landing
+   page's gallery and the Product Library's "Plan this space". The last two
+   used to call setArea straight away, so a tap on the homepage threw away a
+   finished plan without a word. A plan already in My spaces is not lost by
+   switching, and the landing page's sample was never theirs. */
+export function confirmAreaChange(nextLabel){
   const photos = state.uploadedFiles.length;
   const def = SETUP_DIMS[state.setup];
   const cur = dimsFtNums();
   const typed = !!def && (cur.w !== def.w || cur.h !== def.h || cur.d !== def.d);
-  if(!photos && !typed) return true;
+  const plan = !!state.ai && !state.activeSpaceId && !planIsSample();
+  if(!photos && !typed && !plan) return true;
   const lost = [];
+  if(plan) lost.push('your current plan');
   if(photos) lost.push(photos === 1 ? 'your photo' : `your ${photos} photos`);
   if(typed)  lost.push('the measurements you entered');
   return confirm(

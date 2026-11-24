@@ -6,6 +6,7 @@ import { state, wizardAnswers, applyWizardAnswers, resetPlanRecord,
 import { toast } from './ui.js';
 import { areaFor, roomFor } from './wizard-data.js';
 import { track } from './telemetry.js';
+import { planIsSample } from './planProvenance.js';
 
 /* Saved spaces: one row per organized area, media in the private
    space-media bucket under {user_id}/{space_id}/. */
@@ -159,9 +160,28 @@ export async function persistSpace(c, userId, snapshot, { auto=false }={}){
   return spaceId;
 }
 
+/* The INSERT still in flight for a plan, so a second save of the same plan
+   becomes an UPDATE of the row that insert creates. Two quick taps on Save, or
+   Save landing while autoSaveSpace's insert is still out, each snapshotted
+   `spaceId: null` and each inserted: two rows in My spaces, one of them never
+   stamped into state and orphaned. */
+let pendingInsert=null;
+
 export async function saveSpace(name, { media=true, auto=false }={}){
   const { c, u } = requireClient();
-  return persistSpace(c, u.id, snapshotSave(name, { media }), { auto });
+  const snapshot=snapshotSave(name, { media });
+  if(!snapshot.spaceId && pendingInsert && pendingInsert.planInstance===snapshot.planInstance){
+    snapshot.spaceId=await pendingInsert.promise.catch(()=>null);
+  }
+  const promise=persistSpace(c, u.id, snapshot, { auto });
+  if(!snapshot.spaceId){
+    // Only while it is in flight: once settled, activeSpaceId says what it
+    // made, and a stale entry would hand a later save a row since deleted.
+    const entry={ planInstance:snapshot.planInstance, promise };
+    pendingInsert=entry;
+    promise.finally(()=>{ if(pendingInsert===entry) pendingInsert=null; }).catch(()=>{});
+  }
+  return promise;
 }
 
 /* A signed-out visitor's plan survives a reload in localStorage; a signed-in
@@ -191,6 +211,16 @@ export async function autoSaveSpace(){
     warnSaveFailed(e, instance);
     return null;
   }
+}
+
+/* Signing in with a plan already on screen and nothing to replay: a guest who
+   finished a plan and tapped the appbar's Sign in. Nothing created the row, so
+   updateSpacePatch (which needs an activeSpaceId) wrote nothing, the guest
+   draft stopped being written once there was a session, and a reload lost the
+   plan. The landing page's sample is not theirs and is not saved. */
+export function saveAfterSignIn(){
+  if(state.activeSpaceId || planIsSample()) return null;
+  return autoSaveSpace();
 }
 
 /* A camera photo's EXIF block can carry GPS coordinates — where the photo of

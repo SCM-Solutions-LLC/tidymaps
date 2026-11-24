@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-10-26, main at e784faf (after #229).** History (dated
+**Last refreshed: 2026-11-24, main at 092b100 (after #231).** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,11 +11,13 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-10-26 sessions changed
+## What the 2026-11-24 session changed
 
-No code shipped. #229 closed item 12's audit, #230 put this doc's stamp on the
-tree it describes, and item 22 left the recruiting path (its entry says why).
-The archive has all three in full, with the Cloudflare config for the DNS move.
+Audit fixes: sign-out clears plan and draft (it leaked both to the next
+visitor); sign-in saves a guest plan; delete-open-space and save-during-insert
+fixed; Back onto 3D rebuilds; homepage and Product Library confirm before
+clearing; `analyze-space` refunds unbilled first-call failures; Enter signs
+in; "under 30 seconds"; oldest price check; RISATORP, VARIERA gone.
 
 ## Product state
 
@@ -139,13 +141,14 @@ Current as of 2026-10-13; numbers are stable (cited elsewhere; 08-27 archived).
     `rls_enabled_no_policy`, two on `handle_new_user`, `pg_net` in public,
     leaked-password protection off), plus INFO `unused_index` on #168's new
     indexes. A new one means something changed.
+12. **Availability workflow fails weekly** (7/7 to 11-17, Amazon noise): 23.
 
 ## Testing & verification
 
 ```
 npm ci                    # first: empty node_modules = ~800 phantom type errors
 npm run lint && npm run check:types
-npm test                  # 892 unit tests at 10-25
+npm test                  # 899 unit tests at 11-24
 export CHROMIUM_PATH=/opt/pw-browsers/chromium   # the sandbox's stable launcher
 npx playwright test       # 355 e2e + 1 standing skip at 10-25 (~15 min)
 npm run check:model-path  # the canary, by hand
@@ -239,23 +242,22 @@ The live work list; numbers are stable, full 10-13 text in the archive.
 
 ### Actionable now
 
-1. **Confirm the render holds across space types.** Proven on one corner
-   pantry only. Run garages, closets, workbenches; compare object count with
-   the input (the model once multiplied a container). Needs the owner's
-   browser (~20 min); a failed render no longer costs quota (#109).
-13. **Owner housekeeping** (not code): delete the Anthropic keys replaced on
-    09-29; enable an Anthropic billing alert (the only check for a leaking
-    key); rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01** with a
-    calendar reminder, since nothing in the repo warns.
+1. **Confirm the render holds across space types** (one corner pantry so
+   far; compare object counts). Owner's browser, ~20 min (#109).
+13. **Owner housekeeping:** delete the keys replaced 09-29; add an Anthropic
+    billing alert; rotate `SUPABASE_ACCESS_TOKEN` before **2027-10-01**.
 14. **Fridge (10-16).** Real run done 10-23. Left (owner: a person has to
     open the Target listing): replace the `note` on
     `idesign-fridge-freezer-bin-14x8x4-2pk`.
-22. **No security headers on the live site** (F, read 10-26). Pages cannot
-    send them, and a proxy means moving DNS off Porkbun for a zone that also
-    serves the org site, `/steadiday/`, `/ASL/` and `contact@` mail. **Not
-    before item 6** (10-26): framing an OTP form reads no code and the one
-    destructive action sits behind a native `confirm()`, so only HSTS buys
-    anything real. Do it when DNS next moves; config and reasoning in archive.
+22. **No security headers on the live site** (F, 10-26). Needs a DNS move
+    off Porkbun; not before item 6, only HSTS buys much. Archive has it all.
+
+23. **Availability check (11-24):** fail only on two runs running; confirm
+    KUBBIS, OXO POP medium, SimpleHouseware door organizer by hand (2 of 7).
+24. **Audit leftovers (11-24), traced, not fixed:** 3D first load left
+    mid-flight is reused at zero size (`viewer3d.js:241`); `customize.js:19`
+    writes after an await; a saved photo's 1h signed URL fails the render
+    (`results.js:497`); Edit answers, new space, Back: old report, `ai=null`.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
@@ -268,14 +270,12 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
 
 ### Waiting on traffic
 
-6. **First users.** Only the owner has used the app. Plan (10-11): pantry
-   first; five watched sessions on `?ref=watched`, then 20 to 30 strangers,
-   one `?ref=<slug>` per channel (`reddit-<sub>`, `nextdoor`, `fof-a`...;
-   `parseRef` silently drops a slug outside `[a-z0-9-]{1,24}`). Bar, set
-   first: of the first 10 strangers, 6 get an AI plan, 4 tap "Very useful",
-   2 check off 3+ steps within a week; a miss means stop recruiting. Hold
-   Google Ads until then. Join `screen_viewed` `props->>'ref'` to
-   `plan_rated`/`step_checked` on `anon_id`. Blocked on: owner recruiting.
+6. **First users.** Only the owner has used it (re-checked 11-24: 30 days of
+   rows are the canary). Pantry first; five watched sessions on
+   `?ref=watched`, then 20 to 30 strangers, one `?ref=<slug>` per channel
+   (`[a-z0-9-]{1,24}`). Bar: of the first 10, 6 get an AI plan, 4 tap "Very
+   useful", 2 check 3+ steps in a week; a miss stops recruiting. Archive has
+   the full plan and the join. Blocked on: owner recruiting.
 
 ### Waiting on business input
 

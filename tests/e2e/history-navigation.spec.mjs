@@ -224,3 +224,49 @@ test('Back onto a pre-merge "area" entry lands on the space step', async ({ page
   // Forward both say what is on screen.
   expect(page.url()).toContain('#space');
 });
+
+/* The 3D scene is disposed when its screen is left, and openViewer3d was the
+   only way to build it. Browser Back (or Forward) onto the 3D screen showed
+   the last frame frozen with nothing behind it: no drag, no zoom, no labels. */
+test('Back onto the 3D screen builds the scene again', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.getByRole('button', { name: 'View a sample plan' }).click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 40_000 });
+  await page.evaluate(() => window.openViewer3d());
+  await page.waitForFunction(() => !!window.__v3dView, null, { timeout: 20_000 });
+
+  await page.locator('#screen-viewer3d').getByRole('button', { name: /Back to plan/ }).first().click();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/);
+  await page.evaluate(() => { window.__v3dView = null; });
+
+  await page.goBack();
+  await expect(page.locator('#screen-viewer3d')).toHaveClass(/active/);
+  await page.waitForFunction(() => !!window.__v3dView, null, { timeout: 20_000 });
+});
+
+/* The landing page's gallery called setArea straight away, and setArea clears
+   the plan: one tap on the homepage threw away a finished guest plan. The
+   wizard's own space step and Start over both asked first. */
+test('a homepage space card asks before it clears a finished plan', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.evaluate(() => { try { localStorage.clear(); } catch (_) {} });
+  await page.goto('/index.html');
+  await page.locator('#screen-landing .btn-primary').first().click();
+  await page.locator('#space-cards .room-card', { hasText: 'Pantry' }).first().click();
+  for (let i = 0; i < 11; i++) await page.locator('#flow-next').click();   // space → … → review → build
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 30_000 });
+
+  await page.goto('/index.html');   // a reload restores the guest draft onto the report
+  await expect(page.locator('#screen-results')).toHaveClass(/active/, { timeout: 30_000 });
+  await page.goBack();
+  await expect(page.locator('#screen-landing')).toHaveClass(/active/);
+
+  const asked = [];
+  page.once('dialog', (d) => { asked.push(d.message()); d.dismiss(); });
+  await page.locator('#screen-landing .room-card', { hasText: 'Closet' }).first().click();
+  expect(asked, 'the plan was cleared without asking').toHaveLength(1);
+  expect(asked[0]).toContain('your current plan');
+  await expect(page.locator('#screen-landing')).toHaveClass(/active/);
+  const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('tidymap_draft_v2') || 'null'));
+  expect(draft && draft.planReady).toBe(true);
+});

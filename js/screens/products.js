@@ -1,10 +1,10 @@
-import { ROOMS, AREAS, SETUP_TYPES, fmtIn } from '../wizard-data.js';
+import { ROOMS, AREAS, SETUP_TYPES, fmtIn, areaFor } from '../wizard-data.js';
 import { isMetric } from '../state.js';
 import { loadCatalog, priceAsOf, fmtChecked, TYPE_LABEL } from '../catalog.js';
 import { withAffiliate, affiliateRel, affiliatesConfigured, AFFILIATE_DISCLOSURE } from '../affiliates.js';
 import { productArt } from '../product-art.js';
 import { go } from '../router.js';
-import { setArea } from './wizard.js';
+import { setArea, confirmAreaChange } from './wizard.js';
 import { escapeHtml as esc } from '../ui.js';
 
 /* ============================================================
@@ -202,6 +202,7 @@ export async function buildProducts(){
   groups.addEventListener('click', e => {
     const b = e.target.closest('[data-plan-area]'); if(!b) return;
     e.preventDefault();   // the button sits inside <summary>: don't also toggle
+    if(!confirmAreaChange(areaFor(b.dataset.planArea).label)) return;
     setArea(b.dataset.planRoom, b.dataset.planArea);
     go('setup');
   });
