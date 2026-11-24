@@ -233,3 +233,80 @@ test('a unit keeps a colon-headed level whole in the map and the after-drawing a
   await expect(page.locator('#after-cabinet .cab-wall')).toHaveCount(0);
   await expect(page.locator('#after-cabinet .cab-lv > span:first-child').last()).toHaveText('Floor: shoes and bins');
 });
+
+/* The after-drawing's shelves are a fixed 56px so switching modes never
+   resizes it. The "eye level" and "kid reach" tags are bordered pills, 4px
+   taller than a plain level line, so a tagged shelf gave its chips 4px less
+   and clipped their bottom edge (a real reach-in pantry, 11-24: "Baking" and
+   "Cereals" cut off on the eye shelf at every width). */
+test('a tagged shelf in the after-drawing shows its chips whole', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.evaluate(async () => {
+    const [{ state }, { getDemoScenario }, { normalizeAi }, { buildResults }] = await Promise.all([
+      import('/js/state.js'), import('/js/demo-scenarios.js'), import('/js/plan.js'), import('/js/screens/results.js'),
+    ]);
+    state.space = 'pantry';
+    state.setup = 'reachin';
+    state.setupTouched = true;
+    state.household = { ...state.household, kidCount: 1 };
+    const ai = normalizeAi(getDemoScenario('pantry', null, state.household, null));
+    // A level that does not say "eye level" itself is what earns the tag.
+    const eye = ai.map.findIndex((m) => m.eye);
+    ai.map[eye] = { ...ai.map[eye], lv: 'Shelf 3: daily staples' };
+    state.ai = ai;
+    state.planMeta = { model: 'demo', source: 'demo', analyzedAt: 0 };
+    buildResults();
+    window.go('results');
+  });
+  await expect(page.locator("#screen-results")).toHaveClass(/active/);
+  await expandChapters(page);
+  const clipped = () => page.evaluate(() => [...document.querySelectorAll('#after-cabinet .cab-shelf')]
+    .filter((s) => s.querySelector('.cab-tag'))
+    .map((s) => {
+      const row = s.querySelector('.cab-row').getBoundingClientRect();
+      const chip = s.querySelector('.cab-item').getBoundingClientRect();
+      return { tag: s.querySelector('.cab-tag').textContent, cut: +(chip.bottom - row.bottom).toFixed(1) };
+    }));
+  const eyeRows = await clipped();
+  expect(eyeRows.map((r) => r.tag)).toEqual(['eye level']);
+  expect(eyeRows.filter((r) => r.cut > 0.5)).toEqual([]);
+  await page.locator('#after-tabs .after-tab', { hasText: 'Kid-friendly setup' }).click();
+  const kidRows = await clipped();
+  expect(kidRows.map((r) => r.tag)).toContain('kid reach');
+  expect(kidRows.filter((r) => r.cut > 0.5)).toEqual([]);
+});
+
+/* The hero drew a unit's first six zones and a wall's first six rows. A
+   real seven-shelf reach-in pantry (11-24) lost its floor zone from the first
+   picture on the page, the same cut the fridge got rid of with its parts. */
+test('the hero names every zone, past six, in a unit and on a wall', async ({ page }) => {
+  await page.goto('/index.html');
+  const heroZones = (setup, walls) => page.evaluate(async ({ setup, walls }) => {
+    const [{ state }, { normalizeAi }, { buildResults }] = await Promise.all([
+      import('/js/state.js'), import('/js/plan.js'), import('/js/screens/results.js'),
+    ]);
+    const zones = ['Glass jars', 'Spices', 'Baking', 'Canned goods', 'Snacks', "Kids' snacks", 'Bulk overflow', 'Paper goods'];
+    state.space = 'pantry';
+    state.setup = setup;
+    state.setupTouched = true;
+    state.ai = normalizeAi({
+      spaceType: 'Pantry', summary: 'x', categories: [],
+      map: zones.map((zone, i) => ({
+        level: `Shelf ${i + 1}`, icon: 'alignCenter', zone, why: 'x', eye: i === 2, shelfIndex: i, surface: 'shelf',
+        items: [{ name: zone }], ...(walls ? { wall: 'back', tier: i } : {}),
+      })),
+      geometry: { unit: 'in', width: 48, height: 90, depth: 20, shelfCount: zones.length, estimated: false },
+      steps: [{ task: 'Empty it', time: '10 min', why: 'x' }],
+    });
+    state.planMeta = { model: 'demo', source: 'demo', analyzedAt: 0 };
+    buildResults();
+    const svg = decodeURIComponent(document.getElementById('plan-hero-img').getAttribute('src')
+      .replace(/^data:image\/svg\+xml;charset=utf-8,/, ''));
+    return { zones, text: [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1].replace(/&#39;|&apos;/g, "'")) };
+  }, { setup, walls });
+  for (const [setup, walls] of [['reachin', false], ['walkin', true]]) {
+    const { zones, text } = await heroZones(setup, walls);
+    const missing = zones.filter((z) => !text.some((t) => t.includes(z)));
+    expect(missing, `${setup}: the hero drew\n${text.join('\n')}`).toEqual([]);
+  }
+});

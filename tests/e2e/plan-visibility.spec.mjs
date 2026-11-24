@@ -108,3 +108,26 @@ test('the shelf map opens with the report', async ({ page }) => {
   await expect(map.locator('.ch-head')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#res-map .shelf').first()).toBeVisible();
 });
+
+/* A folded chapter pointed its chevron up and an open one pointed it down,
+   while a folded shelf row on the same page points down. On a phone a folded
+   "Use what you already have first" with an up-chevron and nothing under it
+   read as an empty section (11-24 walk). One page, one meaning: down is
+   "there is more here", up is "fold this away". */
+test('a folded chapter and a folded shelf row point their chevrons the same way', async ({ page }) => {
+  await openSamplePlan(page);
+  // The chevrons turn over 0.18s; read where they land, not where they are.
+  await page.addStyleTag({ content: '*,*::after{transition:none!important}' });
+  // Angle of a chevron's rotation, in degrees, read off its computed matrix.
+  const angle = (sel, pseudo) => page.evaluate(({ sel, pseudo }) => {
+    const t = getComputedStyle(document.querySelector(sel), pseudo).transform;
+    const [a, b] = t.match(/matrix\(([^)]+)\)/)[1].split(',').map(Number);
+    return Math.round(Math.atan2(b, a) * 180 / Math.PI);
+  }, { sel, pseudo });
+  const rowFolded = await angle('#res-map .shelf-head[aria-expanded="false"] .shelf-chev', null);
+  await page.locator('#res-map .shelf-head[aria-expanded="false"]').first().click();
+  const rowOpen = await angle('#res-map .shelf-head[aria-expanded="true"] .shelf-chev', null);
+  await expect(page.locator('#ch-reuse')).toHaveClass(/collapsed/);
+  expect(await angle('#ch-reuse .ch-head', '::after'), 'folded chapter vs folded row').toBe(rowFolded);
+  expect(await angle('#ch-map .ch-head', '::after'), 'open chapter vs open row').toBe(rowOpen);
+});
