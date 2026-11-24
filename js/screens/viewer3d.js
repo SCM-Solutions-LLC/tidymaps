@@ -1,7 +1,7 @@
 import { state, persistGuestDraft, isMetric } from '../state.js';
 import { fmtIn, midSentence } from '../wizard-data.js';
 import { toast, escapeHtml } from '../ui.js';
-import { go } from '../router.js';
+import { go, getCurrentScreen } from '../router.js';
 import { activeGeometry, activeMapV2, activeProductNeeds } from '../plan.js';
 import { LEVEL_NOUN, SETUP_NOUN } from '../setupStructure.js';
 import { PRODUCT_TYPES } from '../plan.js';
@@ -230,6 +230,12 @@ function rebuildScene(){
   updateStatus(geometry, resolved, sourceGeometry);
 }
 
+/* Each open takes a ticket. Leaving while the scene module loads used to
+   build anyway, against the hidden canvas (0 wide, so the buffer took the
+   640px fallback), and the next open reused that view at the wrong size.
+   An open that is no longer the latest, or whose screen was left, stops
+   before it builds, so the next open builds at the real size. */
+let openTicket=0;
 export async function openViewer3d(){
   go('viewer3d');
   /* A share-link visitor can look but not write. The report already hides its
@@ -248,6 +254,8 @@ export async function openViewer3d(){
   selectPanel('view');
   const canvas=document.getElementById('v3d-canvas');
   status.textContent='Loading 3D view…';
+  const ticket=++openTicket;
+  const abandoned=()=>ticket!==openTicket || getCurrentScreen()!=='viewer3d';
   try{
     const [{ buildScene }, { attachDrag }]=await Promise.all([
       import('../three/scene.js'),
@@ -258,6 +266,7 @@ export async function openViewer3d(){
     for(let i=0;i<20 && !canvas.clientWidth;i++){
       await new Promise(r=>requestAnimationFrame(r));
     }
+    if(abandoned()) return;
     const {geometry,map,resolved,sourceGeometry}=currentSceneInput();
     const placements=(state.arrangement && state.arrangement.placements)||[];
     view=buildScene({ geometry, map, placements, canvas, layout:resolved, organizerPlan:organizerPlan() });

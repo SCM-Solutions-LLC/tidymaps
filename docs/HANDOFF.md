@@ -252,12 +252,10 @@ The live work list; numbers are stable, full 10-13 text in the archive.
 22. **No security headers on the live site** (F, 10-26). Needs a DNS move
     off Porkbun; not before item 6, only HSTS buys much. Archive has it all.
 
-23. **Availability check (11-24):** fail only on two runs running; confirm
-    KUBBIS, OXO POP medium, SimpleHouseware door organizer by hand (2 of 7).
-24. **Audit leftovers (11-24), traced, not fixed:** 3D first load left
-    mid-flight is reused at zero size (`viewer3d.js:241`); `customize.js:19`
-    writes after an await; a saved photo's 1h signed URL fails the render
-    (`results.js:497`); Edit answers, new space, Back: old report, `ai=null`.
+23. **Availability check:** fails only when two runs in a row flag a
+    product (Amazon flickered, 11-24). Confirm KUBBIS, OXO POP medium and the
+    SimpleHouseware door organizer by hand; flagged, never confirmed.
+24. **Fridge prompt lines (11-24):** unverified live; check the next one.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
@@ -280,11 +278,13 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
 ### Waiting on business input
 
 7. **Products.** Affiliate IDs in `js/affiliates.js` are empty, so all 31
-   products link plain with no disclosure. Two entries are
-   `available:false` and need an owner-checked replacement
-   (`copco-basics-lazy-susan-9in`, `mdesign-open-front-bin-15in-2pk`). Want
-   a drawer organizer under 12" wide. After Amazon Associates approval, a
-   job can fill `img`, `price_usd`, `available`, `checked` from PA-API.
+   products link plain, no disclosure. `available:false` entries need an
+   owner-checked replacement (`copco-basics-lazy-susan-9in`,
+   `mdesign-open-front-bin-15in-2pk`, RISATORP, VARIERA). Want
+   a drawer organizer under 12" wide, and fridge stock: a live fridge plan
+   (11-24) matched 1 of 4 needs (no 12x5x14 bin, 4"-tall containers or date
+   labels). After Amazon Associates approval, a job can fill `img`,
+   `price_usd`, `available`, `checked` from PA-API.
 
 ### Known gap, no owner
 

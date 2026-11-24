@@ -97,10 +97,20 @@ export function classifyAvailability({ status = 0, body = '', url = '', finalUrl
    than bad. A link that no longer lands on the retailer is a failure too: the
    plan would be sending someone somewhere else. */
 const FAILING = new Set(['dead', 'unavailable', 'moved']);
-export function summarize(results) {
+/* `previouslyFlagged`, when last week's report could be read, is the ids it
+   flagged. Six weekly runs (10-13 to 11-17) failed every time: the IKEA pages
+   said the same thing each week, but Amazon's "Currently unavailable" landed
+   on a different handful of products each run, served to a datacenter IP, so
+   the email meant nothing and stopped being read. A product now fails the run
+   only when two runs in a row flag it; one flag alone is a NOTE. With no
+   previous report (the first run, an expired artifact) every flag fails. */
+export function summarize(results, previouslyFlagged = null) {
   const counts = {};
   for (const r of results) counts[r.verdict] = (counts[r.verdict] || 0) + 1;
-  const failing = results.filter(r => r.catalogSays === 'available' && FAILING.has(r.verdict));
+  const flagged = results.filter(r => r.catalogSays === 'available' && FAILING.has(r.verdict));
+  const prev = previouslyFlagged ? new Set(previouslyFlagged) : null;
+  const failing = prev ? flagged.filter(r => prev.has(r.id)) : flagged;
+  const firstSeen = prev ? flagged.filter(r => !prev.has(r.id)) : [];
   const backInStock = results.filter(r => r.catalogSays === 'unavailable' && r.verdict === 'ok');
-  return { counts, failing, backInStock };
+  return { counts, flagged, failing, firstSeen, backInStock };
 }

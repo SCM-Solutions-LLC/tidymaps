@@ -129,3 +129,14 @@ test('the prompt asks for seenSetup from the validator\'s own list and calls it 
   assert.match(fn, /"seenSetup": \$\{FRIDGE_SETUPS\.map/, 'the JSON shape does not list seenSetup from FRIDGE_SETUPS');
   assert.match(fn, /- optional fields: [^\n]*"seenSetup"[^\n]* are optional/);
 });
+
+/* Audit 11-24, a live fridge plan: raw meat shared a drawer with deli, all
+   the produce left the crisper for a shelf, and a "sturdy bottles only, kid
+   safe" door shelf listed jars a step moved off it. Prompt guidance only:
+   nothing here is enforced by the validator, which stays as loose as it was. */
+test('the prompt states the fridge food-safety and consistency rules', () => {
+  const fn = readFileSync(new URL('../supabase/functions/analyze-space/index.ts', import.meta.url), 'utf8');
+  assert.match(fn, /raw meat and fish go on the lowest level[^\n]*never share a shelf or drawer with ready-to-eat food/);
+  assert.match(fn, /Keep produce in the crisper drawers/);
+  assert.match(fn, /a row never lists an item a step moves off that row/);
+});

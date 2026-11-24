@@ -220,6 +220,15 @@ test('spotted drops what the map already places, but keeps what the user include
   assert.deepEqual(out.spotted.map(e => e.name), ['Stand mixer', 'Beer cans']);
 });
 
+test('spotted treats a name that starts a placed one, word for word, as placed', () => {
+  const shelf = { ...row('Middle', 1), items: [{ name: 'Bread' }, { name: 'Beer' }, { name: 'Jam jars' }] };
+  const out = normalizeAi({
+    ...planWith([row('Top', 0), shelf, row('Low', 2)]),
+    spotted: [{ name: 'Bread loaf' }, { name: 'Jam' }, { name: 'Root beer' }, { name: 'Breadsticks' }],
+  });
+  assert.deepEqual(out.spotted.map(e => e.name), ['Root beer', 'Breadsticks']);
+});
+
 test('spotted drops nameless entries, caps at eight, and is absent when empty', () => {
   const many = Array.from({ length: 12 }, (_, i) => ({ name: `Thing ${i}` }));
   const capped = normalizeAi({ ...planWith([row('Top', 0)]), spotted: many });

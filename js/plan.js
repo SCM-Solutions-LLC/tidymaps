@@ -150,10 +150,13 @@ export function normalizeAi(j){
      shelf (a real fridge run, 11-24: "Bread" on the middle shelf and "+ Bread,
      tap to give it a place"). Placed wins: it already has a place. An entry
      the user included stays, since including is what put it on the map. */
-  const placed = new Set(rawMap.flatMap(m=>normalizeItems(m && m.items)).map(it=>itemKey(it.name)));
+  const placed = rawMap.flatMap(m=>normalizeItems(m && m.items)).map(it=>itemKey(it.name));
+  // "Bread" and "Bread loaf" are one thing; "Beer" and "Root beer" are not, so
+  // only a name that starts the other, word for word, counts.
+  const isPlaced = (k) => placed.some(p=>p===k || k.startsWith(p+' ') || p.startsWith(k+' '));
   const spotted = (Array.isArray(j.spotted)?j.spotted:[])
     .filter(e=>e && typeof e.name==='string' && e.name.trim())
-    .filter(e=>e.included===true || !placed.has(itemKey(e.name)))
+    .filter(e=>e.included===true || !isPlaced(itemKey(e.name)))
     .slice(0,SPOTTED_MAX)
     .map(e=>{
       const r = intOrNone(e.row);
