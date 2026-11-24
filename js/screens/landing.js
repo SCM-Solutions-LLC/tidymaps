@@ -138,25 +138,6 @@ function fillProductArt(){
   });
 }
 
-/* ---------- Figure 1: the sort ----------
-   The items start where the mess left them and slide into their zones once
-   the figure is on screen. One authored moment, played once when it can be
-   seen. Reduced motion draws the finished figure (css/landing.css), so
-   nothing here has to check the preference. */
-function initFigure(){
-  const fig=document.getElementById('fig-el');
-  if(!fig) return;
-  const sort=()=>fig.classList.add('sorted');
-  if('IntersectionObserver' in window){
-    const io=new IntersectionObserver((entries)=>{
-      if(entries.some(e=>e.isIntersecting)){ setTimeout(sort,350); io.disconnect(); }
-    },{threshold:.35});
-    io.observe(fig);
-  }else{
-    setTimeout(sort,350);
-  }
-}
-
 /* ---------- Appbar scroll rule ---------- */
 function initAppbarScroll(){
   const appbar=document.querySelector('.appbar');
@@ -189,6 +170,5 @@ export function initLanding(){
 
   renderSpaces();
   fillProductArt();
-  initFigure();
   initAppbarScroll();
 }

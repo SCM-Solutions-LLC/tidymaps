@@ -5,15 +5,16 @@ html{scrollbar-color:var(--line-2) var(--paper);scrollbar-width:thin}
 body{
   background:var(--paper);
   color:var(--ink);
-  font-family:var(--sans);font-size:var(--fs-body);line-height:1.6;
+  background-image:var(--paper-grain);
+  font-family:var(--serif);font-size:var(--fs-body);line-height:1.6;
   font-optical-sizing:auto;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   padding-bottom:env(safe-area-inset-bottom);
   caret-color:var(--spot);
   accent-color:var(--spot);
 }
-/* The browser's own surfaces carry the accent too: the selection, the caret
-   and the focus ring are all terracotta. */
+/* The browser's own surfaces carry the ink too: the selection, the caret
+   and the focus ring. */
 ::selection{background:var(--spot);color:var(--stock)}
 :focus-visible{outline:2px solid var(--spot);outline-offset:2px;}
 /* Headings are focused by script when a screen changes so the new title is
@@ -27,10 +28,11 @@ a{color:inherit;text-decoration:none}
 p a, .small a, .lede a, footer a{text-decoration:underline;text-decoration-color:var(--spot);text-decoration-thickness:1px;text-underline-offset:3px}
 p a:hover, .small a:hover, .lede a:hover, footer a:hover{color:var(--spot-ink)}
 
-/* One family. Titles are Archivo at a firm weight, held to a moderate size;
-   hierarchy comes from weight and space, not from scale. */
+/* Titles are Literata at a book weight: hierarchy comes from size and
+   space, not from bold. Small titles (h3, h4) take a little weight back so
+   they hold up at reading size. */
 h1,h2,h3,h4{
-  font-family:var(--sans);font-weight:700;
+  font-family:var(--serif);font-weight:400;
   letter-spacing:var(--tracking-tight);line-height:1.15;margin:0;
   font-kerning:normal;
   text-rendering:optimizeLegibility;
@@ -39,10 +41,10 @@ h1,h2,h3,h4{
 /* Every screen's title is its h1 (a screen is a page to a screen reader), so
    the h1 is set at the size those titles always had; the landing hero, the
    one display headline, takes its larger size in landing.css. */
-h1{font-size:var(--fs-section);font-weight:700;letter-spacing:-0.018em;line-height:1.12}
-h2{font-size:var(--fs-section);font-weight:700;letter-spacing:-0.018em;line-height:1.12}
-h3{font-size:var(--fs-title);font-weight:700}
-h4{font-size:var(--fs-body);font-weight:700}
+h1{font-size:var(--fs-section);font-weight:400;letter-spacing:-0.02em;line-height:1.12}
+h2{font-size:var(--fs-section);font-weight:400;letter-spacing:-0.018em;line-height:1.12}
+h3{font-size:var(--fs-title);font-weight:600;letter-spacing:-0.005em}
+h4{font-size:var(--fs-body);font-weight:600;letter-spacing:0}
 p{margin:0 0 1em}
 .lede{font-size:var(--fs-lede);color:var(--ink);line-height:1.5}
 /* A small bold label in sentence case: a shelf label, a figure number, a
@@ -220,21 +222,22 @@ main{padding:0 var(--pad,18px)}
 .step-head .step-kicker{font-size:var(--fs-sm);color:var(--spot-ink)}
 
 /* ---------- Buttons ----------
-   A pill with a sentence-case label. The primary one is terracotta; the
-   ghost is the same pill on a white fill. */
+   A gently rounded box with a sentence-case label. The primary one is the
+   ink; the ghost is an ink outline on the sheet. Square corners and caps
+   labels read as a form (2026-10-03); a pill read as an app template. */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:9px;
-  border:var(--rule);border-radius:var(--radius-pill);
-  font-family:var(--sans);font-weight:700;font-size:var(--fs-ui);
+  border:var(--rule);border-radius:var(--radius-btn);
+  font-family:var(--sans);font-weight:600;font-size:var(--fs-ui);
   letter-spacing:.01em;text-transform:none;
   padding:14px 22px;line-height:1;
   transition:background var(--dur), border-color var(--dur), color var(--dur), transform var(--dur-fast);
 }
 .btn svg{width:17px;height:17px;flex:none}
-.btn-primary{background:var(--spot);color:var(--stock);border-color:var(--spot);box-shadow:0 1px 2px oklch(0.4 0.1 36 / .25)}
+.btn-primary{background:var(--spot);color:var(--stock);border-color:var(--spot);box-shadow:0 1px 2px oklch(0.2 0.01 75 / .2)}
 .btn-primary:hover{background:var(--spot-deep);border-color:var(--spot-deep)}
-.btn-primary:active{background:oklch(0.42 0.12 36);border-color:oklch(0.42 0.12 36);transform:translateY(1px)}
-.btn-ghost{background:var(--stock);color:var(--ink);border-color:var(--line-2)}
+.btn-primary:active{background:var(--spot-deep);border-color:var(--spot-deep);transform:translateY(1px)}
+.btn-ghost{background:var(--stock);color:var(--ink);border-color:var(--ink)}
 .btn-ghost:hover{background:var(--tint)}
 .btn-ghost:active{background:var(--tint-2);transform:translateY(1px)}
 .btn-block{width:100%}

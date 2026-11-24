@@ -10,21 +10,21 @@
    copied verbatim rather than approximated in hex. */
 
 export const color = {
-  bg:        'oklch(0.952 0.02 80)',   // --tint: the .step-art band the clip sits on
-  surface3:  'oklch(0.925 0.05 48)',   // --tint-2: dust, recessed panels
-  ink:       'oklch(0.27 0.02 40)',    // --ink
-  ink2:      'oklch(0.27 0.02 40)',    // --ink-2
-  ink3:      'oklch(0.46 0.03 42)',    // --draw: the drawings' line, the main stroke
-  line:      'oklch(0.46 0.03 42)',    // --draw: structure prints in the drawing line too
-  line2:     'oklch(0.62 0.035 58)',   // --field-line: the floor and the staging items
-  primary:   'oklch(0.56 0.13 36)',    // --spot: terracotta accent
+  bg:        'oklch(0.952 0.02 80)',   // --clip-bg: the .step-art band the clip sits on
+  surface3:  'oklch(0.925 0.05 48)',   // --clip-dust: dust, recessed panels
+  ink:       'oklch(0.27 0.02 40)',    // --clip-ink
+  ink2:      'oklch(0.27 0.02 40)',    // --clip-ink
+  ink3:      'oklch(0.46 0.03 42)',    // --clip-draw: the drawings' line, the main stroke
+  line:      'oklch(0.46 0.03 42)',    // --clip-draw: structure prints in the drawing line too
+  line2:     'oklch(0.62 0.035 58)',   // --clip-floor: the floor and the staging items
+  primary:   'oklch(0.56 0.13 36)',    // --clip-accent: terracotta accent
   /* --tint-2, not --primary-bg: on the site that is the band's own sand, so an
      accent fill on it would vanish (the middle zone band, the wipe pad). */
-  primaryBg: 'oklch(0.925 0.05 48)',   // --tint-2
-  honey:     'oklch(0.955 0.06 92)',   // --honey: the butter field
-  honey2:    'oklch(0.64 0.12 82)',    // --honey-2: butter's edge
-  sage:      'oklch(0.58 0.09 150)',   // --sage
-  sageBg:    'oklch(0.94 0.038 150)',  // --sage-bg
+  primaryBg: 'oklch(0.925 0.05 48)',   // --clip-dust
+  honey:     'oklch(0.955 0.06 92)',   // --clip-honey: the butter field
+  honey2:    'oklch(0.64 0.12 82)',    // --clip-honey-2: butter's edge
+  sage:      'oklch(0.58 0.09 150)',   // --clip-sage
+  sageBg:    'oklch(0.94 0.038 150)',  // --clip-sage-bg
 } as const;
 
 /* One loop length per action, matching the CSS animation durations of the

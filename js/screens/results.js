@@ -1081,8 +1081,8 @@ export function includeSpottedItem(i){
 function plate(){
   const cs=getComputedStyle(document.documentElement);
   const v=(name,fb)=>(cs.getPropertyValue(name)||'').trim()||fb;
-  return { ink:v('--draw','#67534b'), spot:v('--spot','#b3543b'), tint:v('--tint','#f6eee1'), tint2:v('--tint-2','#ffddca'),
-    fields:[v('--sky-f','#daeffc'),v('--butter-f','#fef0c3'),v('--sage-f','#daf3de'),v('--tint','#f6eee1')] };
+  return { ink:v('--draw','#4d473f'), spot:v('--spot','#23201c'), tint:v('--tint','#ece5db'), tint2:v('--tint-2','#e4e9d3'),
+    fields:[v('--sky-f','#deeaf3'),v('--butter-f','#f7eccf'),v('--sage-f','#dfecdc'),v('--tint','#ece5db')] };
 }
 const EL_GLYPHS={
   jar:'<path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="l"/>',

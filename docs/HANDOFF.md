@@ -28,6 +28,17 @@ the 3D view says "pinch" and "Tap a zone" on a touch screen. Seen, not
 changed: a scoped-out category also trims the zone name ("Bulk overflow ·
 Baskets" reads "Baskets"); "Step 0 of 9 complete" wording.
 
+Later still, **redesign stage 1** ("The Marked-up Shelf", `DESIGN.md`): the
+owner found the Warm Shelf read as AI-generated. After mockups of six
+directions (label maker, editorial, handmade, playful, lifestyle, illustrated)
+the owner picked a handmade/lifestyle middle, then asked to soften square
+buttons and caps labels (they repeat the 10-03 "clinical" complaint). Shipped:
+Literata + Architects Daughter self-hosted (Literata instanced to 79KB),
+paper/ink/olive tokens, ink buttons at 10px, a rebuilt landing (photo hero
+with pen notes and the before print, spaces as an index, plan sheet with
+margin notes; Figure 1 and "What we promise" removed). The wizard and report
+inherit tokens but keep Warm Shelf shapes: item 25.
+
 ## Product state
 
 Static ES-module site (no build step) on GitHub Pages at
@@ -38,7 +49,7 @@ BYOK is gone). An 11-step wizard over ten spaces and 37 setups (`js/router.js FL
 steps with where-lines, "Also in your photo", a shopping list from a
 31-product catalog) and a 3D viewer with a builder per layout. Also: a
 homepage, product library, dashboard, read-only share links, and an AI photo
-preview (`render-after`, Gemini). Design: "The Warm Shelf" (`DESIGN.md`).
+preview (`render-after`, Gemini). Design: "The Marked-up Shelf" (`DESIGN.md`), stage 1 of 3.
 Only the owner has used it (Production health #9); first users: item 6.
 
 ## Architecture crib sheet
@@ -265,6 +276,13 @@ The live work list; numbers are stable, full 10-13 text in the archive.
     product (Amazon flickered, 11-24). Confirm by hand: KUBBIS, OXO POP medium,
     SimpleHouseware door organizer; Walmart 404s (11-24 deploy) on the Home
     Edit XL bin and pantry labels.
+
+25. **Redesign stages 2 and 3** (owner-approved direction, 11-24). Stage 2:
+    wizard components (space-card art stages are still pastel, option cards
+    and chips still pills); stage 3: the report (pastel zone fields, the
+    elevation plate) and a `--force` clip render (`remotion/`, ~20 min), then
+    delete the `--clip-*` tokens. `DESIGN.md` "Migration status" lists what
+    is stale. Also unmade: the Dymo-label wordmark from the mock.
 
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf

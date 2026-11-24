@@ -501,7 +501,11 @@ body[data-flow="1"] .site-footer{display:none}
    is the column, on a desktop a full-width band left the clip floating in a
    letterbox of tint on either side. */
 .step-art{display:grid;place-items:center;width:min(100%,392px);height:98px;margin:11px 0 3px;
-  background:var(--tint);color:var(--draw);border-radius:var(--radius);
+  /* the clips' frozen palette (tokens.css): the inline scenes draw in it too */
+  --draw:var(--clip-draw);--surface:var(--clip-stock);--surface-2:var(--clip-bg);
+  --primary:var(--clip-accent);--primary-bg:var(--clip-bg);--honey:var(--clip-honey);--honey-2:var(--clip-honey-2);
+  --sage:var(--clip-sage);--sage-bg:var(--clip-sage-bg);
+  background:var(--clip-bg);color:var(--draw);border-radius:var(--radius);
   pointer-events:none;overflow:hidden}
 /* The scenes carry furniture and item detail now, so they are drawn to be read
    rather than glanced at — and at the size and weight of the produced clips,

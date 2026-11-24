@@ -1,10 +1,13 @@
 /* ============================================================
-   TidyMap — The Warm Shelf
-   Cream paper, white cards, soft rounded corners and light
-   shadows. One terracotta accent carries the buttons and the
-   selected states; sage, butter and sky are supporting fields
-   for zones, tips and callouts. Archivo sets everything, in
-   sentence case. Figures are inked cupboard elevations.
+   TidyMap — The Marked-up Shelf
+   Warm paper with a faint grain, real photographs of real
+   shelves, and an organizer's pen notes in the margin. Literata
+   sets reading text and headings; Archivo sets controls and
+   labels, in sentence case; Architects Daughter is the pen and
+   is used only for short notes. Buttons are warm near-black
+   with gently rounded corners; olive is the one accent ink.
+   Replaced "The Warm Shelf" (cream, terracotta, pastel cards)
+   on 2026-11-24: the owner found it read as AI-generated.
    ============================================================ */
 
 /* Self-hosted typefaces (SIL OFL, see vendor/fonts/) */
@@ -23,11 +26,38 @@
   font-display:swap;
   src:url("../vendor/fonts/archivo-latin-wdth-normal.woff2") format("woff2-variations");
 }
+/* Literata is instanced down from Google's variable font to opsz 12-72 and
+   wght 400-600 (110KB to 59KB); nothing on the site sets serif text bolder.
+   The italic is one static 400 instance (20KB): it is used for a phrase in a
+   heading, never for running text. */
+@font-face{
+  font-family:"Literata";
+  font-style:normal;
+  font-weight:400 600;
+  font-display:swap;
+  src:url("../vendor/fonts/literata-latin-normal.woff2") format("woff2-variations");
+}
+@font-face{
+  font-family:"Literata";
+  font-style:italic;
+  font-weight:400;
+  font-display:swap;
+  src:url("../vendor/fonts/literata-latin-italic-400.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Architects Daughter";
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url("../vendor/fonts/architects-daughter-latin.woff2") format("woff2");
+}
 
 :root{
   color-scheme:light;
   --sans:"Archivo",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
-  --serif:var(--sans);
+  --serif:"Literata",Georgia,"Times New Roman",serif;
+  /* The pen: short margin notes only, never a sentence a reader must parse. */
+  --hand:"Architects Daughter","Segoe Print","Bradley Hand",cursive;
   --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Mono",monospace;
 
   /* ---- Type scale ------------------------------------------------------
@@ -50,42 +80,60 @@
   --fs-chapter: clamp(20px, 3vw, 24px);    /* report chapters, gallery rooms */
   --fs-section: clamp(26px, 3.4vw, 34px);  /* h2 section heads */
   --fs-page:    clamp(30px, 4.6vw, 44px);  /* a screen's h1 */
-  --fs-display: clamp(32px, 4.2vw, 46px);  /* the landing hero only */
+  --fs-display: clamp(40px, 5vw, 62px);    /* the landing hero only */
 
-  /* ---- Paper, cards, ink and the colour family ------------------------
-     The page is warm cream paper; cards, inputs and buttons sit on it in
-     near-white. Ink is a soft warm brown-black. Borders are a light warm
-     line, not ink, so a card is outlined rather than boxed in. One accent,
-     a terracotta held under 80% saturation, carries every primary button,
-     selected state and progress mark; white type on it clears 4.6:1 and its
-     darker cut, --spot-ink, clears 5:1 as small text on cream. Supporting
-     colours (sage, butter, sky, and the accent's own peach) are soft fields
-     with a deep ink of their own for text; they colour zones, tips and
-     callouts, and never carry a button. */
-  --paper:     oklch(0.977 0.014 82);  /* the page: warm cream */
-  --stock:     oklch(0.999 0.004 82);  /* cards, inputs, buttons at rest */
-  --ink:       oklch(0.27 0.02 40);    /* soft warm brown-black */
-  --draw:      oklch(0.46 0.03 42);    /* the drawings' line: softer than type ink */
-  --spot:      oklch(0.56 0.13 36);    /* terracotta: buttons, marks */
-  --spot-deep: oklch(0.48 0.125 36);   /* pressed / hover */
-  --spot-ink:  oklch(0.49 0.125 36);   /* small accent text on cream */
+  /* ---- Paper, ink and the colour family -------------------------------
+     The page is warm paper, a step darker than white, so photographs and
+     the near-white sheets on it read as things laid on a desk. Ink is a warm
+     near-black and also carries every primary button and selected state:
+     white on it clears 14:1. The one accent is olive, used as ink (links, a
+     phrase in a heading, a check), never as a fill. The pen is a blue-black
+     for handwritten notes. Sage, butter and sky survive as quiet fields with
+     their own text inks; they colour zones and callouts, never a button. */
+  --paper:     oklch(0.951 0.013 82);  /* the page: warm paper */
+  --stock:     oklch(0.983 0.006 85);  /* sheets, inputs, photo mats */
+  --ink:       oklch(0.245 0.009 75);  /* warm near-black */
+  --draw:      oklch(0.40 0.015 75);   /* the drawings' line: softer than type ink */
+  --spot:      oklch(0.245 0.009 75);  /* buttons and selected states: the ink */
+  --spot-deep: oklch(0.16 0.008 75);   /* pressed / hover */
+  --spot-ink:  oklch(0.39 0.052 124);  /* olive: accent ink on paper, 7:1 */
   --brass:     var(--spot);            /* figure label rule: the accent */
-  --tint:      oklch(0.952 0.02 80);   /* warm sand, content fields */
-  --tint-2:    oklch(0.925 0.05 48);   /* peach: the accent screened to a field */
-  --sel-bg:    oklch(0.968 0.026 50);  /* selected card: the faintest peach */
-  --line:      oklch(0.885 0.02 72);   /* soft border and divider */
-  --line-2:    oklch(0.82 0.025 68);   /* firmer border: dashed frames, small buttons */
-  --field-line: oklch(0.62 0.035 58);  /* form-control edge: clears 3:1 on white */
+  --pen:       oklch(0.372 0.081 266); /* handwritten notes: blue-black */
+  --tint:      oklch(0.925 0.016 80);  /* a darker paper: content fields */
+  --tint-2:    oklch(0.925 0.03 118);  /* olive screened to a field */
+  --sel-bg:    oklch(0.955 0.018 110); /* selected card: the faintest olive */
+  --line:      oklch(0.858 0.023 81);  /* soft border and divider */
+  --line-2:    oklch(0.79 0.026 78);   /* firmer border: dashed frames, small buttons */
+  --field-line: oklch(0.60 0.025 75);  /* form-control edge: clears 3:1 on the sheet */
 
-  --sage-f:    oklch(0.94 0.038 150);  /* sage field */
-  --sage-l:    oklch(0.80 0.07 150);   /* sage edge */
-  --sage-d:    oklch(0.37 0.075 150);  /* sage text, 8:1 on its field */
-  --butter-f:  oklch(0.955 0.06 92);   /* butter field */
-  --butter-l:  oklch(0.84 0.10 88);    /* butter edge */
-  --butter-d:  oklch(0.40 0.08 70);    /* butter text */
-  --sky-f:     oklch(0.94 0.028 235);  /* sky field */
-  --sky-l:     oklch(0.80 0.06 232);   /* sky edge */
-  --sky-d:     oklch(0.38 0.08 245);   /* sky text */
+  --sage-f:    oklch(0.93 0.026 140);  /* sage field */
+  --sage-l:    oklch(0.79 0.05 140);   /* sage edge */
+  --sage-d:    oklch(0.37 0.06 140);   /* sage text, 8:1 on its field */
+  --butter-f:  oklch(0.945 0.04 90);   /* butter field */
+  --butter-l:  oklch(0.83 0.07 86);    /* butter edge */
+  --butter-d:  oklch(0.40 0.07 70);    /* butter text */
+  --sky-f:     oklch(0.93 0.018 240);  /* sky field */
+  --sky-l:     oklch(0.79 0.04 240);   /* sky edge */
+  --sky-d:     oklch(0.38 0.07 250);   /* sky text */
+
+  /* ---- The step clips' frozen palette ------------------------------------
+     The 163 checklist clips are baked video (remotion/), coloured from a copy
+     of these values, and re-rendering them takes a --force render. Until they
+     are re-rendered for this palette, .step-art keeps the clips' own colours
+     so a clip and the inline scene that stands in for it still match.
+     shortcut: the checklist band stays in the old palette; re-render the
+     clips and delete this block when the plan screens are restyled. */
+  --clip-bg:     oklch(0.952 0.02 80);
+  --clip-stock:  oklch(0.999 0.004 82);
+  --clip-dust:   oklch(0.925 0.05 48);
+  --clip-ink:    oklch(0.27 0.02 40);
+  --clip-draw:   oklch(0.46 0.03 42);
+  --clip-floor:  oklch(0.62 0.035 58);
+  --clip-accent: oklch(0.56 0.13 36);
+  --clip-honey:  oklch(0.955 0.06 92);
+  --clip-honey-2: oklch(0.64 0.12 82);
+  --clip-sage:   oklch(0.58 0.09 150);
+  --clip-sage-bg: oklch(0.94 0.038 150);
 
   /* ---- Names the stylesheets already speak ------------------------------
      Kept so the wizard, report, viewer and library resolve without a rename
@@ -95,7 +143,7 @@
   --surface-2: var(--tint);
   --surface-3: var(--tint-2);
   --ink-2:     var(--ink);
-  --ink-3:     oklch(0.45 0.035 45); /* secondary text: warm brown, about 7:1 on cream */
+  --ink-3:     oklch(0.48 0.02 76);  /* secondary text: warm grey, about 6:1 on paper */
 
   --primary:      var(--spot);
   --primary-2:    var(--spot-deep);
@@ -104,8 +152,8 @@
   --primary-ink:  var(--spot-ink);
 
   /* the supporting colour families */
-  --sage:      oklch(0.58 0.09 150);
-  --sage-2:    oklch(0.50 0.09 150);
+  --sage:      oklch(0.56 0.07 140);
+  --sage-2:    oklch(0.48 0.07 140);
   --sage-bg:   var(--sage-f);
   --sage-line: var(--sage-l);
   --sage-ink:  var(--sage-d);
@@ -146,16 +194,18 @@
   --clay-bg:   var(--butter-f);
   --focus:     var(--spot);
 
-  /* Soft edges: cards round at 16px, controls at 10px, chips and buttons are
-     pills. Shadows are low and warm, never grey. */
-  --radius: 16px;
-  --radius-sm: 10px;
-  --radius-lg: 24px;
+  /* Edges: sheets and cards are paper, so they barely round (6px); controls
+     round at 8px and buttons at 10px, soft enough not to read as a form.
+     Chips stay pills. Shadows are low and warm, like paper on a desk. */
+  --radius: 6px;
+  --radius-sm: 8px;
+  --radius-btn: 10px;
+  --radius-lg: 10px;
   --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px oklch(0.35 0.03 50 / .07);
-  --shadow: 0 1px 3px oklch(0.35 0.03 50 / .06), 0 8px 24px -10px oklch(0.35 0.03 50 / .16);
-  --shadow-md: 0 2px 6px oklch(0.35 0.03 50 / .07), 0 14px 32px -12px oklch(0.35 0.03 50 / .2);
-  --shadow-lg: 0 4px 10px oklch(0.35 0.03 50 / .08), 0 22px 44px -16px oklch(0.35 0.03 50 / .26);
+  --shadow-sm: 0 1px 2px oklch(0.30 0.03 70 / .08);
+  --shadow: 0 1px 2px oklch(0.30 0.03 70 / .08), 0 10px 24px -14px oklch(0.30 0.03 70 / .22);
+  --shadow-md: 0 1px 3px oklch(0.30 0.03 70 / .08), 0 16px 34px -16px oklch(0.30 0.03 70 / .28);
+  --shadow-lg: 0 2px 6px oklch(0.30 0.03 70 / .09), 0 22px 44px -18px oklch(0.30 0.03 70 / .34);
   --rule: 1px solid var(--line);
   --rule-2: 1px solid var(--line-2);
   --maxw: 760px;
@@ -178,5 +228,6 @@
   --tracking-label: 0.005em;
   --leading-display: 0.98;
 
-  --paper-grain: none;
+  /* A faint paper fibre over the page colour: fractal noise at 5% alpha. */
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .18 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
