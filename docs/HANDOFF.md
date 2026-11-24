@@ -277,9 +277,8 @@ The live work list; numbers are stable, full 10-13 text in the archive.
     SimpleHouseware door organizer; Walmart 404s (11-24 deploy) on the Home
     Edit XL bin and pantry labels.
 
-25. **Redesign stages 2 and 3** (owner-approved direction, 11-24). Stage 2:
-    wizard components (space-card art stages are still pastel, option cards
-    and chips still pills); stage 3: the report (pastel zone fields, the
+25. **Redesign stage 3** (owner-approved direction, 11-24; stage 2, the
+    wizard, landed 11-24: ink art stages, 10px chips, no pastel boxes). Stage 3: the report (pastel zone fields, the
     elevation plate) and a `--force` clip render (`remotion/`, ~20 min), then
     delete the `--clip-*` tokens. `DESIGN.md` "Migration status" lists what
     is stale. Also unmade: the Dymo-label wordmark from the mock.

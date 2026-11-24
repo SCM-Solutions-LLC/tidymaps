@@ -104,7 +104,7 @@ function renderSpaces(){
     group.className = 'space-group';
     const cards = (AREAS[room.id] || []).map((a, i) => `
       <button type="button" class="room-card" data-room="${room.id}" data-area="${a.id}">
-        <div class="rc-img card-visual tone-${i % 4}">${art(a.artKey)}</div>
+        <div class="rc-img card-visual">${art(a.artKey)}</div>
         <div class="rc-label"><h3>${a.label}</h3><p>${a.desc}</p></div>
       </button>`).join('');
     group.innerHTML = `<h3 class="space-room">${room.label}</h3><div class="room-cards">${cards}</div>`;

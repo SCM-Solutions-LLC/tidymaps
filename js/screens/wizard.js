@@ -263,7 +263,7 @@ function renderSpace(){
       b.setAttribute('aria-checked', String(picked));
       b.tabIndex = -1;
       b.innerHTML = `
-        <div class="rc-img card-visual tone-${index % 4}">${cardArt(a)}</div>
+        <div class="rc-img card-visual">${cardArt(a)}</div>
         <span class="rc-check">${CHECK}</span>
         <div class="rc-label"><h3>${a.label}</h3><p>${a.desc}</p></div>`;
       b.onclick = () => {
@@ -348,7 +348,7 @@ function renderSetup(){
     b.setAttribute('aria-pressed', String(state.setup === t.id));
     b.innerHTML = `
       <span class="wz-check">${CHECK}</span>
-      <span class="ws-img card-visual tone-${index % 4}">${cardArt(t)}</span>
+      <span class="ws-img card-visual">${cardArt(t)}</span>
       <span class="ws-ttl">${t.label}</span>
       <span class="ws-sub">${t.desc}</span>`;
     b.onclick = () => { setSetup(t.id); markSelected(wrap, b); };

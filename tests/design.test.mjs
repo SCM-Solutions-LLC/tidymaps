@@ -312,3 +312,30 @@ test('the photo slider keeps its before, because that one is really theirs', () 
   assert.ok(report.includes('id="ba-before-img"'), 'the photo slider lost its before image');
   assert.ok(report.includes('id="ba-after-img"'), 'the photo slider lost its after image');
 });
+
+/* Stage 2 of the redesign (2026-11-24): the wizard's controls take the
+   button's soft corner, not a pill, and its illustration stages are ink on
+   the plain sheet, not a pastel field per card. The owner's brief was warm but
+   adult; pills and a grid of tinted tiles read as a children's app. Toasts,
+   step dots and the report's tags are other stages' business. */
+test('wizard controls are not pills and its art stages are not tinted', () => {
+  const css = readFileSync(new URL('../css/components.css', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = (sel) => {
+    const m = new RegExp(`(?:^|\\})\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\{([^}]*)\\}`).exec(css);
+    assert.ok(m, `no rule for ${sel}`);
+    return m[1];
+  };
+  for (const sel of ['.chip', '.seg', '.seg button', '.wz-units', '.wz-unit', '.wz-detected-chip', '.wz-prefilled', '.opt .rec']) {
+    assert.ok(!rule(sel).includes('radius-pill'), `${sel} is a pill again`);
+  }
+  assert.match(rule('.chip.sel::before'), /border-width:0 2px 2px 0/, 'a selected chip lost its drawn tick');
+  // The ink-filled chip set its label in stock; on sel-bg that is white on near-white.
+  assert.ok(!/\.chip\.sel\{[^}]*color:var\(--stock\)/.test(css), 'a selected chip is setting its label in white again');
+  const stage = rule('.card-visual');
+  assert.match(stage, /background:var\(--stock\)/, 'the art stage is not the plain sheet');
+  assert.ok(!/tone-\d/.test(css), 'a per-card tint is back on the art stage');
+  for (const sel of ['.wz-detected', '.wz-prefilled', '.wz-effort .we-ico']) {
+    assert.ok(!/sage|butter|sky/.test(rule(sel)), `${sel} is a pastel field again`);
+  }
+});

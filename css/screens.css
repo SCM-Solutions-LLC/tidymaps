@@ -11,7 +11,7 @@
   .wiz{grid-template-columns:7fr 4fr;gap:52px}
   .wiz-rail{display:block;position:sticky;top:calc(var(--appbar-h,57px) + 22px)}
 }
-.rail-note{font-size:var(--fs-md);color:var(--ink);line-height:1.55;padding:14px 16px;border:1px solid var(--butter-l);border-radius:var(--radius);background:var(--butter-f);margin-bottom:26px}
+.rail-note{font-size:var(--fs-md);color:var(--ink);line-height:1.55;padding:14px 16px;border:var(--rule);border-radius:var(--radius);background:var(--stock);margin-bottom:26px}
 .rail-note strong{color:var(--ink-2);font-weight:600}
 .rail-sum{border-top:1px solid var(--line);padding-top:14px}
 .rail-sum .rs-h{font-size:var(--fs-2xs);font-weight:600;color:var(--ink-3);margin-bottom:10px}
