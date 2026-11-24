@@ -6,7 +6,7 @@
 <title>TidyMap: An organizing plan from photos of your space</title>
 <meta name="description" content="Send a few honest photos of one space. Get a clear organizing plan built around your shelves, routines, budget, and what you already own. No tidying up first." />
 <link rel="canonical" href="https://scmsolutions.org/tidymaps/" />
-<meta name="theme-color" content="#b3543b" />
+<meta name="theme-color" content="#23201c" />
 <meta name="color-scheme" content="light dark" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="TidyMap" />
@@ -73,6 +73,7 @@
 <!-- The two faces are swapped in on arrival (font-display:swap), so the sooner
      they are requested the shorter the flash of the fallback. -->
 <link rel="preload" href="vendor/fonts/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="vendor/fonts/literata-latin-normal.woff2" as="font" type="font/woff2" crossorigin />
 <!-- critical-css:start -->
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
@@ -152,101 +153,40 @@
 <!-- ============================================================ 1. LANDING -->
 <section class="screen wide active" id="screen-landing">
 
-  <!-- Hero: headline and actions on the left, Figure 1 on the right. -->
+  <!-- Hero: the promise on the left; on the right the sample pantry after
+       its plan, with an organizer's pen notes on the shelves and the same
+       pantry before it, pinned underneath. The photos and notes are the
+       sample plan (js/demo-scenarios.js), not a claim about anyone's shelves. -->
   <div class="hero" id="start">
     <div class="hero-copy">
-      <h1>Bring order to the space that runs your day.</h1>
-      <p class="hero-lede">Photograph one space. Get a step-by-step plan built around your shelves, your household, and everything you already own.</p>
+      <h1>Your shelves, <em>thought through.</em></h1>
+      <p class="hero-lede">Photograph a pantry, closet or garage as it is today. You get a shelf-by-shelf plan built around how your household uses it, starting with the containers you already own.</p>
       <div class="hero-actions">
         <button class="btn btn-primary" onclick="go('space')">Plan my space</button>
-        <button class="home-link" onclick="runDemo()">View a sample plan</button>
+        <button class="btn btn-ghost" onclick="runDemo()">View a sample plan</button>
       </div>
+      <ul class="hero-trust">
+        <li>Free during early access</li>
+        <li>Photos stay private</li>
+        <li>No purchase required</li>
+      </ul>
     </div>
-  <!-- Figure 1: the sample pantry, drawn as a cupboard elevation. The items
-       start where a mid-week pantry leaves them and slide into the zones the
-       plan assigns; the labels on the right are the plan's own reasons.
-       Everything here is the sample plan (js/demo-scenarios.js), not a claim
-       about anyone's real shelves. -->
-  <figure class="fig fig-1" id="fig-1">
-    <div class="fig-stage">
-      <svg class="fig-el" id="fig-el" viewBox="40 10 740 540" role="img" aria-labelledby="fig-1-title fig-1-desc">
-        <title id="fig-1-title">Figure 1. A pantry elevation, before and after the plan.</title>
-        <desc id="fig-1-desc">Thirty jars, boxes, bottles, spice jars and bins scattered across four shelves slide into four labeled zones: seldom-used and hazards on the top shelf, daily food at eye level, kids' snacks and heavy jars on the lower shelf, bulk bins on the floor.</desc>
-        <defs>
-          <symbol id="f-jar" viewBox="0 0 32 46"><path d="M6 8h20v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M4 8h24M8 3h16v5H8z"/><path d="M11 20h10" class="f-lbl"/></symbol>
-          <symbol id="f-jarlg" viewBox="0 0 42 58"><path d="M6 10h30v42a5 5 0 0 1-5 5H11a5 5 0 0 1-5-5Z"/><path d="M4 10h34M10 3h22v7H10z"/><path d="M13 26h16M13 33h16" class="f-lbl"/></symbol>
-          <symbol id="f-can" viewBox="0 0 28 36"><rect x="3" y="4" width="22" height="30" rx="2"/><path d="M3 9h22M3 29h22"/></symbol>
-          <symbol id="f-box" viewBox="0 0 46 72"><rect x="3" y="3" width="40" height="66"/><path d="M3 14h40" /><path d="M10 30h26M10 40h18" class="f-lbl"/></symbol>
-          <symbol id="f-bottle" viewBox="0 0 24 64"><path d="M8 3h8v9l5 8v40a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V20l5-8Z"/><path d="M7 32h10M7 40h10" class="f-lbl"/></symbol>
-          <symbol id="f-bag" viewBox="0 0 44 52"><path d="M6 12l4-8h24l4 8v34a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4Z"/><path d="M6 12h32"/><path d="M14 26h16M14 34h10" class="f-lbl"/></symbol>
-          <symbol id="f-bin" viewBox="0 0 116 54"><path d="M4 8h108l-6 42H10Z"/><path d="M4 8h108"/><path d="M44 30h28" class="f-lbl"/></symbol>
-          <symbol id="f-spice" viewBox="0 0 26 40"><path d="M5 9h16v27a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3Z"/><path d="M8 3h10v6H8z"/><path d="M9 20h8" class="f-lbl"/></symbol>
-          <clipPath id="f-clip"><rect x="61" y="31" width="698" height="498" rx="17"/></clipPath>
-          <symbol id="f-latch" viewBox="0 0 18 22"><rect x="3" y="10" width="12" height="9"/><path d="M6 10V6a3 3 0 0 1 6 0v4"/></symbol>
-        </defs>
-
-        <!-- the cupboard -->
-        <g class="f-case">
-          <rect x="60" y="30" width="700" height="500" rx="18" class="f-outer"/>
-          <line x1="60" y1="150" x2="760" y2="150"/>
-          <line x1="60" y1="270" x2="760" y2="270"/>
-          <line x1="60" y1="390" x2="760" y2="390"/>
-          <line x1="60" y1="510" x2="760" y2="510"/>
-        </g>
-
-        <!-- zone screens: the plate at 18%, printed once the items settle -->
-        <g class="f-zones" clip-path="url(#f-clip)">
-          <rect x="62" y="32" width="696" height="116" class="f-zone" style="--i:0"/>
-          <rect x="62" y="152" width="696" height="116" class="f-zone f-zone-eye" style="--i:1"/>
-          <rect x="62" y="272" width="696" height="116" class="f-zone" style="--i:2"/>
-          <rect x="62" y="392" width="696" height="116" class="f-zone" style="--i:3"/>
-        </g>
-
-        <!-- the items. Each carries where the mess left it (--jx/--jy/--jr)
-             and sits drawn where the plan puts it. -->
-        <g class="f-items">
-          <g class="it" style="--jx:317px;--jy:191px;--jr:-8deg;--i:0"><use href="#f-bag" x="84" y="76" width="60" height="72"/></g>
-          <g class="it" style="--jx:462px;--jy:183px;--jr:-22deg;--i:1"><use href="#f-box" x="156" y="50" width="62" height="98"/></g>
-          <g class="it" style="--jx:59px;--jy:112px;--jr:19deg;--i:2"><use href="#f-box" x="230" y="50" width="62" height="98"/></g>
-          <g class="it f-hazard" style="--jx:-163px;--jy:113px;--jr:7deg;--i:3"><use href="#f-bottle" x="304" y="62" width="32" height="86"/><use href="#f-latch" x="338" y="84" width="18" height="22" class="f-latch"/></g>
-          <g class="it f-hazard" style="--jx:301px;--jy:147px;--jr:-24deg;--i:4"><use href="#f-bottle" x="348" y="62" width="32" height="86"/></g>
-          <g class="it" style="--jx:277px;--jy:102px;--jr:-7deg;--i:5"><use href="#f-bag" x="392" y="76" width="60" height="72"/></g>
-          <g class="it" style="--jx:176px;--jy:164px;--jr:10deg;--i:6"><use href="#f-box" x="464" y="50" width="62" height="98"/></g>
-          <g class="it" style="--jx:539px;--jy:236px;--jr:23deg;--i:7"><use href="#f-jar" x="84" y="204" width="44" height="64"/></g>
-          <g class="it" style="--jx:115px;--jy:238px;--jr:-17deg;--i:8"><use href="#f-jar" x="140" y="204" width="44" height="64"/></g>
-          <g class="it" style="--jx:-27px;--jy:234px;--jr:-25deg;--i:9"><use href="#f-jar" x="196" y="204" width="44" height="64"/></g>
-          <g class="it" style="--jx:28px;--jy:-264px;--jr:16deg;--i:10"><use href="#f-can" x="252" y="218" width="38" height="50"/></g>
-          <g class="it" style="--jx:244px;--jy:182px;--jr:13deg;--i:11"><use href="#f-can" x="302" y="218" width="38" height="50"/></g>
-          <g class="it" style="--jx:-98px;--jy:-110px;--jr:22deg;--i:12"><use href="#f-can" x="352" y="218" width="38" height="50"/></g>
-          <g class="it" style="--jx:174px;--jy:-276px;--jr:15deg;--i:13"><use href="#f-bag" x="402" y="196" width="60" height="72"/></g>
-          <g class="it" style="--jx:219px;--jy:-120px;--jr:11deg;--i:14"><use href="#f-spice" x="474" y="228" width="26" height="40"/></g>
-          <g class="it" style="--jx:-92px;--jy:-328px;--jr:19deg;--i:15"><use href="#f-spice" x="512" y="228" width="26" height="40"/></g>
-          <g class="it" style="--jx:-440px;--jy:-285px;--jr:16deg;--i:16"><use href="#f-spice" x="550" y="228" width="26" height="40"/></g>
-          <g class="it" style="--jx:-160px;--jy:238px;--jr:8deg;--i:17"><use href="#f-spice" x="588" y="228" width="26" height="40"/></g>
-          <g class="it" style="--jx:-461px;--jy:211px;--jr:-7deg;--i:18"><use href="#f-bottle" x="626" y="182" width="32" height="86"/></g>
-          <g class="it" style="--jx:-283px;--jy:162px;--jr:17deg;--i:19"><use href="#f-bottle" x="670" y="182" width="32" height="86"/></g>
-          <g class="it" style="--jx:9px;--jy:-180px;--jr:-25deg;--i:20"><use href="#f-bin" x="84" y="318" width="150" height="70"/></g>
-          <g class="it" style="--jx:-57px;--jy:105px;--jr:-15deg;--i:21"><use href="#f-jarlg" x="246" y="310" width="56" height="78"/></g>
-          <g class="it" style="--jx:-112px;--jy:-191px;--jr:21deg;--i:22"><use href="#f-jarlg" x="314" y="310" width="56" height="78"/></g>
-          <g class="it" style="--jx:-230px;--jy:-204px;--jr:23deg;--i:23"><use href="#f-jarlg" x="382" y="310" width="56" height="78"/></g>
-          <g class="it" style="--jx:-96px;--jy:-299px;--jr:23deg;--i:24"><use href="#f-bottle" x="450" y="302" width="32" height="86"/></g>
-          <g class="it" style="--jx:-139px;--jy:-181px;--jr:13deg;--i:25"><use href="#f-bag" x="494" y="316" width="60" height="72"/></g>
-          <g class="it" style="--jx:140px;--jy:-135px;--jr:-13deg;--i:26"><use href="#f-bin" x="84" y="438" width="150" height="70"/></g>
-          <g class="it" style="--jx:62px;--jy:-214px;--jr:-14deg;--i:27"><use href="#f-bin" x="246" y="438" width="150" height="70"/></g>
-          <g class="it" style="--jx:-50px;--jy:-127px;--jr:23deg;--i:28"><use href="#f-bag" x="408" y="436" width="60" height="72"/></g>
-          <g class="it" style="--jx:-32px;--jy:-122px;--jr:-20deg;--i:29"><use href="#f-box" x="480" y="410" width="62" height="98"/></g>
-        </g>
-
-      </svg>
-    </div>
-    <ol class="fig-notes">
-      <li><span class="fig-note-h">Top shelf</span><span class="fig-note-t">Seldom used. Hazards go high or behind a latch.</span></li>
-      <li class="fig-note-eye"><span class="fig-note-h">Eye level</span><span class="fig-note-t">Daily. Reached every morning, so it sits where hands land first.</span></li>
-      <li><span class="fig-note-h">Lower shelf</span><span class="fig-note-t">Kids' snacks within reach. Heavy jars low, so nobody climbs.</span></li>
-      <li><span class="fig-note-h">Floor</span><span class="fig-note-t">Bulk overflow in the bins you already own.</span></li>
-    </ol>
-    <figcaption>The sample pantry, before and after its plan. Every space gets the same treatment: each shelf becomes a zone, and each zone says why.</figcaption>
-  </figure>
+    <figure class="hero-photo">
+      <div class="hp-mat">
+        <span class="hp-tape" aria-hidden="true"></span>
+        <img data-img="sample-after" src="assets/photos/ex-pantry-after.webp" width="542" height="715" alt="The sample pantry after its plan: labeled jars and bins on every shelf, bulk stock up top, heavy items low" fetchpriority="high" onerror="this.closest('.hero').classList.add('no-photo')">
+        <ol class="hp-notes" aria-label="Notes from the plan">
+          <li style="--y:13%">bulk + backups up top</li>
+          <li style="--y:44%">daily: breakfast, coffee</li>
+          <li style="--y:80%">heavy items low</li>
+        </ol>
+      </div>
+      <figcaption>The sample pantry, after its nine steps.</figcaption>
+      <figure class="hp-before">
+        <img data-img="sample-before" src="assets/photos/pantry-before.webp" width="486" height="700" alt="The same pantry before: packets, foil trays and cans piled on every shelf" loading="lazy">
+        <figcaption>Before</figcaption>
+      </figure>
+    </figure>
   </div>
 
   <!-- Every space TidyMap plans, rendered from the wizard's own data so the
@@ -306,31 +246,25 @@
     </div>
   </div>
 
-  <!-- One finished plan, compressed to the part that proves the point -->
+  <!-- One finished plan, compressed to the part that proves the point. The
+       photo of this pantry is the hero's; here is the plan that made it. -->
   <div class="home-sec" id="sample">
-    <h2>See a finished plan</h2>
+    <h2>Every shelf has a job, and a reason</h2>
     <p class="sec-sub">One example, a family pantry. Every space gets the same treatment.</p>
     <div class="story-grid">
-      <figure class="story-photo">
-        <img data-img="sample-after" src="assets/photos/ex-pantry-after.webp" width="542" height="715" alt="The finished pantry: labeled jars and bins on every shelf, snacks within reach, bulk stock up top" loading="lazy" onerror="this.closest('.story-grid').classList.add('no-photo')">
-        <figcaption>The pantry from this plan, after the nine steps.</figcaption>
-      </figure>
       <div class="story-plan">
         <p class="story-label">Plan excerpt</p>
-        <table class="story-table">
-          <thead><tr><th scope="col">Zone</th><th scope="col">What goes here</th></tr></thead>
-          <tbody>
-            <tr><td>Eye level</td><td>Daily snacks, breakfast, coffee &amp; tea</td></tr>
-            <tr><td>Lower shelf</td><td>Kid snacks and heavy items, so nobody climbs</td></tr>
-            <tr><td>Top shelf</td><td>Bulk overflow and rarely used things</td></tr>
-          </tbody>
-        </table>
+        <dl class="story-zones">
+          <div><dt>Eye level</dt><dd>Daily snacks, breakfast, coffee and tea. Reached every morning, so it sits where hands land first.<span class="pen">use the 2 baskets you have</span></dd></div>
+          <div><dt>Lower shelf</dt><dd>Kid snacks and heavy items, so nobody climbs and nothing falls far.<span class="pen">heavy things first, 5 min</span></dd></div>
+          <div><dt>Top shelf</dt><dd>Bulk overflow, paper goods and rarely used things.<span class="pen">backups go up, 10 min</span></dd></div>
+        </dl>
         <p class="story-foot">Nine steps, 45-90 minutes, $0 to start. <button class="home-link" onclick="runDemo()">Open the full sample plan</button></p>
-        <figure class="story-3d">
-          <img data-img="product-hero-3d" src="assets/product/hero-3d.webp" width="1100" height="858" alt="The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf" loading="lazy" onerror="this.closest('.story-3d').classList.add('hide')">
-          <figcaption>The same plan standing up, in the 3D view. Drag any item to a different shelf to try another arrangement.</figcaption>
-        </figure>
       </div>
+      <figure class="story-3d">
+        <img data-img="product-hero-3d" src="assets/product/hero-3d.webp" width="1100" height="858" alt="The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf" loading="lazy" onerror="this.closest('.story-3d').classList.add('hide')">
+        <figcaption>The same plan standing up, in the 3D view. Drag any item to a different shelf to try another arrangement.</figcaption>
+      </figure>
     </div>
   </div>
 
@@ -352,29 +286,6 @@
       </li>
     </ol>
     <p class="how-foot">About ten minutes of questions. The plan comes back the same session.</p>
-  </div>
-
-  <!-- Practical promises -->
-  <div class="home-sec" id="promises">
-    <h2>What we promise</h2>
-    <dl class="promise-list">
-      <div>
-        <dt>We start with what you own.</dt>
-        <dd>Every plan begins at $0, on your existing shelves and bins.</dd>
-      </div>
-      <div>
-        <dt>Safety is planned in.</dt>
-        <dd>Hazards go high or behind a latch; kids&rsquo; things stay reachable.</dd>
-      </div>
-      <div>
-        <dt>Purchases stay optional.</dt>
-        <dd>Product ideas are off unless you ask, and clearly marked.</dd>
-      </div>
-      <div>
-        <dt>The plan bends to you.</dt>
-        <dd>Change a zone, lower the effort, swap a step.</dd>
-      </div>
-    </dl>
   </div>
 
   <!-- Credibility -->

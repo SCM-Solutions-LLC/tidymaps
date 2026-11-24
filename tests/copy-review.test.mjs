@@ -43,8 +43,11 @@ test('the landing figure does not call a sample shelf the visitor\'s own', () =>
   assert.ok(html.includes('Fits a 14&Prime; shelf'));
 });
 
-test('the hero asks for a space, the word the wizard uses, not a room', () => {
-  assert.ok(html.includes('Bring order to the space that runs your day.'));
+test('the hero names spaces, the wizard\'s word, never a room', () => {
+  const hero = html.slice(html.indexOf('class="hero"'), html.indexOf('id="spaces"'));
+  assert.ok(html.includes('Your shelves, <em>thought through.</em>'));
+  assert.match(hero, /a pantry, closet or garage/, 'the hero no longer names the spaces the planner covers');
+  assert.ok(!/\broom\b/i.test(hero.replace(/<[^>]+>/g, '')), 'the hero asks for a room');
 });
 
 test('Review shows the space as one answer, not a room and a spot', () => {

@@ -19,7 +19,8 @@ test('every page uses the same theme-color', () => {
 
   /* And it is the accent: --spot in sRGB, the same copied hex the favicon
      carries (tests/design.test.mjs pins that one to the token). It sat a
-     shade off, on #b5522f, until 2026-10-25. */
+     shade off, on #b5522f, until 2026-10-25, and was terracotta until
+     2026-11-24. */
   const favicon = readFileSync(new URL('../assets/favicon.svg', import.meta.url), 'utf8');
   const fill = /<rect width="24" height="24"[^>]* fill="(#[0-9a-f]{6})"/i.exec(favicon)[1];
   assert.equal([...values][0].toLowerCase(), fill.toLowerCase(), 'theme-color is not --spot');

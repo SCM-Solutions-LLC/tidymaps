@@ -1,64 +1,71 @@
 ---
 name: TidyMap
-description: A shelf-by-shelf organization plan on warm cream paper: white cards with soft corners and low shadows, one terracotta accent for every button, and sage, butter and sky as supporting fields.
+description: A shelf-by-shelf organization plan marked up like a professional organizer would: real photographs on warm paper, Literata for reading, an organizer's pen notes, ink buttons with soft corners, and olive as the one accent ink.
 colors:
-  paper: "oklch(0.977 0.014 82)"
-  stock: "oklch(0.999 0.004 82)"
-  ink: "oklch(0.27 0.02 40)"
-  ink-3: "oklch(0.45 0.035 45)"
-  draw: "oklch(0.46 0.03 42)"
-  spot: "oklch(0.56 0.13 36)"
-  spot-deep: "oklch(0.48 0.125 36)"
-  spot-ink: "oklch(0.49 0.125 36)"
-  tint: "oklch(0.952 0.02 80)"
-  tint-2: "oklch(0.925 0.05 48)"
-  sel-bg: "oklch(0.968 0.026 50)"
-  line: "oklch(0.885 0.02 72)"
-  line-2: "oklch(0.82 0.025 68)"
-  field-line: "oklch(0.62 0.035 58)"
-  sage-f: "oklch(0.94 0.038 150)"
-  sage-l: "oklch(0.80 0.07 150)"
-  sage-d: "oklch(0.37 0.075 150)"
-  butter-f: "oklch(0.955 0.06 92)"
-  butter-l: "oklch(0.84 0.10 88)"
-  butter-d: "oklch(0.40 0.08 70)"
-  sky-f: "oklch(0.94 0.028 235)"
-  sky-l: "oklch(0.80 0.06 232)"
-  sky-d: "oklch(0.38 0.08 245)"
+  paper: "oklch(0.951 0.013 82)"
+  stock: "oklch(0.983 0.006 85)"
+  ink: "oklch(0.245 0.009 75)"
+  ink-3: "oklch(0.48 0.02 76)"
+  draw: "oklch(0.40 0.015 75)"
+  spot: "oklch(0.245 0.009 75)"
+  spot-deep: "oklch(0.16 0.008 75)"
+  spot-ink: "oklch(0.39 0.052 124)"
+  tint: "oklch(0.925 0.016 80)"
+  tint-2: "oklch(0.925 0.03 118)"
+  sel-bg: "oklch(0.955 0.018 110)"
+  line: "oklch(0.858 0.023 81)"
+  line-2: "oklch(0.79 0.026 78)"
+  field-line: "oklch(0.60 0.025 75)"
+  sage-f: "oklch(0.93 0.026 140)"
+  sage-l: "oklch(0.79 0.05 140)"
+  sage-d: "oklch(0.37 0.06 140)"
+  butter-f: "oklch(0.945 0.04 90)"
+  butter-l: "oklch(0.83 0.07 86)"
+  butter-d: "oklch(0.40 0.07 70)"
+  sky-f: "oklch(0.93 0.018 240)"
+  sky-l: "oklch(0.79 0.04 240)"
+  sky-d: "oklch(0.38 0.07 250)"
+  pen: "oklch(0.372 0.081 266)"
   danger: "oklch(0.52 0.19 28)"
   danger-ink: "oklch(0.45 0.18 28)"
   danger-bg: "oklch(0.96 0.025 28)"
 typography:
   display:
-    fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
-    fontSize: "clamp(32px, 4.2vw, 46px)"
-    fontWeight: 700
+    fontFamily: "Literata, Georgia, Times New Roman, serif"
+    fontSize: "clamp(40px, 5vw, 62px)"
+    fontWeight: 400
     lineHeight: 1.08
     letterSpacing: "-0.022em"
   headline:
-    fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Literata, Georgia, Times New Roman, serif"
     fontSize: "clamp(26px, 3.4vw, 34px)"
-    fontWeight: 700
+    fontWeight: 400
     lineHeight: 1.12
     letterSpacing: "-0.018em"
   title:
-    fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Literata, Georgia, Times New Roman, serif"
     fontSize: "clamp(17px, 3vw, 19px)"
-    fontWeight: 700
+    fontWeight: 600
     lineHeight: 1.15
     letterSpacing: "-0.012em"
   lede:
-    fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Literata, Georgia, Times New Roman, serif"
     fontSize: "clamp(16px, 2vw, 18px)"
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: "normal"
   body:
-    fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Literata, Georgia, Times New Roman, serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: "normal"
+  hand:
+    fontFamily: "Architects Daughter, Segoe Print, Bradley Hand, cursive"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.25
+    letterSpacing: "0.01em"
   label:
     fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif"
     fontSize: "13px"
@@ -72,9 +79,10 @@ typography:
     lineHeight: 1
     letterSpacing: "0.01em"
 rounded:
-  sm: "10px"
-  md: "16px"
-  lg: "24px"
+  sm: "8px"
+  md: "6px"
+  btn: "10px"
+  lg: "10px"
   pill: "999px"
 shadow:
   sm: "0 1px 2px oklch(0.35 0.03 50 / .07)"
@@ -92,16 +100,16 @@ components:
     backgroundColor: "{colors.spot}"
     textColor: "{colors.stock}"
     typography: "{typography.button}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.btn}"
     padding: "14px 22px"
   button-primary-hover:
     backgroundColor: "{colors.spot-deep}"
   button-ghost:
     backgroundColor: "{colors.stock}"
     textColor: "{colors.ink}"
-    borderColor: "{colors.line-2}"
+    borderColor: "{colors.ink}"
     typography: "{typography.button}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.btn}"
     padding: "14px 22px"
   button-ghost-hover:
     backgroundColor: "{colors.tint}"
@@ -160,85 +168,78 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Warm Shelf"**
+**Creative North Star: "The Marked-up Shelf"**
 
-TidyMap looks like a well-kept pantry feels: warm, tidy, and easy to be in. The page is cream paper; everything that holds content sits on it as a white card with soft corners and a low, warm shadow. One terracotta carries every button, selected state and progress mark. Three quiet supporting colours, sage, butter and sky, colour the zones in a figure, the tips, the callouts and the space cards, so a page has variety without noise. Archivo sets everything, in sentence case: no letterspaced caps, no second face.
+TidyMap looks like a professional organizer's plan for your own shelves: a real photograph of the space, laid on warm paper like a print, with short notes in the organizer's pen pointing at the shelves they describe. Reading text and headings are Literata, a book serif, at a calm weight; controls and labels are Archivo in sentence case; the pen (Architects Daughter) is used only for short margin notes. Buttons are the ink with gently rounded corners. Olive is the one accent, and it is an ink, never a fill.
 
-This replaced the "Home-Economics Manual" direction of 2026-09-07 (white stock, off-black ink, square corners, 1px ink rules, one accent, no shadows). The owner reviewed the shipped site on 2026-10-03 and found it clinical: "too structured and black/white, too many sharp corners and harsh lines." The mechanism that made the manual work, inked cupboard elevations with one terracotta label stroke per item, stays; the chrome around it softened.
+It is for adults running a household, so it should read as a serious tool with a human hand in it, not as an app template and not as a children's scrapbook. The owner rejected the handmade mock that preceded this one as "a little too childlike" (tilted polaroids, emoji, highlighter, a chunky display serif): warmth comes from photographs, paper and the pen, never from decoration.
 
-Density is a comfortable reading page rather than a dashboard: a section rhythm of 64 to 104px, a 760px measure for lessons and 1100px for spreads. Separation is done by cards and space, not rules: a list of things is a stack of rounded cards with 10 to 14px between them, and a section head stands alone with air above it.
+This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, pastel sage, butter and sky cards, Archivo for everything), which the owner found read as AI-generated: cream with a terracotta accent and rounded pastel cards is the widely recognised generated look. The Warm Shelf had itself replaced the "Home-Economics Manual" (2026-09-07: white, off-black, square corners, caps labels), which read as clinical. So this direction keeps the manual's restraint and the Warm Shelf's soft edges: no caps labels, no square buttons, and no pills on buttons either.
 
 **Key Characteristics:**
-- Cream paper, white cards, soft brown-black ink. Borders are a light warm line, so a card is outlined, never boxed in.
-- Terracotta is the button, the selected state, the progress mark and the label stroke inside every drawing. It is never a field, except screened to peach for the eye-level zone and the signup card.
-- Sage, butter and sky are fields with a deep ink of their own for text. They colour zones, tips, callouts and the space cards. They never carry a button.
-- Archivo alone, in sentence case. Titles 700 at moderate sizes; labels 700 at 13px with almost no tracking; buttons 700 at 15px.
-- Corners: 10px on controls, 16px on cards, 24px on the large frames (the figure, the 3D stage, the modal), pills on buttons and chips.
-- Shadows are low and warm, one tier per surface: cards at rest take the small one, a lifted card or the toast the medium, the modal the large.
-- Figures are inked cupboard elevations with a rounded case: items white-filled with round-capped strokes, one terracotta label stroke each, zones as soft colour fields.
-- Motion is one stroke: exponential ease-out, 120 to 340ms for UI, one long 1.15s sort for Figure 1, played once.
+- Warm paper with a faint fibre (`--paper-grain`), near-white sheets with a low warm shadow, hairline rules between rows. Sections are separated by space and hairlines, not boxes.
+- Real photographs of real spaces carry the page. A photo is a print: a paper mat, a strip of tape, a low shadow.
+- The pen: blue-black handwriting on small paper slips pinned to a photo, or as the margin note under a plan zone. Short notes only, never a sentence the reader must parse.
+- Ink buttons (white label, 10px corners); ghost buttons are an ink outline on the sheet. Chips and tags stay pills.
+- Olive (`spot-ink`) for links, a phrase in a heading, check marks and numerals. Never a field larger than the faint `tint-2` / `sel-bg`.
+- Sage, butter and sky survive, desaturated, as quiet fields for zones and callouts in the wizard and report.
 
 ## Colors
 
 ### Paper and ink
-- **Paper** (`paper`): the page. Warm cream, a shade off white.
-- **Stock** (`stock`): cards, inputs, buttons at rest, and the fill of every inked item in a figure. Near white, so a card reads as lifted off the cream.
-- **Ink** (`ink`): text and headings. A soft warm brown-black, never pure black.
-- **Secondary ink** (`ink-3`): subtitles, metadata, helper text, placeholders. Warm brown, about 7:1 on cream.
-- **Drawing line** (`draw`): the stroke of every cupboard drawing, softer than type ink.
-- **Line** (`line`) and **Line 2** (`line-2`): card borders and dividers (`line`), chips, ghost buttons and dashed frames (`line-2`). Both are light and warm.
-- **Field line** (`field-line`): the edge of a form control (inputs, checkboxes, radios, the empty step dot). Clears 3:1 on white so a control is identifiable.
+- **Paper** (`paper`): the page. Warm, a step darker than white, so sheets and prints read as laid on it.
+- **Stock** (`stock`): sheets, inputs, photo mats, the running head.
+- **Ink** (`ink`): text, headings and every primary button. A warm near-black.
+- **Secondary ink** (`ink-3`): subtitles, captions, metadata, helper text. About 6:1 on paper.
+- **Drawing line** (`draw`): the stroke of the cupboard drawings in the wizard and report.
+- **Line** (`line`), **Line 2** (`line-2`), **Field line** (`field-line`): hairlines and dividers, firmer frames, and form-control edges (3:1 on the sheet).
 
 ### Accent
-- **Terracotta** (`spot`): primary buttons, the brand mark, selected chips and segments, the progress rail and bars, the "Kid safe" flag and chapter badges, the numerals in the method list, the label stroke on every inked item, the border and inset ring on a selected card, the range thumb, the caret, the selection highlight and the focus ring.
-- **Terracotta, pressed** (`spot-deep`): hover on a primary button.
-- **Terracotta, printed dark** (`spot-ink`): links, the step counter in the running head, dashboard counts, the eye-level heading in Figure 1's legend.
-- **Peach** (`tint-2`): the accent screened to a field. The eye-level zone in every figure, the signup card, the first space card's stage, the active press on ghost buttons.
-- **Selected** (`sel-bg`): the faintest peach, the fill of a selected card behind its terracotta border.
-- **Sand** (`tint`): the ordinary content field: hover fill on ghost buttons, chips and options, the step-art band, the product filters panel, the clip band behind step animations.
+- **Ink as the button** (`spot`, `spot-deep`): primary buttons, selected chips and segments, the progress rail and bars, the focus ring, the caret and the selection.
+- **Olive** (`spot-ink`): links, the italic phrase in the hero, check marks in the trust line, method numerals, the current chapter in the report contents.
+- **Olive screened** (`tint-2`, `sel-bg`): the faintest fills, for a selected card and the eye-level zone.
+- **Pen** (`pen`): handwritten notes only.
 
 ### Supporting fields
-Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`).
-- **Sage**: success, safety notes, the "Reach-in" and second space cards, Figure 1's floor zone, the "How it works" second numeral.
-- **Butter**: warnings and notes (the rail note, the plan-rate panel, legal callouts, fit notes), the third space cards, Figure 1's lower shelf.
-- **Sky**: information callouts, the fourth space cards, Figure 1's top shelf, the "How it works" third numeral.
+Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), now desaturated to sit on warm paper. Sage is success and safety, butter is warnings and notes, sky is information. They never carry a button.
 
-### Semantic
-- **Success** is sage, **info** is sky, **warning** is butter with a deep amber ink.
-- **Correction pencil** (`danger`, `danger-ink`, `danger-bg`): the one red, used for nothing but a failure (invalid email, unplaceable organizer), so it can never be mistaken for a call to action.
+### The step clips' frozen palette
+The checklist clips are baked video (`remotion/`). Until they are re-rendered, `.step-art` keeps the old Warm Shelf colours through the `--clip-*` tokens so a clip and its inline stand-in scene still match. Delete that block after the `--force` render.
 
 ### Named Rules
-**The One-Button Rule.** Terracotta is the only colour a button, a selected thing or a progress mark may take. Sage, butter and sky are fields and text, never controls.
-**The Accent-Is-Small Rule.** Terracotta appears as a button, a stroke, a numeral, a pill or a dark word. The only fields it may tint are peach: eye level in a figure, the signup card, a selected card.
-**The Field-Has-Its-Own-Ink Rule.** Text on a sage, butter or sky field uses that family's deep ink, never the accent or grey.
+**The Ink-Button Rule.** A button, a selected thing or a progress mark is the ink. Olive is never a control fill.
+**The Accent-Is-Ink Rule.** Olive appears as text, a check or a numeral. Its only fills are the faint `tint-2` and `sel-bg`.
+**The Field-Has-Its-Own-Ink Rule.** Text on a sage, butter or sky field uses that family's deep ink.
 **The Correction-Pencil Rule.** Red appears only on a failure.
-**The Marked-State Rule.** Never encode state by hue alone. Pair every state with a mark (filled, half-filled or empty dot), a strikethrough, an icon or a word.
+**The Marked-State Rule.** Never encode state by hue alone. Pair every state with a mark, a strikethrough, an icon or a word.
 
 ## Typography
 
-**Display Font:** Archivo variable (with -apple-system, Helvetica Neue, Arial)
-**Body Font:** Archivo (same face; `--serif` aliases to it)
-**Label Font:** Archivo at its normal width, sentence case
+**Reading and headings:** Literata (self-hosted, opsz 12-72, wght 400-600; one static italic at 400)
+**Controls and labels:** Archivo variable, sentence case
+**The pen:** Architects Daughter, for short notes only
 
-**Character:** One grotesque at rest. Titles are firm (700) but held to moderate sizes, so hierarchy comes from weight, cards and space rather than scale. Labels are small, bold and in sentence case. Nothing on the site is set in caps.
+**Character:** A book page with an organizer's notes on it. Headings are Literata at a book weight (400), so hierarchy comes from size and space, not bold; h3 and h4 take 600 to hold up at reading size. Archivo sets buttons, inputs, nav, labels, captions and data, where a serif would read as prose. Nothing is set in caps.
 
 ### Scale
-Every font-size is a token from `css/tokens.css`; `tests/type-scale.test.mjs` rejects any other. Eight set sizes: `--fs-2xs` 11px (the floor), `--fs-xs` 12, `--fs-sm` 13, `--fs-md` 14, `--fs-ui` 15, `--fs-body` 16, `--fs-lg` 18, `--fs-xl` 22. Six fluid ones for headings: `--fs-title`, `--fs-lede`, `--fs-chapter` `clamp(20px, 3vw, 24px)`, `--fs-section`, `--fs-page` `clamp(30px, 4.6vw, 44px)`, `--fs-display`. Until 10-23 the sheets carried 40 sizes, half a pixel apart in places, so the same kind of text never quite matched; half-pixel sizes now sit on the step below.
+Every font-size is a token from `css/tokens.css`; `tests/type-scale.test.mjs` rejects any other. Eight set sizes: `--fs-2xs` 11px (the floor), `--fs-xs` 12, `--fs-sm` 13, `--fs-md` 14, `--fs-ui` 15, `--fs-body` 16, `--fs-lg` 18, `--fs-xl` 22. Six fluid ones for headings: `--fs-title`, `--fs-lede`, `--fs-chapter` `clamp(20px, 3vw, 24px)`, `--fs-section`, `--fs-page` `clamp(30px, 4.6vw, 44px)`, `--fs-display` `clamp(40px, 5vw, 62px)`.
 
 ### Hierarchy
-- **Display** (Archivo 700, `--fs-display`, 1.08, -0.022em): the landing hero's h1 only, 22ch max. Every other screen's h1 (wizard, report, plan hero, legal) is `--fs-page`.
-- **Headline** (Archivo 700, `--fs-section`, 1.12, -0.018em): h2 section heads. Report chapters and the room heading in the spaces gallery are `--fs-chapter`.
-- **Title** (Archivo 700, `--fs-title`, 1.15, -0.012em): h3 card names, method-step titles, list items. Card names run 800 at `--fs-lg`; product-shot titles `--fs-xl`; h4 is `--fs-body` / 700.
-- **Lede** (Archivo 400, `--fs-lede`, 1.6): the paragraph under a title, 44ch max. Section subtitles run `--fs-lg`.
-- **Body** (Archivo 400, `--fs-body`, 1.6): reading text, legal prose included (1.7 there). Small is `--fs-md` / 1.5; figure captions and table cells `--fs-md` to `--fs-ui`.
-- **Label** (Archivo 700, `--fs-sm`, 0.005em, sentence case): figure numbers, column heads, nav items, step counters, the contents and its rows, legend headings. Zone names inside a figure are Archivo 700 at `--fs-lg`.
-- **Button** (Archivo 700, `--fs-ui`, 0.01em, sentence case): every button label; small buttons drop to `--fs-sm`; the hero primary sits at `--fs-body` with 16px 28px padding.
+- **Display** (Literata 400, `--fs-display`, 1.06, -0.022em): the landing hero's h1 only, 14ch max, with one italic phrase in olive.
+- **Headline** (Literata 400, `--fs-section`, 1.12): h2 section heads.
+- **Title** (Literata 600, `--fs-title`): h3. Landing space names and product-shot titles are Literata 400 at `--fs-xl`.
+- **Lede and body** (Literata 400, 1.6 to 1.65).
+- **Label, caption, button** (Archivo 500 to 600, `--fs-sm` to `--fs-ui`, sentence case).
+- **Pen** (Architects Daughter 400, `--fs-ui`; `--fs-sm` on a phone).
 
 ### Named Rules
-**The One-Family Rule.** Archivo sets everything. A heading that needs more presence gets a card, a numeral or more space, never a second face.
-**The Sentence-Case Rule.** No `text-transform: uppercase` anywhere. A label is small and bold, not loud.
-**The Firm-Moderate Rule.** Titles are weight 700 at moderate sizes (46px ceiling on the h1). Scale is not the lever; weight and space are.
-**The Figure-Number Rule.** A figure is captioned "Fig. n" in a small peach pill; the number sits inside the caption or the h3, never above a heading.
+**The Three-Voice Rule.** Literata reads, Archivo operates, the pen annotates. A heading that needs more presence gets space or a photograph, never a fourth face or bold.
+**The Sentence-Case Rule.** No `text-transform: uppercase` anywhere.
+**The Short-Note Rule.** Pen notes are a few words. Anything a reader must understand to use the product is set in Literata or Archivo.
+
+## Migration status
+
+Stage 1 (2026-11-24) restyled the tokens, fonts and buttons sitewide and rebuilt the landing page. The wizard (stage 2) and the plan report (stage 3) inherit the new paper, ink, type and buttons, but keep their Warm Shelf shapes: rounded option cards, pastel illustration stages on the space cards, colour-filled zones in the report, pills. The Layout, Shapes and Components sections below still describe those shapes where they say "card", "pill" or "terracotta"; read terracotta there as the ink. Rewrite each section as its stage lands.
 
 ## Layout
 
@@ -315,18 +316,17 @@ One stroke. `--ease` (0.2,0.7,0.2,1) for state changes, `--ease-out` (0.16,0.84,
 ## Do's and Don'ts
 
 ### Do:
-- **Do** put content on a white card with soft corners and the small shadow, on cream paper; separate with space and cards, not rules.
-- **Do** keep terracotta for buttons, selected states, progress marks and the label stroke in drawings; use sage, butter and sky as fields with their own deep ink for text.
-- **Do** set every label in sentence case: Archivo 700 at 13px, almost no tracking.
-- **Do** caption every drawing "Fig. n" in the peach pill and draw it in the elevation voice: white-filled items, round-capped strokes, one terracotta label stroke per item, soft colour zones with eye level in peach.
-- **Do** mark state with a dot (empty, half, full), a strikethrough, an icon or a word, and pair any hue with one of those.
-- **Do** keep focus rings 2px terracotta outlines and touch targets at 44px minimum.
+- **Do** lead with a real photograph of a real space, presented as a print on the paper.
+- **Do** separate sections with space and hairlines; keep sheets for things that are objects (a plan, a photo, a form).
+- **Do** use the pen for short notes that point at something: a shelf, a zone, a next action.
+- **Do** keep buttons the ink with 10px corners, and labels in sentence case.
+- **Do** mark state with a mark, a strikethrough, an icon or a word, and pair any hue with one of those.
+- **Do** keep focus rings 2px ink outlines and touch targets at 44px minimum.
 
 ### Don't:
-- **Don't** set any text in caps, or add tracking to a label.
-- **Don't** draw a hard ink border or a 1px ink rule; borders are `line`, `line-2` or `field-line`.
-- **Don't** colour a button, a selected state or a progress mark with anything but terracotta.
-- **Don't** fill a panel with terracotta; peach is the only accent field, and only for eye level, the signup card and a selected card.
-- **Don't** use red, terracotta or any hue as the sole carrier of a state.
-- **Don't** add a gradient surface, a blur or a second typeface, and keep the h1 at or under 46px.
+- **Don't** bring back cream with a terracotta accent, pastel-filled cards, or a grid of identical rounded cards.
+- **Don't** tilt more than one thing on a screen, or add emoji, highlighter marks or stickers: warmth comes from the photographs and the pen, not decoration.
+- **Don't** set any text in caps, square off a button, or make a button a pill.
+- **Don't** use the pen for a paragraph, a control label or anything a reader must parse.
+- **Don't** add a gradient surface, a blur, or a fourth typeface.
 - **Don't** put a kicker or eyebrow above a heading.

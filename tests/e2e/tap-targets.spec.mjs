@@ -72,8 +72,9 @@ test.describe('phone', () => {
       expect(b.h, `footer "${b.name}"`).toBeGreaterThanOrEqual(44);
     }
     // The padding did not push the sentence apart: the line the sample-plan
-    // button sits on is still one line of text.
-    const line = await page.locator('#screen-landing .home-link').first().evaluate((el) => {
+    // button sits on is still no taller than its text. (It was the hero's
+    // link until 2026-11-24, when that became a ghost button.)
+    const line = await page.locator('#sample .story-foot .home-link').evaluate((el) => {
       const p = el.parentElement.getBoundingClientRect();
       return p.height;
     });

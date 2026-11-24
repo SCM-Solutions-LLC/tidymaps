@@ -8,20 +8,38 @@
       "license": {
         "type": "first-party",
         "owner": "SCM Solutions LLC",
-        "note": "Photography from design handoff showing the pantry after the plan was worked. The matching before shot is deliberately not on the homepage: a photo of a chaotic pantry undersells a section headed \"See a finished plan\"."
+        "note": "Photography from design handoff showing the pantry after the plan was worked. Since 2026-11-24 it is the landing hero, with the plan's notes pinned on it and the before shot tucked under its corner: the pair shows the change the plan makes. (It used to stand alone under \"See a finished plan\", where a chaotic pantry would have argued against the heading.)"
+      },
+      "status": "ready"
+    },
+    "sample-before": {
+      "file": "assets/photos/pantry-before.webp",
+      "alt": "The same pantry before: packets, foil trays and cans piled on every shelf",
+      "license": {
+        "type": "first-party",
+        "owner": "SCM Solutions LLC",
+        "note": "The before shot from the same design handoff as sample-after; shown on the landing hero only as a small print beside the after photo."
       },
       "status": "ready"
     },
     "product-hero-3d": {
       "file": "assets/product/hero-3d.webp",
       "alt": "The sample pantry plan in the TidyMap 3D view: every zone labeled, shelf by shelf",
-      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the app's own 3D viewer; interim hero stand-in until real photography lands." },
+      "license": {
+        "type": "first-party",
+        "owner": "SCM Solutions LLC",
+        "note": "Capture of the app's own 3D viewer; interim hero stand-in until real photography lands."
+      },
       "status": "ready"
     },
     "og": {
       "file": "assets/og.png",
       "alt": "TidyMap: a practical plan for one hard-working storage space",
-      "license": { "type": "first-party", "owner": "SCM Solutions LLC", "note": "Capture of the live hero, 1200x630." },
+      "license": {
+        "type": "first-party",
+        "owner": "SCM Solutions LLC",
+        "note": "Capture of the live hero, 1200x630."
+      },
       "status": "ready"
     }
   }

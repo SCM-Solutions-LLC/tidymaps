@@ -14,7 +14,7 @@ const landing = html.slice(html.indexOf('id="screen-landing"'), html.indexOf('id
 
 test('hero leads with the practical promise', () => {
   for (const phrase of [
-    'Bring order to the space that runs your day',
+    'Your shelves, <em>thought through.</em>',
     'already own',
     'Plan my space',
     'View a sample plan',
@@ -28,9 +28,13 @@ test('no trendy display font or third-party font CDN', () => {
     assert.ok(!html.includes(bad), `font tell present in index.html: ${bad}`);
     assert.ok(!tokens.includes(bad), `font tell present in tokens.css: ${bad}`);
   }
-  // Two faces, both self-hosted: Archivo for titles and labels, Source Serif 4
-  // for reading. The preload names the same file the stylesheet does.
+  // Three faces, all self-hosted: Literata for reading and headings, Archivo
+  // for controls and labels, Architects Daughter for the pen's short notes.
+  // The preloads name the same files the stylesheet does.
   assert.ok(tokens.includes('vendor/fonts/archivo-latin-wdth-normal.woff2'), 'Archivo is not self-hosted');
+  assert.ok(tokens.includes('vendor/fonts/literata-latin-normal.woff2'), 'Literata is not self-hosted');
+  assert.ok(tokens.includes('vendor/fonts/architects-daughter-latin.woff2'), 'the pen face is not self-hosted');
+  assert.ok(html.includes('rel="preload" href="vendor/fonts/literata-latin-normal.woff2"'), 'Literata is not preloaded');
   assert.ok(!tokens.includes('@font-face{\n  font-family:"Bodoni'), 'a display serif is back');
   assert.ok(html.includes('rel="preload" href="vendor/fonts/archivo-latin-wdth-normal.woff2"'), 'Archivo is not preloaded');
 });
@@ -55,16 +59,19 @@ test('signup asks plainly, with no exclusivity framing', () => {
   assert.ok(landing.includes('id="signup-email"'));
 });
 
-// The first figure is the mechanism, drawn: the sample pantry's items slide
-// into the plan's zones, and the notes beside them are the plan's reasons.
-test('Figure 1 draws the sort, with reduced motion showing the finished figure', () => {
-  assert.ok(landing.includes('id="fig-el"'), 'Figure 1 is missing');
-  assert.ok(landing.includes('class="f-items"'), 'Figure 1 has no items to sort');
-  assert.ok((landing.match(/class="it/g) || []).length >= 12, 'Figure 1 has too few items to read as a pantry');
-  assert.ok(!landing.includes('fig-replay'), 'the replay control is back: the sort is one authored moment, and replaying it always lands on the same plan');
-  assert.match(landingCss, /\.fig-el\.sorted \.f-items \.it\{transform:none\}/, 'sorted items no longer land in place');
-  const reduced = landingCss.slice(landingCss.indexOf('@media(prefers-reduced-motion:reduce)'));
-  assert.match(reduced, /\.f-items \.it\{transform:none\}/, 'reduced motion does not show the finished figure');
+// The hero shows the change a plan makes, on a real pantry: the sample's
+// after photo with the plan's notes pinned to the shelves they describe, and
+// the same pantry before, as a smaller print. The notes are a real list, so a
+// screen reader hears them; the drawn Figure 1 this replaced (2026-11-24) was
+// a cupboard elevation the owner found read as generated.
+test('the hero is the sample pantry after its plan, with the plan\'s notes on it', () => {
+  const hero = landing.slice(landing.indexOf('class="hero"'), landing.indexOf('id="spaces"'));
+  assert.ok(hero.includes('data-img="sample-after"'), 'the hero lost the after photo');
+  assert.ok(hero.includes('data-img="sample-before"'), 'the hero lost the before print');
+  assert.match(hero, /<ol class="hp-notes"[^>]*aria-label=/, 'the notes are not a labelled list');
+  assert.ok((hero.match(/<li style="--y:/g) || []).length >= 3, 'the photo carries too few notes to read as a plan');
+  assert.ok(!landing.includes('id="fig-el"'), 'Figure 1 is back beside the photo');
+  assert.match(landingCss, /\.hp-notes li\{[^}]*font-family:var\(--hand\)/, 'the notes are no longer in the pen');
 });
 
 // The homepage sells the whole product, not the pantry it was first built
@@ -85,11 +92,14 @@ test('landing shows real evidence: sample-plan excerpt and the finished space', 
   }
 });
 
-// A section headed "See a finished plan" showing a chaotic pantry argues
-// against itself. The before shot is the wizard's business, not the homepage's.
-test('the sample-plan section shows the finished space, not the mess', () => {
-  assert.ok(landing.includes('ex-pantry-after.webp'), 'sample plan lost its finished-space photo');
-  assert.ok(!landing.includes('pantry-before.webp'), 'the before shot is back on the homepage');
+// A section about a finished plan showing a chaotic pantry argues against
+// itself. The before shot appears once, as the small print beside the hero's
+// after photo, never on its own and never in the sample-plan section.
+test('the before shot is only ever the small print beside the after', () => {
+  const sample = landing.slice(landing.indexOf('id="sample"'), landing.indexOf('id="how"'));
+  assert.ok(!sample.includes('pantry-before.webp'), 'the before shot is in the sample-plan section');
+  assert.equal((landing.match(/pantry-before\.webp/g) || []).length, 1, 'the before shot appears more than once');
+  assert.match(landing, /<figure class="hp-before">\s*<img data-img="sample-before"/, 'the before shot left the hero print');
 });
 
 // A picture of text is not an explanation: app screenshots scaled down to fit
@@ -103,14 +113,14 @@ test('what-you-get explains with drawn panels, not shrunken screenshots', () => 
   assert.ok(!landing.includes('assets/product/wizard-household.png'), 'wizard screenshot re-inlined on the landing page');
 });
 
-test('room labels read as headings and their cards are centred', () => {
-  // a heading size from the scale (tokens.css), at least 20px at its smallest
-  const size = (landingCss.match(/\.space-room\{[^}]*font-size:var\((--fs-[\w-]+)\)/) || [])[1];
-  const tokens = readFileSync(new URL('../css/tokens.css', import.meta.url), 'utf8');
-  const value = size && (tokens.match(new RegExp(`${size}\\s*:\\s*([^;]+);`)) || [])[1];
-  assert.match(value || '', /^clamp\((2\d|[3-9]\d)px/, 'room labels shrank back to caption size');
-  assert.match(landingCss, /\.space-room\{[^}]*text-align:center/, 'room labels are no longer centred');
-  assert.match(landingCss, /\.space-group \.room-cards\{[^}]*justify-content:center/, 'space cards are no longer centred');
+// The landing lists the spaces as an index: the wizard's own buttons, with
+// the art hidden here only, and the space names set at a reading size so the
+// list never shrinks back to captions. Step 2 of the wizard keeps the art.
+test('the spaces read as an index, and only the landing hides their art', () => {
+  assert.match(landingCss, /\.space-group \.room-card \.rc-img\{display:none\}/, 'the landing shows the card art again');
+  assert.match(landingCss, /\.space-group \.rc-label h3\{[^}]*font-size:var\(--fs-xl\)/, 'space names shrank below reading size');
+  const componentsCss = readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
+  assert.ok(!/(^|\})\s*\.room-card \.rc-img\{[^}]*display:none/.test(componentsCss), 'the wizard lost its card art');
 });
 
 test('photo slots degrade gracefully until real photography exists', () => {
@@ -137,21 +147,24 @@ test('the plan hero placeholder is a decodable image, not a truncated one', () =
     'results.js sets a good illustration without clearing a stale hide');
 });
 
-// The Warm Shelf: cream paper, white cards, soft corners and low warm shadows,
-// terracotta as the one button colour with sage, butter and sky as supporting
-// fields. The owner asked for this on 2026-10-03 because the square, one-ink
-// manual look read as clinical. Ambient gradients and glass stay out.
-test('terracotta buttons, soft corners, supporting colours, no ambient gradients', () => {
-  assert.ok(tokens.includes('--spot:      oklch(0.56 0.13 36)'), 'the accent colour drifted');
+// The Marked-up Shelf (2026-11-24): warm paper, ink buttons, olive as the
+// one accent ink, quiet supporting fields. It replaced the Warm Shelf (cream,
+// terracotta, pastel cards), which the owner found read as AI-generated. The
+// Warm Shelf had itself replaced a square, one-ink manual look that read as
+// clinical (2026-10-03), so buttons keep soft corners and sheets keep shadows.
+test('ink buttons, soft corners, an olive accent, no ambient gradients', () => {
+  assert.ok(tokens.includes('--spot:      oklch(0.245 0.009 75)'), 'the button ink drifted');
+  assert.ok(tokens.includes('--spot-ink:  oklch(0.39 0.052 124)'), 'the olive accent drifted');
   /* The favicon, and the touch icon drawn from it, is --spot in sRGB as
      Chromium converts it: an SVG cannot read a CSS token, so the hex is copied.
-     It sat on an older, lighter terracotta (#C4674A) until 2026-10-25. Change
-     the token and this hex together, then rerun scripts/render-touch-icon.mjs. */
+     It was terracotta (#B3543B) until 2026-11-24. Change the token and this
+     hex together, then rerun scripts/render-touch-icon.mjs. */
   assert.match(readFileSync(new URL('../assets/favicon.svg', import.meta.url), 'utf8'),
-    /<rect width="24" height="24"[^>]* fill="#b3543b"/i, 'the favicon is off --spot');
+    /<rect width="24" height="24"[^>]* fill="#23201c"/i, 'the favicon is off --spot');
   assert.ok(tokens.includes('--brass:     var(--spot)'), 'a second accent is carrying the figure label');
-  assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at terracotta');
-  assert.match(tokens, /--radius: 1[2-8]px;/, 'cards lost their soft corners');
+  assert.ok(tokens.includes('--primary:      var(--spot)'), 'the legacy accent no longer points at the button ink');
+  assert.match(tokens, /--radius-btn: (8|9|1[0-2])px;/, 'buttons lost their soft corners');
+  assert.match(tokens, /--radius: [4-8]px;/, 'sheets are rounding like app cards again');
   assert.match(tokens, /--radius-pill: 999px;/, 'the pill radius is gone');
   assert.ok(!tokens.includes('--shadow: none;'), 'shadows were flattened again');
   for (const family of ['sage', 'butter', 'sky']) {
@@ -203,8 +216,7 @@ test('the plate\'s colour fallbacks are the tokens they stand in for', () => {
    walk-in made the point for them, with three walls of peach-or-grey rows and
    no legend in sight. The label column is gone. The eye row says "Eye level"
    in a pill beside its zone, and no rule in components.css paints a shelf
-   label any colour at all. The landing figure keeps its tinted eye zone,
-   because it keeps the legend that explains it. */
+   label any colour at all. */
 test('eye level is a word, not a fill', () => {
   // A comment may still name the old rule to say where it went; only live
   // selectors count.
@@ -218,15 +230,13 @@ test('eye level is a word, not a fill', () => {
   }
   assert.match(results, /class="(?:lv )?eye-mark"/, 'the eye row has no eye-mark pill');
   assert.ok(results.includes('Eye level</span>'), 'the eye row never says "Eye level" in its markup');
-  // The landing figure draws its own rule, with a legend; it must not drift.
-  assert.match(landingCss, /\.f-zone\{fill:var\(--tint\)/, 'Figure 1 ordinary zones are not warm grey');
-  assert.match(landingCss, /\.f-zone-eye\{fill:var\(--tint-2\)\}/, 'Figure 1 eye-level zone is not the accent tint');
 });
 
-// Buttons are pills and labels are sentence case; the narrowed, letterspaced
-// caps of the manual look are what made the site read as a form.
-test('buttons are pills and no label is set in caps', () => {
-  assert.match(baseCss, /\.btn\{[^}]*border-radius:var\(--radius-pill\)/, 'buttons are not pills');
+// Buttons are gently rounded and labels are sentence case; the square
+// corners and letterspaced caps of the manual look made the site read as a
+// form (2026-10-03), and a pill read as an app template (2026-11-24).
+test('buttons are softly rounded and no label is set in caps', () => {
+  assert.match(baseCss, /\.btn\{[^}]*border-radius:var\(--radius-btn\)/, 'buttons lost their own radius');
   for (const [name, css] of [['base', baseCss], ['landing', landingCss]]) {
     assert.ok(!css.includes('text-transform:uppercase'), `${name}.css still sets a caps label`);
   }
