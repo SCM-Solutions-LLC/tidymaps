@@ -49,6 +49,22 @@ test('the critical block becomes one inline <style>, its url()s rebased to the p
   }
 });
 
+// Production painted the landing page black: url(%23n) inside the paper-grain
+// data: SVG was rebased to url(css/%23n), and the SVG's rect, its filter
+// unresolved, drew in its default black fill.
+test('a url() nested inside a data: SVG is left alone', () => {
+  const dir = scratchSite();
+  const grain = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect filter='url(%23n)'/%3E%3C/svg%3E")`;
+  writeFileSync(join(dir, 'css', 'tokens.css'), `:root{--grain:${grain}}\n@font-face{src:url(../vendor/fonts/a.woff2)}`);
+  try {
+    const out = inlineCriticalCss(PAGE(), dir);
+    assert.ok(out.includes(grain), 'the data: SVG was rewritten');
+    assert.match(out, /url\(vendor\/fonts\/a\.woff2\)/, 'an unquoted css/-relative url() was not rebased');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('every stylesheet after the critical block loads async, with a noscript fallback', () => {
   const dir = scratchSite();
   try {

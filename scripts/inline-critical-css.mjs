@@ -23,8 +23,11 @@ const END = '<!-- critical-css:end -->';
 // rewritten relative to the page (all pages here live at the site root).
 function rebaseCssUrls(css, cssHref) {
   const cssDir = posix.dirname(cssHref);
-  return css.replace(/url\((['"]?)([^'")]+)\1\)/g, (whole, quote, url) => {
-    if (/^([a-z]+:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('/')) return whole;
+  // A quoted url() is matched to its closing quote, so a data: SVG's own
+  // url(#id) references stay inside it and are never rebased.
+  return css.replace(/url\(("|')(.*?)\1\)|url\(()([^'")]+)\)/g, (whole, q1, u1, q2, u2) => {
+    const quote = q1 ?? q2, url = u1 ?? u2;
+    if (/^([a-z]+:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('/') || url.startsWith('#')) return whole;
     return `url(${quote}${posix.normalize(posix.join(cssDir, url))}${quote})`;
   });
 }
