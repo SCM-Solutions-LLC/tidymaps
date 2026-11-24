@@ -44,8 +44,9 @@
       "tags": ["clear", "stackable", "extra-deep", "closet", "garage"],
       "dimsVerified": "cross-referenced",
       "img": null,
-      "checked": "2026-07",
-      "available": true
+      "checked": "2026-11-24",
+      "available": false,
+      "note": "The Walmart page returned 404 on the 2026-11-24 scheduled and deploy-time link checks."
     },
     {
       "id": "mdesign-open-front-bin-xl-2pk",
@@ -398,8 +399,9 @@
       "tags": ["wall-mount", "7-hooks", "solid-wood", "entryway", "kids", "backpacks"],
       "dimsVerified": "cross-referenced",
       "img": null,
-      "checked": "2026-07",
-      "available": true
+      "checked": "2026-11-24",
+      "available": false,
+      "note": "IKEA US showed out of stock online on the 2026-11-17 and 2026-11-24 scheduled link checks."
     },
     {
       "id": "home-it-mop-broom-holder-5-slot",
@@ -428,9 +430,10 @@
       "tags": ["labels", "water-resistant", "removable", "script", "pantry", "per-label-size"],
       "dimsVerified": "cross-referenced",
       "img": null,
-      "checked": "2026-07",
+      "checked": "2026-11-24",
       "spaces": ["pantry", "cabinet"],
-      "available": true
+      "available": false,
+      "note": "The Walmart page returned 404 on the 2026-11-24 scheduled and deploy-time link checks."
     },
     {
       "id": "talented-kitchen-157-pantry-labels",

@@ -25,6 +25,8 @@ export default [
       'vendor/**',
       'node_modules/**',
       'test-results/**',
+      // The deploy artifact; the built-site e2e server writes it locally.
+      '_site/**',
       'playwright-report/**',
       // Has its own toolchain and tsconfig.
       'remotion/**',

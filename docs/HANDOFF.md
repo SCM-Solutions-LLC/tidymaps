@@ -273,9 +273,13 @@ The live work list; numbers are stable, full 10-13 text in the archive.
     off Porkbun; not before item 6, only HSTS buys much. Archive has it all.
 
 23. **Availability check:** fails only when two runs in a row flag a
-    product (Amazon flickered, 11-24). Confirm by hand: KUBBIS, OXO POP medium,
-    SimpleHouseware door organizer; Walmart 404s (11-24 deploy) on the Home
-    Edit XL bin and pantry labels.
+    product (Amazon flickered, 11-24). Flipped 11-24: KUBBIS (two runs), the
+    Home Edit XL bin and pantry labels (Walmart 404). Held, first flag only:
+    five Walmart "out of stock" (Home Edit large bin, OXO 16" turntable, Smart
+    Design door rack, both safety latches). Walmart stock is per-location and
+    the checker has no zip, so read the 12-01 run or open them by hand before
+    flipping; flipping both latches empties that category. Still to confirm:
+    OXO POP medium, SimpleHouseware door organizer.
 
 25. **Redesign stage 3** (owner-approved direction, 11-24; stage 2, the
     wizard, landed 11-24: ink art stages, 10px chips, no pastel boxes). Stage 3: the report (pastel zone fields, the
@@ -306,7 +310,8 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
 7. **Products.** Affiliate IDs in `js/affiliates.js` are empty, so all 31
    products link plain, no disclosure. `available:false` entries need an
    owner-checked replacement (`copco-basics-lazy-susan-9in`,
-   `mdesign-open-front-bin-15in-2pk`, RISATORP, VARIERA). Want
+   `mdesign-open-front-bin-15in-2pk`, RISATORP, VARIERA, KUBBIS, Home Edit XL
+   bin, Home Edit pantry labels). Want
    a drawer organizer under 12" wide, and fridge stock: a live fridge plan
    (11-24) matched 1 of 4 needs (no 12x5x14 bin, 4"-tall containers or date
    labels). After Amazon Associates approval, a job can fill `img`,

@@ -19,9 +19,15 @@ export default defineConfig({
       executablePath: process.env.CHROMIUM_PATH || undefined,
     },
   },
-  webServer: {
+  webServer: [{
     command: 'python3 -m http.server 8123',
     port: 8123,
     reuseExistingServer: !process.env.CI,
-  },
+  }, {
+    // The deploy artifact, after scripts/build-site.sh rewrites it. The source
+    // tree never shows what the inliner did (built-site.spec.mjs says why).
+    command: 'bash scripts/build-site.sh _site && python3 -m http.server 8124 -d _site',
+    port: 8124,
+    reuseExistingServer: !process.env.CI,
+  }],
 });
