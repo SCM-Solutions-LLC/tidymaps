@@ -97,9 +97,9 @@ test('groupOrganizers counts purchases by quantity and the rest by zones, keepin
   assert.deepEqual(added.list,[{type:'turntable',qty:2,addedByUser:true},{type:'riser',qty:2,addedByUser:false}]);
 
   // Plain records read too, and empty groups are empty arrays.
-  assert.deepEqual(groupOrganizers([{type:'basket',source:'reuse',shelfIndex:3}]),{list:[],reuse:[{type:'basket',zones:1}],style:[]});
-  assert.deepEqual(groupOrganizers([]),{list:[],reuse:[],style:[]});
-  assert.deepEqual(groupOrganizers(undefined),{list:[],reuse:[],style:[]});
+  assert.deepEqual(groupOrganizers([{type:'basket',source:'reuse',shelfIndex:3}]),{list:[],reuse:[{type:'basket',zones:1}],style:[],styleChosen:false});
+  assert.deepEqual(groupOrganizers([]),{list:[],reuse:[],style:[],styleChosen:false});
+  assert.deepEqual(groupOrganizers(undefined),{list:[],reuse:[],style:[],styleChosen:false});
 });
 
 test('a plan organizer says whether the user added it to the list',()=>{
@@ -122,4 +122,16 @@ test('racks hang on doors and pegboards; nothing else goes there, and rods take 
   assert.equal(surfaceAcceptsOrganizer('drawer','divider'),true);
   assert.equal(isMountedOrganizer('hook-rack'),true);
   assert.equal(isMountedOrganizer('basket'),false);
+});
+
+/* A fridge plan with no style picked showed "Drawer dividers in 4 zones"
+   under "Shown to match your style", noted "drawn to match the style you
+   picked" (live run, 11-24). Fridge drawers get no default divider, and a
+   group with no picked style says so. */
+test('no style picked: a surface default is not called a style, and fridge drawers get no divider',()=>{
+  assert.equal(organizerSpecFor({...base,surface:'drawer',space:'fridge'}),null);
+  assert.equal(organizerSpecFor({...base,surface:'drawer',space:'kitchen'}).source,'surface');
+  const organizer=(type,source)=>({userData:{type,source,shelfIndex:1,spec:{type,source}}});
+  assert.equal(groupOrganizers([organizer('divider','surface'),organizer('clear-bin','space')]).styleChosen,false);
+  assert.equal(groupOrganizers([organizer('divider','surface'),organizer('basket','style')]).styleChosen,true);
 });

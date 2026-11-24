@@ -138,7 +138,8 @@ export function organizerSpecFor({surface,row,itemKind,space,styles,prefs,produc
   if(/basket|woven|hidden storage/.test(choices)) return {type:'basket',source:'style'};
   if(/clear container|clear acrylic/.test(choices)) return {type:'clear-bin',source:'style'};
   if(/divider|file folded|slot for everything|tray|cadd/.test(choices)) return {type:'divider',source:'style'};
-  if(surface==='drawer') return {type:'divider',source:'surface'};
+  // A fridge's crisper and freezer drawers are bins, not drawers to divide.
+  if(surface==='drawer' && space!=='fridge') return {type:'divider',source:'surface'};
 
   const reuse=norm(existingText);
   if(/basket/.test(reuse)&&['food','linen','container','small-item'].includes(itemKind)){
@@ -174,6 +175,7 @@ export const ORGANIZER_TYPES=['clear-bin','basket','divider','turntable','riser'
    appearance, so the summary lists types in the order the scene met them. */
 export function groupOrganizers(organizers){
   const list=new Map(), reuse=new Map(), style=new Map();
+  let styleChosen=false;
   for(const entry of organizers||[]){
     const data=(entry&&entry.userData)||entry||{};
     const spec=data.spec||{};
@@ -187,6 +189,7 @@ export function groupOrganizers(organizers){
       list.set(type,group);
       continue;
     }
+    if(source==='style') styleChosen=true;
     const target=source==='reuse'?reuse:(source==='style'||source==='surface'||source==='space')?style:null;
     if(!target) continue;
     const group=target.get(type)||{type,zones:new Set()};
@@ -194,5 +197,8 @@ export function groupOrganizers(organizers){
     target.set(type,group);
   }
   const byZones=groups=>[...groups.values()].map(group=>({type:group.type,zones:group.zones.size}));
-  return { list:[...list.values()], reuse:byZones(reuse), style:byZones(style) };
+  /* styleChosen: at least one came from a style the user picked. Without
+     one, the group is a surface's or a room's default, and the viewer must
+     not say "the style you picked" (a fridge with no style, 11-24). */
+  return { list:[...list.values()], reuse:byZones(reuse), style:byZones(style), styleChosen };
 }

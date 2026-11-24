@@ -654,9 +654,13 @@ function populateOrganizers(){
     +group(shared?'Using what is already there':'Using what you already have',
       groups.reuse.map(entry=>chip(entry,`${label(entry.type)} ${zones(entry.zones)}`)),
       shared?'Drawn from what the plan says is already owned; nothing to buy.':'Drawn from what your plan says you own; nothing to buy.')
-    +group(shared?'Shown to match the style':'Shown to match your style',
-      groups.style.map(entry=>chip(entry,`${label(entry.type)} ${zones(entry.zones)}`)),
-      shared?'A look, not a purchase: these are drawn to match the style the plan picked.':'A look, not a purchase: these are drawn to match the style you picked.');
+    +(groups.styleChosen
+      ? group(shared?'Shown to match the style':'Shown to match your style',
+        groups.style.map(entry=>chip(entry,`${label(entry.type)} ${zones(entry.zones)}`)),
+        shared?'A look, not a purchase: these are drawn to match the style the plan picked.':'A look, not a purchase: these are drawn to match the style you picked.')
+      : group('Shown as an example',
+        groups.style.map(entry=>chip(entry,`${label(entry.type)} ${zones(entry.zones)}`)),
+        'A look, not a purchase: one way these zones could be organized.'));
   const issueCount=[...byType.values()].reduce((sum,entry)=>sum+entry.issues,0);
   const unplaced=Math.max(0,Number(view.unplacedOrganizerQty)||0);
   /* A door rack or a hook rack hangs on a door or a wall, and most layouts
