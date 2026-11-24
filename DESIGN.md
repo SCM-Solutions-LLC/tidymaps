@@ -239,7 +239,7 @@ Every font-size is a token from `css/tokens.css`; `tests/type-scale.test.mjs` re
 
 ## Migration status
 
-Stage 1 (2026-11-24) restyled the tokens, fonts and buttons sitewide and rebuilt the landing page. The wizard (stage 2) and the plan report (stage 3) inherit the new paper, ink, type and buttons, but keep their Warm Shelf shapes: rounded option cards, pastel illustration stages on the space cards, colour-filled zones in the report, pills. The Layout, Shapes and Components sections below still describe those shapes where they say "card", "pill" or "terracotta"; read terracotta there as the ink. Rewrite each section as its stage lands.
+Stage 1 (2026-11-24) restyled the tokens, fonts and buttons sitewide and rebuilt the landing page. Stage 2 (2026-11-24) restyled the wizard: the art stages on space, setup and product cards are ink on the plain sheet (no per-card tint), chips and segmented controls take the button's 10px corner, and the wizard's sage and butter boxes are plain sheets with a `line` border. The plan report (stage 3) still keeps its Warm Shelf shapes: colour-filled zones, the elevation plate, pills on tags, time chips and task buttons. The Layout, Shapes and Components sections below still describe those shapes where they say "card", "pill" or "terracotta"; read terracotta there as the ink. Rewrite each section as its stage lands.
 
 ## Layout
 
@@ -280,17 +280,17 @@ A pill with a sentence-case label. The primary one is terracotta; the ghost is t
 - **Text buttons** (nav, back, home links): label style in ink, hover to `spot-ink`; nav items draw a 2px terracotta underline on hover; home links are Archivo 600 with a 1px terracotta underline, hover to ink.
 
 ### Chips
-- **Style:** white pill, 1.5px `line-2` border, 9px 16px, Archivo 600 at 14px.
-- **State:** hover to sand; selected fills terracotta with white text. Segmented yes/no controls and the unit toggle are a pill track with 3px padding and the selected segment as a terracotta pill inside it. The legal-page sibling nav is a chip row with the current page terracotta.
+- **Style:** stock sheet, 1px `line-2` border, 10px corners, 9px 16px, Archivo 600 at 14px.
+- **State:** hover to `tint`; selected takes the option cards' mark: ink border, 1px inset ink ring, `sel-bg`, and a drawn olive tick before the label (the chip widens by the tick). Segmented yes/no controls and the unit toggle are a 10px track with 3px padding and the selected segment as a 7px ink block inside it. The legal-page sibling nav is a chip row with the current page terracotta.
 - **Tags** (small, non-interactive): sand pill, `line` border, 13px; semantic variants use sage, butter and sky, and the correction pencil only for danger.
 
 ### Cards / Containers
 - **Corner Style:** 16px; 24px for space cards, the review card, the signup card, the 3D stage and the modal.
-- **Background:** white; sand for the product filters and the step-art band; butter for notes and asks (rail note, plan-rate, legal note, fit note); sage for safety notes and detected-items panels; sky for information callouts; peach for the signup card.
+- **Background:** white; sand for the product filters and the step-art band; butter for notes and asks in the report and legal pages (plan-rate, legal note, fit note); sage for safety notes; the wizard's rail note, detected-items panel and pre-filled note are plain stock sheets with a `line` border; sky for information callouts; peach for the signup card.
 - **Shadow Strategy:** small at rest, medium on hover (see Elevation). Selection is a terracotta border plus 1px inset ring plus `sel-bg`.
 - **Border:** 1px `line`; 1.5px `line-2` on selectable cards.
 - **Internal Padding:** `clamp(18px, 4vw, 26px)`; option rows 15px 16px; card labels 12px 16px 14px.
-- **Space cards:** a coloured art stage at 4/3 (3/2 on the landing gallery) that cycles peach, sage, butter and sky by position, name in Archivo 800 at 18px; hover lifts 3px with the terracotta ring and medium shadow and nudges the drawing 5% upward; selected shows a 28px terracotta check disc in the corner.
+- **Space cards:** an art stage at 4/3 (3/2 on the landing gallery): the ink drawing on the stock sheet, ruled off from the label by a `line` hairline (setup cards inset theirs with a full `line` frame), name in Archivo 800 at 18px; hover lifts 3px with the terracotta ring and medium shadow and nudges the drawing 5% upward; selected shows a 28px terracotta check disc in the corner.
 
 ### Inputs / Fields
 - **Style:** white, 1.5px `field-line` border, 10px corners, 12px 14px, Archivo at 15px; labels in Archivo 600 at 14px above. Placeholder text is `ink-3`. The signup input is a pill with its button beside it. Range sliders carry a 20px terracotta disc thumb with a white border and the small shadow on a 6px `line-2` track.
@@ -305,7 +305,7 @@ A pill with a sentence-case label. The primary one is terracotta; the ghost is t
 ### Figures (signature)
 An inked cupboard elevation: a 2.6px case with 18px corners, 1.8px shelves, items drawn white-filled with 1.9px round-capped strokes and a 2.2px terracotta label stroke on each, zones as soft colour fields clipped to the rounded case (sky, peach for eye level, butter, sage), and a legend beneath as four colour-matched cards, each heading in that family's deep ink over 14px notes. Figure 1 on the landing page is the interactive version: items begin displaced and rotated and travel to their zone over 1.15s on the exponential ease-out, staggered 55ms per item; zones screen in after 1.1s. It plays once. There is no replay: the sort always ends on the same plan, so a button would only repeat it. Under reduced motion the finished figure is shown.
 
-The same vocabulary scales down to the card elevations (`EL_ART`, `SETUP_ART`, `productArt`): a 96 by 72 viewBox, 0.9px items, 1.3px case, 1.1px accent label stroke, fills re-inked from the stylesheet to stock and the card's own tint and peach, so the four card tones colour the drawing's zones along with its stage. Each card carries one ambient storage motion (a drawer pulling, a door opening, a bin sliding, a shirt swaying, a jar lifting) looping at 4.1 to 5.4s, quickening on hover. The plan report's hero (`planElevationSvg`) draws one shelf per zone from the same glyphs in a rounded case, the eye-level shelf in peach and the others cycling sky, butter, sage and sand, reading its colours from the tokens at render time. The report's "Where things go" rows still carry a peach label field on the eye-level row; the per-wall report replaces that with an icon and the word.
+The same vocabulary scales down to the card elevations (`EL_ART`, `SETUP_ART`, `productArt`): a 96 by 72 viewBox, 0.9px items, 1.3px case, 1.1px accent label stroke, fills re-inked from the stylesheet to stock and paper, so the drawing's zones are the sheet itself. Each card carries one ambient storage motion (a drawer pulling, a door opening, a bin sliding, a shirt swaying, a jar lifting) looping at 4.1 to 5.4s, quickening on hover. The plan report's hero (`planElevationSvg`) draws one shelf per zone from the same glyphs in a rounded case, the eye-level shelf in peach and the others cycling sky, butter, sage and sand, reading its colours from the tokens at render time. The report's "Where things go" rows still carry a peach label field on the eye-level row; the per-wall report replaces that with an icon and the word.
 
 ### Stage marks (signature)
 Progress is a mark, never a colour alone: an 18px `field-line` circle that is empty (to do), half-filled with the accent (in progress), or filled with the accent (done), with done rows struck through and their text in `spot-ink`. Task checks in the report are 44px circles carrying the step number until done, when the number gives way to a white check on terracotta. Progress bars are a 10px pill track with the accent advancing.

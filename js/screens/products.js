@@ -58,18 +58,18 @@ function priceStr(p){
 /* A real retailer photo when the catalog has one, the category drawing when it
    doesn't — and the drawing again if the photo 404s, since a hotlinked
    retailer URL can rotate at any time. */
-function productVisual(p, tone){
+function productVisual(p){
   const art = productArt(p.type);
-  if(!p.img) return `<span class="pc-art card-visual tone-${tone}">${art}</span>`;
-  return `<span class="pc-art card-visual tone-${tone} has-photo">${art}` +
+  if(!p.img) return `<span class="pc-art card-visual">${art}</span>`;
+  return `<span class="pc-art card-visual has-photo">${art}` +
     `<img src="${esc(p.img)}" alt="" loading="lazy" decoding="async" ` +
     `onerror="this.parentElement.classList.remove('has-photo');this.remove()"></span>`;
 }
 
-function productCard(p, index){
+function productCard(p){
   return `
     <article class="pcard">
-      ${productVisual(p, index % 4)}
+      ${productVisual(p)}
       <div class="pc-body">
         <div class="pc-head">
           <span class="pc-brand">${esc(p.brand)}</span>
@@ -90,7 +90,7 @@ function typeBlock(need, products){
     <section class="ptype">
       <h3>${esc(TYPE_LABEL[need.type] || need.type)}${need.kidOnly ? '<span class="ptype-tag">with kids or pets</span>' : ''}</h3>
       <p class="ptype-why">${esc(need.purpose)}</p>
-      <div class="pcards">${products.map((p, i) => productCard(p, i)).join('')}</div>
+      <div class="pcards">${products.map((p) => productCard(p)).join('')}</div>
     </section>`;
 }
 

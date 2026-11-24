@@ -44,17 +44,20 @@
 .opt.sel .tick{background:var(--primary);border-color:var(--primary)}
 .opt .tick svg{width:13px;height:13px;color:var(--stock);opacity:0;transition:.15s}
 .opt.sel .tick svg{opacity:1}
-.opt .rec{font-size:var(--fs-2xs);font-weight:600;color:var(--primary);background:var(--primary-bg);border:1px solid var(--primary-line);border-radius:var(--radius-pill);padding:2px 6px;margin-left:auto;flex:none}
+.opt .rec{font-size:var(--fs-2xs);font-weight:600;color:var(--primary);background:var(--primary-bg);border:1px solid var(--primary-line);border-radius:var(--radius);padding:2px 6px;margin-left:auto;flex:none}
 
 /* chip-style multiselect */
 .chips{display:flex;flex-wrap:wrap;gap:9px}
 .chip{
-  background:var(--stock);border:var(--rule-2);border-radius:var(--radius-pill);
+  background:var(--stock);border:var(--rule-2);border-radius:var(--radius-btn);
   padding:9px 16px;font-size:var(--fs-md);font-weight:600;color:var(--ink);
   transition:border-color .16s, background-color .16s, color .16s;
 }
 .chip:hover{background:var(--tint)}
-.chip.sel{background:var(--primary);border-color:var(--primary);color:var(--stock)}
+/* Selected reads like the option cards: ink edge, the faintest olive, and a
+   drawn olive tick, so a chosen chip is marked by a shape as well as a colour. */
+.chip.sel{background:var(--sel-bg);border-color:var(--spot);box-shadow:inset 0 0 0 1px var(--spot);color:var(--ink)}
+.chip.sel::before{content:"";display:inline-block;width:5px;height:9px;margin:0 9px 2px 1px;border:solid var(--spot-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
 
 label.field{display:block;margin-bottom:16px}
 label.field > span{display:block;font-weight:600;font-size:var(--fs-md);margin-bottom:6px}
@@ -69,8 +72,8 @@ textarea{resize:vertical;min-height:84px}
 .helper svg{width:16px;height:16px;flex:none;color:var(--primary);margin-top:2px}
 
 /* segmented yes/no */
-.seg{display:inline-flex;gap:2px;padding:3px;border:var(--rule-2);border-radius:var(--radius-pill);background:var(--stock)}
-.seg button{position:relative;border:none;border-radius:var(--radius-pill);background:var(--stock);padding:8px 22px;font-size:var(--fs-md);font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--ink);transition:background-color var(--dur,.18s), color var(--dur,.18s), box-shadow var(--dur,.18s)}
+.seg{display:inline-flex;gap:2px;padding:3px;border:var(--rule-2);border-radius:var(--radius-btn);background:var(--stock)}
+.seg button{position:relative;border:none;border-radius:calc(var(--radius-btn) - 3px);background:var(--stock);padding:8px 22px;font-size:var(--fs-md);font-weight:700;letter-spacing:.01em;text-transform:none;color:var(--ink);transition:background-color var(--dur,.18s), color var(--dur,.18s), box-shadow var(--dur,.18s)}
 /* A 32px segment is a 44px target: a band below the box takes the tap, the
    box itself is drawn as it was. Below, not above and below: the sticky
    progress bar sits over the steps toggle and would take a tap above it.
@@ -718,19 +721,16 @@ body[data-flow="1"] .site-footer{display:none}
 .room-card .rc-check svg{width:17px;height:17px}
 .room-card.sel .rc-check{display:grid}
 
-/* Shared wizard illustration stage. A warm four-tone family adds variety
-   while every room, area, and setup keeps the same line-art language. */
+/* Shared illustration stage: an ink drawing on the plain sheet, ruled off
+   from the card's label. It was a pastel field per card (sage, butter, sky)
+   until stage 2 of the redesign (2026-11-24): the owner wants warm but adult,
+   and a grid of tinted tiles read as a children's app. The drawings fill from
+   --tint and --tint-2, so re-pointing those two here turns their zones to
+   paper too. */
 .card-visual{
-  position:relative;isolation:isolate;background:var(--tint);
+  position:relative;isolation:isolate;background:var(--stock);border-bottom:var(--rule);
+  --tint:var(--stock);--tint-2:var(--paper);
 }
-/* Each card takes a supporting colour. The drawings fill from --tint and
-   --tint-2, so re-pointing those two inside the card re-colours the stage and
-   the drawing's zones together, and the line work stays the same. */
-.card-visual.tone-0{--tint:oklch(0.955 0.03 52);--tint-2:oklch(0.915 0.06 48)}
-.card-visual.tone-1{--tint:var(--sage-f);--tint-2:oklch(0.9 0.06 150)}
-.card-visual.tone-2{--tint:var(--butter-f);--tint-2:oklch(0.92 0.09 90)}
-.card-visual.tone-3{--tint:var(--sky-f);--tint-2:oklch(0.9 0.05 232)}
-.card-visual.tone-0,.card-visual.tone-1,.card-visual.tone-2,.card-visual.tone-3{background:var(--tint)}
 .card-art-svg{
   position:absolute;z-index:1;left:50%;top:50%;width:82%;height:82%;overflow:visible;
   transform:translate(-50%,-48%);
@@ -892,7 +892,7 @@ body[data-flow="1"] .site-footer{display:none}
 .wz-setup:active{transform:translateY(0) scale(.985)}
 .wz-setup:focus-visible{outline:3px solid var(--primary-line);outline-offset:4px}
 .wz-setup.sel{border-color:var(--primary);background:var(--sel-bg);box-shadow:inset 0 0 0 1px var(--spot)}
-.wz-setup .ws-img{display:block;height:118px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:13px}
+.wz-setup .ws-img{display:block;height:118px;border:var(--rule);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:13px}
 .ws-ttl{display:block;font-family:var(--sans);font-weight:700;font-size:var(--fs-lg);margin-bottom:3px;letter-spacing:-.01em}
 .ws-sub{display:block;font-size:var(--fs-sm);color:var(--ink-3);line-height:1.45}
 
@@ -932,8 +932,8 @@ body[data-flow="1"] .site-footer{display:none}
 /* Units toggle: a preference about the reader, so it sits above the fields it
    governs rather than inside them, and reads as a segmented control rather
    than another thing to answer. */
-.wz-units{display:flex;gap:2px;margin:0 0 18px;padding:3px;border:var(--rule-2);border-radius:var(--radius-pill);background:var(--stock);width:fit-content}
-.wz-unit{padding:6px 14px;border:0;border-radius:var(--radius-pill);background:none;font:inherit;font-size:var(--fs-md);
+.wz-units{display:flex;gap:2px;margin:0 0 18px;padding:3px;border:var(--rule-2);border-radius:var(--radius-btn);background:var(--stock);width:fit-content}
+.wz-unit{padding:6px 14px;border:0;border-radius:calc(var(--radius-btn) - 3px);background:none;font:inherit;font-size:var(--fs-md);
   color:var(--ink-3);cursor:pointer;transition:background .15s,color .15s}
 .wz-unit:hover{color:var(--ink)}
 .wz-unit.on{background:var(--spot);color:var(--stock);font-weight:700}
@@ -952,7 +952,7 @@ body[data-flow="1"] .site-footer{display:none}
 .wz-photo .wp-x:hover{background:var(--spot-deep)}
 .wz-photo .wp-x svg{width:14px;height:14px}
 .wz-photo .wp-flag{
-  position:absolute;top:8px;left:8px;padding:2px 8px;border-radius:var(--radius-pill);
+  position:absolute;top:8px;left:8px;padding:2px 8px;border-radius:var(--radius);
   background:var(--clay);color:var(--stock);font-size:var(--fs-2xs);font-weight:600;line-height:1.5;
 }
 .wz-photo-add{
@@ -974,16 +974,16 @@ body[data-flow="1"] .site-footer{display:none}
   animation:wz-spin 1.02s linear infinite;
 }
 @keyframes wz-spin{to{transform:rotate(360deg)}}
-.wz-detected{margin-top:22px;padding:20px 22px;border:1px solid var(--sage-line);border-radius:var(--radius);background:var(--sage-bg)}
-.wz-detected .wd-h{font-family:var(--sans);font-weight:700;font-size:var(--fs-ui);margin:0 0 4px;color:var(--sage-ink)}
+.wz-detected{margin-top:22px;padding:20px 22px;border:var(--rule);border-radius:var(--radius);background:var(--stock)}
+.wz-detected .wd-h{font-family:var(--sans);font-weight:700;font-size:var(--fs-ui);margin:0 0 4px;color:var(--ink)}
 .wz-detected .wd-sub{font-size:var(--fs-sm);color:var(--ink-3);margin:0 0 13px}
 .wz-detected .wd-chips{display:flex;flex-wrap:wrap;gap:8px}
 .wz-detected-chip{
-  padding:7px 14px;border-radius:var(--radius-pill);background:var(--stock);border:1px solid var(--sage-line);
-  font-size:var(--fs-sm);color:var(--sage-ink);font-weight:600;
+  padding:7px 14px;border-radius:var(--radius-btn);background:var(--paper);border:var(--rule);
+  font-size:var(--fs-sm);color:var(--ink);font-weight:600;
 }
 .wz-privacy{font-size:var(--fs-md);color:var(--ink-3);margin:20px 0 0;display:flex;align-items:center;gap:8px}
-.wz-privacy svg{flex:none;color:var(--sage)}
+.wz-privacy svg{flex:none;color:var(--spot-ink)}
 
 /* household steppers */
 .wz-people{display:flex;flex-direction:column;gap:14px;max-width:440px}
@@ -1003,10 +1003,10 @@ body[data-flow="1"] .site-footer{display:none}
 .wz-kid-ages{margin-top:26px}
 .wz-kid-ages .wk-h{font-size:var(--fs-ui);font-weight:600;color:var(--ink-2);margin:0 0 12px}
 
-/* contents pre-filled pill */
+/* contents pre-filled note */
 .wz-prefilled{
   display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:600;
-  color:var(--sage-ink);background:var(--sage-bg);border-radius:var(--radius-pill);padding:7px 15px;margin:0 0 24px;
+  color:var(--ink);background:var(--stock);border:var(--rule);border-radius:var(--radius-btn);padding:7px 15px;margin:0 0 24px;
 }
 
 /* goal checkbox rows */
@@ -1057,7 +1057,7 @@ body[data-flow="1"] .site-footer{display:none}
 .wz-effort.sel{border-color:var(--primary);background:var(--sel-bg);box-shadow:inset 0 0 0 1px var(--spot)}
 .wz-effort .we-ico{
   display:grid;place-items:center;width:48px;height:48px;flex:none;border-radius:var(--radius-sm);
-  background:var(--sage-bg);color:var(--sage-ink);
+  background:var(--primary-bg);color:var(--primary);
 }
 .wz-effort .we-ico svg{width:24px;height:24px}
 .wz-effort .we-txt{flex:1}
