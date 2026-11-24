@@ -79,3 +79,19 @@ test('the run fails only on products the catalog still calls available', () => {
   assert.deepEqual(backInStock.map(r => r.id), ['d'], 'a product marked unavailable whose page loads fine is worth a look');
   assert.deepEqual(counts, { unavailable: 2, blocked: 1, ok: 2, dead: 1, error: 1, moved: 1 });
 });
+
+/* Six weekly runs failed in a row: Amazon's "Currently unavailable" hit a
+   different handful of products each week. With last week's report, a
+   product fails only when both runs flag it. */
+test('with last week\'s flags, only a product flagged twice in a row fails the run', () => {
+  const now = [
+    { id: 'ikea', verdict: 'unavailable', catalogSays: 'available' },
+    { id: 'flicker', verdict: 'unavailable', catalogSays: 'available' },
+    { id: 'fine', verdict: 'ok', catalogSays: 'available' },
+  ];
+  const r = summarize(now, ['ikea', 'fine-last-week-only']);
+  assert.deepEqual(r.failing.map((x) => x.id), ['ikea']);
+  assert.deepEqual(r.firstSeen.map((x) => x.id), ['flicker'], 'a first flag is reported, not failed');
+  assert.deepEqual(r.flagged.map((x) => x.id), ['ikea', 'flicker'], 'next week compares against every flag, not only the failures');
+  assert.deepEqual(summarize(now).failing.map((x) => x.id), ['ikea', 'flicker'], 'no previous report: every flag fails');
+});

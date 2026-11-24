@@ -1,6 +1,6 @@
 import { getUser, signOut } from '../auth.js';
 import { listSpaces, coverUrl, openSavedSpace, deleteSpace } from '../db.js';
-import { startPlanInstance } from '../state.js';
+import { state, startPlanInstance, clearGuestDraft } from '../state.js';
 import { escapeHtml, toast } from '../ui.js';
 import { go, restart } from '../router.js';
 import { areaFor } from '../wizard-data.js';
@@ -79,6 +79,10 @@ export async function buildDashboard(){
       if(!confirm('Delete "'+sp.name+'" and its plan? This cannot be undone.')) return;
       try{ await deleteSpace(sp.id); }
       catch(e){ toast('Could not delete. Please try again.'); return; }
+      /* The open plan's row is gone. Left pointing at it, every Save from Back
+         on the report UPDATEd nothing and said "Saving failed"; without the id
+         a Save makes a new row. */
+      if(state.activeSpaceId===sp.id) state.activeSpaceId=null;
       buildDashboard();
     };
     grid.appendChild(card);
@@ -99,8 +103,15 @@ export async function buildDashboard(){
   }
 }
 
+/* Signing out clears the plan, the answers and the guest draft, the way Start
+   over does. It used to go straight to the landing page with all of it still
+   in memory, and with no session that navigation wrote it to the guest draft:
+   the next person on the device was welcomed back to the account's plan, its
+   household notes included, and Back reached the report. */
 export async function dashSignOut(){
   await signOut();
+  restart({ ask:false });
+  // restart's own navigation writes a draft of the defaults; leave none at all.
+  clearGuestDraft();
   toast('Signed out');
-  go('landing');
 }

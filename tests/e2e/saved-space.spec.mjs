@@ -19,8 +19,10 @@ const NEW_SPACE_ID = '11111111-2222-4333-8444-555555555555';
 const SECOND_SPACE_ID = '99999999-8888-4777-8666-555555555555';
 
 // Records every Supabase call and answers it locally.
-async function stubBackend(page, { signedIn, updateMatchesNothing = false }) {
+async function stubBackend(page, { signedIn, updateMatchesNothing = false, listed = [], postDelayMs = 0 }) {
   const wire = [];
+  // Rows a DELETE has removed: a later PATCH of one matches nothing, as it would.
+  const deleted = new Set();
   const newIds = [NEW_SPACE_ID, SECOND_SPACE_ID];
   let inserted = 0;
   if (signedIn) {
@@ -36,10 +38,18 @@ async function stubBackend(page, { signedIn, updateMatchesNothing = false }) {
     if (/\/auth\/v1\/token/.test(url)) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession()) });
     }
+    // The sign-in modal's two calls: send the code, then trade it for a session.
+    if (/\/auth\/v1\/otp/.test(url)) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    }
+    if (/\/auth\/v1\/verify/.test(url)) {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession()) });
+    }
     if (/\/auth\/v1\/user/.test(url)) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession().user) });
     }
     if (/\/rest\/v1\/spaces/.test(url) && req.method() === 'POST') {
+      if (postDelayMs) await new Promise((r) => setTimeout(r, postDelayMs));
       const id = newIds[Math.min(inserted++, newIds.length - 1)];
       return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id }) });
     }
@@ -50,7 +60,8 @@ async function stubBackend(page, { signedIn, updateMatchesNothing = false }) {
        PATCH says only when it matched no rows — so the stub has to be specific
        here or it stands in for the very failure the check exists to catch. */
     if (/\/rest\/v1\/spaces/.test(url) && req.method() === 'PATCH') {
-      if (updateMatchesNothing) {
+      const target = (new URL(`https://x${url}`).searchParams.get('id') || '').replace(/^eq\./, '');
+      if (updateMatchesNothing || deleted.has(target)) {
         return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
       }
       const id = new URL(`https://x${url}`).searchParams.get('id') || '';
@@ -58,6 +69,14 @@ async function stubBackend(page, { signedIn, updateMatchesNothing = false }) {
         status: 200, contentType: 'application/json',
         body: JSON.stringify([{ id: id.replace(/^eq\./, '') || NEW_SPACE_ID }]),
       });
+    }
+    if (/\/rest\/v1\/spaces/.test(url) && req.method() === 'DELETE') {
+      deleted.add((new URL(`https://x${url}`).searchParams.get('id') || '').replace(/^eq\./, ''));
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    }
+    // My spaces' list query (the only one selecting `name`).
+    if (/\/rest\/v1\/spaces\?select=id%2Cname/.test(url) && req.method() === 'GET') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(listed) });
     }
     if (/\/rest\/v1\//.test(url)) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
@@ -298,4 +317,91 @@ test('hiding the page twice does not send the same write again', async ({ page }
   await page.waitForTimeout(200);
 
   expect(wire.filter((c) => c.method === 'PATCH').length).toBe(afterFirst);
+});
+
+/* ---------- Signing in and out, deleting, saving twice ---------- */
+
+const patches = (wire) => wire.filter((c) => c.method === 'PATCH' && /\/rest\/v1\/spaces/.test(c.url));
+
+/* A guest who finished a plan and then signed in from the appbar had nothing
+   to replay, so no row was ever made: updateSpacePatch needs an id, the guest
+   draft stops once there is a session, and a reload lost the plan. Signed in
+   with Enter, which the modal ignored (its inputs sit in no <form>). */
+test('signing in from the appbar after a guest plan saves that plan, and Enter submits', async ({ page }) => {
+  const wire = await stubBackend(page, { signedIn: false });
+  await buildAPlan(page);
+  await page.waitForTimeout(500);
+  expect(spaceWrites(wire)).toHaveLength(0);
+
+  await page.locator('#acct-signin').click();
+  await page.fill('#auth-email', 'tester@example.com');
+  await page.locator('#auth-email').press('Enter');
+  await expect(page.locator('#auth-step-code')).toBeVisible();
+  await page.fill('#auth-code', '12345678');
+  await page.locator('#auth-code').press('Enter');
+  await expect(page.locator('#auth-modal')).toHaveClass(/hide/);
+
+  await expect.poll(() => spaceWrites(wire).length, { message: 'the guest plan was never saved to the account' }).toBe(1);
+  expect(JSON.parse(spaceWrites(wire)[0].body).plan).toBeTruthy();
+});
+
+/* Signing out went to the landing page with the plan still in memory, and with
+   no session that navigation wrote it all to the guest draft: the next person
+   on the device was welcomed back to the account's plan and its household. */
+test('signing out leaves no plan on the device for the next visitor', async ({ page }) => {
+  await stubBackend(page, { signedIn: true });
+  await buildAPlan(page);
+  await page.waitForTimeout(1500);
+
+  await page.locator('#acct-btn').click();
+  await expect(page.locator('#screen-dashboard')).toHaveClass(/active/);
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page.locator('#screen-landing')).toHaveClass(/active/);
+
+  // No draft at all: not the account's plan, and not a draft of defaults that
+  // the next visit would greet with "Your answers are still here".
+  const draft = await page.evaluate(() => localStorage.getItem('tidymap_draft_v2'));
+  expect(draft, 'signing out left a guest draft on the device').toBeNull();
+  // Two presses: past My spaces to the report's entry, which must not reopen it.
+  await page.goBack();
+  await page.goBack();
+  await page.waitForTimeout(500);
+  await expect(page.locator('#screen-results'), 'Back reached the signed-out account\'s report').not.toHaveClass(/active/);
+});
+
+/* Deleting the space that is open left activeSpaceId on the deleted row, so
+   every Save from Back on the report UPDATEd nothing and said "Saving failed". */
+test('deleting the open space and saving from the report makes a new row', async ({ page }) => {
+  const wire = await stubBackend(page, {
+    signedIn: true,
+    listed: [{ id: NEW_SPACE_ID, name: 'Closet', space_type: 'closet', plan_meta: {}, progress: {}, updated_at: '2026-11-24T00:00:00Z' }],
+  });
+  await buildAPlan(page);
+  await page.waitForTimeout(1500);
+  expect(spaceWrites(wire)).toHaveLength(1);
+
+  await page.locator('#acct-btn').click();
+  page.once('dialog', (d) => d.accept());
+  await page.locator('[data-del]').first().click();
+  await expect.poll(() => wire.some((c) => c.method === 'DELETE')).toBe(true);
+
+  await page.goBack();
+  await expect(page.locator('#screen-results')).toHaveClass(/active/);
+  await page.getByRole('button', { name: 'Save & share' }).click();
+  await page.locator('#save-opts .opt', { hasText: 'Save plan' }).click();
+  await expect(page.locator('#toast')).toContainText('Saved');
+  expect(spaceWrites(wire), 'the save should have made a row of its own').toHaveLength(2);
+});
+
+/* A Save while the autosave's INSERT is still out snapshotted no id and
+   inserted again: two rows in My spaces for one plan. */
+test('saving while the first insert is still in flight does not duplicate the space', async ({ page }) => {
+  const wire = await stubBackend(page, { signedIn: true, postDelayMs: 4000 });
+  await buildAPlan(page);
+  await page.getByRole('button', { name: 'Save & share' }).click();
+  await page.locator('#save-opts .opt', { hasText: 'Save plan' }).click();
+  await expect(page.locator('#toast')).toContainText('Saved. Find it', { timeout: 15_000 });
+
+  expect(spaceWrites(wire), 'one plan, one row').toHaveLength(1);
+  expect(patches(wire).some((c) => c.url.includes(NEW_SPACE_ID))).toBe(true);
 });

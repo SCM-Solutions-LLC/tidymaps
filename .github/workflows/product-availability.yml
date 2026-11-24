@@ -25,6 +25,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  # Read last week's report artifact, so a product fails only when two runs
+  # in a row flag it (scripts/product-availability.mjs summarize).
+  actions: read
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -40,8 +43,15 @@ jobs:
           node-version: 22
       # No `npm ci`: the script imports only node builtins and its sibling
       # module, so there is nothing to install and nothing to break.
+      - name: Fetch last run's report
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh api "repos/${{ github.repository }}/actions/workflows/product-availability.yml/runs?status=completed&per_page=1" --jq '.workflow_runs[0].id')
+          gh run download "$id" --repo "${{ github.repository }}" -n product-availability -D "$RUNNER_TEMP/previous"
       - name: Check every catalog product page
-        run: node scripts/check-product-links.mjs --report="$RUNNER_TEMP/product-availability.json"
+        run: node scripts/check-product-links.mjs --report="$RUNNER_TEMP/product-availability.json" --previous="$RUNNER_TEMP/previous/product-availability.json"
       - name: Keep the report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

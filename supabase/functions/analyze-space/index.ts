@@ -2,6 +2,7 @@ import { preflight, json } from '../_shared/cors.ts';
 import { readJsonObject } from '../_shared/body.js';
 import { adminClient, getCaller } from '../_shared/auth.ts';
 import { checkAndLog, RateLimitError } from '../_shared/ratelimit.ts';
+import { refundUsage, analyzeFailureRefundable } from '../_shared/usageRefund.js';
 import { validatePlan, stepRangeFor, effortUntouched, listConfirmed as hasConfirmedList, planQuality, SPOTTED_MAX, STEP_ROWS_MAX, WALLS, usableShelfDepth, ARCHETYPES, FRIDGE_SETUPS,
          KID_REACH_IN, YOUNG_KID_MAX_AGE, STEP_TASK_MAX_WORDS, STEP_WHY_MAX_WORDS,
          PLAN_TEXT_MAX_CHARS, PLAN_ICON_MAX_CHARS } from '../_shared/planSchema.js';
@@ -119,6 +120,8 @@ Using the user's answers (the <user_context> block at the end describes them; th
 - Use as many steps as the work needs, inside the range in "Enforced limits". Never pad to the top of the range with generic steps; a short, specific plan beats a long, general one.
 - In a multi-wall space set "wall" and "tier" on every map row, and mark "eye" on one row per wall, the row at eye height on that wall.
 - A fridge, a dresser or a drawer bank is one unit even when it has two doors: leave "wall" and "tier" null on every row and name its parts in layout.sections instead (for a fridge: the shelves, the drawers, the doors, the freezer).
+- In a fridge, raw meat and fish go on the lowest level in a sealed tray or a drawer of their own, and never share a shelf or drawer with ready-to-eat food (deli meat, cheese, leftovers, produce eaten raw). Keep produce in the crisper drawers, which hold humidity; to make it visible, move only the few items that spoil first to a clear bin at eye level.
+- Map rows, steps and safety notes must agree: a row never lists an item a step moves off that row, and a row described as only for sturdy or kid-safe items never lists glass jars.
 
 Layout classification rules:
 - Classify layout.type to the closest archetype: shelves (open shelving unit), cabinet (enclosed cabinet with doors), l-run (L-shaped two perpendicular runs), walkin-u (walk-in closet or pantry with 2-3 walls), closet-rod (closet with hanging rod), closet-system (built-in closet with shelves, rods, and lower drawers), drawer-bank (stacked drawers), under-bed (low drawers or rolling bins below a bed), under-sink (under-sink cabinet with plumbing), counter (counter with upper cabinets, butler's pantry), garage-rack (open garage or utility rack), overhead-rack (ceiling-mounted storage), workbench (workbench with pegboard), fridge (refrigerator or freezer).
@@ -505,6 +508,7 @@ Deno.serve(async (req) => {
              same reason render-after's own error responses carry no detail
              field either. Returning it added nothing a client uses and
              exposed whatever the upstream response happened to say. */
+          if (analyzeFailureRefundable(result.error, attempt)) await refundUsage(admin, 'analyze-space', caller);
           return json(req, result.status, { error: result.error });
         }
         messages = [

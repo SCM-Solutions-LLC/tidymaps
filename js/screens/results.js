@@ -12,7 +12,7 @@ import { backendConfigured } from '../config.js';
 import { renderAfter as renderAfterApi, renderAfterErrorMessage, analysisFailureCopy } from '../api.js';
 import { fileToScaledB64, RENDER_MAX_EDGE } from '../media.js';
 import { getSession } from '../auth.js';
-import { updateSpacePatch, persistAnswers } from '../db.js';
+import { updateSpacePatch, persistAnswers, coverUrl } from '../db.js';
 import { classifyAction, motifForSpace, glyphForStep, mediaKeyFor, hydrateStepMedia } from '../stepMedia.js';
 import { track } from '../telemetry.js';
 import { applyCategoryEdits, includeSpotted } from '../personalize.js';
@@ -279,7 +279,7 @@ export function buildResults(){
     const notes=activeSafetyNotes();
     notesWrap.innerHTML=notes.length?
       `<div class="sn-head">${SVG.shield}<div><strong>Safety notes for your household</strong>
-        <span>The notes below are placements chosen for safety, based on what you told us about kids, pets, and reach. The plan already follows them.</span></div></div>`
+        <span>${escapeHtml(safetyIntro())}</span></div></div>`
       + notes.map(n=>`<div class="safety-note">${SVG.shield}<span>${escapeHtml(n)}</span></div>`).join('')
       :'';
   }
@@ -486,7 +486,7 @@ function setupAfterPhoto(){
 function beforePhotoSource(target=state){
   if(target.uploadedFiles && target.uploadedFiles.length) return { kind:'file', file:target.uploadedFiles[0] };
   if(target.frames && target.frames.length) return { kind:'frame', data:target.frames[0].data };
-  if(target._beforeUrl) return { kind:'url', url:target._beforeUrl };
+  if(target._beforeUrl) return { kind:'url', url:target._beforeUrl, spaceId:target.activeSpaceId||null };
   return null;
 }
 
@@ -494,7 +494,16 @@ async function encodeBeforePhoto(src){
   if(!src) throw new Error('No photo to work from.');
   if(src.kind==='file') return { media_type:'image/jpeg', data: await fileToScaledB64(src.file, { maxEdge: RENDER_MAX_EDGE }) };
   if(src.kind==='frame') return { media_type:'image/jpeg', data: src.data };
-  const blob=await (await fetch(src.url)).blob();
+  /* A saved photo's link is signed for an hour (db.js coverUrl). Opened
+     longer ago than that, the fetch got the storage error as the "image" and
+     the render failed (audit 11-24), so an expired link is signed again once. */
+  let res=await fetch(src.url);
+  if(!res.ok && src.spaceId){
+    const fresh=await coverUrl(src.spaceId).catch(()=>null);
+    if(fresh) res=await fetch(fresh);
+  }
+  if(!res.ok) throw new Error('Could not load your saved photo. Reopen the plan and try again.');
+  const blob=await res.blob();
   const data=await new Promise((res,rej)=>{
     const fr=new FileReader();
     fr.onload=()=>res(String(fr.result).split(',')[1]);
@@ -967,6 +976,22 @@ function renderMap(map, placement){
     e.preventDefault();
     selectWall(wrap, tabs[n].getAttribute('data-wall'), { focus:true });
   };
+}
+
+/* The safety section said "based on what you told us about kids, pets, and
+   reach" for a two-adult household whose only notes were about raw meat
+   (audit 11-24). It names only what the user actually told us. */
+export function safetyIntro(h=state.household, shared=!!state.shareView){
+  const told=[];
+  if(!shared && h){
+    if((h.kids && h.kids.present==='yes') || h.kidCount>0) told.push('kids');
+    if((h.pets && h.pets.present==='yes') || h.petCount>0) told.push('pets');
+    if(Array.isArray(h.mobility) && h.mobility.length) told.push('reach');
+  }
+  const list=told.length>1 ? told.slice(0,-1).join(', ')+' and '+told[told.length-1] : told[0];
+  return list
+    ? `The notes below are placements chosen for safety, based on what you told us about ${list}. The plan already follows them.`
+    : 'The notes below are placements chosen for safety. The plan already follows them.';
 }
 
 /* "Also in your photo". The analysis saw a stand mixer, the contents list

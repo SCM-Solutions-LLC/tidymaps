@@ -13,11 +13,23 @@
    look, not a fact: a person confirms and flips `available` in
    data/catalog.json, and sets `checked` to the date.
 
-   --report=path   also write every verdict as JSON (the workflow uploads it) */
-import { readFileSync, writeFileSync } from 'node:fs';
+   --report=path   also write every verdict as JSON (the workflow uploads it)
+   --previous=path last run's report; a product fails only when both runs
+                   flag it (product-availability.mjs summarize says why) */
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { classifyAvailability, summarize } from './product-availability.mjs';
 
 const reportPath = (process.argv.find(a => a.startsWith('--report=')) || '').slice('--report='.length) || null;
+const previousPath = (process.argv.find(a => a.startsWith('--previous=')) || '').slice('--previous='.length) || null;
+let previouslyFlagged = null;
+if (previousPath && existsSync(previousPath)) {
+  try {
+    const prev = JSON.parse(readFileSync(previousPath, 'utf8'));
+    // Reports from before `flagged` existed listed the same ids as `failing`.
+    previouslyFlagged = Array.isArray(prev.flagged) ? prev.flagged : (Array.isArray(prev.failing) ? prev.failing : null);
+  } catch (_) { previouslyFlagged = null; }
+}
+console.log(previouslyFlagged ? `comparing with last run (${previouslyFlagged.length} flagged then)` : 'no previous report: every flag fails this run');
 const catalog = JSON.parse(readFileSync(new URL('../data/catalog.json', import.meta.url), 'utf8'));
 
 /* An honest bot name. The retailers bot-block datacenter IPs, and a browser
@@ -73,14 +85,15 @@ for (const p of catalog.products) {
   console.log(`${verdict.state.padEnd(11)} ${String(status || '---').padEnd(3)} ${p.id}${verdict.reason ? `  (${verdict.reason})` : ''}`);
 }
 
-const { counts, failing, backInStock } = summarize(results);
+const { counts, flagged, failing, firstSeen, backInStock } = summarize(results, previouslyFlagged);
 console.log(`\n${results.length} products checked: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')}`);
 for (const r of failing) console.log(`FAIL  ${r.id} is ${r.verdict} but the catalog says available: ${r.url}${r.reason ? ` (${r.reason})` : ''}`);
+for (const r of firstSeen) console.log(`NOTE  ${r.id} is ${r.verdict} for the first run; it fails the run if next week says the same: ${r.url}${r.reason ? ` (${r.reason})` : ''}`);
 for (const r of backInStock) console.log(`NOTE  ${r.id} loads fine now but the catalog says unavailable: worth a look`);
 if (counts.blocked) console.log(`NOTE  ${counts.blocked} page(s) could not be read (bot wall, 403, 429 or 503, or an empty or non-HTML body); they are neither confirmed nor cleared`);
 
 if (reportPath) {
-  writeFileSync(reportPath, JSON.stringify({ checkedAt: new Date().toISOString(), counts, failing: failing.map(r => r.id), results }, null, 2));
+  writeFileSync(reportPath, JSON.stringify({ checkedAt: new Date().toISOString(), counts, flagged: flagged.map(r => r.id), failing: failing.map(r => r.id), results }, null, 2));
   console.log(`report written to ${reportPath}`);
 }
 process.exit(failing.length ? 1 : 0);

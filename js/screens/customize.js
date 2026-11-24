@@ -16,12 +16,19 @@ import { renderSteps, setUpgrades, applySavedProgress, buildResults } from './re
    needs instead — the same scenario the plan came from, asked without the
    $0 answer. AI plans keep their productNeeds (applyAnswers never runs on
    them), so this only ever has to rebuild the deterministic path. */
-async function restoreProductNeeds(){
+export async function restoreProductNeeds(load=()=>import('../demo-scenarios.js')){
   if(!state.ai || (state.ai.productNeeds||[]).length) return;
+  /* The answers are read before the await and written only if this is still
+     the same plan: a saved plan reopened cold loads the module over the
+     network, and a plan opened meanwhile used to receive this one's products
+     and cost (audit 11-24). */
+  const instance=currentPlanInstance();
+  const key=scenarioKeyFor(state.space, state.setup), goal=state.goal, household=state.household, setup=state.setup;
   // Loaded on demand: the wizard's build already fetched it for a demo plan,
   // and an AI plan keeps its own productNeeds and never reaches this line.
-  const { getDemoScenario } = await import('../demo-scenarios.js');
-  const scenario=getDemoScenario(scenarioKeyFor(state.space, state.setup), state.goal, state.household, null, state.setup);
+  const { getDemoScenario } = await load();
+  if(!planInstanceIsCurrent(instance) || !state.ai) return;
+  const scenario=getDemoScenario(key, goal, household, null, setup);
   state.ai.productNeeds=normalizeAi(scenario).productNeeds;
   state.ai.cost=scenario.cost||state.ai.cost;
   state.shopping=null;   // rebuilt by initShopping against the new needs

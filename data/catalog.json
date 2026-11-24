@@ -140,8 +140,9 @@
       "tags": ["wire", "metal", "wood-handle", "pantry", "produce"],
       "dimsVerified": "cross-referenced",
       "img": null,
-      "checked": "2026-07",
-      "available": true
+      "checked": "2026-11-17",
+      "available": false,
+      "note": "The weekly availability check read the IKEA page as out of stock on all seven runs from 2026-10-06 to 2026-11-17."
     },
     {
       "id": "copco-basics-lazy-susan-9in",
@@ -246,8 +247,9 @@
       "tags": ["steel", "connectable", "cabinet", "doubles-shelf-space"],
       "dimsVerified": "cross-referenced",
       "img": null,
-      "checked": "2026-07",
-      "available": true
+      "checked": "2026-11-17",
+      "available": false,
+      "note": "The weekly availability check read the IKEA page as out of stock on all seven runs from 2026-10-06 to 2026-11-17."
     },
     {
       "id": "simplehouseware-expandable-shelf-large",

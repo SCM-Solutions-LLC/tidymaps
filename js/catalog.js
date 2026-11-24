@@ -37,13 +37,15 @@ export async function loadCatalog(){
 export function catalogFailed(){ return loadFailed; }
 export function catalogProducts(){ return catalog ? (catalog.products||[]) : []; }
 
-/* The newest `checked` among the products still on offer, as a month. The
-   catalog-wide `priceAsOf` is the fallback for a file that predates per-product
-   checks. */
+/* The OLDEST `checked` among the products still on offer, as a month: the
+   note reads "Prices approximate, checked <month>", a claim about every price
+   on screen. It used to take the newest, so three products checked in October
+   had 28 July prices reading "checked Oct 2026". The catalog-wide `priceAsOf`
+   is the fallback for a file that predates per-product checks. */
 export function priceAsOf(){
   if(!catalog) return '';
-  const newest=catalogProducts().filter(p=>p.available!==false).map(p=>String(p.checked||'')).filter(Boolean).sort().pop();
-  return newest ? newest.slice(0,7) : (catalog.priceAsOf||'');
+  const oldest=catalogProducts().filter(p=>p.available!==false).map(p=>String(p.checked||'')).filter(Boolean).sort()[0];
+  return oldest ? oldest.slice(0,7) : (catalog.priceAsOf||'');
 }
 
 /* A check date for people: "2026-07" reads "Jul 2026" and a full date

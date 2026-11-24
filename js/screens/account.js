@@ -1,6 +1,7 @@
 import { backendConfigured } from '../config.js';
 import { initAuth, onSession, sendCode, verifyCode, getUser } from '../auth.js';
 import { toast } from '../ui.js';
+import { saveAfterSignIn } from '../db.js';
 
 /* Appbar account state + the email-code sign-in modal. */
 
@@ -19,12 +20,21 @@ export async function setupAccount(){
     if(session && pendingIntent){
       const run=intentHandlers[pendingIntent]; pendingIntent=null;
       if(run) run();
+    }else if(session){
+      saveAfterSignIn();
     }
   });
 }
 
 function handleModalKey(e){
   if(e.key==='Escape'){ closeAuth(); return; }
+  /* The inputs sit in no <form>, so Enter (and a phone keyboard's Go) did
+     nothing. Clicking the step's button keeps its disabled-while-sending guard. */
+  if(e.key==='Enter'){
+    const btn={ 'auth-email':'auth-send-btn', 'auth-code':'auth-verify-btn' }[/** @type {HTMLElement} */ (e.target).id];
+    if(btn){ e.preventDefault(); document.getElementById(btn).click(); }
+    return;
+  }
   if(e.key!=='Tab') return;
   const modal=document.querySelector('#auth-modal .modal');
   if(!modal) return;

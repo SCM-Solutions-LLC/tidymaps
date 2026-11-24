@@ -146,6 +146,18 @@ export function initHistory(){
     // An entry for a screen this build does not have (an old tab, a hand-edited
     // fragment) is left to the browser rather than throwing on a null element.
     if(!document.getElementById('screen-'+id)) return;
+    /* A screen that draws the plan, reached by Back after the plan was
+       cleared (Edit answers, then a different space, then Back), showed the
+       old plan's DOM with nothing behind it (audit 11-24). The plan is gone,
+       so the entry is claimed for the wizard step the answers are on. */
+    if(NEEDS_PLAN.has(id) && !state.ai){
+      const to=state.space ? 'space' : 'landing';
+      history.replaceState({ screen:to, gen:generation },'', urlFor(to));
+      if(to===current) return;
+      popping=true;
+      try{ go(to); } finally { popping=false; }
+      return;
+    }
     popping=true;
     try{ go(id); } finally { popping=false; }
   });
@@ -159,6 +171,8 @@ export function initHistory(){
    dividing the screen's index in FLOW by FLOW's length, so a rail that had
    just reached 100% at Review fell to 75% on the loading screen and climbed
    back to 81% on the report, as if building the plan had undone two steps. */
+// The screens that render state.ai; without one they show a stale report.
+const NEEDS_PLAN=new Set(['results','customize','save','viewer3d']);
 const PLAN_SCREENS=new Set([...FLOW.slice(FLOW.indexOf('review')+1),'viewer3d']);
 export function railPercent(id){
   const stepNum=stepNumFor(id);
@@ -189,6 +203,11 @@ export function go(id, opts={}){
   if(!SITE_SCREENS.has(id)) loadResults().catch(()=>{});
   // the Adjust options depend on the household answer, so they are built on
   // every entry; the module loads with the report (js/planScreens.js)
+  /* Back or Forward onto the 3D screen. Its scene was disposed when it was
+     left, and openViewer3d (the only way in) was never called again, so the
+     screen came back frozen on its last frame with nothing listening. It calls
+     go('viewer3d') itself; that lands on the current entry and pushes none. */
+  if(id==='viewer3d' && popping && from!=='viewer3d') import('./screens/viewer3d.js').then(m=>m.openViewer3d());
   if(id==='customize') loadCustomize().then(m=>{ if(current==='customize') m.buildCustomize(); },
     ()=>toast('Could not load these options. Check your connection and try again.'));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -303,9 +322,9 @@ export function updateGate(){
   btn.disabled=!ok;
 }
 
-export function restart(){
+export function restart({ ask=true }={}){
   const hasProgress = current!=='landing' && (state.ai || state.uploadedFiles.length || WIZARD_STEPS.indexOf(current)>0);
-  if(hasProgress && !confirm('Start over? Your current answers will be cleared.')) return;
+  if(ask && hasProgress && !confirm('Start over? Your current answers will be cleared.')) return;
   /* Every wizard answer, from one list (js/state.js) — including the "did they
      actually say this?" flags, which belong to the answers they qualify.
      Without those, Start over left the two defaults pre-ticked and Review went

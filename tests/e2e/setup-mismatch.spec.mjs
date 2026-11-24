@@ -72,7 +72,7 @@ test('photos that show a different setup ask before the plan opens, and Keep ope
   await expect(check.locator('#setup-check-q')).toHaveText('Your photos look like a walk-in. Switch?');
   await expect(check.getByRole('button', { name: 'Switch', exact: true })).toBeFocused();
   // Switch is a second full analysis, and the box says so before the choice.
-  await expect(check.locator('#setup-check-note')).toHaveText('Switching builds your plan again, which takes one to two minutes.');
+  await expect(check.locator('#setup-check-note')).toHaveText('Switching builds your plan again, which usually takes under 30 seconds.');
   // Held: the report does not open behind the question.
   await page.waitForTimeout(1200);
   await expect(page.locator('#screen-loading')).toHaveClass(/active/);
