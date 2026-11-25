@@ -191,17 +191,21 @@ function typeHeadline(){
   root.classList.remove('tw-pending');
 }
 
+/* Sections are never hidden: one that is waiting stays visible, and the rise
+   plays only as it enters the screen. Hiding them until scrolled to left
+   every section blank after a jump to the bottom, and in a full-page
+   screenshot (11-25). One already on screen at load is left alone. */
 function revealSections(){
   if(!('IntersectionObserver' in window)) return;
   const io=new IntersectionObserver(entries=>{
     entries.forEach(e=>{
       if(!e.isIntersecting) return;
-      e.target.classList.add('in');
+      e.target.classList.add('rise-in');
       io.unobserve(e.target);
     });
-  },{rootMargin:'0px 0px -8% 0px'});
+  });
   document.querySelectorAll('#screen-landing .home-sec').forEach(sec=>{
-    sec.classList.add('reveal');
+    if(sec.getBoundingClientRect().top < innerHeight) return;
     io.observe(sec);
   });
 }

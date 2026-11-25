@@ -242,17 +242,17 @@
 .signup-fine{font-size:var(--fs-sm);color:var(--ink-3);margin:10px 0 0}
 
 /* ---------- Entrance motion (js/screens/landing.js initEntrance) ----------
-   The headline's letters arrive 45ms apart; sections rise 10px as they first
-   scroll into view, on the arrival curve. Only script adds these classes. */
+   The headline's letters arrive 45ms apart; sections rise 10px on the
+   arrival curve as they first enter the screen. Nothing waits hidden. Only
+   script adds these classes. */
 .tw-pending .hero h1{visibility:hidden}
 .hero h1 .tw-ch{animation:tw-in .12s var(--ease) both}
 @keyframes tw-in{from{opacity:0}to{opacity:1}}
-.home-sec.reveal{opacity:0;transform:translateY(10px)}
-.home-sec.reveal.in{opacity:1;transform:none;transition:opacity .54s var(--ease-out),transform .54s var(--ease-out)}
+.home-sec.rise-in{animation:rise .54s var(--ease-out)}
 
 @media (prefers-reduced-motion: reduce){
   .signup-row input.err{animation:none}
   .tw-pending .hero h1{visibility:visible}
   .hero h1 .tw-ch{animation:none}
-  .home-sec.reveal{opacity:1;transform:none}
+  .home-sec.rise-in{animation:none}
 }
