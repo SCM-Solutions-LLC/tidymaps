@@ -322,6 +322,41 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-11-24 session changed (as the handoff read until 2026-11-25)
+
+Audit fixes: sign-out clears plan and draft (it leaked both to the next
+visitor); sign-in saves a guest plan; delete-open-space and save-during-insert
+fixed; Back onto 3D rebuilds; homepage and Product Library confirm before
+clearing; `analyze-space` refunds unbilled first-call failures; Enter signs
+in; "under 30 seconds"; oldest price check; RISATORP, VARIERA gone.
+
+Later (pantry first-run walk, phone and desktop, a real 09-08 reach-in plan
+replayed as the `analyze-space` answer): the hero drawing now draws every
+zone (it stopped at six, so a seven-shelf pantry lost its floor); the
+after-drawing's "eye level"/"kid reach" tag no longer clips that shelf's
+chips; chapter chevrons point the way shelf-row chevrons do (down = folded);
+the 3D view says "pinch" and "Tap a zone" on a touch screen. Seen, not
+changed: a scoped-out category also trims the zone name ("Bulk overflow ·
+Baskets" reads "Baskets"); "Step 0 of 9 complete" wording.
+
+Later still, **redesign stage 1** ("The Marked-up Shelf", `DESIGN.md`): the
+owner found the Warm Shelf read as AI-generated. After mockups of six
+directions (label maker, editorial, handmade, playful, lifestyle, illustrated)
+the owner picked a handmade/lifestyle middle, then asked to soften square
+buttons and caps labels (they repeat the 10-03 "clinical" complaint). Shipped:
+Literata + Architects Daughter self-hosted (Literata instanced to 79KB),
+paper/ink/olive tokens, ink buttons at 10px, a rebuilt landing (photo hero
+with pen notes and the before print, spaces as an index, plan sheet with
+margin notes; Figure 1 and "What we promise" removed). The wizard and report
+inherit tokens but keep Warm Shelf shapes: item 25.
+
+Later, **redesign stages 2 and 3**: the wizard (#238) and then the report
+went to plain paper. Stage 3: the elevation plate's shelves are the sheet
+(eye level alone in `tint-2`), tags, time chips, task buttons and tabs take
+soft corners, the report's sage/butter/sky boxes are plain sheets, and all
+163 step clips were `--force` re-rendered in the new palette
+(`remotion/src/tokens.ts`), so the `--clip-*` tokens are gone. Item 25 closed.
+
 ## Condensed 2026-11-24, as the handoff read until then
 
 22. **No security headers on the live site** (F, read 10-26). Pages cannot
