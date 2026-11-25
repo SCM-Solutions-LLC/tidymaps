@@ -209,7 +209,7 @@ npm run check:model-path  # the canary, by hand
   low for kids, the opposite of chemicals and sharps). Archive scorecard #1.
 - **The owner's own visits are excluded from analytics.** The owner's
   browser stays opted out (10-06); the owner never opens a tagged `?ref=`
-  link; watched sessions use `?ref=watched`; only `source='ai'` plans and
+  link; friend sessions use `?ref=friend-1` to `friend-5`; only `source='ai'` plans and
   `useful='Very useful'` count toward the first-users bar (#195, item 6).
 - **No meta CSP, deliberately** (10-26). `index.html` has 93 inline `on*=`
   handlers and 116 inline `style=` attributes, so a CSP that does not break
@@ -306,8 +306,8 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
 ### Waiting on traffic
 
 6. **First users.** Only the owner has used it (re-checked 11-24: 30 days of
-   rows are the canary). Pantry first; five watched sessions on
-   `?ref=watched` (`docs/watched-sessions.md`), then 20 to 30 strangers,
+   rows are the canary). Pantry first; five unwatched friend sessions,
+   one `?ref=friend-N` each (`docs/watched-sessions.md`), then 20 to 30 strangers,
    one `?ref=<slug>` per channel (`[a-z0-9-]{1,24}`). Bar: of the first 10, 6 get an AI plan, 4 tap "Very
    useful", 2 check 3+ steps in a week; a miss stops recruiting. Archive has
    the full plan and the join. Blocked on: owner recruiting.

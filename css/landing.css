@@ -85,27 +85,29 @@
 .hero.no-photo .hero-photo{display:none}
 
 /* ---------- Spaces ----------
-   An index, not a gallery: the rooms as small headings, their spaces as rows
-   on a hairline. The wizard's step 2 keeps the illustrated cards. */
+   An index, not a gallery: the rooms as small olive headings, their spaces as
+   rows on a hairline, each with a thumbnail of the wizard's own drawing so
+   the ten rows read apart at a glance (owner, 11-25: the bare list read as
+   monotone). The wizard's step 2 keeps the full-size illustrated cards. */
 .space-groups{display:grid;gap:36px 56px;margin-top:40px;grid-template-columns:minmax(0,1fr)}
 @media(min-width:760px){.space-groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .space-room{
   font-family:var(--sans);font-size:var(--fs-sm);font-weight:600;letter-spacing:var(--tracking-label);
-  color:var(--ink-3);margin:0 0 6px;
+  color:var(--spot-ink);margin:0 0 6px;
 }
 .space-group .room-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
 .space-group .room-card{
-  display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:16px;width:100%;max-width:none;
+  display:flex;flex-direction:row;align-items:center;gap:16px;width:100%;max-width:none;
   background:none;border:none;border-top:var(--rule);border-radius:0;box-shadow:none;
   padding:16px 2px;text-align:left;animation:none;transform:none;
 }
 .space-group .room-card:last-child{border-bottom:var(--rule)}
 .space-group .room-card:hover{transform:none;box-shadow:none;background:var(--tint)}
-.space-group .room-card .rc-img{display:none}
-.space-group .rc-label{padding:0;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;min-width:0}
+.space-group .room-card .rc-img{flex:none;width:64px;border:var(--rule);border-radius:6px}
+.space-group .rc-label{padding:0;display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap;min-width:0;flex:1}
 .space-group .rc-label h3{font-family:var(--serif);font-size:var(--fs-xl);font-weight:400;letter-spacing:-.01em}
 .space-group .rc-label p{font-family:var(--sans);font-size:var(--fs-sm);color:var(--ink-3);margin:0}
-.space-group .room-card::after{content:"\2192";font-family:var(--sans);color:var(--ink-3);flex:none}
+.space-group .room-card::after{content:"\2192";font-family:var(--sans);color:var(--spot-ink);flex:none}
 .space-foot{font-size:var(--fs-ui);line-height:1.6;color:var(--ink-3);margin:28px 0 0;max-width:62ch}
 
 /* ---------- One finished plan ----------
@@ -239,6 +241,18 @@
 .signup-done strong{color:var(--spot-ink)}
 .signup-fine{font-size:var(--fs-sm);color:var(--ink-3);margin:10px 0 0}
 
+/* ---------- Entrance motion (js/screens/landing.js initEntrance) ----------
+   The headline's letters arrive 45ms apart; sections rise 10px as they first
+   scroll into view, on the arrival curve. Only script adds these classes. */
+.tw-pending .hero h1{visibility:hidden}
+.hero h1 .tw-ch{animation:tw-in .12s var(--ease) both}
+@keyframes tw-in{from{opacity:0}to{opacity:1}}
+.home-sec.reveal{opacity:0;transform:translateY(10px)}
+.home-sec.reveal.in{opacity:1;transform:none;transition:opacity .54s var(--ease-out),transform .54s var(--ease-out)}
+
 @media (prefers-reduced-motion: reduce){
   .signup-row input.err{animation:none}
+  .tw-pending .hero h1{visibility:visible}
+  .hero h1 .tw-ch{animation:none}
+  .home-sec.reveal{opacity:1;transform:none}
 }
