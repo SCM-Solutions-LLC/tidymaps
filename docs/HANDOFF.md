@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-11-24, main at 092b100 (after #231).** History (dated
+**Last refreshed: 2026-11-25, main at 931febe (after #244).** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,40 +11,28 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-11-24 session changed
+## What the 2026-11-25 session changed
 
-Audit fixes: sign-out clears plan and draft (it leaked both to the next
-visitor); sign-in saves a guest plan; delete-open-space and save-during-insert
-fixed; Back onto 3D rebuilds; homepage and Product Library confirm before
-clearing; `analyze-space` refunds unbilled first-call failures; Enter signs
-in; "under 30 seconds"; oldest price check; RISATORP, VARIERA gone.
-
-Later (pantry first-run walk, phone and desktop, a real 09-08 reach-in plan
-replayed as the `analyze-space` answer): the hero drawing now draws every
-zone (it stopped at six, so a seven-shelf pantry lost its floor); the
-after-drawing's "eye level"/"kid reach" tag no longer clips that shelf's
-chips; chapter chevrons point the way shelf-row chevrons do (down = folded);
-the 3D view says "pinch" and "Tap a zone" on a touch screen. Seen, not
-changed: a scoped-out category also trims the zone name ("Bulk overflow ·
-Baskets" reads "Baskets"); "Step 0 of 9 complete" wording.
-
-Later still, **redesign stage 1** ("The Marked-up Shelf", `DESIGN.md`): the
-owner found the Warm Shelf read as AI-generated. After mockups of six
-directions (label maker, editorial, handmade, playful, lifestyle, illustrated)
-the owner picked a handmade/lifestyle middle, then asked to soften square
-buttons and caps labels (they repeat the 10-03 "clinical" complaint). Shipped:
-Literata + Architects Daughter self-hosted (Literata instanced to 79KB),
-paper/ink/olive tokens, ink buttons at 10px, a rebuilt landing (photo hero
-with pen notes and the before print, spaces as an index, plan sheet with
-margin notes; Figure 1 and "What we promise" removed). The wizard and report
-inherit tokens but keep Warm Shelf shapes: item 25.
-
-Later, **redesign stages 2 and 3**: the wizard (#238) and then the report
-went to plain paper. Stage 3: the elevation plate's shelves are the sheet
-(eye level alone in `tint-2`), tags, time chips, task buttons and tabs take
-soft corners, the report's sage/butter/sky boxes are plain sheets, and all
-163 step clips were `--force` re-rendered in the new palette
-(`remotion/src/tokens.ts`), so the `--clip-*` tokens are gone. Item 25 closed.
+- **Deploy split (#242).** `pages.yml` now builds in one job and deploys in
+  another that needs it. `deploy-pages` failed #240 and #241 with "No
+  artifacts named github-pages were found" (looked 0.3s after upload); the
+  job hand-off fixes that, and a failed deploy re-runs alone without the
+  ~15 min of suites.
+- **Item 6 made unwatched (#243).** The owner cannot sit in, so each friend
+  gets `?ref=friend-N` and telemetry shows where they stopped;
+  `docs/watched-sessions.md` has the texts, questionnaire, stall rule and SQL.
+- **Landing motion (#243, #244).** Headline types in once per load; sections
+  rise in as they enter but are never hidden while waiting (the first cut hid
+  them, so a full-page screenshot showed blank paper); room thumbnails draw
+  in; before print and pen notes arrive after the headline. Reduced motion
+  gets none. Spec: `DESIGN.md` Motion.
+- **Room-coloured cards (#244).** The spaces index is one field card per room
+  (kitchen sage, bedroom butter, bathroom and hall sky, garage clay, a new
+  family used nowhere else). `DESIGN.md` records it as the one exception to
+  "fields are never a card"; `report-chrome` asserts each room is its own
+  card and no two share a colour.
+- **Landing is frozen** until all five friends have tried it (item 6), so
+  every session sees the same page.
 
 ## Product state
 
@@ -122,7 +110,8 @@ Only the owner has used it (Production health #9); first users: item 6.
   scoped to this project, read-write, **expires 2027-10-01** (open item 13).
   Keys expire silently and CI cannot see it (Production health #3).
 - **What deploys on merge to `main`:** the site (`pages.yml` builds `_site/`
-  with `scripts/build-site.sh` and inlines critical CSS) and the functions
+  with `scripts/build-site.sh` and inlines critical CSS, then a separate
+  deploy job publishes it; re-run that job alone if it fails) and the functions
   when `supabase/functions/**` changed (`supabase-functions.yml`, also weekly
   Mon 06:17 UTC; no `--prune`, so deleting a function is manual). A red
   "Deploy edge functions" run means production functions differ from `main`.
@@ -310,7 +299,8 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
    one `?ref=friend-N` each (`docs/watched-sessions.md`), then 20 to 30 strangers,
    one `?ref=<slug>` per channel (`[a-z0-9-]{1,24}`). Bar: of the first 10, 6 get an AI plan, 4 tap "Very
    useful", 2 check 3+ steps in a week; a miss stops recruiting. Archive has
-   the full plan and the join. Blocked on: owner recruiting.
+   the full plan and the join. The landing is frozen until all five friends
+   have tried it. Blocked on: owner recruiting.
 
 ### Waiting on business input
 
