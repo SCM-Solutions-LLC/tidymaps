@@ -115,6 +115,9 @@
   --sky-f:     oklch(0.93 0.018 240);  /* sky field */
   --sky-l:     oklch(0.79 0.04 240);   /* sky edge */
   --sky-d:     oklch(0.38 0.07 250);   /* sky text */
+  --clay-f:    oklch(0.93 0.03 50);    /* clay field: the garage card only */
+  --clay-l:    oklch(0.80 0.06 50);    /* clay edge */
+  --clay-d:    oklch(0.42 0.08 45);    /* clay text */
 
   /* ---- Names the stylesheets already speak ------------------------------
      Kept so the wizard, report, viewer and library resolve without a rename

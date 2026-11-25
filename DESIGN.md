@@ -182,7 +182,7 @@ This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, p
 - The pen: blue-black handwriting on small paper slips pinned to a photo, or as the margin note under a plan zone. Short notes only, never a sentence the reader must parse.
 - Ink buttons (white label, 10px corners); ghost buttons are an ink outline on the sheet. Chips, tabs and tags take soft corners too (10px, 6px on a small tag); only the toast, progress tracks and round marks stay round.
 - Olive (`spot-ink`) for links, a phrase in a heading, check marks and numerals. Never a field larger than the faint `tint-2` / `sel-bg`.
-- Sage, butter and sky survive only as small marks that carry a word: a safety tag, a warning icon. Zones, callouts and notes are the plain sheet with a hairline.
+- Sage, butter and sky survive only as small marks that carry a word: a safety tag, a warning icon. Zones, callouts and notes are the plain sheet with a hairline. The one exception is the landing's spaces index, where each room is a card in its own field (see Supporting fields).
 
 ## Colors
 
@@ -201,7 +201,7 @@ This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, p
 - **Pen** (`pen`): handwritten notes only.
 
 ### Supporting fields
-Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), desaturated to sit on warm paper. Sage is success and safety, butter is warnings, sky is information. They colour a small tag or an icon beside a word, never a card, a callout or a zone, and never a button.
+Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), desaturated to sit on warm paper. Sage is success and safety, butter is warnings, sky is information. They colour a small tag or an icon beside a word, never a callout, a zone or a button, and never a card, with one exception: on the landing's spaces index each room is a card in a field (kitchen sage, bedroom butter, bathroom and hall sky, garage clay), so the rooms read apart at a glance (owner, 11-25). Clay (`clay-f`, `clay-l`, `clay-d`) exists only for that garage card. There the colours name a room, not a state, and the rows stay ink on the field.
 
 ### The step clips' palette
 The checklist clips are baked video (`remotion/`), coloured from `remotion/src/tokens.ts`, a test-held copy of these tokens: the band is `tint`, items are `stock`, structure is `draw`, the accent is olive (`spot-ink` over `tint-2`), and a label is a paper tag with a drawn edge. `.step-art` points the inline stand-in scenes at the same tokens. A change to any of them is a `--force` re-render.
@@ -209,7 +209,7 @@ The checklist clips are baked video (`remotion/`), coloured from `remotion/src/t
 ### Named Rules
 **The Ink-Button Rule.** A button, a selected thing or a progress mark is the ink. Olive is never a control fill.
 **The Accent-Is-Ink Rule.** Olive appears as text, a check or a numeral. Its only fills are the faint `tint-2` and `sel-bg`.
-**The Field-Has-Its-Own-Ink Rule.** Text on a sage, butter or sky field uses that family's deep ink.
+**The Field-Has-Its-Own-Ink Rule.** Text on a sage, butter, sky or clay field uses that family's deep ink, or the ink itself.
 **The Correction-Pencil Rule.** Red appears only on a failure.
 **The Marked-State Rule.** Never encode state by hue alone. Pair every state with a mark, a strikethrough, an icon or a word.
 
@@ -313,7 +313,7 @@ Progress is a mark, never a colour alone: an 18px `field-line` circle that is em
 ### Motion
 One stroke. `--ease` (0.2,0.7,0.2,1) for state changes, `--ease-out` (0.16,0.84,0.28,1) for arrivals, `--ease-physical` (0.34,1.32,0.48,1) for things that stand for objects. Durations 120ms (transform), 180ms (colour), 340ms (slow), 400ms for a screen rising 10px into place, 450ms for the rail, 540ms for a card arriving with a 55ms stagger. Every animation is disabled under `prefers-reduced-motion`.
 
-On the landing, the hero headline types in once per load, its letters arriving 45ms apart on `--ease` (a head script hides it from the first paint and shows it after 2.5s regardless), and each section rises 10px over 540ms on `--ease-out` as it first enters the screen; a section is never hidden while it waits, so a jump down the page or a full-page screenshot shows everything. The spaces index sets its room headings and arrows in olive, with a 64px thumbnail of each space's drawing (owner, 11-25: the bare list read as monotone).
+On the landing, the hero headline types in once per load, its letters arriving 45ms apart on `--ease` (a head script hides it from the first paint and shows it after 2.5s regardless), and each section rises 10px over 540ms on `--ease-out` as it first enters the screen; a section is never hidden while it waits, so a jump down the page or a full-page screenshot shows everything. The spaces index is one field card per room, its heading and arrows in the room's deep ink, with a 64px thumbnail of each space's drawing on stock. As each room card first enters the screen its thumbnails draw their lines in over 900ms on `--ease-out`, 110ms apart; a card waiting below is shown whole, and the line is only taken away at the moment it starts drawing. The before print drops in (600ms, `--ease-physical`) and the pen notes slide in 200ms apart after the headline has typed, timed from first paint; on a phone the before print starts below the fold, so it waits and arrives when it comes on screen.
 
 ## Do's and Don'ts
 
