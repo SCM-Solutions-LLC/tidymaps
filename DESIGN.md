@@ -313,6 +313,8 @@ Progress is a mark, never a colour alone: an 18px `field-line` circle that is em
 ### Motion
 One stroke. `--ease` (0.2,0.7,0.2,1) for state changes, `--ease-out` (0.16,0.84,0.28,1) for arrivals, `--ease-physical` (0.34,1.32,0.48,1) for things that stand for objects. Durations 120ms (transform), 180ms (colour), 340ms (slow), 400ms for a screen rising 10px into place, 450ms for the rail, 540ms for a card arriving with a 55ms stagger. Every animation is disabled under `prefers-reduced-motion`.
 
+On the landing, the hero headline types in once per load, its letters arriving 45ms apart on `--ease` (a head script hides it from the first paint and shows it after 2.5s regardless), and each section rises 10px over 540ms on `--ease-out` the first time it scrolls into view. The spaces index sets its room headings and arrows in olive, with a 64px thumbnail of each space's drawing (owner, 11-25: the bare list read as monotone).
+
 ## Do's and Don'ts
 
 ### Do:

@@ -113,11 +113,12 @@ test('what-you-get explains with drawn panels, not shrunken screenshots', () => 
   assert.ok(!landing.includes('assets/product/wizard-household.png'), 'wizard screenshot re-inlined on the landing page');
 });
 
-// The landing lists the spaces as an index: the wizard's own buttons, with
-// the art hidden here only, and the space names set at a reading size so the
-// list never shrinks back to captions. Step 2 of the wizard keeps the art.
-test('the spaces read as an index, and only the landing hides their art', () => {
-  assert.match(landingCss, /\.space-group \.room-card \.rc-img\{display:none\}/, 'the landing shows the card art again');
+// The landing lists the spaces as an index: the wizard's own buttons, each
+// with a small thumbnail of its drawing so the rows read apart (owner,
+// 11-25), and the space names set at a reading size so the list never
+// shrinks back to captions. Step 2 of the wizard keeps the full-size art.
+test('the spaces read as an index with thumbnails, not a gallery', () => {
+  assert.match(landingCss, /\.space-group \.room-card \.rc-img\{[^}]*width:64px/, 'the landing art grew back into a gallery, or vanished');
   assert.match(landingCss, /\.space-group \.rc-label h3\{[^}]*font-size:var\(--fs-xl\)/, 'space names shrank below reading size');
   const componentsCss = readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
   assert.ok(!/(^|\})\s*\.room-card \.rc-img\{[^}]*display:none/.test(componentsCss), 'the wizard lost its card art');

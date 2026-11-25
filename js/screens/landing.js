@@ -153,6 +153,65 @@ function initAppbarScroll(){
   },{passive:true});
 }
 
+/* ---------- Entrance motion ----------
+   The headline types itself in, letter by letter, once per page load; each
+   section below rises into place the first time it scrolls into view. Both
+   start from script, so without it, or under reduced motion, everything is
+   simply there. */
+function typeHeadline(){
+  const root=document.documentElement;
+  const h1=document.querySelector('#screen-landing .hero h1');
+  // The head script's 2.5s fallback already showed it whole: typing it again
+  // now would flash the sentence away and back.
+  if(!h1 || !root.classList.contains('tw-pending')) return;
+  // Screen readers get the sentence whole; the letters are for eyes only.
+  const said=document.createElement('span');
+  said.className='sr-only';
+  said.textContent=h1.textContent;
+  const drawn=document.createElement('span');
+  drawn.setAttribute('aria-hidden','true');
+  drawn.append(...h1.childNodes);
+  let i=0;
+  const split=node=>{
+    for(const child of [...node.childNodes]){
+      if(child.nodeType!==Node.TEXT_NODE){ split(child); continue; }
+      const letters=document.createDocumentFragment();
+      for(const ch of child.textContent){
+        const s=document.createElement('span');
+        s.className='tw-ch';
+        s.style.animationDelay=`${i++*45}ms`;
+        s.textContent=ch;
+        letters.append(s);
+      }
+      child.replaceWith(letters);
+    }
+  };
+  split(drawn);
+  h1.append(said, drawn);
+  root.classList.remove('tw-pending');
+}
+
+function revealSections(){
+  if(!('IntersectionObserver' in window)) return;
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    });
+  },{rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('#screen-landing .home-sec').forEach(sec=>{
+    sec.classList.add('reveal');
+    io.observe(sec);
+  });
+}
+
+function initEntrance(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  typeHeadline();
+  revealSections();
+}
+
 /* ---------- Landing setup: restore signup state ---------- */
 export function initLanding(){
   try{
@@ -171,4 +230,5 @@ export function initLanding(){
   renderSpaces();
   fillProductArt();
   initAppbarScroll();
+  initEntrance();
 }
