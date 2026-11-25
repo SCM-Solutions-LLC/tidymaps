@@ -92,12 +92,23 @@ test('a step clip fills its band on a desktop instead of floating in it', async 
   expect(Math.abs(band.w - band.h * (video.w / video.h)), 'the band is wider than the clip it holds').toBeLessThanOrEqual(2);
 });
 
+/* The landing's rooms were once boxed by accident, by a retired picker's
+   rule sharing the class name. Since 11-25 each room is a card on purpose
+   (owner: colour tells the rooms apart), so the guard now holds that box to
+   its intent: every room is its own card, and no two rooms share a colour. */
 for (const width of [390, 1280]) {
-  test(`at ${width} the landing gallery's rooms are not boxed`, async ({ page }) => {
+  test(`at ${width} each landing room is its own coloured card`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/index.html');
-    const borders = await page.$$eval('#space-groups .space-group', (els) => els.map((el) => getComputedStyle(el).borderTopWidth));
-    expect(borders.length).toBeGreaterThan(2);
-    for (const b of borders) expect(b).toBe('0px');
+    const rooms = await page.$$eval('#space-groups .space-group', (els) => els.map((el) => {
+      const cs = getComputedStyle(el);
+      return { room: el.dataset.room, border: cs.borderTopWidth, bg: cs.backgroundColor };
+    }));
+    expect(rooms.length).toBeGreaterThan(2);
+    for (const r of rooms) {
+      expect(r.room, 'a room card is not keyed by its room').toBeTruthy();
+      expect(r.border, `${r.room} is not drawn as a card`).toBe('1px');
+    }
+    expect(new Set(rooms.map((r) => r.bg)).size, 'two rooms share a colour').toBe(rooms.length);
   });
 }
