@@ -102,6 +102,7 @@ function renderSpaces(){
   ROOMS.forEach(room => {
     const group = document.createElement('div');
     group.className = 'space-group';
+    group.dataset.room = room.id;
     const cards = (AREAS[room.id] || []).map((a, i) => `
       <button type="button" class="room-card" data-room="${room.id}" data-area="${a.id}">
         <div class="rc-img card-visual">${art(a.artKey)}</div>
@@ -191,25 +192,77 @@ function typeHeadline(){
   root.classList.remove('tw-pending');
 }
 
+/* Sections are never hidden: one that is waiting stays visible, and the rise
+   plays only as it enters the screen. Hiding them until scrolled to left
+   every section blank after a jump to the bottom, and in a full-page
+   screenshot (11-25). One already on screen at load is left alone. */
 function revealSections(){
   if(!('IntersectionObserver' in window)) return;
   const io=new IntersectionObserver(entries=>{
     entries.forEach(e=>{
       if(!e.isIntersecting) return;
-      e.target.classList.add('in');
+      e.target.classList.add('rise-in');
       io.unobserve(e.target);
     });
-  },{rootMargin:'0px 0px -8% 0px'});
+  });
   document.querySelectorAll('#screen-landing .home-sec').forEach(sec=>{
-    sec.classList.add('reveal');
+    if(sec.getBoundingClientRect().top < innerHeight) return;
     io.observe(sec);
   });
+}
+
+/* Each room card's drawings draw their own lines in as the card enters the
+   screen, a tile at a time. Like the sections, a card waiting below is shown
+   whole: the line is only taken away at the moment it starts drawing. Shapes
+   that already carry their own motion (the steam) are left to it. */
+function drawInArt(){
+  if(!('IntersectionObserver' in window)) return;
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      io.unobserve(e.target);
+      e.target.querySelectorAll('.card-art-svg').forEach((svg,i)=>{
+        svg.querySelectorAll('path,line,rect,circle,ellipse,polyline,polygon').forEach(shape=>{
+          if(getComputedStyle(shape).animationName!=='none') return;
+          let len=0;
+          try{ len=shape.getTotalLength(); }catch(_){ return; }
+          if(!len) return;
+          shape.style.setProperty('--len', len.toFixed(1));
+          shape.style.animationDelay=`${i*110}ms`;
+          shape.classList.add('draw-in');
+        });
+      });
+    });
+  },{rootMargin:'0px 0px -12% 0px'});
+  document.querySelectorAll('#space-groups .space-group').forEach(group=>{
+    if(group.getBoundingClientRect().top < innerHeight) return;
+    io.observe(group);
+  });
+}
+
+/* The before print and the pen notes arrive after the headline, timed from
+   first paint by the head script's `entrance` class. On a phone the before
+   print starts below the fold, where that would play to nobody, so there it
+   waits (`later`) and arrives when it comes on screen. */
+function arriveBeforePrint(){
+  const print=document.querySelector('#screen-landing .hp-before');
+  if(!print || print.getBoundingClientRect().top < innerHeight) return;
+  print.classList.add('later');
+  if(!('IntersectionObserver' in window)) return;
+  const io=new IntersectionObserver(([e])=>{
+    if(!e.isIntersecting) return;
+    io.disconnect();
+    print.classList.add('arrive');
+  },{rootMargin:'0px 0px -10% 0px'});
+  io.observe(print);
 }
 
 function initEntrance(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   typeHeadline();
   revealSections();
+  drawInArt();
+  arriveBeforePrint();
 }
 
 /* ---------- Landing setup: restore signup state ---------- */

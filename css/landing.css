@@ -85,29 +85,36 @@
 .hero.no-photo .hero-photo{display:none}
 
 /* ---------- Spaces ----------
-   An index, not a gallery: the rooms as small olive headings, their spaces as
-   rows on a hairline, each with a thumbnail of the wizard's own drawing so
-   the ten rows read apart at a glance (owner, 11-25: the bare list read as
-   monotone). The wizard's step 2 keeps the full-size illustrated cards. */
+   An index of the rooms, each room its own card in a field colour (owner,
+   11-25: the plain list read as monotone, and colour tells the rooms apart at
+   a glance), its spaces as rows on the card's own hairline with a thumbnail of
+   the wizard's drawing. The text on a card is ink, and the room's name and
+   arrows its family's deep ink. The wizard's step 2 keeps the full-size art. */
 .space-groups{display:grid;gap:36px 56px;margin-top:40px;grid-template-columns:minmax(0,1fr)}
 @media(min-width:760px){.space-groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.space-group{
+  --room-f:var(--sage-f);--room-l:var(--sage-l);--room-d:var(--sage-d);
+  background:var(--room-f);border:1px solid var(--room-l);border-radius:14px;padding:16px 14px 4px;
+}
+.space-group[data-room="bedroom"]{--room-f:var(--butter-f);--room-l:var(--butter-l);--room-d:var(--butter-d)}
+.space-group[data-room="bath"]{--room-f:var(--sky-f);--room-l:var(--sky-l);--room-d:var(--sky-d)}
+.space-group[data-room="garage"]{--room-f:var(--clay-f);--room-l:var(--clay-l);--room-d:var(--clay-d)}
 .space-room{
   font-family:var(--sans);font-size:var(--fs-sm);font-weight:600;letter-spacing:var(--tracking-label);
-  color:var(--spot-ink);margin:0 0 6px;
+  color:var(--room-d);margin:0 0 6px;
 }
 .space-group .room-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
 .space-group .room-card{
   display:flex;flex-direction:row;align-items:center;gap:16px;width:100%;max-width:none;
-  background:none;border:none;border-top:var(--rule);border-radius:0;box-shadow:none;
+  background:none;border:none;border-top:1px solid var(--room-l);border-radius:0;box-shadow:none;
   padding:16px 2px;text-align:left;animation:none;transform:none;
 }
-.space-group .room-card:last-child{border-bottom:var(--rule)}
-.space-group .room-card:hover{transform:none;box-shadow:none;background:var(--tint)}
-.space-group .room-card .rc-img{flex:none;width:64px;border:var(--rule);border-radius:6px}
+.space-group .room-card:hover{transform:none;box-shadow:none;background:var(--stock)}
+.space-group .room-card .rc-img{flex:none;width:64px;border:1px solid var(--room-l);border-radius:6px}
 .space-group .rc-label{padding:0;display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap;min-width:0;flex:1}
 .space-group .rc-label h3{font-family:var(--serif);font-size:var(--fs-xl);font-weight:400;letter-spacing:-.01em}
 .space-group .rc-label p{font-family:var(--sans);font-size:var(--fs-sm);color:var(--ink-3);margin:0}
-.space-group .room-card::after{content:"\2192";font-family:var(--sans);color:var(--spot-ink);flex:none}
+.space-group .room-card::after{content:"\2192";font-family:var(--sans);color:var(--room-d);flex:none}
 .space-foot{font-size:var(--fs-ui);line-height:1.6;color:var(--ink-3);margin:28px 0 0;max-width:62ch}
 
 /* ---------- One finished plan ----------
@@ -242,17 +249,33 @@
 .signup-fine{font-size:var(--fs-sm);color:var(--ink-3);margin:10px 0 0}
 
 /* ---------- Entrance motion (js/screens/landing.js initEntrance) ----------
-   The headline's letters arrive 45ms apart; sections rise 10px as they first
-   scroll into view, on the arrival curve. Only script adds these classes. */
+   The headline's letters arrive 45ms apart; sections rise 10px on the
+   arrival curve as they first enter the screen. Nothing waits hidden. Only
+   script adds these classes. */
 .tw-pending .hero h1{visibility:hidden}
 .hero h1 .tw-ch{animation:tw-in .12s var(--ease) both}
 @keyframes tw-in{from{opacity:0}to{opacity:1}}
-.home-sec.reveal{opacity:0;transform:translateY(10px)}
-.home-sec.reveal.in{opacity:1;transform:none;transition:opacity .54s var(--ease-out),transform .54s var(--ease-out)}
+.home-sec.rise-in{animation:rise .54s var(--ease-out)}
+/* The thumbnails' lines draw in (drawInArt); the hero's notes and the
+   before print arrive after the headline has typed, timed from first paint.
+   Individual translate/rotate compose with each print's own tilt. */
+.card-art-svg .draw-in{animation:draw-in .9s var(--ease-out) both}
+@keyframes draw-in{
+  from{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
+  to{stroke-dasharray:var(--len);stroke-dashoffset:0}
+}
+.entrance .hp-before:not(.later),.hp-before.arrive{animation:print-in .6s var(--ease-physical) 1.1s backwards}
+.hp-before.arrive{animation-delay:.1s}
+.entrance .hp-notes li{animation:note-in .4s var(--ease-out) 1.5s backwards}
+.entrance .hp-notes li:nth-child(2){animation-delay:1.7s}
+.entrance .hp-notes li:nth-child(3){animation-delay:1.9s}
+@keyframes print-in{from{opacity:0;translate:-16px 20px;rotate:-5deg}}
+@keyframes note-in{from{opacity:0;translate:10px 0}}
 
 @media (prefers-reduced-motion: reduce){
   .signup-row input.err{animation:none}
   .tw-pending .hero h1{visibility:visible}
   .hero h1 .tw-ch{animation:none}
-  .home-sec.reveal{opacity:1;transform:none}
+  .home-sec.rise-in{animation:none}
+  .card-art-svg .draw-in,.entrance .hp-before,.hp-before.arrive,.entrance .hp-notes li{animation:none}
 }

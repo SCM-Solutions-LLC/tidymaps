@@ -72,10 +72,11 @@
 </script>
 <!-- The headline types itself in (js/screens/landing.js typeHeadline). It is
      hidden from the first paint so it never shows whole and then vanishes, and
-     shown after 2.5s regardless, in case the module never runs. -->
+     shown after 2.5s regardless, in case the module never runs. `entrance`
+     times the hero prints' arrival from the same first paint. -->
 <script>
 if(window.matchMedia&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-  document.documentElement.classList.add('tw-pending');
+  document.documentElement.classList.add('tw-pending','entrance');
   setTimeout(function(){document.documentElement.classList.remove('tw-pending')},2500);
 }
 </script>

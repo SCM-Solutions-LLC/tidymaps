@@ -124,6 +124,13 @@ test('the spaces read as an index with thumbnails, not a gallery', () => {
   assert.ok(!/(^|\})\s*\.room-card \.rc-img\{[^}]*display:none/.test(componentsCss), 'the wizard lost its card art');
 });
 
+// The rise-in once hid every landing section until it was scrolled to, so a
+// jump down the page or a full-page screenshot showed blank paper (11-25).
+// A section may animate in, but no rule may park it invisible.
+test('landing sections are never hidden while they wait to animate', () => {
+  assert.doesNotMatch(landingCss, /\.home-sec[^{]*\{[^}]*opacity:\s*0[;}]/, 'a landing section is hidden until scrolled to');
+});
+
 test('photo slots degrade gracefully until real photography exists', () => {
   assert.ok(landing.includes("classList.add('no-photo')"), 'photo fallback handler missing');
   assert.ok(landingCss.includes('.no-photo'), 'no-photo layout styles missing');
