@@ -322,6 +322,29 @@ first was findable in one query against the edge logs. When something reads as
 "nobody is using it", rule out "it is broken" and "we are lying to ourselves in
 the data" before concluding anything about demand.
 
+## What the 2026-11-25 session changed (as the handoff read until 2026-11-26)
+
+- **Deploy split (#242).** `pages.yml` now builds in one job and deploys in
+  another that needs it. `deploy-pages` failed #240 and #241 with "No
+  artifacts named github-pages were found" (looked 0.3s after upload); the
+  job hand-off fixes that, and a failed deploy re-runs alone without the
+  ~15 min of suites.
+- **Item 6 made unwatched (#243).** The owner cannot sit in, so each friend
+  gets `?ref=friend-N` and telemetry shows where they stopped;
+  `docs/watched-sessions.md` has the texts, questionnaire, stall rule and SQL.
+- **Landing motion (#243, #244).** Headline types in once per load; sections
+  rise in as they enter but are never hidden while waiting (the first cut hid
+  them, so a full-page screenshot showed blank paper); room thumbnails draw
+  in; before print and pen notes arrive after the headline. Reduced motion
+  gets none. Spec: `DESIGN.md` Motion.
+- **Room-coloured cards (#244).** The spaces index is one field card per room
+  (kitchen sage, bedroom butter, bathroom and hall sky, garage clay, a new
+  family used nowhere else). `DESIGN.md` records it as the one exception to
+  "fields are never a card"; `report-chrome` asserts each room is its own
+  card and no two share a colour.
+- **Landing is frozen** until all five friends have tried it (item 6), so
+  every session sees the same page.
+
 ## What the 2026-11-24 session changed (as the handoff read until 2026-11-25)
 
 Audit fixes: sign-out clears plan and draft (it leaked both to the next

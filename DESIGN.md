@@ -327,6 +327,7 @@ On the landing, the hero headline types in once per load, its letters arriving 4
 
 ### Don't:
 - **Don't** bring back cream with a terracotta accent, pastel-filled cards, or a grid of identical rounded cards.
+- **Don't** put a full-width dark band behind a landing section: tried 2026-11-26, the owner found it uninviting.
 - **Don't** tilt more than one thing on a screen, or add emoji, highlighter marks or stickers: warmth comes from the photographs and the pen, not decoration.
 - **Don't** set any text in caps, square off a button, or make a button a pill.
 - **Don't** use the pen for a paragraph, a control label or anything a reader must parse.

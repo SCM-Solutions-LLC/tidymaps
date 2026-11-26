@@ -3,7 +3,7 @@
 What is deployed, what is true of production, what is open, and why the code
 does the things that look arbitrary. Read it before changing anything.
 
-**Last refreshed: 2026-11-25, main at 931febe (after #244).** History (dated
+**Last refreshed: 2026-11-26, main at 8d04a35 (after #246).** History (dated
 sessions, scorecard, closed items, and the full pre-trim text of every
 section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 
@@ -11,28 +11,25 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
-## What the 2026-11-25 session changed
+## What the 2026-11-26 session changed
 
-- **Deploy split (#242).** `pages.yml` now builds in one job and deploys in
-  another that needs it. `deploy-pages` failed #240 and #241 with "No
-  artifacts named github-pages were found" (looked 0.3s after upload); the
-  job hand-off fixes that, and a failed deploy re-runs alone without the
-  ~15 min of suites.
-- **Item 6 made unwatched (#243).** The owner cannot sit in, so each friend
-  gets `?ref=friend-N` and telemetry shows where they stopped;
-  `docs/watched-sessions.md` has the texts, questionnaire, stall rule and SQL.
-- **Landing motion (#243, #244).** Headline types in once per load; sections
-  rise in as they enter but are never hidden while waiting (the first cut hid
-  them, so a full-page screenshot showed blank paper); room thumbnails draw
-  in; before print and pen notes arrive after the headline. Reduced motion
-  gets none. Spec: `DESIGN.md` Motion.
-- **Room-coloured cards (#244).** The spaces index is one field card per room
-  (kitchen sage, bedroom butter, bathroom and hall sky, garage clay, a new
-  family used nowhere else). `DESIGN.md` records it as the one exception to
-  "fields are never a card"; `report-chrome` asserts each room is its own
-  card and no two share a colour.
-- **Landing is frozen** until all five friends have tried it (item 6), so
-  every session sees the same page.
+- **Landing "What you get" (#246).** The eye-level shelf from the after
+  photo sits beside its zone. Zone labels, "3 of 9 done", prices, shelf names
+  and the "How it works" numerals are olive, as is "and a reason" in the
+  sample heading. The 3D print was recaptured from today's viewer: the old
+  one predated item labels being hidden by default, so zone and item names
+  overlapped.
+- **Tried and dropped: a full-width dark band** behind the sample section
+  (1278332, reverted in 778cc8c). The owner found it uninviting; do not
+  propose it again. Rejected looks so far: cream with terracotta and pastel
+  cards (11-24, read as AI-made), clinical white with square corners (09-07),
+  the dark band (11-26). `DESIGN.md` Don'ts holds all three.
+- **Skill advice not adopted.** ui-ux-pro-max suggested a purple palette and
+  a testimonials carousel: there are no real testimonials and purple does not
+  fit. taste-skill was useful only as a review checklist.
+- **Landing is still frozen** (item 6). If it still feels bland after the
+  friends, add real photos of a closet and a garage, not more coloured
+  surfaces.
 
 ## Product state
 
@@ -283,6 +280,11 @@ The live work list; numbers are stable, full 10-13 text in the archive.
     "pill"); rewrite them from the live CSS. Small pills left on purpose:
     toast, progress tracks, `.cab-item` chips in the after drawing.
 
+26. **Landing follow-ups (11-26, after the freeze).** Not yet checked at
+    768 and 1024px. The 3D viewer has no code that keeps labels from
+    overlapping: the sample capture is clean, other setups or camera angles
+    may not be.
+
 Also open, unnumbered (from the dated sections):
 - **After #192:** run a real reach-in or wardrobe with products on (shelf
   `maxDims.d_in` <=13.5 untrimmed, floor needs name the floor row, card and
@@ -300,7 +302,8 @@ Spotted 4 (5.5) vs 8 (4.6): 4.6 padded; inputs differed, 5.5's recall untested (
    one `?ref=<slug>` per channel (`[a-z0-9-]{1,24}`). Bar: of the first 10, 6 get an AI plan, 4 tap "Very
    useful", 2 check 3+ steps in a week; a miss stops recruiting. Archive has
    the full plan and the join. The landing is frozen until all five friends
-   have tried it. Blocked on: owner recruiting.
+   have tried it. No links sent as of 11-26; next: send friend-1. Blocked on:
+   owner recruiting.
 
 ### Waiting on business input
 
