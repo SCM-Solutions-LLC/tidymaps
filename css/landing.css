@@ -120,16 +120,7 @@
 /* ---------- One finished plan ----------
    The plan as a sheet of paper, the organizer's notes in the margin of each
    zone, and the 3D view beside it. */
-/* The one ink band: full bleed without widening the page (the shadow paints
-   the sides, the clip keeps them off the vertical axis). The plan sheet and
-   the 3D print sit on it like paper on a desk. */
-#sample{
-  background:var(--spot-deep);box-shadow:0 0 0 100vmax var(--spot-deep);clip-path:inset(0 -100vmax);
-  margin-top:clamp(64px,10vh,104px);padding-bottom:clamp(64px,10vh,104px);
-}
-#sample > h2{color:var(--stock)}
-#sample > h2 em{font-style:italic;color:var(--band-olive)}
-#sample > .sec-sub,#sample .story-3d figcaption{color:var(--band-ink-3)}
+#sample > h2 em{font-style:italic;color:var(--spot-ink)}
 .story-grid{display:grid;gap:36px;margin-top:40px;align-items:start}
 @media(min-width:860px){.story-grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:56px}}
 .story-plan{background:var(--stock);box-shadow:var(--shadow-sm);padding:8px clamp(18px,3vw,32px) 22px}

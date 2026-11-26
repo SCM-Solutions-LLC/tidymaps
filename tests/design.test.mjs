@@ -116,17 +116,6 @@ test('what-you-get explains with drawn panels, not shrunken screenshots', () => 
   assert.ok(!landing.includes('assets/product/wizard-household.png'), 'wizard screenshot re-inlined on the landing page');
 });
 
-// All paper and sheet read as bland (owner, 11-26), so the sample plan sits on
-// one ink band. One: a second dark section turns the accent into a theme. Its
-// heading must leave the ink, or it vanishes into the band.
-test('the sample plan is the landing\'s one ink band', () => {
-  const dark = landingCss.match(/background:var\(--spot-deep\)/g) || [];
-  assert.equal(dark.length, 1, `expected one ink band on the landing, found ${dark.length}`);
-  assert.match(landingCss, /#sample\{[^}]*background:var\(--spot-deep\)/, 'the ink band left the sample plan');
-  assert.match(landingCss, /#sample > h2\{[^}]*color:var\(--stock\)/, 'the band\'s heading is ink on ink');
-  assert.match(landingCss, /#sample > \.sec-sub[^{]*\{[^}]*color:var\(--band-ink-3\)/, 'the band\'s subtitle is grey on ink');
-});
-
 // The landing lists the spaces as an index: the wizard's own buttons, each
 // with a small thumbnail of its drawing so the rows read apart (owner,
 // 11-25), and the space names set at a reading size so the list never
