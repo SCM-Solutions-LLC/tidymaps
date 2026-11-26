@@ -104,11 +104,14 @@ test('the before shot is only ever the small print beside the after', () => {
 
 // A picture of text is not an explanation: app screenshots scaled down to fit
 // three-across were unreadable, so "What you get" draws the three pieces of a
-// plan at their own size instead. No screenshot belongs in that section.
+// plan at their own size instead. No screenshot belongs in that section; its
+// one picture is a crop of the hero's after photo beside the zones it shows.
 test('what-you-get explains with drawn panels, not shrunken screenshots', () => {
   const section = landing.slice(landing.indexOf('id="product"'), landing.indexOf('id="sample"'));
   assert.equal((section.match(/class="wy-vis"/g) || []).length, 3, 'expected three drawn explainer panels');
-  assert.ok(!section.includes('<img'), 'a screenshot is back in the what-you-get section');
+  const imgs = section.match(/<img [^>]*>/g) || [];
+  assert.equal(imgs.length, 1, 'expected only the eye-level photo crop in the what-you-get section');
+  assert.ok(imgs[0].includes('src="assets/photos/ex-pantry-after.webp"'), 'a screenshot is back in the what-you-get section');
   assert.ok(!landing.includes('assets/product/plan-map.png'), 'plan screenshot re-inlined on the landing page');
   assert.ok(!landing.includes('assets/product/wizard-household.png'), 'wizard screenshot re-inlined on the landing page');
 });
