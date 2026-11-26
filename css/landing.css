@@ -120,6 +120,16 @@
 /* ---------- One finished plan ----------
    The plan as a sheet of paper, the organizer's notes in the margin of each
    zone, and the 3D view beside it. */
+/* The one ink band: full bleed without widening the page (the shadow paints
+   the sides, the clip keeps them off the vertical axis). The plan sheet and
+   the 3D print sit on it like paper on a desk. */
+#sample{
+  background:var(--spot-deep);box-shadow:0 0 0 100vmax var(--spot-deep);clip-path:inset(0 -100vmax);
+  margin-top:clamp(64px,10vh,104px);padding-bottom:clamp(64px,10vh,104px);
+}
+#sample > h2{color:var(--stock)}
+#sample > h2 em{font-style:italic;color:var(--band-olive)}
+#sample > .sec-sub,#sample .story-3d figcaption{color:var(--band-ink-3)}
 .story-grid{display:grid;gap:36px;margin-top:40px;align-items:start}
 @media(min-width:860px){.story-grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:56px}}
 .story-plan{background:var(--stock);box-shadow:var(--shadow-sm);padding:8px clamp(18px,3vw,32px) 22px}
@@ -130,13 +140,14 @@
 .story-zones{margin:0}
 .story-zones > div{display:grid;gap:4px 24px;padding:18px 0;border-bottom:var(--rule)}
 @media(min-width:560px){.story-zones > div{grid-template-columns:130px minmax(0,1fr)}}
-.story-zones dt{font-family:var(--sans);font-weight:600;font-size:var(--fs-ui);padding-top:2px}
+.story-zones dt{font-family:var(--sans);font-weight:600;font-size:var(--fs-ui);padding-top:2px;color:var(--spot-ink)}
 .story-zones dd{margin:0;font-size:var(--fs-body);line-height:1.6}
 .story-zones .pen{display:block;margin-top:6px}
 .story-zones .pen::before{content:"\2192\00a0"}
 .story-foot{margin:18px 0 0;font-size:var(--fs-ui);color:var(--ink)}
 .story-3d{margin:0;min-width:0}
-.story-3d img{width:100%;height:auto;background:var(--stock);padding:10px;box-shadow:var(--shadow-sm)}
+/* Cropped to the cabinet: the render is two-thirds empty floor either side. */
+.story-3d img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;object-position:50% 0;background:var(--stock);padding:10px;box-shadow:var(--shadow-sm)}
 .story-3d figcaption{font-family:var(--sans);font-size:var(--fs-sm);line-height:1.5;color:var(--ink-3);padding:10px 0 0}
 
 /* ---------- What a plan contains ----------
@@ -155,11 +166,20 @@
   display:grid;gap:0;background:var(--stock);box-shadow:var(--shadow-sm);overflow:hidden;font-family:var(--sans);
 }
 
-/* zones */
+/* zones, beside the eye-level shelf of the after photo (a banner on a phone) */
+.wy-vis[data-photo]{grid-template-columns:minmax(0,1fr)}
+.wy-photo{position:relative;height:150px;overflow:hidden}
+.wy-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 47%}
+@media(min-width:560px){
+  .wy-vis[data-photo]{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
+  .wy-photo{height:auto}
+  /* Tall column: zoom to the shelf, so it reads as a detail, not the hero again. */
+  .wy-photo img{transform:scale(1.7);transform-origin:50% 47%}
+}
 .wy-zone{display:grid;gap:4px;padding:14px 18px;border-bottom:var(--rule)}
 .wy-zone:last-child{border-bottom:none}
 .wy-zone.dim .wy-zone-items{color:var(--ink-3)}
-.wy-zone-name{font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--tracking-label);color:var(--ink-3)}
+.wy-zone-name{font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--tracking-label);color:var(--spot-ink)}
 .wy-zone-items{font-family:var(--serif);font-size:var(--fs-lg);color:var(--ink)}
 .wy-why{font-size:var(--fs-md);line-height:1.45;color:var(--ink-3)}
 .wy-flag{
@@ -173,7 +193,7 @@
 .wy-prog-marks{flex:1;display:flex;gap:4px}
 .wy-prog-marks i{flex:1;height:6px;border-radius:2px;background:var(--tint)}
 .wy-prog-marks i.on{background:var(--ink)}
-.wy-prog-txt{font-size:var(--fs-xs);font-weight:600;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wy-prog-txt{font-size:var(--fs-xs);font-weight:600;color:var(--spot-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .wy-step{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:var(--rule)}
 .wy-step:last-child{border-bottom:none}
 .wy-tick{width:16px;height:16px;flex:none;border:1.5px solid var(--ink);border-radius:3px;background:var(--stock)}
@@ -190,7 +210,7 @@
 .wy-buy-art svg{position:absolute;inset:0;width:100%;height:100%}
 .wy-buy-name{flex:1;display:grid;gap:2px;font-size:var(--fs-md);font-weight:600;color:var(--ink)}
 .wy-buy-name em{font-family:var(--hand);font-style:normal;font-size:var(--fs-sm);font-weight:400;color:var(--pen)}
-.wy-buy-price{flex:none;font-size:var(--fs-md);font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.wy-buy-price{flex:none;font-size:var(--fs-md);font-weight:700;color:var(--spot-ink);font-variant-numeric:tabular-nums}
 
 /* ---------- Method ----------
    Three steps on hairlines, numbered because the order is the method. */
@@ -202,7 +222,7 @@
 }
 .how-step::before{
   content:counter(how);grid-row:1/3;
-  font-family:var(--serif);font-size:var(--fs-xl);line-height:1;color:var(--spot-ink);
+  font-family:var(--serif);font-size:var(--fs-page);line-height:.8;color:var(--spot-ink);
 }
 .how-step h3{font-size:var(--fs-lg);margin:0;color:var(--ink)}
 .how-step p{margin:0;font-size:var(--fs-body);line-height:1.6;color:var(--ink-3);max-width:56ch;grid-column:2}

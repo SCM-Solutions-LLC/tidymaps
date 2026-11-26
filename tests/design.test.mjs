@@ -104,13 +104,27 @@ test('the before shot is only ever the small print beside the after', () => {
 
 // A picture of text is not an explanation: app screenshots scaled down to fit
 // three-across were unreadable, so "What you get" draws the three pieces of a
-// plan at their own size instead. No screenshot belongs in that section.
+// plan at their own size instead. No screenshot belongs in that section; its
+// one picture is a crop of the hero's after photo beside the zones it shows.
 test('what-you-get explains with drawn panels, not shrunken screenshots', () => {
   const section = landing.slice(landing.indexOf('id="product"'), landing.indexOf('id="sample"'));
   assert.equal((section.match(/class="wy-vis"/g) || []).length, 3, 'expected three drawn explainer panels');
-  assert.ok(!section.includes('<img'), 'a screenshot is back in the what-you-get section');
+  const imgs = section.match(/<img [^>]*>/g) || [];
+  assert.equal(imgs.length, 1, 'expected only the eye-level photo crop in the what-you-get section');
+  assert.ok(imgs[0].includes('src="assets/photos/ex-pantry-after.webp"'), 'a screenshot is back in the what-you-get section');
   assert.ok(!landing.includes('assets/product/plan-map.png'), 'plan screenshot re-inlined on the landing page');
   assert.ok(!landing.includes('assets/product/wizard-household.png'), 'wizard screenshot re-inlined on the landing page');
+});
+
+// All paper and sheet read as bland (owner, 11-26), so the sample plan sits on
+// one ink band. One: a second dark section turns the accent into a theme. Its
+// heading must leave the ink, or it vanishes into the band.
+test('the sample plan is the landing\'s one ink band', () => {
+  const dark = landingCss.match(/background:var\(--spot-deep\)/g) || [];
+  assert.equal(dark.length, 1, `expected one ink band on the landing, found ${dark.length}`);
+  assert.match(landingCss, /#sample\{[^}]*background:var\(--spot-deep\)/, 'the ink band left the sample plan');
+  assert.match(landingCss, /#sample > h2\{[^}]*color:var\(--stock\)/, 'the band\'s heading is ink on ink');
+  assert.match(landingCss, /#sample > \.sec-sub[^{]*\{[^}]*color:var\(--band-ink-3\)/, 'the band\'s subtitle is grey on ink');
 });
 
 // The landing lists the spaces as an index: the wizard's own buttons, each

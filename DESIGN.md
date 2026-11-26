@@ -25,6 +25,8 @@ colors:
   sky-f: "oklch(0.93 0.018 240)"
   sky-l: "oklch(0.79 0.04 240)"
   sky-d: "oklch(0.38 0.07 250)"
+  band-ink-3: "oklch(0.80 0.012 80)"
+  band-olive: "oklch(0.82 0.085 120)"
   pen: "oklch(0.372 0.081 266)"
   danger: "oklch(0.52 0.19 28)"
   danger-ink: "oklch(0.45 0.18 28)"
@@ -177,7 +179,7 @@ It is for adults running a household, so it should read as a serious tool with a
 This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, pastel sage, butter and sky cards, Archivo for everything), which the owner found read as AI-generated: cream with a terracotta accent and rounded pastel cards is the widely recognised generated look. The Warm Shelf had itself replaced the "Home-Economics Manual" (2026-09-07: white, off-black, square corners, caps labels), which read as clinical. So this direction keeps the manual's restraint and the Warm Shelf's soft edges: no caps labels, no square buttons, and no pills on buttons either.
 
 **Key Characteristics:**
-- Warm paper with a faint fibre (`--paper-grain`), near-white sheets with a low warm shadow, hairline rules between rows. Sections are separated by space and hairlines, not boxes.
+- Warm paper with a faint fibre (`--paper-grain`), near-white sheets with a low warm shadow, hairline rules between rows. Sections are separated by space and hairlines, not boxes. The one exception is the landing's sample plan, set on a single full-bleed ink band (see The Ink Band).
 - Real photographs of real spaces carry the page. A photo is a print: a paper mat, a strip of tape, a low shadow.
 - The pen: blue-black handwriting on small paper slips pinned to a photo, or as the margin note under a plan zone. Short notes only, never a sentence the reader must parse.
 - Ink buttons (white label, 10px corners); ghost buttons are an ink outline on the sheet. Chips, tabs and tags take soft corners too (10px, 6px on a small tag); only the toast, progress tracks and round marks stay round.
@@ -202,6 +204,9 @@ This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, p
 
 ### Supporting fields
 Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), desaturated to sit on warm paper. Sage is success and safety, butter is warnings, sky is information. They colour a small tag or an icon beside a word, never a callout, a zone or a button, and never a card, with one exception: on the landing's spaces index each room is a card in a field (kitchen sage, bedroom butter, bathroom and hall sky, garage clay), so the rooms read apart at a glance (owner, 11-25). Clay (`clay-f`, `clay-l`, `clay-d`) exists only for that garage card. There the colours name a room, not a state, and the rows stay ink on the field.
+
+### The Ink Band
+The landing's sample-plan section (`#sample`) sits on one full-bleed band of `spot-deep`, so the page has one dark moment between the light ones and the plan sheet and 3D print read as paper laid on a desk (owner, 11-26: the page read as bland, all paper and sheet). Its heading is `stock` with the italic phrase in `band-olive`, the olive lifted to read on the dark; its subtitle and caption are `band-ink-3`. Everything else on the band is a stock sheet keeping its own inks. There is one band on the site: a second dark section would turn an accent into a theme.
 
 ### The step clips' palette
 The checklist clips are baked video (`remotion/`), coloured from `remotion/src/tokens.ts`, a test-held copy of these tokens: the band is `tint`, items are `stock`, structure is `draw`, the accent is olive (`spot-ink` over `tint-2`), and a label is a paper tag with a drawn edge. `.step-art` points the inline stand-in scenes at the same tokens. A change to any of them is a `--force` re-render.

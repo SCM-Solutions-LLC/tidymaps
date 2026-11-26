@@ -119,6 +119,10 @@
   --clay-l:    oklch(0.80 0.06 50);    /* clay edge */
   --clay-d:    oklch(0.42 0.08 45);    /* clay text */
 
+  /* The landing's one ink band (#sample): text set on spot-deep. */
+  --band-ink-3: oklch(0.80 0.012 80);  /* secondary text on the band, 9:1 */
+  --band-olive: oklch(0.82 0.085 120); /* the olive, lifted to read on the band */
+
   /* ---- Names the stylesheets already speak ------------------------------
      Kept so the wizard, report, viewer and library resolve without a rename
      sweep. Every one lands on the stock, the tint, an ink, or the plate. */

@@ -219,15 +219,19 @@ if(window.matchMedia&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
           <h3>Where things go</h3>
           <p>Every shelf becomes a zone, and each one says why.</p>
         </figcaption>
-        <div class="wy-vis" aria-hidden="true">
-          <div class="wy-zone">
-            <span class="wy-zone-name">Eye level</span>
-            <span class="wy-zone-items">Daily snacks, breakfast, coffee</span>
-            <span class="wy-why">Reached every morning, so it sits where hands land first.</span>
-            <span class="wy-flag">Kid safe</span>
+        <div class="wy-vis" data-photo aria-hidden="true">
+          <!-- The eye-level shelf of the hero's after photo: the zone below, as it looks. -->
+          <div class="wy-photo"><img src="assets/photos/ex-pantry-after.webp" width="542" height="715" alt="" loading="lazy" onerror="this.parentNode.remove()"></div>
+          <div class="wy-rows">
+            <div class="wy-zone">
+              <span class="wy-zone-name">Eye level</span>
+              <span class="wy-zone-items">Daily snacks, breakfast, coffee</span>
+              <span class="wy-why">Reached every morning, so it sits where hands land first.</span>
+              <span class="wy-flag">Kid safe</span>
+            </div>
+            <div class="wy-zone dim"><span class="wy-zone-name">Lower shelf</span><span class="wy-zone-items">Kid snacks, heavy jars</span></div>
+            <div class="wy-zone dim"><span class="wy-zone-name">Top shelf</span><span class="wy-zone-items">Bulk overflow</span></div>
           </div>
-          <div class="wy-zone dim"><span class="wy-zone-name">Lower shelf</span><span class="wy-zone-items">Kid snacks, heavy jars</span></div>
-          <div class="wy-zone dim"><span class="wy-zone-name">Top shelf</span><span class="wy-zone-items">Bulk overflow</span></div>
         </div>
       </figure>
       <figure class="product-shot">
@@ -259,7 +263,7 @@ if(window.matchMedia&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
   <!-- One finished plan, compressed to the part that proves the point. The
        photo of this pantry is the hero's; here is the plan that made it. -->
   <div class="home-sec" id="sample">
-    <h2>Every shelf has a job, and a reason</h2>
+    <h2>Every shelf has a job, <em>and a reason</em></h2>
     <p class="sec-sub">One example, a family pantry. Every space gets the same treatment.</p>
     <div class="story-grid">
       <div class="story-plan">
