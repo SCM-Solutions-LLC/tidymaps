@@ -11,6 +11,24 @@ section condensed here) is in [`docs/handoff-archive.md`](handoff-archive.md).
 trail `main`. When it and `git log --oneline -20` disagree, git is right
 (CLAUDE.md). Re-derive specifics before acting on them (open item 8).
 
+## What the 2026-11-27 session changed
+
+- **Landing de-templated, at the owner's request despite the freeze
+  (item 6).** Plain h1 ("Photograph the mess. Get a plan for every shelf."),
+  no italic accent phrase in any heading; the ✓ trust row and the numbered
+  "How it works" section are gone (their facts folded into the hero lede);
+  the spaces index is plain groups on the page, not pastel room cards, which
+  reverses 11-25, and the clay tokens are deleted. The email signup stays:
+  with no users it is the only way back. `design.test.mjs` guards all of it.
+- **The hero pantry photo is not a TidyMap result.** It is a professional
+  organizer's (a cropped watermark shows at the bottom edge); the caption now
+  says so, and `data/images.json` marks both shots `unverified`. Open: get
+  permission or replace it with a real before and after (item 6's friends
+  are the source).
+- Copy cleanup (item 8 of the review: "Three parts, in every plan." and
+  similar), a near-white page, and dropping the tape, tilt and pen font
+  were proposed and not taken.
+
 ## What the 2026-11-26 session changed
 
 - **Landing "What you get" (#246).** The eye-level shelf from the after

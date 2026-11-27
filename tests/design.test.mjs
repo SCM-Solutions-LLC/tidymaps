@@ -14,7 +14,7 @@ const landing = html.slice(html.indexOf('id="screen-landing"'), html.indexOf('id
 
 test('hero leads with the practical promise', () => {
   for (const phrase of [
-    'Your shelves, <em>thought through.</em>',
+    'Photograph the mess. Get a plan for every shelf.',
     'already own',
     'Plan my space',
     'View a sample plan',
@@ -46,6 +46,13 @@ test('AI-template landing patterns stay gone', () => {
     assert.ok(!landing.includes(bad), `template signal on landing: ${bad}`);
   }
   assert.ok(!landing.includes('lx-'), 'legacy lx-* landing classes still present');
+  // A heading with an italic phrase in the accent, a row of check-marked
+  // claims under the buttons, and a numbered 1-2-3 method read as the stock
+  // generated landing (owner, 11-27).
+  assert.ok(!/<h[12][^>]*>[^<]*<em>/.test(landing), 'a landing heading has an italic accent phrase again');
+  for (const bad of ['hero-trust', 'how-list', 'id="how"']) {
+    assert.ok(!landing.includes(bad), `template section back on the landing: ${bad}`);
+  }
 });
 
 test('exclusivity and invented-product language stays gone', () => {
@@ -72,6 +79,11 @@ test('the hero is the sample pantry after its plan, with the plan\'s notes on it
   assert.ok((hero.match(/<li style="--y:/g) || []).length >= 3, 'the photo carries too few notes to read as a plan');
   assert.ok(!landing.includes('id="fig-el"'), 'Figure 1 is back beside the photo');
   assert.match(landingCss, /\.hp-notes li\{[^}]*font-family:var\(--hand\)/, 'the notes are no longer in the pen');
+  // The photo is a professional organizer's, not a TidyMap result (owner,
+  // 11-27), so the caption must say so and never claim the plan made it.
+  const caption = (hero.match(/<figcaption>([^<]*)<\/figcaption>/) || [])[1] || '';
+  assert.match(caption, /not by TidyMap/, 'the hero caption no longer says the photo is not a TidyMap result');
+  assert.ok(!/after its|sample pantry/i.test(caption), 'the hero caption claims the plan made this pantry');
 });
 
 // The homepage sells the whole product, not the pantry it was first built
@@ -96,7 +108,7 @@ test('landing shows real evidence: sample-plan excerpt and the finished space', 
 // itself. The before shot appears once, as the small print beside the hero's
 // after photo, never on its own and never in the sample-plan section.
 test('the before shot is only ever the small print beside the after', () => {
-  const sample = landing.slice(landing.indexOf('id="sample"'), landing.indexOf('id="how"'));
+  const sample = landing.slice(landing.indexOf('id="sample"'), landing.indexOf('id="about"'));
   assert.ok(!sample.includes('pantry-before.webp'), 'the before shot is in the sample-plan section');
   assert.equal((landing.match(/pantry-before\.webp/g) || []).length, 1, 'the before shot appears more than once');
   assert.match(landing, /<figure class="hp-before">\s*<img data-img="sample-before"/, 'the before shot left the hero print');

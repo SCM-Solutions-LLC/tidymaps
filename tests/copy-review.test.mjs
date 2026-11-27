@@ -45,7 +45,7 @@ test('the landing figure does not call a sample shelf the visitor\'s own', () =>
 
 test('the hero names spaces, the wizard\'s word, never a room', () => {
   const hero = html.slice(html.indexOf('class="hero"'), html.indexOf('id="spaces"'));
-  assert.ok(html.includes('Your shelves, <em>thought through.</em>'));
+  assert.ok(html.includes('Photograph the mess. Get a plan for every shelf.'));
   assert.match(hero, /a pantry, closet or garage/, 'the hero no longer names the spaces the planner covers');
   assert.ok(!/\broom\b/i.test(hero.replace(/<[^>]+>/g, '')), 'the hero asks for a room');
 });

@@ -4,11 +4,11 @@
   "images": {
     "sample-after": {
       "file": "assets/photos/ex-pantry-after.webp",
-      "alt": "The finished pantry: labeled jars and bins on every shelf, snacks within reach, bulk stock up top",
+      "alt": "A professionally organized pantry: labeled jars and bins on every shelf, snacks within reach, bulk stock up top",
       "license": {
-        "type": "first-party",
-        "owner": "SCM Solutions LLC",
-        "note": "Photography from design handoff showing the pantry after the plan was worked. Since 2026-11-24 it is the landing hero, with the plan's notes pinned on it and the before shot tucked under its corner: the pair shows the change the plan makes. (It used to stand alone under \"See a finished plan\", where a chaotic pantry would have argued against the heading.)"
+        "type": "unverified",
+        "owner": "unknown: a professional organizer's photo (a cropped watermark shows at the bottom edge)",
+        "note": "Not a TidyMap result (owner, 2026-11-27); the hero caption says so. Rights to ship it are unconfirmed: find the organizer and get permission, or replace it with a real TidyMap before and after."
       },
       "status": "ready"
     },
@@ -16,9 +16,9 @@
       "file": "assets/photos/pantry-before.webp",
       "alt": "The same pantry before: packets, foil trays and cans piled on every shelf",
       "license": {
-        "type": "first-party",
-        "owner": "SCM Solutions LLC",
-        "note": "The before shot from the same design handoff as sample-after; shown on the landing hero only as a small print beside the after photo."
+        "type": "unverified",
+        "owner": "unknown: the same source as sample-after",
+        "note": "The before shot of the same pantry as sample-after, from the same unverified source; shown on the landing hero only as a small print beside the after photo."
       },
       "status": "ready"
     },
