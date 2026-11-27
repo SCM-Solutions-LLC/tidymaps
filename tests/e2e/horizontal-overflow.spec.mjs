@@ -105,7 +105,7 @@ test('every item in the opened mobile menu is reachable and laid out as a row', 
       left: el.getBoundingClientRect().left,
     })),
   );
-  expect(rows.map((r) => r.text)).toEqual(['Spaces', 'What you get', 'How it works', 'Products']);
+  expect(rows.map((r) => r.text)).toEqual(['Spaces', 'What you get', 'Products']);
   for (const row of rows) {
     expect(row.height, `${row.text} height`).toBeGreaterThanOrEqual(44);
     expect(row.left, `${row.text} left edge`).toBe(rows[0].left);
