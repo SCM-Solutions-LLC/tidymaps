@@ -31,17 +31,9 @@
 @media(min-width:960px){.hero{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}}
 .hero-copy{min-width:0}
 .hero h1{font-size:var(--fs-display);font-weight:400;letter-spacing:-0.022em;line-height:1.06;max-width:14ch}
-.hero h1 em{font-style:italic;color:var(--spot-ink)}
 .hero-lede{font-size:var(--fs-lede);line-height:1.65;color:var(--ink);max-width:36ch;margin:24px 0 0}
 .hero-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:32px}
 .hero-actions .btn{padding:16px 24px}
-.hero-trust{
-  list-style:none;margin:36px 0 0;padding:20px 0 0;border-top:var(--rule);
-  display:flex;flex-wrap:wrap;gap:8px 26px;
-  font-family:var(--sans);font-size:var(--fs-sm);font-weight:500;color:var(--ink-3);
-}
-.hero-trust li::before{content:"\2713\00a0";color:var(--spot-ink)}
-
 /* The photograph is a print laid on the page: a paper mat, a strip of tape,
    a low shadow. The before shot is a smaller print tucked under its corner. */
 .hero-photo{position:relative;margin:0 0 34px;min-width:0}
@@ -69,7 +61,7 @@
 }
 .hero-photo > figcaption{
   font-family:var(--sans);font-size:var(--fs-sm);color:var(--ink-3);
-  padding:10px 0 0;text-align:right;
+  padding:10px 0 0 clamp(110px,26%,170px);text-align:right; /* clears the before print, which would cover the caption's start */
 }
 .hp-before{position:absolute;left:-28px;bottom:-34px;width:clamp(110px,26%,170px);margin:0;
   background:var(--stock);padding:7px 7px 0;transform:rotate(-2deg);
@@ -85,42 +77,33 @@
 .hero.no-photo .hero-photo{display:none}
 
 /* ---------- Spaces ----------
-   An index of the rooms, each room its own card in a field colour (owner,
-   11-25: the plain list read as monotone, and colour tells the rooms apart at
-   a glance), its spaces as rows on the card's own hairline with a thumbnail of
-   the wizard's drawing. The text on a card is ink, and the room's name and
-   arrows its family's deep ink. The wizard's step 2 keeps the full-size art. */
+   An index of the rooms on the page itself: the room's name as a label, its
+   spaces as hairline rows with a thumbnail of the wizard's drawing. No room
+   gets a field colour or a box: pastel room cards read as generated (owner,
+   11-27, reversing 11-25). The wizard's step 2 keeps the full-size art. */
 .space-groups{display:grid;gap:36px 56px;margin-top:40px;grid-template-columns:minmax(0,1fr)}
 @media(min-width:760px){.space-groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.space-group{
-  --room-f:var(--sage-f);--room-l:var(--sage-l);--room-d:var(--sage-d);
-  background:var(--room-f);border:1px solid var(--room-l);border-radius:14px;padding:16px 14px 4px;
-}
-.space-group[data-room="bedroom"]{--room-f:var(--butter-f);--room-l:var(--butter-l);--room-d:var(--butter-d)}
-.space-group[data-room="bath"]{--room-f:var(--sky-f);--room-l:var(--sky-l);--room-d:var(--sky-d)}
-.space-group[data-room="garage"]{--room-f:var(--clay-f);--room-l:var(--clay-l);--room-d:var(--clay-d)}
 .space-room{
   font-family:var(--sans);font-size:var(--fs-sm);font-weight:600;letter-spacing:var(--tracking-label);
-  color:var(--room-d);margin:0 0 6px;
+  color:var(--ink-3);margin:0 0 6px;
 }
 .space-group .room-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
 .space-group .room-card{
   display:flex;flex-direction:row;align-items:center;gap:16px;width:100%;max-width:none;
-  background:none;border:none;border-top:1px solid var(--room-l);border-radius:0;box-shadow:none;
+  background:none;border:none;border-top:var(--rule);border-radius:0;box-shadow:none;
   padding:16px 2px;text-align:left;animation:none;transform:none;
 }
 .space-group .room-card:hover{transform:none;box-shadow:none;background:var(--stock)}
-.space-group .room-card .rc-img{flex:none;width:64px;border:1px solid var(--room-l);border-radius:6px}
+.space-group .room-card .rc-img{flex:none;width:64px;border:1px solid var(--line);border-radius:6px}
 .space-group .rc-label{padding:0;display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap;min-width:0;flex:1}
 .space-group .rc-label h3{font-family:var(--serif);font-size:var(--fs-xl);font-weight:400;letter-spacing:-.01em}
 .space-group .rc-label p{font-family:var(--sans);font-size:var(--fs-sm);color:var(--ink-3);margin:0}
-.space-group .room-card::after{content:"\2192";font-family:var(--sans);color:var(--room-d);flex:none}
+.space-group .room-card::after{content:"\2192";font-family:var(--sans);color:var(--ink-3);flex:none}
 .space-foot{font-size:var(--fs-ui);line-height:1.6;color:var(--ink-3);margin:28px 0 0;max-width:62ch}
 
 /* ---------- One finished plan ----------
    The plan as a sheet of paper, the organizer's notes in the margin of each
    zone, and the 3D view beside it. */
-#sample > h2 em{font-style:italic;color:var(--spot-ink)}
 .story-grid{display:grid;gap:36px;margin-top:40px;align-items:start}
 @media(min-width:860px){.story-grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:56px}}
 .story-plan{background:var(--stock);box-shadow:var(--shadow-sm);padding:8px clamp(18px,3vw,32px) 22px}
@@ -202,27 +185,6 @@
 .wy-buy-name{flex:1;display:grid;gap:2px;font-size:var(--fs-md);font-weight:600;color:var(--ink)}
 .wy-buy-name em{font-family:var(--hand);font-style:normal;font-size:var(--fs-sm);font-weight:400;color:var(--pen)}
 .wy-buy-price{flex:none;font-size:var(--fs-md);font-weight:700;color:var(--spot-ink);font-variant-numeric:tabular-nums}
-
-/* ---------- Method ----------
-   Three steps on hairlines, numbered because the order is the method. */
-.how-list{margin:36px 0 0;padding:0;list-style:none;counter-reset:how;display:grid;gap:0;border-top:var(--rule)}
-.how-step{
-  counter-increment:how;
-  display:grid;gap:6px 22px;grid-template-columns:40px 1fr;align-items:baseline;
-  padding:22px 0;border-bottom:var(--rule);
-}
-.how-step::before{
-  content:counter(how);grid-row:1/3;
-  font-family:var(--serif);font-size:var(--fs-page);line-height:.8;color:var(--spot-ink);
-}
-.how-step h3{font-size:var(--fs-lg);margin:0;color:var(--ink)}
-.how-step p{margin:0;font-size:var(--fs-body);line-height:1.6;color:var(--ink-3);max-width:56ch;grid-column:2}
-@media(min-width:720px){
-  .how-step{grid-template-columns:40px 280px 1fr}
-  .how-step h3{grid-column:2}
-  .how-step p{grid-column:3;grid-row:1}
-}
-.how-foot{margin:18px 0 0;font-size:var(--fs-ui);color:var(--ink-3)}
 
 /* ---------- Credibility ---------- */
 .about-grid{display:grid;gap:32px;margin-top:30px}

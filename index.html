@@ -116,7 +116,6 @@ if(window.matchMedia&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
     <nav class="site-nav" id="site-nav" aria-label="Site">
       <a href="#spaces" onclick="return navHome('#spaces')">Spaces</a>
       <a href="#product" onclick="return navHome('#product')">What you get</a>
-      <a href="#how" onclick="return navHome('#how')">How it works</a>
       <button type="button" onclick="openProducts()">Products</button>
     </nav>
     <span class="spacer"></span>
@@ -163,35 +162,30 @@ if(window.matchMedia&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
 <!-- ============================================================ 1. LANDING -->
 <section class="screen wide active" id="screen-landing">
 
-  <!-- Hero: the promise on the left; on the right the sample pantry after
-       its plan, with an organizer's pen notes on the shelves and the same
-       pantry before it, pinned underneath. The photos and notes are the
-       sample plan (js/demo-scenarios.js), not a claim about anyone's shelves. -->
+  <!-- Hero: the promise on the left; on the right a pantry a professional
+       organized (not a TidyMap result, and the caption says so), with notes
+       from the sample plan (js/demo-scenarios.js) on the shelves they
+       describe and the same pantry before it, pinned underneath. -->
   <div class="hero" id="start">
     <div class="hero-copy">
-      <h1>Your shelves, <em>thought through.</em></h1>
-      <p class="hero-lede">Photograph a pantry, closet or garage as it is today. You get a shelf-by-shelf plan built around how your household uses it, starting with the containers you already own.</p>
+      <h1>Photograph the mess. Get a plan for every shelf.</h1>
+      <p class="hero-lede">Photograph a pantry, closet or garage as it is today. You get a shelf-by-shelf plan built around how your household uses it, starting with the containers you already own. About ten minutes of questions, free during early access, nothing to buy.</p>
       <div class="hero-actions">
         <button class="btn btn-primary" onclick="go('space')">Plan my space</button>
         <button class="btn btn-ghost" onclick="runDemo()">View a sample plan</button>
       </div>
-      <ul class="hero-trust">
-        <li>Free during early access</li>
-        <li>Photos stay private</li>
-        <li>No purchase required</li>
-      </ul>
     </div>
     <figure class="hero-photo">
       <div class="hp-mat">
         <span class="hp-tape" aria-hidden="true"></span>
-        <img data-img="sample-after" src="assets/photos/ex-pantry-after.webp" width="542" height="715" alt="The sample pantry after its plan: labeled jars and bins on every shelf, bulk stock up top, heavy items low" fetchpriority="high" onerror="this.closest('.hero').classList.add('no-photo')">
+        <img data-img="sample-after" src="assets/photos/ex-pantry-after.webp" width="542" height="715" alt="A professionally organized pantry: labeled jars and bins on every shelf, bulk stock up top, heavy items low" fetchpriority="high" onerror="this.closest('.hero').classList.add('no-photo')">
         <ol class="hp-notes" aria-label="Notes from the plan">
           <li style="--y:13%">bulk + backups up top</li>
           <li style="--y:44%">daily: breakfast, coffee</li>
           <li style="--y:80%">heavy items low</li>
         </ol>
       </div>
-      <figcaption>The sample pantry, after its nine steps.</figcaption>
+      <figcaption>Organized by a professional, not by TidyMap. Notes from our sample plan.</figcaption>
       <figure class="hp-before">
         <img data-img="sample-before" src="assets/photos/pantry-before.webp" width="486" height="700" alt="The same pantry before: packets, foil trays and cans piled on every shelf" loading="lazy">
         <figcaption>Before</figcaption>
@@ -260,10 +254,10 @@ if(window.matchMedia&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
     </div>
   </div>
 
-  <!-- One finished plan, compressed to the part that proves the point. The
-       photo of this pantry is the hero's; here is the plan that made it. -->
+  <!-- One finished plan, compressed to the part that proves the point. It is
+       the demo scenario's plan; the hero photo is not its result. -->
   <div class="home-sec" id="sample">
-    <h2>Every shelf has a job, <em>and a reason</em></h2>
+    <h2>A sample plan</h2>
     <p class="sec-sub">One example, a family pantry. Every space gets the same treatment.</p>
     <div class="story-grid">
       <div class="story-plan">
@@ -280,26 +274,6 @@ if(window.matchMedia&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
         <figcaption>The same plan standing up, in the 3D view. Drag any item to a different shelf to try another arrangement.</figcaption>
       </figure>
     </div>
-  </div>
-
-  <!-- Method -->
-  <div class="home-sec" id="how">
-    <h2>How it works</h2>
-    <ol class="how-list">
-      <li class="how-step">
-        <h3>Show the space as it is</h3>
-        <p>A few photos, mid-week mess and all. No tidying up first.</p>
-      </li>
-      <li class="how-step">
-        <h3>Answer a few questions</h3>
-        <p>Who uses it, what&rsquo;s inside, how much time you&rsquo;ve got. Your photos are read when the plan is built, so it can say what is actually on your shelves.</p>
-      </li>
-      <li class="how-step">
-        <h3>Work through the steps</h3>
-        <p>Each one is short and timed. Pause for school pickup; the plan holds.</p>
-      </li>
-    </ol>
-    <p class="how-foot">About ten minutes of questions. The plan comes back the same session.</p>
   </div>
 
   <!-- Credibility -->

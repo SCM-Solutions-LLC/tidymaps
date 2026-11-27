@@ -93,11 +93,11 @@ test('a step clip fills its band on a desktop instead of floating in it', async 
 });
 
 /* The landing's rooms were once boxed by accident, by a retired picker's
-   rule sharing the class name. Since 11-25 each room is a card on purpose
-   (owner: colour tells the rooms apart), so the guard now holds that box to
-   its intent: every room is its own card, and no two rooms share a colour. */
+   rule sharing the class name, then on purpose as pastel cards (11-25). The
+   owner dropped those on 11-27 as reading generated: each room is a plain
+   group on the page, no fill and no box, told apart by its name. */
 for (const width of [390, 1280]) {
-  test(`at ${width} each landing room is its own coloured card`, async ({ page }) => {
+  test(`at ${width} each landing room is a plain group, not a coloured card`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/index.html');
     const rooms = await page.$$eval('#space-groups .space-group', (els) => els.map((el) => {
@@ -106,9 +106,28 @@ for (const width of [390, 1280]) {
     }));
     expect(rooms.length).toBeGreaterThan(2);
     for (const r of rooms) {
-      expect(r.room, 'a room card is not keyed by its room').toBeTruthy();
-      expect(r.border, `${r.room} is not drawn as a card`).toBe('1px');
+      expect(r.room, 'a room group is not keyed by its room').toBeTruthy();
+      expect(r.border, `${r.room} is boxed again`).toBe('0px');
+      expect(r.bg, `${r.room} has a field colour again`).toBe('rgba(0, 0, 0, 0)');
     }
-    expect(new Set(rooms.map((r) => r.bg)).size, 'two rooms share a colour').toBe(rooms.length);
+  });
+}
+
+/* The hero caption is what says the photo is a professional's, not a TidyMap
+   result (11-27). The before print overlaps the after photo's corner by
+   design, and once covered the caption's first words, the ones that matter. */
+for (const width of [390, 1280]) {
+  test(`at ${width} the before print does not cover the hero caption`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/index.html');
+    const cap = await page.locator('.hero-photo > figcaption').boundingBox();
+    const print = await page.locator('.hp-before').boundingBox();
+    // The caption's text box: a right-aligned line starts where its text does.
+    const textLeft = await page.locator('.hero-photo > figcaption').evaluate((el) => {
+      const r = document.createRange(); r.selectNodeContents(el);
+      return Math.min(...[...r.getClientRects()].map((c) => c.left));
+    });
+    const overlapsY = print.y < cap.y + cap.height && cap.y < print.y + print.height;
+    expect(overlapsY && textLeft < print.x + print.width, 'the before print covers the caption').toBe(false);
   });
 }

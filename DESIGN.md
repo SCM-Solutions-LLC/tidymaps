@@ -182,7 +182,7 @@ This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, p
 - The pen: blue-black handwriting on small paper slips pinned to a photo, or as the margin note under a plan zone. Short notes only, never a sentence the reader must parse.
 - Ink buttons (white label, 10px corners); ghost buttons are an ink outline on the sheet. Chips, tabs and tags take soft corners too (10px, 6px on a small tag); only the toast, progress tracks and round marks stay round.
 - Olive (`spot-ink`) for links, a phrase in a heading, check marks and numerals. Never a field larger than the faint `tint-2` / `sel-bg`.
-- Sage, butter and sky survive only as small marks that carry a word: a safety tag, a warning icon. Zones, callouts and notes are the plain sheet with a hairline. The one exception is the landing's spaces index, where each room is a card in its own field (see Supporting fields).
+- Sage, butter and sky survive only as small marks that carry a word: a safety tag, a warning icon. Zones, callouts and notes are the plain sheet with a hairline.
 
 ## Colors
 
@@ -196,12 +196,12 @@ This replaced "The Warm Shelf" on 2026-11-24 (cream paper, terracotta buttons, p
 
 ### Accent
 - **Ink as the button** (`spot`, `spot-deep`): primary buttons, selected chips and segments, the progress rail and bars, the focus ring, the caret and the selection.
-- **Olive** (`spot-ink`): links, the italic phrase in the hero, check marks in the trust line, method numerals, the current chapter in the report contents.
+- **Olive** (`spot-ink`): links, check marks in the trust line, method numerals, the current chapter in the report contents.
 - **Olive screened** (`tint-2`, `sel-bg`): the faintest fills, for a selected card and the eye-level zone.
 - **Pen** (`pen`): handwritten notes only.
 
 ### Supporting fields
-Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), desaturated to sit on warm paper. Sage is success and safety, butter is warnings, sky is information. They colour a small tag or an icon beside a word, never a callout, a zone or a button, and never a card, with one exception: on the landing's spaces index each room is a card in a field (kitchen sage, bedroom butter, bathroom and hall sky, garage clay), so the rooms read apart at a glance (owner, 11-25). Clay (`clay-f`, `clay-l`, `clay-d`) exists only for that garage card. There the colours name a room, not a state, and the rows stay ink on the field.
+Each family is a field (`-f`), an edge (`-l`) and a deep text colour (`-d`), desaturated to sit on warm paper. Sage is success and safety, butter is warnings, sky is information. They colour a small tag or an icon beside a word, never a callout, a zone, a button or a card. The landing's spaces index had one pastel card per room from 11-25 to 11-27; the owner dropped them as reading generated, and the clay tokens went with them.
 
 ### The step clips' palette
 The checklist clips are baked video (`remotion/`), coloured from `remotion/src/tokens.ts`, a test-held copy of these tokens: the band is `tint`, items are `stock`, structure is `draw`, the accent is olive (`spot-ink` over `tint-2`), and a label is a paper tag with a drawn edge. `.step-art` points the inline stand-in scenes at the same tokens. A change to any of them is a `--force` re-render.
@@ -225,7 +225,7 @@ The checklist clips are baked video (`remotion/`), coloured from `remotion/src/t
 Every font-size is a token from `css/tokens.css`; `tests/type-scale.test.mjs` rejects any other. Eight set sizes: `--fs-2xs` 11px (the floor), `--fs-xs` 12, `--fs-sm` 13, `--fs-md` 14, `--fs-ui` 15, `--fs-body` 16, `--fs-lg` 18, `--fs-xl` 22. Six fluid ones for headings: `--fs-title`, `--fs-lede`, `--fs-chapter` `clamp(20px, 3vw, 24px)`, `--fs-section`, `--fs-page` `clamp(30px, 4.6vw, 44px)`, `--fs-display` `clamp(40px, 5vw, 62px)`.
 
 ### Hierarchy
-- **Display** (Literata 400, `--fs-display`, 1.06, -0.022em): the landing hero's h1 only, 14ch max, with one italic phrase in olive.
+- **Display** (Literata 400, `--fs-display`, 1.06, -0.022em): the landing hero's h1 only, 14ch max, one plain sentence: no italic accent phrase (owner, 11-27).
 - **Headline** (Literata 400, `--fs-section`, 1.12): h2 section heads.
 - **Title** (Literata 600, `--fs-title`): h3. Landing space names and product-shot titles are Literata 400 at `--fs-xl`.
 - **Lede and body** (Literata 400, 1.6 to 1.65).
@@ -313,7 +313,7 @@ Progress is a mark, never a colour alone: an 18px `field-line` circle that is em
 ### Motion
 One stroke. `--ease` (0.2,0.7,0.2,1) for state changes, `--ease-out` (0.16,0.84,0.28,1) for arrivals, `--ease-physical` (0.34,1.32,0.48,1) for things that stand for objects. Durations 120ms (transform), 180ms (colour), 340ms (slow), 400ms for a screen rising 10px into place, 450ms for the rail, 540ms for a card arriving with a 55ms stagger. Every animation is disabled under `prefers-reduced-motion`.
 
-On the landing, the hero headline types in once per load, its letters arriving 45ms apart on `--ease` (a head script hides it from the first paint and shows it after 2.5s regardless), and each section rises 10px over 540ms on `--ease-out` as it first enters the screen; a section is never hidden while it waits, so a jump down the page or a full-page screenshot shows everything. The spaces index is one field card per room, its heading and arrows in the room's deep ink, with a 64px thumbnail of each space's drawing on stock. As each room card first enters the screen its thumbnails draw their lines in over 900ms on `--ease-out`, 110ms apart; a card waiting below is shown whole, and the line is only taken away at the moment it starts drawing. The before print drops in (600ms, `--ease-physical`) and the pen notes slide in 200ms apart after the headline has typed, timed from first paint; on a phone the before print starts below the fold, so it waits and arrives when it comes on screen.
+On the landing, the hero headline types in once per load, its letters arriving 45ms apart on `--ease` (a head script hides it from the first paint and shows it after 2.5s regardless), and each section rises 10px over 540ms on `--ease-out` as it first enters the screen; a section is never hidden while it waits, so a jump down the page or a full-page screenshot shows everything. The spaces index is one plain group per room on the page, its name a label in `ink-3` over hairline rows, with a 64px thumbnail of each space's drawing on stock. As each room card first enters the screen its thumbnails draw their lines in over 900ms on `--ease-out`, 110ms apart; a card waiting below is shown whole, and the line is only taken away at the moment it starts drawing. The before print drops in (600ms, `--ease-physical`) and the pen notes slide in 200ms apart after the headline has typed, timed from first paint; on a phone the before print starts below the fold, so it waits and arrives when it comes on screen.
 
 ## Do's and Don'ts
 
@@ -333,3 +333,5 @@ On the landing, the hero headline types in once per load, its letters arriving 4
 - **Don't** use the pen for a paragraph, a control label or anything a reader must parse.
 - **Don't** add a gradient surface, a blur, or a fourth typeface.
 - **Don't** put a kicker or eyebrow above a heading.
+- **Don't** set an italic accent phrase in a heading, a row of check-marked claims under the buttons, or a numbered 1-2-3 method section: the owner found all three read as a generated landing (11-27).
+- **Don't** caption a photo as a TidyMap result unless a TidyMap plan produced it. The hero pantry is a professional's photo and says so.
